@@ -56,6 +56,8 @@
   .card-amount.income { color:var(--accent); }
 
   .delete-btn { background:none; border:none; color:var(--danger); font-size:18px; cursor:pointer; padding:4px 0 4px 8px; opacity:.5; flex-shrink:0; }
+  .edit-btn { background:none; border:none; color:var(--text-dim); font-size:16px; cursor:pointer; padding:4px 0 4px 4px; opacity:.4; flex-shrink:0; }
+  .edit-btn:active { opacity:1; color:var(--accent); }
 
   .badge { font-size:10px; border-radius:4px; padding:2px 5px; font-weight:600; flex-shrink:0; white-space:nowrap; }
   .badge-cap { background:rgba(78,205,196,0.15); color:var(--accent); }
@@ -122,6 +124,8 @@
   .btn-primary { flex:1; background:var(--accent); color:var(--bg); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:700; padding:14px; cursor:pointer; }
   .btn-cancel { background:var(--surface2); color:var(--text-dim); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:600; padding:14px 20px; cursor:pointer; }
 
+  .reset-btn { background:none; border:none; color:var(--danger); font-size:13px; opacity:0.4; cursor:pointer; padding:8px; width:100%; text-align:center; }
+  .reset-btn:active { opacity:1; }
   .empty { text-align:center; padding:32px 20px; color:var(--text-dim); }
   .empty-icon { font-size:40px; margin-bottom:10px; }
   .empty p { font-size:14px; line-height:1.5; }
@@ -147,7 +151,8 @@
   <div class="card" id="savings-list">
     <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
   </div>
-  <button class="add-btn" onclick="openModal('savings')">＋ Добавить счёт</button>
+  <button class="add-btn" onclick="editingId=null;openModal('savings')">＋ Добавить счёт</button>
+  <button class="reset-btn" onclick="resetAllData()">🗑 Очистить все данные</button>
 </div>
 
 <!-- INCOME -->
@@ -160,7 +165,7 @@
   <div class="card" id="income-list">
     <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
   </div>
-  <button class="add-btn" onclick="openModal('income')">＋ Добавить источник дохода</button>
+  <button class="add-btn" onclick="editingId=null;openModal('income')">＋ Добавить источник дохода</button>
 </div>
 
 <!-- GOALS -->
@@ -187,7 +192,7 @@
   <div class="card" id="goals-list">
     <div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>
   </div>
-  <button class="add-btn" onclick="openModal('goals')">＋ Добавить цель</button>
+  <button class="add-btn" onclick="editingId=null;openModal('goals')">＋ Добавить цель</button>
 </div>
 
 <!-- MODAL -->
@@ -298,7 +303,7 @@
 <script>
 // ── STATE ─────────────────────────────────────────────────
 let state = { savings:[], income:[], goals:[] };
-let modalMode = null, incomeTab = 'linked';
+let modalMode = null, incomeTab = 'linked', editingId = null;
 
 // ── CURRENCY RATES ────────────────────────────────────────
 // rates: { USD: 89.5, EUR: 97.2, ... } — how many RUB per 1 unit of currency
@@ -464,7 +469,7 @@ function renderSavings() {
         ${mainAmt}
         ${subAmt ? `<span class="sub-amount">${subAmt}</span>` : ''}
       </div>
-      <button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
+      <button class="edit-btn" onclick="openEdit('savings','${x.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
     </div>`;
   }).join('');
 }
@@ -489,7 +494,7 @@ function renderIncome() {
       <div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">${sub}</div></div>
       ${linked?`<span class="badge badge-link">🔗</span>`:''}
       <div class="card-amount income">+${fmt(amt)} ₽</div>
-      <button class="delete-btn" onclick="deleteItem('income','${x.id}')">✕</button>
+      <button class="edit-btn" onclick="openEdit('income','${x.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('income','${x.id}')">✕</button>
     </div>`;
   }).join('');
 }
@@ -517,7 +522,7 @@ function renderGoals() {
     <div class="goal-check">${g.covered?'✓':''}</div>
     <div class="goal-info"><div class="goal-name">${g.name}</div></div>
     <div class="goal-amount">${fmt(g.amount)} ₽</div>
-    <button class="delete-btn" onclick="deleteItem('goals','${g.id}')">✕</button>
+    <button class="edit-btn" onclick="openEdit('goals','${g.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('goals','${g.id}')">✕</button>
   </div>`).join('');
   const pct = totalGoals?Math.min(100,Math.round(coveredSum/totalGoals*100)):0;
   document.getElementById('goals-pct').textContent=pct+'%';
@@ -528,9 +533,13 @@ function renderGoals() {
 
 // ── MODAL ─────────────────────────────────────────────────
 function openModal(mode) {
+  if (!editingId) editingId = null;
   modalMode = mode;
   ['savings','income','goals'].forEach(m=>document.getElementById('fields-'+m).style.display=m===mode?'':'none');
-  document.getElementById('modal-title').textContent={savings:'Добавить счёт',income:'Добавить доход',goals:'Добавить цель'}[mode];
+  const titles = editingId
+    ? {savings:'Редактировать счёт',income:'Редактировать доход',goals:'Редактировать цель'}
+    : {savings:'Добавить счёт',income:'Добавить доход',goals:'Добавить цель'};
+  document.getElementById('modal-title').textContent = titles[mode];
   if (mode==='savings') {
     document.getElementById('s-icon').selectedIndex=0;
     document.getElementById('s-currency').value='RUB';
@@ -635,11 +644,72 @@ function updateIncomePreview() {
   }
 }
 
-function closeModal(){document.getElementById('modal').classList.remove('open');}
+function openEdit(list, id) {
+  editingId = id;
+  if (list === 'savings') {
+    const x = state.savings.find(s => s.id === id);
+    if (!x) return;
+    openModal('savings');
+    document.getElementById('s-name').value = x.name;
+    document.getElementById('s-amount').value = x.amount;
+    document.getElementById('s-currency').value = x.currency || 'RUB';
+    // set icon select
+    const sel = document.getElementById('s-icon');
+    for (let i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === x.icon) { sel.selectedIndex = i; break; }
+    }
+    onSavingTypeChange();
+    if (x.isDeposit) {
+      document.getElementById('s-rate').value = x.rate || '';
+      document.getElementById('s-date-start').value = x.dateStart || '';
+      document.getElementById('s-date-end').value = x.dateEnd || '';
+      document.getElementById('s-compound').checked = !!x.compound;
+      updateDepositPreview();
+    }
+  } else if (list === 'income') {
+    const x = state.income.find(i => i.id === id);
+    if (!x) return;
+    openModal('income');
+    if (x.savingRef) {
+      switchIncomeTab('linked');
+      document.getElementById('i-saving-ref').value = x.savingRef;
+      if (x.calcMode === 'percent') {
+        document.getElementById('i-calc-mode').value = 'percent';
+        document.getElementById('i-percent').value = x.rate || '';
+      } else if (x.calcMode === 'fixed') {
+        document.getElementById('i-calc-mode').value = 'fixed';
+        document.getElementById('i-fixed-amount').value = x.amount || '';
+      }
+      updateIncomePreview();
+    } else {
+      switchIncomeTab('manual');
+      document.getElementById('i-name').value = x.name;
+      document.getElementById('i-amount').value = x.amount;
+      const isel = document.getElementById('i-icon');
+      for (let i = 0; i < isel.options.length; i++) {
+        if (isel.options[i].value === x.icon) { isel.selectedIndex = i; break; }
+      }
+    }
+  } else if (list === 'goals') {
+    const x = state.goals.find(g => g.id === id);
+    if (!x) return;
+    openModal('goals');
+    document.getElementById('g-name').value = x.name;
+    document.getElementById('g-amount').value = x.amount;
+  }
+}
+
+function closeModal(){editingId=null;document.getElementById('modal').classList.remove('open');}
 function closeModalOutside(e){if(e.target===document.getElementById('modal'))closeModal();}
 
 function saveItem(){
-  const id=uid();
+  const id = editingId || uid();
+  if (editingId) {
+    // remove old item first, then re-add with same id
+    ['savings','income','goals'].forEach(list => {
+      state[list] = state[list].filter(x => x.id !== editingId);
+    });
+  }
   if(modalMode==='savings'){
     const name=document.getElementById('s-name').value.trim();
     const amount=parseFloat(document.getElementById('s-amount').value);
@@ -688,7 +758,7 @@ function saveItem(){
     if(!name||isNaN(amount)||amount<=0)return;
     state.goals.push({id,name,amount});
   }
-  save();render();closeModal();
+  editingId=null;save();render();closeModal();
 }
 
 function deleteItem(list,id){
@@ -717,8 +787,15 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape')closeModal();
 });
 
-setInterval(render,60000);          // refresh amounts every minute
-setInterval(fetchRates,3600000);    // refresh rates every hour
+function resetAllData() {
+  if (confirm('Удалить все данные приложения? Это нельзя отменить.')) {
+    ['fin_v3','fin_state_v2','fin_state'].forEach(k => localStorage.removeItem(k));
+    location.reload();
+  }
+}
+
+setInterval(render,60000);
+setInterval(fetchRates,3600000);
 
 load();render();fetchRates();
 </script>
