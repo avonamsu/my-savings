@@ -38,7 +38,6 @@
     margin: 0 auto;
   }
 
-  /* NAV */
   nav {
     display: flex;
     background: var(--surface);
@@ -75,11 +74,9 @@
     border-radius: 2px 2px 0 0;
   }
 
-  /* PAGES */
   .page { display: none; flex-direction: column; flex: 1; padding: 20px 16px 100px; gap: 16px; }
   .page.active { display: flex; }
 
-  /* HEADER CARD */
   .hero {
     background: linear-gradient(135deg, var(--surface2) 0%, #1a2e4a 100%);
     border-radius: var(--radius);
@@ -107,7 +104,6 @@
   .hero-amount span { color: var(--accent); }
   .hero-sub { font-size: 13px; color: var(--text-dim); margin-top: 8px; }
 
-  /* SECTION */
   .section-title {
     font-size: 11px;
     font-weight: 700;
@@ -117,7 +113,6 @@
     margin-bottom: -4px;
   }
 
-  /* CARDS LIST */
   .card {
     background: var(--surface);
     border-radius: var(--radius);
@@ -130,7 +125,6 @@
     padding: 14px 16px;
     gap: 12px;
     border-bottom: 1px solid rgba(255,255,255,0.04);
-    position: relative;
   }
   .card-item:last-child { border-bottom: none; }
   .card-icon {
@@ -160,7 +154,6 @@
   }
   .delete-btn:hover { opacity: 1; }
 
-  /* GOAL ITEM */
   .goal-item {
     display: flex;
     align-items: center;
@@ -180,23 +173,13 @@
     font-size: 13px;
     transition: all 0.3s;
   }
-  .goal-item.covered .goal-check {
-    background: var(--done);
-    border-color: var(--done);
-    color: var(--bg);
-  }
+  .goal-item.covered .goal-check { background: var(--done); border-color: var(--done); color: var(--bg); }
   .goal-info { flex: 1; min-width: 0; }
-  .goal-name {
-    font-size: 15px;
-    font-weight: 500;
-    transition: color 0.2s;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
+  .goal-name { font-size: 15px; font-weight: 500; transition: color 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .goal-item.covered .goal-name { color: var(--accent); }
   .goal-amount { font-size: 14px; font-weight: 600; flex-shrink: 0; }
   .goal-item.covered .goal-amount { color: var(--accent); }
 
-  /* PROGRESS BAR */
   .progress-wrap { background: var(--surface); border-radius: var(--radius); padding: 18px; border: 1px solid rgba(255,255,255,0.05); }
   .progress-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
   .progress-label { font-size: 13px; color: var(--text-dim); }
@@ -205,7 +188,6 @@
   .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #88E4DF); border-radius: 4px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
   .progress-amounts { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--text-dim); }
 
-  /* ADD BUTTON */
   .add-btn {
     background: none;
     border: 2px dashed rgba(78,205,196,0.3);
@@ -221,7 +203,40 @@
   }
   .add-btn:hover, .add-btn:active { background: var(--accent-dim); border-color: var(--accent); }
 
-  /* MODAL */
+  .tab-switch {
+    display: flex;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    gap: 3px;
+    margin-bottom: 14px;
+  }
+  .tab-switch button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-switch button.active { background: var(--accent); color: var(--bg); }
+
+  .calc-preview {
+    background: var(--accent-dim);
+    border: 1px solid rgba(78,205,196,0.25);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    display: none;
+  }
+  .calc-preview strong { color: var(--accent); font-size: 18px; }
+
   .modal-overlay {
     display: none;
     position: fixed; inset: 0;
@@ -282,16 +297,10 @@
     cursor: pointer;
   }
 
-  /* EMPTY STATE */
-  .empty {
-    text-align: center;
-    padding: 32px 20px;
-    color: var(--text-dim);
-  }
+  .empty { text-align: center; padding: 32px 20px; color: var(--text-dim); }
   .empty-icon { font-size: 40px; margin-bottom: 10px; }
   .empty p { font-size: 14px; line-height: 1.5; }
 
-  /* INCOME PAGE SPECIAL */
   .income-rate-card {
     background: var(--surface);
     border-radius: var(--radius);
@@ -306,7 +315,15 @@
   .income-rate-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
   .income-rate-val { font-size: 22px; font-weight: 700; color: var(--accent); }
 
-  .total-income-hero { margin-top: 4px; }
+  .linked-badge {
+    font-size: 10px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -323,42 +340,31 @@
   </button>
 </nav>
 
-<!-- SAVINGS PAGE -->
 <div class="page active" id="page-savings">
   <div class="hero">
     <div class="hero-label">Всего накоплено</div>
     <div class="hero-amount" id="total-savings">0 <span>₽</span></div>
     <div class="hero-sub" id="savings-count">Нет счетов</div>
   </div>
-
   <div class="section-title">Мои счета</div>
   <div class="card" id="savings-list">
-    <div class="empty">
-      <div class="empty-icon">🏦</div>
-      <p>Добавь первый счёт или инвестицию</p>
-    </div>
+    <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
   </div>
   <button class="add-btn" onclick="openModal('savings')">＋ Добавить счёт</button>
 </div>
 
-<!-- INCOME PAGE -->
 <div class="page" id="page-income">
   <div class="hero">
     <div class="hero-label">Пассивный доход в месяц</div>
-    <div class="hero-amount total-income-hero" id="total-income-display">0 <span>₽</span></div>
+    <div class="hero-amount" style="margin-top:4px" id="total-income-display">0 <span>₽</span></div>
   </div>
-
   <div class="section-title">Источники дохода</div>
   <div class="card" id="income-list">
-    <div class="empty">
-      <div class="empty-icon">📊</div>
-      <p>Добавь доход от инвестиций, вклада или другой источник</p>
-    </div>
+    <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
   </div>
   <button class="add-btn" onclick="openModal('income')">＋ Добавить источник дохода</button>
 </div>
 
-<!-- GOALS PAGE -->
 <div class="page" id="page-goals">
   <div class="progress-wrap">
     <div class="progress-header">
@@ -373,7 +379,6 @@
       <span id="goals-total-amount">из 0 ₽</span>
     </div>
   </div>
-
   <div class="income-rate-card">
     <div class="income-rate-icon">💸</div>
     <div class="income-rate-info">
@@ -381,53 +386,101 @@
       <div class="income-rate-val" id="goals-income-ref">0 ₽</div>
     </div>
   </div>
-
   <div class="section-title">Мои цели</div>
   <div class="card" id="goals-list">
-    <div class="empty">
-      <div class="empty-icon">✨</div>
-      <p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p>
-    </div>
+    <div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>
   </div>
   <button class="add-btn" onclick="openModal('goals')">＋ Добавить цель</button>
 </div>
 
-<!-- MODAL -->
 <div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
   <div class="modal">
     <div class="modal-title" id="modal-title">Добавить счёт</div>
 
-    <div class="field">
-      <label>НАЗВАНИЕ</label>
-      <input type="text" id="m-name" placeholder="Например: Вклад в Сбере">
+    <div id="fields-savings">
+      <div class="field">
+        <label>НАЗВАНИЕ</label>
+        <input type="text" id="s-name" placeholder="Например: Вклад в Сбере">
+      </div>
+      <div class="field">
+        <label>ТИП</label>
+        <select id="s-icon">
+          <option value="🏦">🏦 Банковский вклад</option>
+          <option value="📈">📈 Инвестиции / брокер</option>
+          <option value="💵">💵 Наличные</option>
+          <option value="🏠">🏠 Недвижимость</option>
+          <option value="₿">₿ Крипто</option>
+          <option value="💼">💼 Другое</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>СУММА (₽)</label>
+        <input type="number" id="s-amount" placeholder="0" inputmode="decimal">
+      </div>
     </div>
 
-    <div class="field" id="field-icon">
-      <label>ТИП</label>
-      <select id="m-icon">
-        <option value="🏦">🏦 Банковский вклад</option>
-        <option value="📈">📈 Инвестиции / брокер</option>
-        <option value="💵">💵 Наличные</option>
-        <option value="🏠">🏠 Недвижимость</option>
-        <option value="₿">₿ Крипто</option>
-        <option value="💼">💼 Другое</option>
-      </select>
+    <div id="fields-income" style="display:none">
+      <div class="tab-switch">
+        <button class="active" id="tab-linked" onclick="switchIncomeTab('linked')">Из накоплений</button>
+        <button id="tab-manual" onclick="switchIncomeTab('manual')">Вручную</button>
+      </div>
+      <div id="income-linked">
+        <div class="field">
+          <label>СЧЁТ</label>
+          <select id="i-saving-ref" onchange="updateCalcPreview()">
+            <option value="">— выбери счёт —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>КАК СЧИТАТЬ ДОХОД</label>
+          <select id="i-calc-mode" onchange="updateCalcPreview()">
+            <option value="percent">% годовых → считаю сам</option>
+            <option value="manual_linked">Фиксированная сумма в месяц</option>
+          </select>
+        </div>
+        <div class="field" id="field-percent">
+          <label>ПРОЦЕНТ ГОДОВЫХ (%)</label>
+          <input type="number" id="i-percent" placeholder="Например: 18" inputmode="decimal" oninput="updateCalcPreview()">
+        </div>
+        <div class="field" id="field-linked-amount" style="display:none">
+          <label>ДОХОД В МЕСЯЦ (₽)</label>
+          <input type="number" id="i-linked-amount" placeholder="0" inputmode="decimal">
+        </div>
+        <div class="calc-preview" id="calc-preview">
+          Доход в месяц: <strong id="calc-result">0 ₽</strong>
+        </div>
+      </div>
+      <div id="income-manual" style="display:none">
+        <div class="field">
+          <label>НАЗВАНИЕ</label>
+          <input type="text" id="i-name" placeholder="Например: Дивиденды от акций">
+        </div>
+        <div class="field">
+          <label>ТИП ДОХОДА</label>
+          <select id="i-icon">
+            <option value="💰">💰 Проценты по вкладу</option>
+            <option value="📊">📊 Дивиденды</option>
+            <option value="🏠">🏠 Аренда</option>
+            <option value="💸">💸 Купоны / облигации</option>
+            <option value="✨">✨ Другое</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>ДОХОД В МЕСЯЦ (₽)</label>
+          <input type="number" id="i-amount" placeholder="0" inputmode="decimal">
+        </div>
+      </div>
     </div>
 
-    <div class="field" id="field-income-type" style="display:none">
-      <label>ТИП ДОХОДА</label>
-      <select id="m-income-type">
-        <option value="💰">💰 Проценты по вкладу</option>
-        <option value="📊">📊 Дивиденды</option>
-        <option value="🏠">🏠 Аренда</option>
-        <option value="💸">💸 Купоны / облигации</option>
-        <option value="✨">✨ Другое</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label id="m-amount-label">СУММА (₽)</label>
-      <input type="number" id="m-amount" placeholder="0" inputmode="decimal">
+    <div id="fields-goals" style="display:none">
+      <div class="field">
+        <label>НАЗВАНИЕ</label>
+        <input type="text" id="g-name" placeholder="Например: Коммунальные услуги">
+      </div>
+      <div class="field">
+        <label>СУММА В МЕСЯЦ (₽)</label>
+        <input type="number" id="g-amount" placeholder="0" inputmode="decimal">
+      </div>
     </div>
 
     <div class="modal-actions">
@@ -438,80 +491,52 @@
 </div>
 
 <script>
-  // ── STATE ──────────────────────────────────────────────
-  let state = {
-    savings: [],   // { id, name, icon, amount }
-    income: [],    // { id, name, icon, amount }
-    goals: []      // { id, name, amount }
-  };
+  let state = { savings: [], income: [], goals: [] };
   let modalMode = null;
+  let incomeTab = 'linked';
 
-  // ── STORAGE ────────────────────────────────────────────
   function save() { localStorage.setItem('fin_state', JSON.stringify(state)); }
-  function load() {
-    const raw = localStorage.getItem('fin_state');
-    if (raw) state = JSON.parse(raw);
-  }
+  function load() { const raw = localStorage.getItem('fin_state'); if (raw) state = JSON.parse(raw); }
 
-  // ── HELPERS ───────────────────────────────────────────
   const fmt = n => Number(n).toLocaleString('ru-RU', { maximumFractionDigits: 0 });
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 
-  // ── RENDER ────────────────────────────────────────────
-  function render() {
-    renderSavings();
-    renderIncome();
-    renderGoals();
-  }
+  function render() { renderSavings(); renderIncome(); renderGoals(); }
 
   function renderSavings() {
     const total = state.savings.reduce((s, x) => s + Number(x.amount), 0);
     document.getElementById('total-savings').innerHTML = `${fmt(total)} <span>₽</span>`;
     const n = state.savings.length;
-    document.getElementById('savings-count').textContent =
-      n ? `${n} ${plural(n, 'счёт', 'счёта', 'счетов')}` : 'Нет счетов';
-
+    document.getElementById('savings-count').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов';
     const el = document.getElementById('savings-list');
-    if (!state.savings.length) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`;
-      return;
+    if (!n) { el.innerHTML = `<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`; return; }
+    el.innerHTML = state.savings.map(x => `<div class="card-item"><div class="card-icon">${x.icon}</div><div class="card-info"><div class="card-name">${x.name}</div></div><div class="card-amount">${fmt(x.amount)} ₽</div><button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button></div>`).join('');
+  }
+
+  function calcIncomeAmount(item) {
+    if (item.savingRef && item.calcMode === 'percent' && item.rate) {
+      const saving = state.savings.find(s => s.id === item.savingRef);
+      if (saving) return (Number(saving.amount) * Number(item.rate)) / 100 / 12;
     }
-    el.innerHTML = state.savings.map(x => `
-      <div class="card-item">
-        <div class="card-icon">${x.icon}</div>
-        <div class="card-info">
-          <div class="card-name">${x.name}</div>
-        </div>
-        <div class="card-amount">${fmt(x.amount)} ₽</div>
-        <button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
-      </div>`).join('');
+    return Number(item.amount) || 0;
   }
 
   function renderIncome() {
-    const total = state.income.reduce((s, x) => s + Number(x.amount), 0);
+    const total = state.income.reduce((s, x) => s + calcIncomeAmount(x), 0);
     document.getElementById('total-income-display').innerHTML = `${fmt(total)} <span>₽</span>`;
-
     const el = document.getElementById('income-list');
-    if (!state.income.length) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`;
-      return;
-    }
-    el.innerHTML = state.income.map(x => `
-      <div class="card-item">
-        <div class="card-icon">${x.icon}</div>
-        <div class="card-info">
-          <div class="card-name">${x.name}</div>
-          <div class="card-sub">в месяц</div>
-        </div>
-        <div class="card-amount income">+${fmt(x.amount)} ₽</div>
-        <button class="delete-btn" onclick="deleteItem('income','${x.id}')">✕</button>
-      </div>`).join('');
+    if (!state.income.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`; return; }
+    el.innerHTML = state.income.map(x => {
+      const amt = calcIncomeAmount(x);
+      const linked = x.savingRef ? state.savings.find(s => s.id === x.savingRef) : null;
+      const sub = linked ? (x.calcMode === 'percent' ? `${x.rate}% годовых · ${linked.name}` : linked.name) : 'в месяц';
+      return `<div class="card-item"><div class="card-icon">${x.icon}</div><div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">${sub}</div></div>${linked ? `<span class="linked-badge">🔗</span>` : ''}<div class="card-amount income">+${fmt(amt)} ₽</div><button class="delete-btn" onclick="deleteItem('income','${x.id}')">✕</button></div>`;
+    }).join('');
   }
 
   function renderGoals() {
-    const totalIncome = state.income.reduce((s, x) => s + Number(x.amount), 0);
+    const totalIncome = state.income.reduce((s, x) => s + calcIncomeAmount(x), 0);
     document.getElementById('goals-income-ref').textContent = `${fmt(totalIncome)} ₽`;
-
     const el = document.getElementById('goals-list');
     if (!state.goals.length) {
       el.innerHTML = `<div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>`;
@@ -521,108 +546,6 @@
       document.getElementById('goals-total-amount').textContent = 'из 0 ₽';
       return;
     }
-
-    let remaining = totalIncome;
-    let coveredSum = 0;
+    let remaining = totalIncome, coveredSum = 0;
     const totalGoals = state.goals.reduce((s, x) => s + Number(x.amount), 0);
-
-    const items = state.goals.map(g => {
-      const cost = Number(g.amount);
-      const covered = remaining >= cost;
-      if (covered) { remaining -= cost; coveredSum += cost; }
-      return { ...g, covered };
-    });
-
-    el.innerHTML = items.map(g => `
-      <div class="goal-item ${g.covered ? 'covered' : ''}">
-        <div class="goal-check">${g.covered ? '✓' : ''}</div>
-        <div class="goal-info">
-          <div class="goal-name">${g.name}</div>
-        </div>
-        <div class="goal-amount">${fmt(g.amount)} ₽</div>
-        <button class="delete-btn" onclick="deleteItem('goals','${g.id}')">✕</button>
-      </div>`).join('');
-
-    const pct = totalGoals ? Math.min(100, Math.round(coveredSum / totalGoals * 100)) : 0;
-    document.getElementById('goals-pct').textContent = pct + '%';
-    document.getElementById('goals-bar').style.width = pct + '%';
-    document.getElementById('goals-covered-amount').textContent = `${fmt(coveredSum)} ₽ покрыто`;
-    document.getElementById('goals-total-amount').textContent = `из ${fmt(totalGoals)} ₽`;
-  }
-
-  // ── MODAL ─────────────────────────────────────────────
-  function openModal(mode) {
-    modalMode = mode;
-    document.getElementById('m-name').value = '';
-    document.getElementById('m-amount').value = '';
-
-    const titles = { savings: 'Добавить счёт', income: 'Добавить доход', goals: 'Добавить цель' };
-    const labels = { savings: 'СУММА (₽)', income: 'ДОХОД В МЕСЯЦ (₽)', goals: 'СУММА В МЕСЯЦ (₽)' };
-    const namePh = { savings: 'Например: Вклад в Сбере', income: 'Например: Проценты по вкладу', goals: 'Например: Коммунальные услуги' };
-
-    document.getElementById('modal-title').textContent = titles[mode];
-    document.getElementById('m-amount-label').textContent = labels[mode];
-    document.getElementById('m-name').placeholder = namePh[mode];
-
-    document.getElementById('field-icon').style.display = mode === 'savings' ? '' : 'none';
-    document.getElementById('field-income-type').style.display = mode === 'income' ? '' : 'none';
-
-    document.getElementById('modal').classList.add('open');
-    setTimeout(() => document.getElementById('m-name').focus(), 100);
-  }
-
-  function closeModal() { document.getElementById('modal').classList.remove('open'); }
-  function closeModalOutside(e) { if (e.target === document.getElementById('modal')) closeModal(); }
-
-  function saveItem() {
-    const name = document.getElementById('m-name').value.trim();
-    const amount = parseFloat(document.getElementById('m-amount').value);
-    if (!name || isNaN(amount) || amount <= 0) {
-      document.getElementById('m-name').style.borderColor = name ? '' : 'var(--danger)';
-      return;
-    }
-    const id = uid();
-    if (modalMode === 'savings') {
-      const icon = document.getElementById('m-icon').value;
-      state.savings.push({ id, name, icon, amount });
-    } else if (modalMode === 'income') {
-      const icon = document.getElementById('m-income-type').value;
-      state.income.push({ id, name, icon, amount });
-    } else {
-      state.goals.push({ id, name, amount });
-    }
-    save(); render(); closeModal();
-  }
-
-  function deleteItem(list, id) {
-    state[list] = state[list].filter(x => x.id !== id);
-    save(); render();
-  }
-
-  // ── NAV ───────────────────────────────────────────────
-  function showPage(name) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-    document.getElementById('page-' + name).classList.add('active');
-    document.getElementById('nav-' + name).classList.add('active');
-  }
-
-  // ── UTILS ─────────────────────────────────────────────
-  function plural(n, one, few, many) {
-    const mod10 = n % 10, mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return one;
-    if ([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return few;
-    return many;
-  }
-
-  // ── ENTER TO SAVE ─────────────────────────────────────
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) saveItem();
-    if (e.key === 'Escape') closeModal();
-  });
-
-  // ── INIT ─────────────────────────────────────────────
-  load(); render();
-</script>
-</body>
-</html>
+    const items = state.goals.map(g => { co
