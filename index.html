@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0F1B2D">
+<title>Мои накопления</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #0F1B2D; --surface: #162437; --surface2: #1E3050;
+    --accent: #4ECDC4; --accent-dim: rgba(78,205,196,0.15); --accent-glow: rgba(78,205,196,0.3);
+    --text: #E8F4F8; --text-dim: #7A9BB5;
+    --done: #4ECDC4; --done-bg: rgba(78,205,196,0.12);
+    --danger: #FF6B6B; --warn: #FFB347;
+    --radius: 16px; --radius-sm: 10px;
+  }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,'Inter',sans-serif; min-height:100dvh; display:flex; flex-direction:column; max-width:480px; margin:0 auto; }
+
+  nav { display:flex; background:var(--surface); border-bottom:1px solid rgba(78,205,196,0.1); position:sticky; top:0; z-index:100; }
+  nav button { flex:1; background:none; border:none; color:var(--text-dim); font-size:11px; font-weight:600; letter-spacing:.03em; padding:14px 4px 12px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; transition:color .2s; position:relative; }
+  nav button .ni { font-size:20px; }
+  nav button.active { color:var(--accent); }
+  nav button.active::after { content:''; position:absolute; bottom:0; left:20%; right:20%; height:2px; background:var(--accent); border-radius:2px 2px 0 0; }
+
+  .page { display:none; flex-direction:column; flex:1; padding:20px 16px 100px; gap:16px; }
+  .page.active { display:flex; }
+
+  .hero { background:linear-gradient(135deg,var(--surface2) 0%,#1a2e4a 100%); border-radius:var(--radius); padding:24px; border:1px solid rgba(78,205,196,0.15); position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; top:-40px; right:-40px; width:140px; height:140px; background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%); pointer-events:none; }
+  .hero-label { font-size:12px; color:var(--text-dim); margin-bottom:8px; font-weight:500; }
+  .hero-amount { font-size:38px; font-weight:700; color:var(--text); line-height:1; letter-spacing:-1px; margin-top:4px; }
+  .hero-amount span { color:var(--accent); }
+  .hero-sub { font-size:13px; color:var(--text-dim); margin-top:8px; }
+
+  .section-title { font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--text-dim); text-transform:uppercase; margin-bottom:-4px; }
+
+  .card { background:var(--surface); border-radius:var(--radius); overflow:hidden; border:1px solid rgba(255,255,255,0.05); }
+  .card-item { display:flex; align-items:center; padding:14px 16px; gap:12px; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .card-item:last-child { border-bottom:none; }
+  .card-icon { width:38px; height:38px; border-radius:10px; background:var(--accent-dim); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .card-info { flex:1; min-width:0; }
+  .card-name { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card-sub { font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .card-amount { font-size:15px; font-weight:600; color:var(--text); flex-shrink:0; text-align:right; }
+  .card-amount.income { color:var(--accent); }
+  .card-amount .orig { font-size:11px; color:var(--text-dim); display:block; }
+
+  .delete-btn { background:none; border:none; color:var(--danger); font-size:18px; cursor:pointer; padding:4px 0 4px 8px; opacity:.5; transition:opacity .2s; flex-shrink:0; }
+  .delete-btn:hover { opacity:1; }
+
+  /* DEPOSIT BADGE */
+  .badge { font-size:10px; border-radius:4px; padding:2px 5px; font-weight:600; flex-shrink:0; white-space:nowrap; }
+  .badge-cap { background:rgba(78,205,196,0.15); color:var(--accent); }
+  .badge-exp { background:rgba(255,179,71,0.15); color:var(--warn); }
+  .badge-link { background:rgba(78,205,196,0.15); color:var(--accent); }
+
+  /* GOALS */
+  .goal-item { display:flex; align-items:center; padding:14px 16px; gap:12px; border-bottom:1px solid rgba(255,255,255,0.04); transition:background .2s; }
+  .goal-item:last-child { border-bottom:none; }
+  .goal-item.covered { background:var(--done-bg); }
+  .goal-check { width:24px; height:24px; border-radius:50%; border:2px solid var(--text-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; transition:all .3s; }
+  .goal-item.covered .goal-check { background:var(--done); border-color:var(--done); color:var(--bg); }
+  .goal-info { flex:1; min-width:0; }
+  .goal-name { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .goal-item.covered .goal-name { color:var(--accent); }
+  .goal-amount { font-size:14px; font-weight:600; flex-shrink:0; }
+  .goal-item.covered .goal-amount { color:var(--accent); }
+
+  /* PROGRESS */
+  .progress-wrap { background:var(--surface); border-radius:var(--radius); padding:18px; border:1px solid rgba(255,255,255,0.05); }
+  .progress-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
+  .progress-label { font-size:13px; color:var(--text-dim); }
+  .progress-pct { font-size:22px; font-weight:700; color:var(--accent); }
+  .progress-bar-bg { height:8px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden; }
+  .progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),#88E4DF); border-radius:4px; transition:width .6s cubic-bezier(.4,0,.2,1); }
+  .progress-amounts { display:flex; justify-content:space-between; margin-top:8px; font-size:12px; color:var(--text-dim); }
+
+  .income-summary { background:var(--surface); border-radius:var(--radius); padding:18px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:14px; }
+  .income-summary-icon { font-size:28px; }
+  .income-summary-info { flex:1; }
+  .income-summary-label { font-size:12px; color:var(--text-dim); margin-bottom:4px; }
+  .income-summary-val { font-size:22px; font-weight:700; color:var(--accent); }
+
+  .add-btn { background:none; border:2px dashed rgba(78,205,196,0.3); border-radius:var(--radius-sm); color:var(--accent); font-size:14px; font-weight:600; padding:14px; cursor:pointer; width:100%; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .add-btn:hover, .add-btn:active { background:var(--accent-dim); border-color:var(--accent); }
+
+  /* TABS */
+  .tab-switch { display:flex; background:var(--surface2); border-radius:var(--radius-sm); padding:3px; gap:3px; margin-bottom:14px; }
+  .tab-switch button { flex:1; background:none; border:none; color:var(--text-dim); font-size:13px; font-weight:600; padding:9px 4px; border-radius:8px; cursor:pointer; transition:all .2s; }
+  .tab-switch button.active { background:var(--accent); color:var(--bg); }
+
+  /* TOGGLE */
+  .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); margin-bottom:14px; }
+  .toggle-label { font-size:14px; color:var(--text); }
+  .toggle { position:relative; width:44px; height:26px; flex-shrink:0; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .toggle-slider { position:absolute; inset:0; background:var(--surface2); border-radius:13px; cursor:pointer; transition:.3s; }
+  .toggle-slider::before { content:''; position:absolute; width:20px; height:20px; left:3px; bottom:3px; background:var(--text-dim); border-radius:50%; transition:.3s; }
+  .toggle input:checked + .toggle-slider { background:var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform:translateX(18px); background:var(--bg); }
+
+  /* CALC PREVIEW */
+  .calc-preview { background:var(--accent-dim); border:1px solid rgba(78,205,196,0.25); border-radius:var(--radius-sm); padding:12px 14px; font-size:13px; color:var(--text-dim); margin-bottom:14px; display:none; line-height:1.6; }
+  .calc-preview strong { color:var(--accent); font-size:17px; }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; padding:24px 20px 40px; width:100%; max-width:480px; border-top:1px solid rgba(78,205,196,0.2); max-height:90dvh; overflow-y:auto; }
+  .modal-title { font-size:18px; font-weight:700; margin-bottom:20px; }
+  .field { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .field label { font-size:12px; color:var(--text-dim); font-weight:600; letter-spacing:.05em; }
+  .field input, .field select { background:var(--surface2); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-sm); color:var(--text); font-size:16px; padding:12px 14px; outline:none; width:100%; transition:border-color .2s; -webkit-appearance:none; }
+  .field input:focus, .field select:focus { border-color:var(--accent); }
+  .field select option { background:var(--surface2); }
+  .field-row { display:flex; gap:10px; }
+  .field-row .field { flex:1; }
+  .modal-actions { display:flex; gap:10px; margin-top:20px; }
+  .btn-primary { flex:1; background:var(--accent); color:var(--bg); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:700; padding:14px; cursor:pointer; transition:opacity .2s; }
+  .btn-primary:active { opacity:.85; }
+  .btn-cancel { background:var(--surface2); color:var(--text-dim); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:600; padding:14px 20px; cursor:pointer; }
+
+  .empty { text-align:center; padding:32px 20px; color:var(--text-dim); }
+  .empty-icon { font-size:40px; margin-bottom:10px; }
+  .empty p { font-size:14px; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<nav>
+  <button class="active" onclick="showPage('savings')" id="nav-savings"><span class="ni">💰</span>Накопления</button>
+  <button onclick="showPage('income')" id="nav-income"><span class="ni">📈</span>Доход</button>
+  <button onclick="showPage('goals')" id="nav-goals"><span class="ni">🎯</span>Цели</button>
+</nav>
+
+<!-- SAVINGS -->
+<div class="page active" id="page-savings">
+  <div class="hero">
+    <div class="hero-label">Всего накоплено (с процентами)</div>
+    <div class="hero-amount" id="total-savings">0 <span>₽</span></div>
+    <div class="hero-sub" id="savings-count">Нет счетов</div>
+  </div>
+  <div class="section-title">Мои счета</div>
+  <div class="card" id="savings-list">
+    <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
+  </div>
+  <button class="add-btn" onclick="openModal('savings')">＋ Добавить счёт</button>
+</div>
+
+<!-- INCOME -->
+<div class="page" id="page-income">
+  <div class="hero">
+    <div class="hero-label">Пассивный доход в месяц</div>
+    <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
+  </div>
+  <div class="section-title">Источники дохода</div>
+  <div class="card" id="income-list">
+    <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
+  </div>
+  <button class="add-btn" onclick="openModal('income')">＋ Добавить источник дохода</button>
+</div>
+
+<!-- GOALS -->
+<div class="page" id="page-goals">
+  <div class="progress-wrap">
+    <div class="progress-header">
+      <div class="progress-label">Покрыто целей</div>
+      <div class="progress-pct" id="goals-pct">0%</div>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="goals-bar" style="width:0%"></div></div>
+    <div class="progress-amounts">
+      <span id="goals-covered-amount">0 ₽ покрыто</span>
+      <span id="goals-total-amount">из 0 ₽</span>
+    </div>
+  </div>
+  <div class="income-summary">
+    <div class="income-summary-icon">💸</div>
+    <div class="income-summary-info">
+      <div class="income-summary-label">Ежемесячный доход</div>
+      <div class="income-summary-val" id="goals-income-ref">0 ₽</div>
+    </div>
+  </div>
+  <div class="section-title">Мои цели</div>
+  <div class="card" id="goals-list">
+    <div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>
+  </div>
+  <button class="add-btn" onclick="openModal('goals')">＋ Добавить цель</button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+
+    <!-- SAVINGS -->
+    <div id="fields-savings" style="display:none">
+      <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="s-name" placeholder="Например: Вклад в Сбере"></div>
+      <div class="field">
+        <label>ТИП</label>
+        <select id="s-icon" onchange="onSavingTypeChange()">
+          <option value="🏦" data-deposit="1">🏦 Банковский вклад</option>
+          <option value="📈">📈 Инвестиции / брокер</option>
+          <option value="💵">💵 Наличные</option>
+          <option value="🏠">🏠 Недвижимость</option>
+          <option value="₿">₿ Крипто</option>
+          <option value="💼">💼 Другое</option>
+        </select>
+      </div>
+      <div class="field"><label>СУММА (₽) — тело вклада/счёта</label><input type="number" id="s-amount" placeholder="0" inputmode="decimal"></div>
+
+      <!-- Deposit extra fields -->
+      <div id="deposit-fields">
+        <div class="field"><label>ПРОЦЕНТ ГОДОВЫХ (%)</label><input type="number" id="s-rate" placeholder="Например: 18" inputmode="decimal" oninput="updateDepositPreview()"></div>
+        <div class="field-row">
+          <div class="field"><label>ДАТА НАЧАЛА</label><input type="date" id="s-date-start" onchange="updateDepositPreview()"></div>
+          <div class="field"><label>ДАТА КОНЦА</label><input type="date" id="s-date-end" onchange="updateDepositPreview()"></div>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Капитализация (% на %)</span>
+          <label class="toggle"><input type="checkbox" id="s-compound" onchange="updateDepositPreview()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="calc-preview" id="deposit-preview"></div>
+      </div>
+    </div>
+
+    <!-- INCOME -->
+    <div id="fields-income" style="display:none">
+      <div class="tab-switch">
+        <button class="active" id="tab-linked" onclick="switchIncomeTab('linked')">Из накоплений</button>
+        <button id="tab-manual" onclick="switchIncomeTab('manual')">Вручную</button>
+      </div>
+      <div id="income-linked">
+        <div class="field"><label>СЧЁТ</label>
+          <select id="i-saving-ref" onchange="updateIncomePreview()"><option value="">— выбери счёт —</option></select>
+        </div>
+        <div id="income-linked-auto" style="display:none">
+          <div class="calc-preview" id="income-auto-preview" style="display:block"></div>
+        </div>
+        <div id="income-linked-manual-wrap">
+          <div class="field"><label>КАК СЧИТАТЬ ДОХОД</label>
+            <select id="i-calc-mode" onchange="updateIncomePreview()">
+              <option value="percent">% годовых → считаю сам</option>
+              <option value="fixed">Фиксированная сумма в месяц</option>
+            </select>
+          </div>
+          <div class="field" id="field-percent"><label>ПРОЦЕНТ ГОДОВЫХ (%)</label><input type="number" id="i-percent" placeholder="Например: 18" inputmode="decimal" oninput="updateIncomePreview()"></div>
+          <div class="field" id="field-fixed" style="display:none"><label>ДОХОД В МЕСЯЦ (₽)</label><input type="number" id="i-fixed-amount" placeholder="0" inputmode="decimal"></div>
+          <div class="calc-preview" id="income-linked-preview"></div>
+        </div>
+      </div>
+      <div id="income-manual" style="display:none">
+        <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="i-name" placeholder="Например: Дивиденды от акций"></div>
+        <div class="field"><label>ТИП ДОХОДА</label>
+          <select id="i-icon">
+            <option value="💰">💰 Проценты по вкладу</option>
+            <option value="📊">📊 Дивиденды</option>
+            <option value="🏠">🏠 Аренда</option>
+            <option value="💸">💸 Купоны / облигации</option>
+            <option value="✨">✨ Другое</option>
+          </select>
+        </div>
+        <div class="field"><label>ДОХОД В МЕСЯЦ (₽)</label><input type="number" id="i-amount" placeholder="0" inputmode="decimal"></div>
+      </div>
+    </div>
+
+    <!-- GOALS -->
+    <div id="fields-goals" style="display:none">
+      <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="g-name" placeholder="Например: Коммунальные услуги"></div>
+      <div class="field"><label>СУММА В МЕСЯЦ (₽)</label><input type="number" id="g-amount" placeholder="0" inputmode="decimal"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Отмена</button>
+      <button class="btn-primary" onclick="saveItem()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let state = { savings: [], income: [], goals: [] };
+let modalMode = null, incomeTab = 'linked';
+
+function save() { localStorage.setItem('fin_state_v2', JSON.stringify(state)); }
+function load() { const r = localStorage.getItem('fin_state_v2'); if (r) state = JSON.parse(r); }
+
+const fmt = n => Number(n).toLocaleString('ru-RU', { maximumFractionDigits: 0 });
+const fmt2 = n => Number(n).toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+const today = () => new Date().toISOString().slice(0, 10);
+
+// ── DEPOSIT MATH ─────────────────────────────────────────
+// Returns { currentAmount, monthlyIncome, daysTotal, daysPassed, expired }
+function calcDeposit(s) {
+  if (!s.isDeposit || !s.rate || !s.dateStart || !s.dateEnd) {
+    return { currentAmount: Number(s.amount), monthlyIncome: 0, daysTotal: 0, daysPassed: 0, expired: false };
+  }
+  const principal = Number(s.amount);
+  const rate = Number(s.rate) / 100;
+  const start = new Date(s.dateStart);
+  const end   = new Date(s.dateEnd);
+  const now   = new Date();
+  const clampedNow = now > end ? end : now;
+  const expired = now > end;
+
+  const msPerDay = 86400000;
+  const daysTotal  = Math.max(1, Math.round((end - start) / msPerDay));
+  const daysPassed = Math.max(0, Math.round((clampedNow - start) / msPerDay));
+  const monthsPassed = daysPassed / 30.4375;
+
+  let currentAmount;
+  if (s.compound) {
+    // monthly compounding
+    const monthsTotal = daysTotal / 30.4375;
+    const monthlyRate = rate / 12;
+    currentAmount = principal * Math.pow(1 + monthlyRate, monthsPassed);
+  } else {
+    // simple interest
+    currentAmount = principal + principal * rate * (daysPassed / 365);
+  }
+
+  // monthly income based on CURRENT amount
+  let monthlyIncome;
+  if (s.compound) {
+    const monthlyRate = rate / 12;
+    monthlyIncome = currentAmount * monthlyRate;
+  } else {
+    monthlyIncome = principal * rate / 12;
+  }
+
+  return { currentAmount, monthlyIncome, daysTotal, daysPassed, expired };
+}
+
+function getSavingCurrentAmount(s) {
+  if (s.isDeposit && s.rate && s.dateStart && s.dateEnd) {
+    return calcDeposit(s).currentAmount;
+  }
+  return Number(s.amount);
+}
+
+// ── INCOME CALC ──────────────────────────────────────────
+function calcIncomeAmount(item) {
+  if (item.savingRef) {
+    const saving = state.savings.find(s => s.id === item.savingRef);
+    if (!saving) return 0;
+    // if deposit with rate — use auto monthly income
+    if (saving.isDeposit && saving.rate && saving.dateStart && saving.dateEnd) {
+      return calcDeposit(saving).monthlyIncome;
+    }
+    // else use percent or fixed
+    if (item.calcMode === 'percent' && item.rate) {
+      return getSavingCurrentAmount(saving) * Number(item.rate) / 100 / 12;
+    }
+    return Number(item.amount) || 0;
+  }
+  return Number(item.amount) || 0;
+}
+
+// ── RENDER ───────────────────────────────────────────────
+function render() { renderSavings(); renderIncome(); renderGoals(); }
+
+function renderSavings() {
+  const total = state.savings.reduce((s, x) => s + getSavingCurrentAmount(x), 0);
+  document.getElementById('total-savings').innerHTML = `${fmt(total)} <span>₽</span>`;
+  const n = state.savings.length;
+  document.getElementById('savings-count').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов';
+  const el = document.getElementById('savings-list');
+  if (!n) { el.innerHTML = `<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`; return; }
+  el.innerHTML = state.savings.map(x => {
+    const cur = getSavingCurrentAmount(x);
+    const orig = Number(x.amount);
+    const gained = cur - orig;
+    let badges = '';
+    let sub = '';
+    if (x.isDeposit && x.rate && x.dateStart && x.dateEnd) {
+      const d = calcDeposit(x);
+      const daysLeft = d.daysTotal - d.daysPassed;
+      if (d.expired) {
+        badges += `<span class="badge badge-exp">Истёк</span>`;
+      } else {
+        badges += `<span class="badge badge-cap">${x.rate}%</span>`;
+        if (x.compound) badges += ` <span class="badge badge-cap">капит.</span>`;
+      }
+      sub = d.expired ? `Вклад завершён` : `Осталось ${daysLeft} дн.`;
+    }
+    const gainedStr = gained > 0.01 ? `+${fmt(gained)} ₽` : '';
+    return `<div class="card-item">
+      <div class="card-icon">${x.icon}</div>
+      <div class="card-info">
+        <div class="card-name">${x.name} ${badges}</div>
+        ${sub ? `<div class="card-sub">${sub}</div>` : ''}
+      </div>
+      <div class="card-amount">
+        ${fmt(cur)} ₽
+        ${gainedStr ? `<span class="orig">${gainedStr}</span>` : ''}
+      </div>
+      <button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function renderIncome() {
+  const total = state.income.reduce((s, x) => s + calcIncomeAmount(x), 0);
+  document.getElementById('total-income-display').innerHTML = `${fmt(total)} <span>₽</span>`;
+  const el = document.getElementById('income-list');
+  if (!state.income.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`; return; }
+  el.innerHTML = state.income.map(x => {
+    const amt = calcIncomeAmount(x);
+    const linked = x.savingRef ? state.savings.find(s => s.id === x.savingRef) : null;
+    let sub = 'в месяц';
+    if (linked) {
+      if (linked.isDeposit && linked.rate && linked.dateStart && linked.dateEnd) {
+        sub = `авто · ${linked.name}`;
+      } else if (x.calcMode === 'percent') {
+        sub = `${x.rate}% годовых · ${linked.name}`;
+      } else {
+        sub = linked.name;
+      }
+    }
+    return `<div class="card-item">
+      <div class="card-icon">${x.icon}</div>
+      <div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">${sub}</div></div>
+      ${linked ? `<span class="badge badge-link">🔗</span>` : ''}
+      <div class="card-amount income">+${fmt(amt)} ₽</div>
+      <button class="delete-btn" onclick="deleteItem('income','${x.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function renderGoals() {
+  const totalIncome = state.income.reduce((s, x) => s + calcIncomeAmount(x), 0);
+  document.getElementById('goals-income-ref').textContent = `${fmt(totalIncome)} ₽`;
+  const el = document.getElementById('goals-list');
+  if (!state.goals.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>`;
+    ['goals-pct','goals-bar','goals-covered-amount','goals-total-amount'].forEach(id => {
+      const e = document.getElementById(id);
+      if (id==='goals-pct') e.textContent='0%';
+      else if (id==='goals-bar') e.style.width='0%';
+      else if (id==='goals-covered-amount') e.textContent='0 ₽ покрыто';
+      else e.textContent='из 0 ₽';
+    });
+    return;
+  }
+  let remaining = totalIncome, coveredSum = 0;
+  const totalGoals = state.goals.reduce((s, x) => s + Number(x.amount), 0);
+  const items = state.goals.map(g => {
+    const cost = Number(g.amount);
+    const covered = remaining >= cost;
+    if (covered) { remaining -= cost; coveredSum += cost; }
+    return { ...g, covered };
+  });
+  el.innerHTML = items.map(g => `<div class="goal-item ${g.covered?'covered':''}">
+    <div class="goal-check">${g.covered?'✓':''}</div>
+    <div class="goal-info"><div class="goal-name">${g.name}</div></div>
+    <div class="goal-amount">${fmt(g.amount)} ₽</div>
+    <button class="delete-btn" onclick="deleteItem('goals','${g.id}')">✕</button>
+  </div>`).join('');
+  const pct = totalGoals ? Math.min(100, Math.round(coveredSum/totalGoals*100)) : 0;
+  document.getElementById('goals-pct').textContent = pct+'%';
+  document.getElementById('goals-bar').style.width = pct+'%';
+  document.getElementById('goals-covered-amount').textContent = `${fmt(coveredSum)} ₽ покрыто`;
+  document.getElementById('goals-total-amount').textContent = `из ${fmt(totalGoals)} ₽`;
+}
+
+// ── MODAL ────────────────────────────────────────────────
+function openModal(mode) {
+  modalMode = mode;
+  ['savings','income','goals'].forEach(m => document.getElementById('fields-'+m).style.display = m===mode?'':'none');
+  document.getElementById('modal-title').textContent = {savings:'Добавить счёт',income:'Добавить доход',goals:'Добавить цель'}[mode];
+
+  if (mode==='savings') {
+    document.getElementById('s-icon').selectedIndex = 0;
+    onSavingTypeChange();
+    document.getElementById('s-date-start').value = today();
+    document.getElementById('s-compound').checked = false;
+  }
+  if (mode==='income') {
+    const sel = document.getElementById('i-saving-ref');
+    sel.innerHTML = '<option value="">— выбери счёт —</option>' +
+      state.savings.map(s=>`<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
+    switchIncomeTab('linked');
+    updateIncomePreview();
+  }
+  ['s-name','s-amount','s-rate','s-date-end','i-percent','i-fixed-amount','i-name','i-amount','g-name','g-amount']
+    .forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+  document.getElementById('deposit-preview').style.display='none';
+  document.getElementById('modal').classList.add('open');
+}
+
+function onSavingTypeChange() {
+  const sel = document.getElementById('s-icon');
+  const isDeposit = sel.options[sel.selectedIndex].dataset.deposit === '1';
+  document.getElementById('deposit-fields').style.display = isDeposit ? '' : 'none';
+}
+
+function updateDepositPreview() {
+  const amount = parseFloat(document.getElementById('s-amount').value) || 0;
+  const rate = parseFloat(document.getElementById('s-rate').value) || 0;
+  const dateStart = document.getElementById('s-date-start').value;
+  const dateEnd = document.getElementById('s-date-end').value;
+  const compound = document.getElementById('s-compound').checked;
+  const preview = document.getElementById('deposit-preview');
+
+  if (!amount || !rate || !dateStart || !dateEnd) { preview.style.display='none'; return; }
+
+  const fakeS = { amount, rate, dateStart, dateEnd, compound, isDeposit: true };
+  const d = calcDeposit(fakeS);
+  if (d.daysTotal <= 0) { preview.style.display='none'; return; }
+
+  preview.style.display = '';
+  preview.innerHTML = `
+    Срок: <strong>${d.daysTotal}</strong> дн. &nbsp;|&nbsp; Прошло: <strong>${d.daysPassed}</strong> дн.<br>
+    Сейчас: <strong>${fmt2(d.currentAmount)} ₽</strong><br>
+    Доход в месяц сейчас: <strong>${fmt2(d.monthlyIncome)} ₽</strong>
+  `;
+}
+
+function switchIncomeTab(tab) {
+  incomeTab = tab;
+  document.getElementById('tab-linked').classList.toggle('active', tab==='linked');
+  document.getElementById('tab-manual').classList.toggle('active', tab==='manual');
+  document.getElementById('income-linked').style.display = tab==='linked'?'':'none';
+  document.getElementById('income-manual').style.display = tab==='manual'?'':'none';
+}
+
+function updateIncomePreview() {
+  const refId = document.getElementById('i-saving-ref').value;
+  const calcMode = document.getElementById('i-calc-mode').value;
+  const autoWrap = document.getElementById('income-linked-auto');
+  const manualWrap = document.getElementById('income-linked-manual-wrap');
+  const autoPreview = document.getElementById('income-auto-preview');
+  const linkedPreview = document.getElementById('income-linked-preview');
+
+  document.getElementById('field-percent').style.display = calcMode==='percent'?'':'none';
+  document.getElementById('field-fixed').style.display = calcMode==='fixed'?'':'none';
+
+  if (!refId) { autoWrap.style.display='none'; manualWrap.style.display=''; linkedPreview.style.display='none'; return; }
+
+  const saving = state.savings.find(s => s.id===refId);
+  if (!saving) return;
+
+  if (saving.isDeposit && saving.rate && saving.dateStart && saving.dateEnd) {
+    // auto mode — show info
+    autoWrap.style.display = '';
+    manualWrap.style.display = 'none';
+    const d = calcDeposit(saving);
+    autoPreview.innerHTML = `
+      Вклад: <strong>${saving.name}</strong><br>
+      ${saving.rate}% годовых${saving.compound?' с капитализацией':''}<br>
+      Доход сейчас: <strong>${fmt2(d.monthlyIncome)} ₽/мес</strong>
+      ${d.expired ? '<br><span style="color:var(--warn)">⚠️ Вклад истёк</span>' : ''}
+    `;
+  } else {
+    autoWrap.style.display = 'none';
+    manualWrap.style.display = '';
+    const rate = parseFloat(document.getElementById('i-percent').value) || 0;
+    if (calcMode==='percent' && rate > 0) {
+      const monthly = getSavingCurrentAmount(saving) * rate / 100 / 12;
+      linkedPreview.style.display='';
+      linkedPreview.innerHTML = `Доход в месяц: <strong>${fmt2(monthly)} ₽</strong>`;
+    } else {
+      linkedPreview.style.display='none';
+    }
+  }
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeModalOutside(e) { if(e.target===document.getElementById('modal')) closeModal(); }
+
+function saveItem() {
+  const id = uid();
+  if (modalMode==='savings') {
+    const name = document.getElementById('s-name').value.trim();
+    const amount = parseFloat(document.getElementById('s-amount').value);
+    if (!name || isNaN(amount) || amount<=0) return;
+    const sel = document.getElementById('s-icon');
+    const icon = sel.value;
+    const isDeposit = sel.options[sel.selectedIndex].dataset.deposit==='1';
+    const item = { id, name, icon, amount, isDeposit };
+    if (isDeposit) {
+      item.rate = parseFloat(document.getElementById('s-rate').value) || 0;
+      item.dateStart = document.getElementById('s-date-start').value;
+      item.dateEnd = document.getElementById('s-date-end').value;
+      item.compound = document.getElementById('s-compound').checked;
+    }
+    state.savings.push(item);
+
+  } else if (modalMode==='income') {
+    if (incomeTab==='linked') {
+      const refId = document.getElementById('i-saving-ref').value;
+      if (!refId) return;
+      const saving = state.savings.find(s=>s.id===refId);
+      if (saving.isDeposit && saving.rate && saving.dateStart && saving.dateEnd) {
+        // auto — linked to deposit
+        state.income.push({ id, name: saving.name, icon: saving.icon, amount:0, savingRef: refId, calcMode:'auto' });
+      } else {
+        const calcMode = document.getElementById('i-calc-mode').value;
+        if (calcMode==='percent') {
+          const rate = parseFloat(document.getElementById('i-percent').value);
+          if (!rate||rate<=0) return;
+          state.income.push({ id, name:saving.name, icon:saving.icon, amount:0, savingRef:refId, calcMode:'percent', rate });
+        } else {
+          const amt = parseFloat(document.getElementById('i-fixed-amount').value);
+          if (!amt||amt<=0) return;
+          state.income.push({ id, name:saving.name, icon:saving.icon, amount:amt, savingRef:refId, calcMode:'fixed' });
+        }
+      }
+    } else {
+      const name = document.getElementById('i-name').value.trim();
+      const amount = parseFloat(document.getElementById('i-amount').value);
+      if (!name||isNaN(amount)||amount<=0) return;
+      state.income.push({ id, name, icon:document.getElementById('i-icon').value, amount });
+    }
+
+  } else {
+    const name = document.getElementById('g-name').value.trim();
+    const amount = parseFloat(document.getElementById('g-amount').value);
+    if (!name||isNaN(amount)||amount<=0) return;
+    state.goals.push({ id, name, amount });
+  }
+  save(); render(); closeModal();
+}
+
+function deleteItem(list, id) {
+  state[list] = state[list].filter(x=>x.id!==id);
+  if (list==='savings') state.income = state.income.filter(x=>!x.savingRef||x.savingRef!==id);
+  save(); render();
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  render(); // re-render to update deposit amounts in real time
+}
+
+function plural(n,one,few,many) {
+  const m=n%10,h=n%100;
+  if(m===1&&h!==11) return one;
+  if([2,3,4].includes(m)&&![12,13,14].includes(h)) return few;
+  return many;
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter'&&document.getElementById('modal').classList.contains('open')) saveItem();
+  if(e.key==='Escape') closeModal();
+});
+
+// refresh every minute so deposit amounts stay current
+setInterval(render, 60000);
+
+load(); render();
+</script>
+</body>
+</html>
