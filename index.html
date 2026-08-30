@@ -278,8 +278,8 @@
             <input type="date" id="i-fx-date" onchange="updateFxPreview()">
           </div>
           <div class="field">
-            <label>КУРС ПОКУПКИ (₽ за 1 единицу)</label>
-            <input type="number" id="i-fx-rate" placeholder="Например: 85.50" inputmode="decimal" oninput="updateFxPreview()">
+            <label>КУРС ПОКУПКИ (₽) — необязательно, возьмём из ЦБ</label>
+            <input type="number" id="i-fx-rate" placeholder="Не заполняй — возьмём из ЦБ по дате" inputmode="decimal" oninput="updateFxPreview()">
           </div>
           <div class="calc-preview" id="fx-preview" style="display:none"></div>
         </div>
@@ -424,12 +424,49 @@ function getSavingCurrentAmountRub(s) {
 }
 
 // ── INCOME CALC ───────────────────────────────────────────
+// Cache for historical CBR rates: { 'USD_2024-01-15': 89.5 }
+const historicalRates = {};
+
+async function fetchHistoricalRate(currency, date) {
+  const key = currency + '_' + date;
+  if (historicalRates[key]) return historicalRates[key];
+  try {
+    // CBR daily archive URL format
+    const [y, m, d] = date.split('-');
+    const dateStr = d + '/' + m + '/' + y;
+    const url = `https://www.cbr-xml-daily.ru/archive/${y}/${m}/${d}/daily_json.js`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const v = data.Valute;
+    if (v[currency]) {
+      const r = v[currency].Value / v[currency].Nominal;
+      historicalRates[key] = r;
+      return r;
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function loadFxBuyRates() {
+  // For all fx income items without fxBuyRate, fetch and cache historical rate
+  const fxItems = state.income.filter(x => x.calcMode === 'fx' && !x.fxBuyRate && x.fxDate);
+  for (const item of fxItems) {
+    const saving = state.savings.find(s => s.id === item.savingRef);
+    if (!saving || !saving.currency || saving.currency === 'RUB') continue;
+    const r = await fetchHistoricalRate(saving.currency, item.fxDate);
+    if (r) {
+      // Store fetched rate in item for display, but don't persist — refetch next time
+      item._fetchedBuyRate = r;
+    }
+  }
+  render();
+}
+
 function calcFxIncome(item) {
-  // returns total unrealized gain in RUB from currency rate difference
   if (!item.savingRef || item.calcMode !== 'fx') return 0;
   const saving = state.savings.find(s => s.id === item.savingRef);
   if (!saving || !saving.currency || saving.currency === 'RUB') return 0;
-  const buyRate = Number(item.fxBuyRate) || 0;
+  const buyRate = Number(item.fxBuyRate) || Number(item._fetchedBuyRate) || 0;
   if (!buyRate) return 0;
   const currentRate = rates[saving.currency] || 0;
   if (!currentRate) return 0;
@@ -512,9 +549,10 @@ function renderIncome() {
     if (linked) {
       const cur = linked.currency||'RUB';
       if (x.calcMode==='fx') {
-        const buyR = Number(x.fxBuyRate)||0;
+        const buyR = Number(x.fxBuyRate) || Number(x._fetchedBuyRate) || 0;
         const curR = rates[cur]||0;
-        sub = `курс покупки ${buyR} ₽ · сейчас ${curR ? curR.toLocaleString('ru-RU',{maximumFractionDigits:2}) : '?'} ₽ · ${linked.name}`;
+        const buyRStr = buyR ? buyR.toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽' : (x.fxDate ? 'загрузка...' : '?');
+        sub = `покупка: ${buyRStr} · сейчас: ${curR ? curR.toLocaleString('ru-RU',{maximumFractionDigits:2}) : '?'} ₽ · ${linked.name}`;
       } else if (linked.isDeposit && linked.rate) sub = `авто · ${linked.name}${cur!=='RUB'?' · '+currSym(cur):''}`;
       else if (x.calcMode==='percent') sub = `${x.rate}% годовых · ${linked.name}`;
       else sub = linked.name;
@@ -684,22 +722,34 @@ function updateIncomePreview() {
   }
 }
 
-function updateFxPreview() {
+async function updateFxPreview() {
   const refId=document.getElementById('i-saving-ref').value;
-  const buyRate=parseFloat(document.getElementById('i-fx-rate').value)||0;
+  const manualRate=parseFloat(document.getElementById('i-fx-rate').value)||0;
+  const fxDate=document.getElementById('i-fx-date').value;
   const preview=document.getElementById('fx-preview');
-  if(!refId||!buyRate){preview.style.display='none';return;}
+  if(!refId){preview.style.display='none';return;}
   const saving=state.savings.find(s=>s.id===refId);
   if(!saving||!saving.currency||saving.currency==='RUB'){preview.style.display='none';return;}
   const cur=saving.currency;
   const currentRate=rates[cur]||0;
   if(!currentRate){preview.style.display='none';return;}
+
+  let buyRate = manualRate;
+  let rateSource = 'вручную';
+  if(!buyRate && fxDate) {
+    preview.style.display='';
+    preview.innerHTML='⏳ Загружаю курс ЦБ на эту дату...';
+    const fetched = await fetchHistoricalRate(cur, fxDate);
+    if(fetched) { buyRate=fetched; rateSource='ЦБ РФ на '+fxDate; }
+  }
+  if(!buyRate){preview.style.display='none';return;}
+
   const amount=Number(saving.amount);
   const gain=(currentRate-buyRate)*amount;
   const gainPct=((currentRate-buyRate)/buyRate*100);
   preview.style.display='';
-  preview.innerHTML=`Куплено: <strong>${fmt2(amount)} ${currSym(cur)}</strong> по <strong>${fmt2(buyRate)} ₽</strong><br>
-    Текущий курс: <strong>${fmt2(currentRate)} ₽</strong><br>
+  preview.innerHTML=`Куплено: <strong>${fmt2(amount)} ${currSym(cur)}</strong> по <strong>${fmt2(buyRate)} ₽</strong> (${rateSource})<br>
+    Текущий курс ЦБ: <strong>${fmt2(currentRate)} ₽</strong><br>
     Курсовая разница: <strong style="color:${gain>=0?'var(--accent)':'var(--danger)'}">
     ${gain>=0?'+':''}${fmt(gain)} ₽ (${gain>=0?'+':''}${gainPct.toFixed(1)}%)</strong>`;
 }
@@ -805,9 +855,10 @@ function saveItem(){
           if(!rate||rate<=0)return;
           state.income.push({id,name:saving.name,icon:saving.icon,amount:0,savingRef:refId,calcMode:'percent',rate});
         } else if(calcMode==='fx'){
-          const fxBuyRate=parseFloat(document.getElementById('i-fx-rate').value);
+          const fxBuyRateRaw=parseFloat(document.getElementById('i-fx-rate').value);
           const fxDate=document.getElementById('i-fx-date').value;
-          if(!fxBuyRate||fxBuyRate<=0)return;
+          if(!fxDate)return; // date is required
+          const fxBuyRate=fxBuyRateRaw>0 ? fxBuyRateRaw : null; // null = fetch from CBR
           state.income.push({id,name:'Курсовая разница · '+saving.name,icon:'💱',amount:0,savingRef:refId,calcMode:'fx',fxBuyRate,fxDate});
         } else {
           const amt=parseFloat(document.getElementById('i-fixed-amount').value);
@@ -866,7 +917,7 @@ function resetAllData() {
 setInterval(render,60000);
 setInterval(fetchRates,3600000);
 
-load();render();fetchRates();
+load();render();fetchRates().then(()=>loadFxBuyRates());
 </script>
 </body>
 </html>
