@@ -125,6 +125,10 @@
   .btn-cancel { background:var(--surface2); color:var(--text-dim); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:600; padding:14px 20px; cursor:pointer; }
 
   .reset-btn { background:none; border:none; color:var(--danger); font-size:13px; opacity:0.4; cursor:pointer; padding:8px; width:100%; text-align:center; }
+  .card-item.excluded { opacity: 0.4; }
+  .card-item.excluded .card-name { text-decoration: line-through; }
+  .excl-btn { background:none; border:none; cursor:pointer; font-size:18px; padding:4px 0 4px 4px; flex-shrink:0; opacity:0.5; line-height:1; }
+  .excl-btn:active { opacity:1; }
   .reset-btn:active { opacity:1; }
   .empty { text-align:center; padding:32px 20px; color:var(--text-dim); }
   .empty-icon { font-size:40px; margin-bottom:10px; }
@@ -494,8 +498,14 @@ function calcIncomeAmountRub(item) {
 // ── RENDER ────────────────────────────────────────────────
 function render() { renderSavings(); renderIncome(); renderGoals(); }
 
+function toggleExclude(id) {
+  const s = state.savings.find(x => x.id === id);
+  if (s) s.excluded = !s.excluded;
+  save(); renderSavings();
+}
+
 function renderSavings() {
-  const total = state.savings.reduce((s,x) => s + getSavingCurrentAmountRub(x), 0);
+  const total = state.savings.reduce((s,x) => s + (x.excluded ? 0 : getSavingCurrentAmountRub(x)), 0);
   document.getElementById('total-savings').innerHTML = `${fmt(total)} <span>₽</span>`;
   const n = state.savings.length;
   document.getElementById('savings-count').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов';
@@ -522,7 +532,7 @@ function renderSavings() {
     if (cur !== 'RUB') badges += ` <span class="badge badge-cur">${currSym(cur)}</span>`;
     const mainAmt = cur==='RUB' ? `${fmt(localAmt)} ₽` : `${fmt2(localAmt)} ${currSym(cur)}`;
     const subAmt  = cur!=='RUB' ? `≈ ${fmt(rubAmt)} ₽` : (gained>0.01 ? `+${fmt2(gained)} ${currSym(cur)}` : '');
-    return `<div class="card-item">
+    return `<div class="card-item${x.excluded?' excluded':''}">
       <div class="card-icon">${x.icon}</div>
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
@@ -532,7 +542,7 @@ function renderSavings() {
         ${mainAmt}
         ${subAmt ? `<span class="sub-amount">${subAmt}</span>` : ''}
       </div>
-      <button class="edit-btn" onclick="openEdit('savings','${x.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
+      <button class="excl-btn" onclick="toggleExclude('${x.id}')" title="${x.excluded?'Включить в накопления':'Исключить из накоплений'}">${x.excluded?'🔘':'⚫'}</button><button class="edit-btn" onclick="openEdit('savings','${x.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
     </div>`;
   }).join('');
 }
