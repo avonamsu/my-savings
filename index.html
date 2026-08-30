@@ -265,11 +265,23 @@
             <select id="i-calc-mode" onchange="updateIncomePreview()">
               <option value="percent">% годовых → считаю сам</option>
               <option value="fixed">Фиксированная сумма в месяц</option>
+              <option value="fx">💱 Курсовая разница</option>
             </select>
           </div>
           <div class="field" id="field-percent"><label>ПРОЦЕНТ ГОДОВЫХ (%)</label><input type="number" id="i-percent" placeholder="18" inputmode="decimal" oninput="updateIncomePreview()"></div>
           <div class="field" id="field-fixed" style="display:none"><label>ДОХОД В МЕСЯЦ (₽)</label><input type="number" id="i-fixed-amount" placeholder="0" inputmode="decimal"></div>
           <div class="calc-preview" id="income-linked-preview" style="display:none"></div>
+        </div>
+        <div id="field-fx" style="display:none">
+          <div class="field">
+            <label>ДАТА ПОКУПКИ ВАЛЮТЫ</label>
+            <input type="date" id="i-fx-date" onchange="updateFxPreview()">
+          </div>
+          <div class="field">
+            <label>КУРС ПОКУПКИ (₽ за 1 единицу)</label>
+            <input type="number" id="i-fx-rate" placeholder="Например: 85.50" inputmode="decimal" oninput="updateFxPreview()">
+          </div>
+          <div class="calc-preview" id="fx-preview" style="display:none"></div>
         </div>
       </div>
       <div id="income-manual" style="display:none">
@@ -412,7 +424,21 @@ function getSavingCurrentAmountRub(s) {
 }
 
 // ── INCOME CALC ───────────────────────────────────────────
+function calcFxIncome(item) {
+  // returns total unrealized gain in RUB from currency rate difference
+  if (!item.savingRef || item.calcMode !== 'fx') return 0;
+  const saving = state.savings.find(s => s.id === item.savingRef);
+  if (!saving || !saving.currency || saving.currency === 'RUB') return 0;
+  const buyRate = Number(item.fxBuyRate) || 0;
+  if (!buyRate) return 0;
+  const currentRate = rates[saving.currency] || 0;
+  if (!currentRate) return 0;
+  const amount = Number(saving.amount);
+  return (currentRate - buyRate) * amount;
+}
+
 function calcIncomeAmountRub(item) {
+  if (item.calcMode === 'fx') return calcFxIncome(item);
   if (item.savingRef) {
     const saving = state.savings.find(s => s.id===item.savingRef);
     if (!saving) return 0;
@@ -485,7 +511,11 @@ function renderIncome() {
     let sub = 'в месяц';
     if (linked) {
       const cur = linked.currency||'RUB';
-      if (linked.isDeposit && linked.rate) sub = `авто · ${linked.name}${cur!=='RUB'?' · '+currSym(cur):''}`;
+      if (x.calcMode==='fx') {
+        const buyR = Number(x.fxBuyRate)||0;
+        const curR = rates[cur]||0;
+        sub = `курс покупки ${buyR} ₽ · сейчас ${curR ? curR.toLocaleString('ru-RU',{maximumFractionDigits:2}) : '?'} ₽ · ${linked.name}`;
+      } else if (linked.isDeposit && linked.rate) sub = `авто · ${linked.name}${cur!=='RUB'?' · '+currSym(cur):''}`;
       else if (x.calcMode==='percent') sub = `${x.rate}% годовых · ${linked.name}`;
       else sub = linked.name;
     }
@@ -493,7 +523,7 @@ function renderIncome() {
       <div class="card-icon">${x.icon}</div>
       <div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">${sub}</div></div>
       ${linked?`<span class="badge badge-link">🔗</span>`:''}
-      <div class="card-amount income">+${fmt(amt)} ₽</div>
+      <div class="card-amount income">${x.calcMode==='fx' ? (amt>=0?'+':'') : '+'}${fmt(amt)} ₽${x.calcMode==='fx'?'<span class="sub-amount">курсовая разница</span>':''}</div>
       <button class="edit-btn" onclick="openEdit('income','${x.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('income','${x.id}')">✕</button>
     </div>`;
   }).join('');
@@ -554,7 +584,7 @@ function openModal(mode) {
     switchIncomeTab('linked');
     updateIncomePreview();
   }
-  ['s-name','s-amount','s-rate','s-date-end','i-percent','i-fixed-amount','i-name','i-amount','g-name','g-amount']
+  ['s-name','s-amount','s-rate','s-date-end','i-percent','i-fixed-amount','i-fx-rate','i-fx-date','i-name','i-amount','g-name','g-amount']
     .forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('deposit-preview').style.display='none';
   document.getElementById('currency-preview').style.display='none';
@@ -616,11 +646,19 @@ function updateIncomePreview() {
 
   document.getElementById('field-percent').style.display=calcMode==='percent'?'':'none';
   document.getElementById('field-fixed').style.display=calcMode==='fixed'?'':'none';
+  document.getElementById('field-fx').style.display=calcMode==='fx'?'':'none';
+  document.getElementById('fx-preview').style.display='none';
 
   if(!refId){autoWrap.style.display='none';manWrap.style.display='';linkedPreview.style.display='none';return;}
   const saving=state.savings.find(s=>s.id===refId);
   if(!saving)return;
   const cur=saving.currency||'RUB';
+
+  // hide fx option if account is RUB
+  const calcSel=document.getElementById('i-calc-mode');
+  const fxOption=calcSel.querySelector('option[value="fx"]');
+  if(fxOption) fxOption.style.display = (cur!=='RUB')?'':'none';
+  if(calcMode==='fx' && cur==='RUB') { calcSel.value='percent'; }
 
   if(saving.isDeposit&&saving.rate&&saving.dateStart&&saving.dateEnd){
     autoWrap.style.display='';manWrap.style.display='none';
@@ -640,8 +678,30 @@ function updateIncomePreview() {
         linkedPreview.style.display='';
         linkedPreview.innerHTML=`Доход в месяц: <strong>${fmt(monthly)} ₽</strong>`;
       } else linkedPreview.style.display='none';
+    } else if(calcMode==='fx'){
+      updateFxPreview();
     } else linkedPreview.style.display='none';
   }
+}
+
+function updateFxPreview() {
+  const refId=document.getElementById('i-saving-ref').value;
+  const buyRate=parseFloat(document.getElementById('i-fx-rate').value)||0;
+  const preview=document.getElementById('fx-preview');
+  if(!refId||!buyRate){preview.style.display='none';return;}
+  const saving=state.savings.find(s=>s.id===refId);
+  if(!saving||!saving.currency||saving.currency==='RUB'){preview.style.display='none';return;}
+  const cur=saving.currency;
+  const currentRate=rates[cur]||0;
+  if(!currentRate){preview.style.display='none';return;}
+  const amount=Number(saving.amount);
+  const gain=(currentRate-buyRate)*amount;
+  const gainPct=((currentRate-buyRate)/buyRate*100);
+  preview.style.display='';
+  preview.innerHTML=`Куплено: <strong>${fmt2(amount)} ${currSym(cur)}</strong> по <strong>${fmt2(buyRate)} ₽</strong><br>
+    Текущий курс: <strong>${fmt2(currentRate)} ₽</strong><br>
+    Курсовая разница: <strong style="color:${gain>=0?'var(--accent)':'var(--danger)'}">
+    ${gain>=0?'+':''}${fmt(gain)} ₽ (${gain>=0?'+':''}${gainPct.toFixed(1)}%)</strong>`;
 }
 
 function openEdit(list, id) {
@@ -679,6 +739,10 @@ function openEdit(list, id) {
       } else if (x.calcMode === 'fixed') {
         document.getElementById('i-calc-mode').value = 'fixed';
         document.getElementById('i-fixed-amount').value = x.amount || '';
+      } else if (x.calcMode === 'fx') {
+        document.getElementById('i-calc-mode').value = 'fx';
+        document.getElementById('i-fx-rate').value = x.fxBuyRate || '';
+        document.getElementById('i-fx-date').value = x.fxDate || '';
       }
       updateIncomePreview();
     } else {
@@ -740,6 +804,11 @@ function saveItem(){
           const rate=parseFloat(document.getElementById('i-percent').value);
           if(!rate||rate<=0)return;
           state.income.push({id,name:saving.name,icon:saving.icon,amount:0,savingRef:refId,calcMode:'percent',rate});
+        } else if(calcMode==='fx'){
+          const fxBuyRate=parseFloat(document.getElementById('i-fx-rate').value);
+          const fxDate=document.getElementById('i-fx-date').value;
+          if(!fxBuyRate||fxBuyRate<=0)return;
+          state.income.push({id,name:'Курсовая разница · '+saving.name,icon:'💱',amount:0,savingRef:refId,calcMode:'fx',fxBuyRate,fxDate});
         } else {
           const amt=parseFloat(document.getElementById('i-fixed-amount').value);
           if(!amt||amt<=0)return;
