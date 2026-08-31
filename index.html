@@ -145,7 +145,7 @@
   .inf-result-val { font-size:17px; font-weight:700; }
   .card-item.excluded { opacity: 0.4; }
   .card-item.excluded .card-name { text-decoration: line-through; }
-  .excl-btn { background:none; border:none; cursor:pointer; font-size:18px; padding:4px 0 4px 4px; flex-shrink:0; opacity:0.5; line-height:1; }
+  .excl-btn { background:none; border:none; cursor:pointer; font-size:18px; padding:4px 8px 4px 0; flex-shrink:0; opacity:0.5; line-height:1; }
   .excl-btn:active { opacity:1; }
   .reset-btn:active { opacity:1; }
   .empty { text-align:center; padding:32px 20px; color:var(--text-dim); }
@@ -188,6 +188,7 @@
   <div class="card" id="savings-list">
     <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
   </div>
+  <button class="add-btn" onclick="editingId=null;openModal('savings')">＋ Добавить счёт</button>
   <div class="chart-wrap">
     <div class="chart-header">
       <span class="chart-title">📈 РОСТ НАКОПЛЕНИЙ</span>
@@ -199,7 +200,6 @@
       <div class="chart-tooltip" id="chart-tooltip" style="display:none;"></div>
     </div>
   </div>
-  <button class="add-btn" onclick="editingId=null;openModal('savings')">＋ Добавить счёт</button>
   <button class="reset-btn" onclick="resetAllData()">🗑 Очистить все данные</button>
 </div>
 
@@ -266,20 +266,6 @@
 
 <!-- INFLATION PAGE -->
 <div class="page" id="page-inflation">
-  <div class="hero">
-    <div class="hero-label">Покупательная способность накоплений</div>
-    <div class="hero-amount" id="inf-current">0 <span>₽</span></div>
-    <div class="hero-sub" id="inf-sub">Загружаю данные об инфляции...</div>
-  </div>
-
-  <div class="chart-wrap">
-    <div class="chart-header">
-      <span class="chart-title">🇷🇺 ИНФЛЯЦИЯ В РОССИИ (РОССТАТ)</span>
-      <span id="inf-rate-badge" style="font-size:12px;color:var(--accent);font-weight:700;"></span>
-    </div>
-    <div id="inf-rate-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px;"></div>
-  </div>
-
   <div class="chart-wrap">
     <div class="chart-header">
       <span class="chart-title">💸 КАК ОБЕСЦЕНЯТСЯ НАКОПЛЕНИЯ</span>
@@ -652,6 +638,7 @@ function renderSavings() {
     const mainAmt = cur==='RUB' ? `${fmt(localAmt)} ₽` : `${fmt2(localAmt)} ${currSym(cur)}`;
     const subAmt  = cur!=='RUB' ? `≈ ${fmt(rubAmt)} ₽` : (gained>0.01 ? `+${fmt2(gained)} ${currSym(cur)}` : '');
     return `<div class="card-item${x.excluded?' excluded':''}">
+      <button class="excl-btn" onclick="toggleExclude('${x.id}')" title="${x.excluded?'Включить в накопления':'Исключить из накоплений'}">${x.excluded?'🔘':'⚫'}</button>
       <div class="card-icon">${x.icon}</div>
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
@@ -661,7 +648,7 @@ function renderSavings() {
         ${mainAmt}
         ${subAmt ? `<span class="sub-amount">${subAmt}</span>` : ''}
       </div>
-      <button class="excl-btn" onclick="toggleExclude('${x.id}')" title="${x.excluded?'Включить в накопления':'Исключить из накоплений'}">${x.excluded?'🔘':'⚫'}</button><button class="edit-btn" onclick="openEdit('savings','${x.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
+      <button class="edit-btn" onclick="openEdit('savings','${x.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
     </div>`;
   }).join('');
 }
