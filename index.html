@@ -1323,6 +1323,38 @@ function initGoalDrag() {
   });
 }
 
+
+// ── SWIPE NAVIGATION ──────────────────────────────────────
+const PAGES = ['savings','income','goals','achievements'];
+let swipeStartX = 0, swipeStartY = 0, swipeStartTime = 0;
+
+document.addEventListener('touchstart', e => {
+  // ignore if touch started on drag handle or modal
+  if (e.target.closest('.drag-handle') || e.target.closest('.modal-overlay')) return;
+  swipeStartX = e.touches[0].clientX;
+  swipeStartY = e.touches[0].clientY;
+  swipeStartTime = Date.now();
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+  if (document.getElementById('modal').classList.contains('open')) return;
+  if (e.target.closest('.drag-handle')) return;
+
+  const dx = e.changedTouches[0].clientX - swipeStartX;
+  const dy = e.changedTouches[0].clientY - swipeStartY;
+  const dt = Date.now() - swipeStartTime;
+
+  // must be fast, horizontal, and long enough
+  if (dt > 400) return;
+  if (Math.abs(dx) < 60) return;
+  if (Math.abs(dy) > Math.abs(dx) * 0.7) return; // too vertical
+
+  const current = PAGES.find(p => document.getElementById('page-'+p).classList.contains('active'));
+  const idx = PAGES.indexOf(current);
+  if (dx < 0 && idx < PAGES.length - 1) showPage(PAGES[idx + 1]); // swipe left → next
+  if (dx > 0 && idx > 0) showPage(PAGES[idx - 1]);                 // swipe right → prev
+}, { passive: true });
+
 load();render();fetchRates().then(()=>loadFxBuyRates());
 checkAchievements();
 </script>
