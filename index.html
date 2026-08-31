@@ -135,6 +135,11 @@
   .chart-add-btn { background:none; border:1px solid rgba(78,205,196,0.3); border-radius:6px; color:var(--accent); font-size:11px; font-weight:600; padding:4px 10px; cursor:pointer; }
   .chart-empty { text-align:center; padding:32px; color:var(--text-dim); font-size:13px; }
   .chart-tooltip { position:absolute; background:var(--surface2); border:1px solid rgba(78,205,196,0.3); border-radius:8px; padding:8px 12px; font-size:12px; pointer-events:none; z-index:10; white-space:nowrap; }
+  .freedom-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .freedom-row:last-child { border-bottom:none; }
+  .freedom-label { font-size:13px; color:var(--text-dim); }
+  .freedom-val { font-size:15px; font-weight:700; }
+  .freedom-bar-wrap { margin:12px 0 4px; }
   .inf-year-row { display:flex; align-items:center; gap:10px; }
   .inf-year-label { font-size:12px; color:var(--text-dim); width:36px; flex-shrink:0; }
   .inf-bar-bg { flex:1; height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
@@ -189,6 +194,25 @@
     <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('savings')">＋ Добавить счёт</button>
+  <button class="reset-btn" onclick="resetAllData()">🗑 Очистить все данные</button>
+</div>
+
+<!-- INCOME -->
+<div class="page" id="page-income">
+  <div class="hero">
+    <div class="hero-label">Пассивный доход в месяц</div>
+    <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
+  </div>
+
+  <!-- Financial freedom card -->
+  <div id="freedom-card" class="chart-wrap" style="display:none;">
+    <div class="chart-header">
+      <span class="chart-title">🏁 ДО ФИНАНСОВОЙ СВОБОДЫ</span>
+    </div>
+    <div id="freedom-content"></div>
+  </div>
+
+  <!-- Savings growth chart -->
   <div class="chart-wrap">
     <div class="chart-header">
       <span class="chart-title">📈 РОСТ НАКОПЛЕНИЙ</span>
@@ -200,15 +224,7 @@
       <div class="chart-tooltip" id="chart-tooltip" style="display:none;"></div>
     </div>
   </div>
-  <button class="reset-btn" onclick="resetAllData()">🗑 Очистить все данные</button>
-</div>
 
-<!-- INCOME -->
-<div class="page" id="page-income">
-  <div class="hero">
-    <div class="hero-label">Пассивный доход в месяц</div>
-    <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
-  </div>
   <div class="section-title">Источники дохода</div>
   <div class="card" id="income-list">
     <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
@@ -658,6 +674,7 @@ function renderIncome() {
   document.getElementById('total-income-display').innerHTML = `${fmt(total)} <span>₽</span>`;
   const el = document.getElementById('income-list');
   if (!state.income.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`; return; }
+  renderFreedom();
   el.innerHTML = state.income.map(x => {
     const amt = calcIncomeAmountRub(x);
     const linked = x.savingRef ? state.savings.find(s=>s.id===x.savingRef) : null;
@@ -681,6 +698,60 @@ function renderIncome() {
       <button class="edit-btn" onclick="openEdit('income','${x.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('income','${x.id}')">✕</button>
     </div>`;
   }).join('');
+}
+
+function renderFreedom() {
+  const card = document.getElementById('freedom-card');
+  const contentEl = document.getElementById('freedom-content');
+  if (!card || !contentEl) return;
+
+  const totalIncome = state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0);
+  const totalGoalsAmt = state.goals.reduce((s,x) => s + Number(x.amount), 0);
+
+  if (!totalGoalsAmt) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+
+  const pct = Math.min(100, totalIncome / totalGoalsAmt * 100);
+  const remaining = Math.max(0, totalGoalsAmt - totalIncome);
+  const isFree = totalIncome >= totalGoalsAmt;
+
+  let html = '';
+
+  if (isFree) {
+    html = `<div style="text-align:center;padding:12px 0;">
+      <div style="font-size:36px;margin-bottom:8px;">🎉</div>
+      <div style="font-size:17px;font-weight:700;color:var(--accent);">Ты финансово свободна!</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-top:6px;">Пассивный доход покрывает все твои цели</div>
+    </div>`;
+  } else {
+    html = `
+      <div class="freedom-row">
+        <span class="freedom-label">Текущий доход</span>
+        <span class="freedom-val" style="color:var(--accent)">${fmt(totalIncome)} ₽/мес</span>
+      </div>
+      <div class="freedom-row">
+        <span class="freedom-label">Нужно для свободы</span>
+        <span class="freedom-val">${fmt(totalGoalsAmt)} ₽/мес</span>
+      </div>
+      <div class="freedom-row">
+        <span class="freedom-label">Осталось до цели</span>
+        <span class="freedom-val" style="color:var(--warn)">−${fmt(remaining)} ₽/мес</span>
+      </div>
+      <div class="freedom-bar-wrap">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:6px;">
+          <span>Прогресс к свободе</span>
+          <span>${pct.toFixed(1)}%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }
+
+  contentEl.innerHTML = html;
 }
 
 function renderGoals() {
@@ -1012,7 +1083,7 @@ function showPage(name){
   document.getElementById('nav-'+name).classList.add('active');
   render();
   if(name==='achievements') renderAchievements();
-  if(name==='savings') setTimeout(drawChart, 50);
+  if(name==='savings'||name==='income') setTimeout(drawChart, 50);
   if(name==='inflation') setTimeout(updateInflationCalc, 50);
 }
 
