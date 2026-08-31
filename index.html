@@ -1351,11 +1351,13 @@ function initGoalDrag() {
       touchClone.style.top = item.getBoundingClientRect().top + 'px';
       document.body.appendChild(touchClone);
       item.classList.add('dragging');
+      // Add touchmove only when drag starts — so normal scroll is never blocked
+      document.addEventListener('touchmove', onDragMove, { passive: false });
       e.preventDefault();
     }, { passive: false });
   });
 
-  document.addEventListener('touchmove', e => {
+  function onDragMove(e) {
     if (!touchDragEl || !touchClone) return;
     e.preventDefault();
     const y = e.touches[0].clientY;
@@ -1366,10 +1368,11 @@ function initGoalDrag() {
     const elBelow = document.elementFromPoint(e.touches[0].clientX, y);
     const targetItem = elBelow?.closest('.goal-item');
     if (targetItem && targetItem !== touchDragEl) targetItem.classList.add('drag-over');
-  }, { passive: false });
+  }
 
   document.addEventListener('touchend', e => {
     if (!touchDragEl || !touchClone) return;
+    document.removeEventListener('touchmove', onDragMove);
     const y = e.changedTouches[0].clientY;
     const elBelow = document.elementFromPoint(e.changedTouches[0].clientX, y);
     const targetItem = elBelow?.closest('.goal-item');
@@ -1386,6 +1389,7 @@ function initGoalDrag() {
       list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
     }
 
+    document.removeEventListener('touchmove', onDragMove);
     touchClone.remove();
     touchClone = null;
     touchDragEl = null;
