@@ -129,6 +129,20 @@
   .btn-cancel { background:var(--surface2); color:var(--text-dim); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:600; padding:14px 20px; cursor:pointer; }
 
   .reset-btn { background:none; border:none; color:var(--danger); font-size:13px; opacity:0.4; cursor:pointer; padding:8px; width:100%; text-align:center; }
+  .chart-wrap { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); padding:16px; }
+  .chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .chart-title { font-size:13px; font-weight:600; color:var(--text-dim); }
+  .chart-add-btn { background:none; border:1px solid rgba(78,205,196,0.3); border-radius:6px; color:var(--accent); font-size:11px; font-weight:600; padding:4px 10px; cursor:pointer; }
+  .chart-empty { text-align:center; padding:32px; color:var(--text-dim); font-size:13px; }
+  .chart-tooltip { position:absolute; background:var(--surface2); border:1px solid rgba(78,205,196,0.3); border-radius:8px; padding:8px 12px; font-size:12px; pointer-events:none; z-index:10; white-space:nowrap; }
+  .inf-year-row { display:flex; align-items:center; gap:10px; }
+  .inf-year-label { font-size:12px; color:var(--text-dim); width:36px; flex-shrink:0; }
+  .inf-bar-bg { flex:1; height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
+  .inf-bar-fill { height:100%; border-radius:3px; }
+  .inf-year-val { font-size:12px; font-weight:600; width:44px; text-align:right; flex-shrink:0; }
+  .inf-result-row { background:var(--surface2); border-radius:var(--radius-sm); padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
+  .inf-result-label { font-size:13px; color:var(--text-dim); }
+  .inf-result-val { font-size:17px; font-weight:700; }
   .card-item.excluded { opacity: 0.4; }
   .card-item.excluded .card-name { text-decoration: line-through; }
   .excl-btn { background:none; border:none; cursor:pointer; font-size:18px; padding:4px 0 4px 4px; flex-shrink:0; opacity:0.5; line-height:1; }
@@ -159,6 +173,7 @@
   <button onclick="showPage('income')" id="nav-income"><span class="ni">📈</span>Доход</button>
   <button onclick="showPage('goals')" id="nav-goals"><span class="ni">🎯</span>Цели</button>
   <button onclick="showPage('achievements')" id="nav-achievements"><span class="ni">🏅</span>Ачивки</button>
+  <button onclick="showPage('inflation')" id="nav-inflation"><span class="ni">📉</span>Инфляция</button>
 </nav>
 
 <!-- SAVINGS -->
@@ -172,6 +187,17 @@
   <div class="section-title">Мои счета</div>
   <div class="card" id="savings-list">
     <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span class="chart-title">📈 РОСТ НАКОПЛЕНИЙ</span>
+      <button class="chart-add-btn" onclick="addHistoryPoint()">＋ Добавить прошлое</button>
+    </div>
+    <div id="chart-container" style="position:relative;">
+      <div class="chart-empty" id="chart-empty">Данные появятся после первого месяца</div>
+      <canvas id="savings-chart" style="display:none;width:100%;"></canvas>
+      <div class="chart-tooltip" id="chart-tooltip" style="display:none;"></div>
+    </div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('savings')">＋ Добавить счёт</button>
   <button class="reset-btn" onclick="resetAllData()">🗑 Очистить все данные</button>
@@ -235,6 +261,47 @@
     <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:4px;">АЧИВКА РАЗБЛОКИРОВАНА</div>
     <div id="ach-popup-name" style="font-size:18px;font-weight:700;margin-bottom:6px;"></div>
     <div id="ach-popup-desc" style="font-size:13px;color:var(--text-dim);"></div>
+  </div>
+</div>
+
+<!-- INFLATION PAGE -->
+<div class="page" id="page-inflation">
+  <div class="hero">
+    <div class="hero-label">Покупательная способность накоплений</div>
+    <div class="hero-amount" id="inf-current">0 <span>₽</span></div>
+    <div class="hero-sub" id="inf-sub">Загружаю данные об инфляции...</div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span class="chart-title">🇷🇺 ИНФЛЯЦИЯ В РОССИИ (РОССТАТ)</span>
+      <span id="inf-rate-badge" style="font-size:12px;color:var(--accent);font-weight:700;"></span>
+    </div>
+    <div id="inf-rate-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px;"></div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span class="chart-title">💸 КАК ОБЕСЦЕНЯТСЯ НАКОПЛЕНИЯ</span>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;">
+      <span style="font-size:13px;color:var(--text-dim);">Через</span>
+      <input type="range" id="inf-years" min="1" max="30" value="5" style="flex:1;accent-color:var(--accent);" oninput="updateInflationCalc()">
+      <span id="inf-years-label" style="font-size:15px;font-weight:700;color:var(--accent);min-width:40px;">5 лет</span>
+    </div>
+    <div id="inf-result" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span class="chart-title">📊 СКОЛЬКО НУЖНО НАКОПИТЬ С УЧЁТОМ ИНФЛЯЦИИ</span>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div class="field"><label>ЦЕЛЬ (₽) — сколько хочешь иметь в сегодняшних ценах</label>
+        <input type="number" id="inf-goal" placeholder="1 000 000" inputmode="decimal" oninput="updateInflationCalc()">
+      </div>
+    </div>
+    <div id="inf-goal-result"></div>
   </div>
 </div>
 
@@ -351,6 +418,19 @@
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Отмена</button>
       <button class="btn-primary" onclick="saveItem()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY POINT MODAL -->
+<div class="modal-overlay" id="history-modal" onclick="if(event.target===this)closeHistoryModal()">
+  <div class="modal">
+    <div class="modal-title">Добавить прошлое значение</div>
+    <div class="field"><label>МЕСЯЦ И ГОД</label><input type="month" id="h-month"></div>
+    <div class="field"><label>СУММА НАКОПЛЕНИЙ (₽)</label><input type="number" id="h-amount" placeholder="0" inputmode="decimal"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeHistoryModal()">Отмена</button>
+      <button class="btn-primary" onclick="saveHistoryPoint()">Сохранить</button>
     </div>
   </div>
 </div>
@@ -945,6 +1025,8 @@ function showPage(name){
   document.getElementById('nav-'+name).classList.add('active');
   render();
   if(name==='achievements') renderAchievements();
+  if(name==='savings') setTimeout(drawChart, 50);
+  if(name==='inflation') setTimeout(updateInflationCalc, 50);
 }
 
 function plural(n,one,few,many){
@@ -1325,7 +1407,7 @@ function initGoalDrag() {
 
 
 // ── SWIPE NAVIGATION ──────────────────────────────────────
-const PAGES = ['savings','income','goals','achievements'];
+const PAGES = ['savings','income','goals','achievements','inflation'];
 let swipeStartX = 0, swipeStartY = 0, swipeStartTime = 0;
 
 document.addEventListener('touchstart', e => {
@@ -1355,7 +1437,292 @@ document.addEventListener('touchend', e => {
   if (dx > 0 && idx > 0) showPage(PAGES[idx - 1]);                 // swipe right → prev
 }, { passive: true });
 
-load();render();fetchRates().then(()=>loadFxBuyRates());
+
+// ── SAVINGS HISTORY & CHART ───────────────────────────────
+function recordSnapshot() {
+  const ym = new Date().toISOString().slice(0,7); // YYYY-MM
+  if (!state._history) state._history = {};
+  state._history[ym] = Math.round(totalRub(state.savings));
+  save();
+}
+
+function addHistoryPoint() {
+  document.getElementById('history-modal').classList.add('open');
+  const now = new Date();
+  document.getElementById('h-month').value = now.toISOString().slice(0,7);
+  document.getElementById('h-amount').value = '';
+}
+function closeHistoryModal() {
+  document.getElementById('history-modal').classList.remove('open');
+}
+function saveHistoryPoint() {
+  const ym = document.getElementById('h-month').value;
+  const amt = parseFloat(document.getElementById('h-amount').value);
+  if (!ym || isNaN(amt) || amt < 0) return;
+  if (!state._history) state._history = {};
+  state._history[ym] = Math.round(amt);
+  save();
+  closeHistoryModal();
+  drawChart();
+}
+
+function drawChart() {
+  if (!state._history) state._history = {};
+
+  // Also add current month
+  const ym = new Date().toISOString().slice(0,7);
+  const currentTotal = Math.round(totalRub(state.savings));
+  if (currentTotal > 0) state._history[ym] = currentTotal;
+
+  const entries = Object.entries(state._history)
+    .sort(([a],[b]) => a.localeCompare(b))
+    .filter(([,v]) => v >= 0);
+
+  const empty = document.getElementById('chart-empty');
+  const canvas = document.getElementById('savings-chart');
+
+  if (entries.length < 2) {
+    empty.style.display = '';
+    canvas.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  canvas.style.display = 'block';
+
+  const container = document.getElementById('chart-container');
+  const W = container.clientWidth - 32;
+  const H = 180;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const vals = entries.map(([,v]) => v);
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const range = maxV - minV || 1;
+
+  const PAD = { top:16, right:16, bottom:36, left:16 };
+  const gW = W - PAD.left - PAD.right;
+  const gH = H - PAD.top - PAD.bottom;
+
+  const xOf = i => PAD.left + (i / (entries.length-1)) * gW;
+  const yOf = v => PAD.top + gH - ((v - minV) / range) * gH;
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  [0,0.5,1].forEach(t => {
+    const y = PAD.top + gH * (1-t);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W-PAD.right, y); ctx.stroke();
+  });
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top+gH);
+  grad.addColorStop(0, 'rgba(78,205,196,0.3)');
+  grad.addColorStop(1, 'rgba(78,205,196,0)');
+  ctx.beginPath();
+  ctx.moveTo(xOf(0), yOf(vals[0]));
+  for (let i=1; i<vals.length; i++) {
+    const x0=xOf(i-1), y0=yOf(vals[i-1]), x1=xOf(i), y1=yOf(vals[i]);
+    const cpx=(x0+x1)/2;
+    ctx.bezierCurveTo(cpx,y0,cpx,y1,x1,y1);
+  }
+  ctx.lineTo(xOf(vals.length-1), PAD.top+gH);
+  ctx.lineTo(xOf(0), PAD.top+gH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle = '#4ECDC4';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.moveTo(xOf(0), yOf(vals[0]));
+  for (let i=1; i<vals.length; i++) {
+    const x0=xOf(i-1), y0=yOf(vals[i-1]), x1=xOf(i), y1=yOf(vals[i]);
+    const cpx=(x0+x1)/2;
+    ctx.bezierCurveTo(cpx,y0,cpx,y1,x1,y1);
+  }
+  ctx.stroke();
+
+  // Dots + labels
+  entries.forEach(([ym, v], i) => {
+    const x=xOf(i), y=yOf(v);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI*2);
+    ctx.fillStyle = '#4ECDC4';
+    ctx.fill();
+    ctx.strokeStyle = '#0F1B2D';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // X axis label — show every Nth to avoid overlap
+    const step = entries.length <= 6 ? 1 : entries.length <= 12 ? 2 : 3;
+    if (i % step === 0 || i === entries.length-1) {
+      const [y4, m2] = ym.split('-');
+      const label = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][parseInt(m2)-1] + ' ' + y4.slice(2);
+      ctx.fillStyle = 'rgba(122,155,181,0.8)';
+      ctx.font = `${10 * window.devicePixelRatio / window.devicePixelRatio}px -apple-system,sans-serif`;
+      ctx.textAlign = i===0 ? 'left' : i===entries.length-1 ? 'right' : 'center';
+      ctx.fillText(label, x, H - 8);
+    }
+  });
+
+  // Touch/click tooltip
+  canvas.onclick = canvas.ontouchend = e => {
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.changedTouches[0].clientX : e.clientX) - rect.left;
+    const tooltip = document.getElementById('chart-tooltip');
+    let closest = 0, minD = Infinity;
+    entries.forEach(([,v], i) => {
+      const d = Math.abs(xOf(i) - cx);
+      if (d < minD) { minD=d; closest=i; }
+    });
+    const [ym2, v2] = entries[closest];
+    const [y4, m2] = ym2.split('-');
+    const monthName = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'][parseInt(m2)-1];
+    tooltip.innerHTML = `<strong>${monthName} ${y4}</strong><br>${fmt(v2)} ₽`;
+    const tx = Math.min(xOf(closest), W - 120);
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top = (yOf(v2) - 60) + 'px';
+    tooltip.style.display = 'block';
+    setTimeout(() => tooltip.style.display='none', 2500);
+  };
+}
+
+
+// ── INFLATION CALCULATOR ──────────────────────────────────
+// Official Rosstat annual CPI data (% change year-on-year)
+const ROSSTAT_INFLATION = {
+  2010: 8.78, 2011: 6.10, 2012: 6.58, 2013: 6.45, 2014: 11.36,
+  2015: 12.91, 2016: 5.38, 2017: 2.52, 2018: 4.27, 2019: 3.05,
+  2020: 4.91, 2021: 8.39, 2022: 11.94, 2023: 7.42, 2024: 9.52
+};
+
+let currentInflation = null; // will try to fetch from CBR
+
+async function fetchCurrentInflation() {
+  try {
+    // CBR publishes inflation stats — use their open data
+    // Fallback: use last known Rosstat figure
+    const res = await fetch('https://www.cbr-xml-daily.ru/daily_json.js');
+    // CBR daily JSON doesn't have inflation, so we use Rosstat 2024 as base
+    // and note it clearly to user
+    currentInflation = ROSSTAT_INFLATION[2024];
+  } catch(e) {
+    currentInflation = ROSSTAT_INFLATION[2024];
+  }
+  renderInflationPage();
+}
+
+function avgInflation(years) {
+  const allYears = Object.keys(ROSSTAT_INFLATION).map(Number).sort();
+  const recent = allYears.slice(-years);
+  const vals = recent.map(y => ROSSTAT_INFLATION[y]);
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+
+function renderInflationPage() {
+  const years = Object.keys(ROSSTAT_INFLATION).map(Number).sort();
+  const vals = years.map(y => ROSSTAT_INFLATION[y]);
+  const maxVal = Math.max(...vals);
+
+  // Rate badge
+  const cur = currentInflation || ROSSTAT_INFLATION[2024];
+  document.getElementById('inf-rate-badge').textContent = `2024: ${cur.toFixed(2)}%`;
+
+  // Bar chart of historical inflation
+  document.getElementById('inf-rate-list').innerHTML = years.map(y => {
+    const v = ROSSTAT_INFLATION[y];
+    const pct = v/maxVal*100;
+    const color = v >= 10 ? '#FF6B6B' : v >= 6 ? '#FFB347' : '#4ECDC4';
+    return `<div class="inf-year-row">
+      <span class="inf-year-label">${y}</span>
+      <div class="inf-bar-bg"><div class="inf-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+      <span class="inf-year-val" style="color:${color}">${v.toFixed(1)}%</span>
+    </div>`;
+  }).join('');
+
+  updateInflationCalc();
+}
+
+function updateInflationCalc() {
+  const years = parseInt(document.getElementById('inf-years').value) || 5;
+  document.getElementById('inf-years-label').textContent = years + ' ' + plural(years,'год','года','лет');
+
+  const currentTotal = totalRub(state.savings);
+  document.getElementById('inf-current').innerHTML = `${fmt(currentTotal)} <span>₽</span>`;
+
+  // Use average inflation for selected horizon
+  const horizonYears = Math.min(years, Object.keys(ROSSTAT_INFLATION).length);
+  const avgInf = avgInflation(horizonYears);
+  const rate = avgInf / 100;
+
+  // Real value in today's purchasing power
+  const realValue = currentTotal / Math.pow(1 + rate, years);
+  const loss = currentTotal - realValue;
+  const lossPct = currentTotal > 0 ? (loss/currentTotal*100) : 0;
+
+  document.getElementById('inf-sub').textContent =
+    `Среднегодовая инфляция за ${horizonYears} лет — ${avgInf.toFixed(1)}% (Росстат)`;
+
+  document.getElementById('inf-result').innerHTML = `
+    <div class="inf-result-row">
+      <div>
+        <div class="inf-result-label">Сейчас</div>
+      </div>
+      <div class="inf-result-val" style="color:var(--accent)">${fmt(currentTotal)} ₽</div>
+    </div>
+    <div class="inf-result-row">
+      <div>
+        <div class="inf-result-label">Через ${years} ${plural(years,'год','года','лет')} в сегодняшних ценах</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Покупательная способность упадёт</div>
+      </div>
+      <div class="inf-result-val" style="color:var(--danger)">${fmt(realValue)} ₽</div>
+    </div>
+    <div class="inf-result-row">
+      <div>
+        <div class="inf-result-label">Потеря покупательной способности</div>
+      </div>
+      <div class="inf-result-val" style="color:var(--warn)">−${fmt(loss)} ₽ (${lossPct.toFixed(0)}%)</div>
+    </div>
+    <div class="inf-result-row">
+      <div>
+        <div class="inf-result-label">Нужно накопить чтобы не потерять</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Сколько нужно сейчас при той же инфляции</div>
+      </div>
+      <div class="inf-result-val" style="color:var(--accent)">${fmt(currentTotal * Math.pow(1+rate, years))} ₽</div>
+    </div>`;
+
+  // Goal calculator
+  const goalRaw = parseFloat(document.getElementById('inf-goal')?.value) || 0;
+  const goalEl = document.getElementById('inf-goal-result');
+  if (goalRaw > 0) {
+    const needed = goalRaw * Math.pow(1 + rate, years);
+    const monthly = needed / (years * 12);
+    goalEl.innerHTML = `
+      <div class="inf-result-row">
+        <div><div class="inf-result-label">Нужно накопить с учётом инфляции</div></div>
+        <div class="inf-result-val" style="color:var(--accent)">${fmt(needed)} ₽</div>
+      </div>
+      <div class="inf-result-row">
+        <div><div class="inf-result-label">Примерно в месяц</div></div>
+        <div class="inf-result-val">${fmt(monthly)} ₽</div>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);padding:8px 4px;">
+        Без учёта процентов по вкладам и инвестициям — реальная сумма взноса будет меньше.
+      </div>`;
+  } else {
+    goalEl.innerHTML = '<div style="font-size:13px;color:var(--text-dim);padding:8px 4px;">Введи цель выше — покажу сколько нужно накопить с учётом инфляции.</div>';
+  }
+}
+
+load();render();fetchRates().then(()=>{ loadFxBuyRates(); recordSnapshot(); drawChart(); fetchCurrentInflation(); });
 checkAchievements();
 </script>
 </body>
