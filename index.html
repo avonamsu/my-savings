@@ -237,13 +237,14 @@
       <span id="goals-total-amount">из 0 ₽</span>
     </div>
   </div>
-  <div id="freedom-card" class="chart-wrap">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <span style="font-size:12px;color:var(--text-dim);font-weight:700;letter-spacing:.06em;">💸 ЕЖЕМЕСЯЧНЫЙ ДОХОД</span>
-      <span class="freedom-val" id="goals-income-ref" style="color:var(--accent);font-size:18px;font-weight:700;">0 ₽</span>
+  <div class="income-summary">
+    <div class="income-summary-icon">💸</div>
+    <div class="income-summary-info">
+      <div class="income-summary-label">Ежемесячный доход</div>
+      <div class="income-summary-val" id="goals-income-ref">0 ₽</div>
     </div>
-    <div id="freedom-content"></div>
   </div>
+
   <div class="section-title">Мои цели</div>
   <div class="card" id="goals-list">
     <div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>
@@ -739,7 +740,6 @@ function renderFreedom() {
 function renderGoals() {
   const totalIncome = state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0);
   document.getElementById('goals-income-ref').textContent = `${fmt(totalIncome)} ₽`;
-  renderFreedom();
   const el = document.getElementById('goals-list');
   if (!state.goals.length) {
     el.innerHTML=`<div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>`;
