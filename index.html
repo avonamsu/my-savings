@@ -65,7 +65,11 @@
   .badge-link { background:rgba(78,205,196,0.15); color:var(--accent); }
   .badge-cur { background:rgba(255,255,255,0.08); color:var(--text-dim); }
 
-  .goal-item { display:flex; align-items:center; padding:14px 16px; gap:12px; border-bottom:1px solid rgba(255,255,255,0.04); transition:background .2s; }
+  .goal-item { display:flex; align-items:center; padding:14px 16px; gap:12px; border-bottom:1px solid rgba(255,255,255,0.04); transition:background .2s; touch-action:none; }
+  .goal-item.dragging { opacity:0.4; background:var(--surface2); }
+  .goal-item.drag-over { border-top:2px solid var(--accent); }
+  .drag-handle { color:var(--text-dim); opacity:0.4; font-size:18px; cursor:grab; flex-shrink:0; padding:4px 4px 4px 0; user-select:none; touch-action:none; }
+  .drag-handle:active { cursor:grabbing; opacity:0.8; }
   .goal-item:last-child { border-bottom:none; }
   .goal-item.covered { background:var(--done-bg); }
   .goal-check { width:24px; height:24px; border-radius:50%; border:2px solid var(--text-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; }
@@ -631,12 +635,14 @@ function renderGoals() {
     if(covered){remaining-=cost;coveredSum+=cost;}
     return {...g,covered};
   });
-  el.innerHTML = items.map(g=>`<div class="goal-item ${g.covered?'covered':''}">
+  el.innerHTML = items.map(g=>`<div class="goal-item ${g.covered?'covered':''}" data-id="${g.id}" draggable="true">
+    <div class="drag-handle" title="Перетащи для сортировки">⠿</div>
     <div class="goal-check">${g.covered?'✓':''}</div>
     <div class="goal-info"><div class="goal-name">${g.name}</div></div>
     <div class="goal-amount">${fmt(g.amount)} ₽</div>
     <button class="edit-btn" onclick="openEdit('goals','${g.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('goals','${g.id}')">✕</button>
   </div>`).join('');
+  initGoalDrag();
   const pct = totalGoals?Math.min(100,Math.round(coveredSum/totalGoals*100)):0;
   document.getElementById('goals-pct').textContent=pct+'%';
   document.getElementById('goals-bar').style.width=pct+'%';
@@ -1229,6 +1235,92 @@ function renderAchievements() {
       <div class="ach-badge">${isUnlocked?'✅':'🔒'}</div>
     </div>`;
   }).join('');
+}
+
+
+// ── DRAG & DROP GOALS ─────────────────────────────────────
+function initGoalDrag() {
+  const list = document.getElementById('goals-list');
+  let dragEl = null, touchDragEl = null, touchClone = null, touchStartY = 0;
+
+  // Desktop drag
+  list.querySelectorAll('.goal-item').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      dragEl = item;
+      setTimeout(() => item.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
+      dragEl = null;
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!dragEl || dragEl === item) return;
+      list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragEl || dragEl === item) return;
+      const ids = [...list.querySelectorAll('.goal-item')].map(i => i.dataset.id);
+      const fromIdx = ids.indexOf(dragEl.dataset.id);
+      const toIdx   = ids.indexOf(item.dataset.id);
+      const moved = state.goals.splice(fromIdx, 1)[0];
+      state.goals.splice(toIdx, 0, moved);
+      save(); renderGoals();
+    });
+
+    // Touch drag
+    const handle = item.querySelector('.drag-handle');
+    handle.addEventListener('touchstart', e => {
+      touchDragEl = item;
+      touchStartY = e.touches[0].clientY;
+      touchClone = item.cloneNode(true);
+      touchClone.style.cssText = `position:fixed;left:16px;right:16px;z-index:999;opacity:0.9;pointer-events:none;background:var(--surface2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);`;
+      touchClone.style.top = item.getBoundingClientRect().top + 'px';
+      document.body.appendChild(touchClone);
+      item.classList.add('dragging');
+      e.preventDefault();
+    }, { passive: false });
+  });
+
+  document.addEventListener('touchmove', e => {
+    if (!touchDragEl || !touchClone) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    touchClone.style.top = (touchClone.getBoundingClientRect().top + (y - touchStartY)) + 'px';
+    touchStartY = y;
+
+    list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
+    const elBelow = document.elementFromPoint(e.touches[0].clientX, y);
+    const targetItem = elBelow?.closest('.goal-item');
+    if (targetItem && targetItem !== touchDragEl) targetItem.classList.add('drag-over');
+  }, { passive: false });
+
+  document.addEventListener('touchend', e => {
+    if (!touchDragEl || !touchClone) return;
+    const y = e.changedTouches[0].clientY;
+    const elBelow = document.elementFromPoint(e.changedTouches[0].clientX, y);
+    const targetItem = elBelow?.closest('.goal-item');
+
+    if (targetItem && targetItem !== touchDragEl) {
+      const ids = [...list.querySelectorAll('.goal-item')].map(i => i.dataset.id);
+      const fromIdx = ids.indexOf(touchDragEl.dataset.id);
+      const toIdx   = ids.indexOf(targetItem.dataset.id);
+      const moved = state.goals.splice(fromIdx, 1)[0];
+      state.goals.splice(toIdx, 0, moved);
+      save(); renderGoals();
+    } else {
+      touchDragEl.classList.remove('dragging');
+      list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
+    }
+
+    touchClone.remove();
+    touchClone = null;
+    touchDragEl = null;
+  });
 }
 
 load();render();fetchRates().then(()=>loadFxBuyRates());
