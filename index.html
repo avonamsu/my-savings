@@ -131,6 +131,19 @@
   .excl-btn:active { opacity:1; }
   .reset-btn:active { opacity:1; }
   .empty { text-align:center; padding:32px 20px; color:var(--text-dim); }
+  .ach-card { background:var(--surface); border-radius:var(--radius); padding:16px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:14px; transition:all .3s; }
+  .ach-card.unlocked { border-color:rgba(78,205,196,0.3); background:rgba(78,205,196,0.06); }
+  .ach-card.secret { opacity:0.35; }
+  .ach-icon { font-size:32px; flex-shrink:0; width:48px; text-align:center; filter:grayscale(1); }
+  .ach-card.unlocked .ach-icon { filter:none; }
+  .ach-info { flex:1; min-width:0; }
+  .ach-name { font-size:15px; font-weight:600; color:var(--text-dim); }
+  .ach-card.unlocked .ach-name { color:var(--text); }
+  .ach-desc { font-size:12px; color:var(--text-dim); margin-top:3px; }
+  .ach-progress { margin-top:6px; }
+  .ach-progress-bar { height:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; margin-top:4px; }
+  .ach-progress-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .6s; }
+  .ach-badge { font-size:18px; flex-shrink:0; }
   .empty-icon { font-size:40px; margin-bottom:10px; }
   .empty p { font-size:14px; line-height:1.5; }
 </style>
@@ -141,6 +154,7 @@
   <button class="active" onclick="showPage('savings')" id="nav-savings"><span class="ni">💰</span>Накопления</button>
   <button onclick="showPage('income')" id="nav-income"><span class="ni">📈</span>Доход</button>
   <button onclick="showPage('goals')" id="nav-goals"><span class="ni">🎯</span>Цели</button>
+  <button onclick="showPage('achievements')" id="nav-achievements"><span class="ni">🏅</span>Ачивки</button>
 </nav>
 
 <!-- SAVINGS -->
@@ -197,6 +211,27 @@
     <div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('goals')">＋ Добавить цель</button>
+</div>
+
+<!-- ACHIEVEMENTS PAGE -->
+<div class="page" id="page-achievements">
+  <div class="hero">
+    <div class="hero-label">Разблокировано</div>
+    <div class="hero-amount" id="ach-count">0 <span>из 0</span></div>
+    <div class="hero-sub" id="ach-sub">Начни копить — и ачивки появятся</div>
+  </div>
+  <div id="ach-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+</div>
+
+<!-- ACHIEVEMENT POPUP -->
+<div id="ach-popup" style="display:none;position:fixed;inset:0;z-index:300;pointer-events:none;">
+  <canvas id="confetti-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+  <div id="ach-popup-card" style="position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:340px;text-align:center;pointer-events:all;box-shadow:0 0 40px rgba(78,205,196,0.3);">
+    <div id="ach-popup-icon" style="font-size:48px;margin-bottom:8px;"></div>
+    <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:4px;">АЧИВКА РАЗБЛОКИРОВАНА</div>
+    <div id="ach-popup-name" style="font-size:18px;font-weight:700;margin-bottom:6px;"></div>
+    <div id="ach-popup-desc" style="font-size:13px;color:var(--text-dim);"></div>
+  </div>
 </div>
 
 <!-- MODAL -->
@@ -888,7 +923,7 @@ function saveItem(){
     if(!name||isNaN(amount)||amount<=0)return;
     state.goals.push({id,name,amount});
   }
-  editingId=null;save();render();closeModal();
+  editingId=null;trackDailyAdd();save();render();closeModal();setTimeout(checkAchievements,300);
 }
 
 function deleteItem(list,id){
@@ -903,6 +938,7 @@ function showPage(name){
   document.getElementById('page-'+name).classList.add('active');
   document.getElementById('nav-'+name).classList.add('active');
   render();
+  if(name==='achievements') renderAchievements();
 }
 
 function plural(n,one,few,many){
@@ -927,7 +963,276 @@ function resetAllData() {
 setInterval(render,60000);
 setInterval(fetchRates,3600000);
 
+
+// ── ACHIEVEMENTS ──────────────────────────────────────────
+const ACHIEVEMENTS = [
+  // Savings milestones
+  { id:'s1', icon:'🌱', name:'Первый росток', desc:'Добавь первый счёт', secret:false,
+    check:(s,i,g)=> s.length >= 1, progress:(s)=>({cur:s.length,max:1}) },
+  { id:'s1b', icon:'🌿', name:'Пять тысяч', desc:'Накопи 5 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=5000, progress:(s)=>({cur:totalRub(s),max:5000,rub:true}) },
+  { id:'s2', icon:'🪨', name:'Подушка', desc:'Накопи 10 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=10000, progress:(s)=>({cur:totalRub(s),max:10000,rub:true}) },
+  { id:'s2b', icon:'🏗️', name:'Строю будущее', desc:'Накопи 50 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=50000, progress:(s)=>({cur:totalRub(s),max:50000,rub:true}) },
+  { id:'s3', icon:'💼', name:'Серьёзно', desc:'Накопи 100 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=100000, progress:(s)=>({cur:totalRub(s),max:100000,rub:true}) },
+  { id:'s3b', icon:'🎓', name:'На образование', desc:'Накопи 200 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=200000, progress:(s)=>({cur:totalRub(s),max:200000,rub:true}) },
+  { id:'s3c', icon:'🚗', name:'На машину', desc:'Накопи 300 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=300000, progress:(s)=>({cur:totalRub(s),max:300000,rub:true}) },
+  { id:'s4', icon:'🏠', name:'На первоначальный взнос', desc:'Накопи 500 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=500000, progress:(s)=>({cur:totalRub(s),max:500000,rub:true}) },
+  { id:'s4b', icon:'✈️', name:'На крыльях', desc:'Накопи 750 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=750000, progress:(s)=>({cur:totalRub(s),max:750000,rub:true}) },
+  { id:'s5', icon:'🚀', name:'Миллион', desc:'Накопи 1 000 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=1000000, progress:(s)=>({cur:totalRub(s),max:1000000,rub:true}) },
+  { id:'s5b', icon:'🌟', name:'Два миллиона', desc:'Накопи 2 000 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=2000000, progress:(s)=>({cur:totalRub(s),max:2000000,rub:true}) },
+  { id:'s6', icon:'💎', name:'Три миллиона', desc:'Накопи 3 000 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=3000000, progress:(s)=>({cur:totalRub(s),max:3000000,rub:true}) },
+
+  // Passive income
+  { id:'i1', icon:'☕', name:'Кофе за свой счёт', desc:'Пассивный доход 500 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=500, progress:(s,inc)=>({cur:totalIncome(inc),max:500,rub:true}) },
+  { id:'i1b', icon:'🍵', name:'Чай с булочкой', desc:'Пассивный доход 1 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=1000, progress:(s,inc)=>({cur:totalIncome(inc),max:1000,rub:true}) },
+  { id:'i2', icon:'📱', name:'Подписки закрыты', desc:'Пассивный доход 3 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=3000, progress:(s,inc)=>({cur:totalIncome(inc),max:3000,rub:true}) },
+  { id:'i2b', icon:'💈', name:'Стрижка', desc:'Пассивный доход 2 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=2000, progress:(s,inc)=>({cur:totalIncome(inc),max:2000,rub:true}) },
+  { id:'i3', icon:'🚌', name:'Транспорт', desc:'Пассивный доход 5 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=5000, progress:(s,inc)=>({cur:totalIncome(inc),max:5000,rub:true}) },
+  { id:'i3b', icon:'🎬', name:'Кино раз в неделю', desc:'Пассивный доход 4 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=4000, progress:(s,inc)=>({cur:totalIncome(inc),max:4000,rub:true}) },
+  { id:'i4', icon:'💊', name:'Аптека', desc:'Пассивный доход 7 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=7000, progress:(s,inc)=>({cur:totalIncome(inc),max:7000,rub:true}) },
+  { id:'i4b', icon:'👗', name:'Обновить гардероб', desc:'Пассивный доход 8 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=8000, progress:(s,inc)=>({cur:totalIncome(inc),max:8000,rub:true}) },
+  { id:'i5', icon:'🛒', name:'Продукты', desc:'Пассивный доход 10 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=10000, progress:(s,inc)=>({cur:totalIncome(inc),max:10000,rub:true}) },
+  { id:'i5b', icon:'💆', name:'Массаж', desc:'Пассивный доход 12 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=12000, progress:(s,inc)=>({cur:totalIncome(inc),max:12000,rub:true}) },
+  { id:'i5c', icon:'🍽️', name:'Ресторан раз в неделю', desc:'Пассивный доход 15 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=15000, progress:(s,inc)=>({cur:totalIncome(inc),max:15000,rub:true}) },
+  { id:'i6', icon:'🍕', name:'Еда вне дома', desc:'Пассивный доход 20 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=20000, progress:(s,inc)=>({cur:totalIncome(inc),max:20000,rub:true}) },
+  { id:'i6b', icon:'🏋️', name:'Зал и тренер', desc:'Пассивный доход 25 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=25000, progress:(s,inc)=>({cur:totalIncome(inc),max:25000,rub:true}) },
+  { id:'i6c', icon:'🎮', name:'Игровой ПК', desc:'Пассивный доход 30 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=30000, progress:(s,inc)=>({cur:totalIncome(inc),max:30000,rub:true}) },
+  { id:'i6d', icon:'🚕', name:'Такси вместо метро', desc:'Пассивный доход 40 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=40000, progress:(s,inc)=>({cur:totalIncome(inc),max:40000,rub:true}) },
+  { id:'i6e', icon:'🧳', name:'Отпуск раз в год', desc:'Пассивный доход 50 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=50000, progress:(s,inc)=>({cur:totalIncome(inc),max:50000,rub:true}) },
+  { id:'i7', icon:'🏖️', name:'Живу на проценты', desc:'Пассивный доход 60 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=60000, progress:(s,inc)=>({cur:totalIncome(inc),max:60000,rub:true}) },
+
+  // Goals
+  { id:'g1', icon:'🎯', name:'Первая цель', desc:'Добавь первую цель', secret:false,
+    check:(s,i,g)=>g.length>=1, progress:(s,i,g)=>({cur:g.length,max:1}) },
+  { id:'g2', icon:'✅', name:'Первая цель покрыта', desc:'Пассивный доход покрывает хотя бы одну цель', secret:false,
+    check:(s,inc,g)=>goalsCount(inc,g)>=1, progress:(s,inc,g)=>({cur:goalsCount(inc,g),max:1}) },
+  { id:'g3', icon:'🏆', name:'Все цели покрыты', desc:'Пассивный доход покрывает все цели', secret:false,
+    check:(s,inc,g)=>g.length>0&&goalsPct(inc,g)>=100, progress:(s,inc,g)=>({cur:Math.round(goalsPct(inc,g)),max:100,pct:true}) },
+  { id:'g4', icon:'♾️', name:'С запасом', desc:'Доход в 2× больше суммы всех целей', secret:false,
+    check:(s,inc,g)=>{ const t=totalGoals(g); return t>0&&totalIncome(inc)>=t*2; },
+    progress:(s,inc,g)=>{ const t=totalGoals(g)||1; return {cur:Math.round(totalIncome(inc)/t*50),max:100,pct:true}; } },
+
+  // Diversification
+  { id:'d1', icon:'🌍', name:'Валютчица', desc:'Добавь счёт в иностранной валюте', secret:false,
+    check:(s)=>s.some(x=>x.currency&&x.currency!=='RUB'), progress:(s)=>({cur:s.filter(x=>x.currency&&x.currency!=='RUB').length,max:1}) },
+  { id:'d2', icon:'🎲', name:'Портфель', desc:'Есть вклад, инвестиции и наличные одновременно', secret:false,
+    check:(s)=>s.some(x=>x.isDeposit)&&s.some(x=>x.icon==='📈')&&s.some(x=>x.icon==='💵'),
+    progress:(s)=>({cur:[s.some(x=>x.isDeposit),s.some(x=>x.icon==='📈'),s.some(x=>x.icon==='💵')].filter(Boolean).length,max:3}) },
+  { id:'d3', icon:'🦉', name:'Стратег', desc:'5 и более разных счетов', secret:false,
+    check:(s)=>s.length>=5, progress:(s)=>({cur:s.length,max:5}) },
+  { id:'d4', icon:'🏦', name:'Финансист', desc:'Счета в 3 и более валютах', secret:false,
+    check:(s)=>new Set(s.map(x=>x.currency||'RUB')).size>=3,
+    progress:(s)=>({cur:new Set(s.map(x=>x.currency||'RUB')).size,max:3}) },
+
+  // Deposits
+  { id:'dep1', icon:'🔒', name:'Заморозила', desc:'Открой вклад сроком от 1 года', secret:false,
+    check:(s)=>s.some(x=>x.isDeposit&&x.dateStart&&x.dateEnd&&daysBetween(x.dateStart,x.dateEnd)>=365),
+    progress:(s)=>({cur:s.filter(x=>x.isDeposit&&x.dateStart&&x.dateEnd&&daysBetween(x.dateStart,x.dateEnd)>=365).length,max:1}) },
+  { id:'dep2', icon:'🌊', name:'Капитализация', desc:'Набери 5 000 ₽ процентами по вкладам', secret:false,
+    check:(s)=>depositInterestTotal(s)>=5000, progress:(s)=>({cur:depositInterestTotal(s),max:5000,rub:true}) },
+
+  // FX
+  { id:'fx1', icon:'📈', name:'В плюсе', desc:'Курсовая прибыль от валюты 1 000 ₽', secret:false,
+    check:(s,inc)=>fxGainTotal(inc)>=1000, progress:(s,inc)=>({cur:Math.max(0,fxGainTotal(inc)),max:1000,rub:true}) },
+  { id:'fx2', icon:'💹', name:'Трейдер', desc:'Курсовая прибыль 30 000 ₽', secret:false,
+    check:(s,inc)=>fxGainTotal(inc)>=30000, progress:(s,inc)=>({cur:Math.max(0,fxGainTotal(inc)),max:30000,rub:true}) },
+
+  // Secret
+  { id:'sec1', icon:'🌙', name:'Сова', desc:'Открой приложение после полуночи', secret:true,
+    check:()=>new Date().getHours()<4||new Date().getHours()===0, progress:()=>({cur:0,max:1}) },
+  { id:'sec2', icon:'⚡', name:'Молния', desc:'Добавь 3 счёта за один день', secret:true,
+    check:()=>false, progress:()=>({cur:0,max:3}) }, // tracked via dailyAdded
+  { id:'sec3', icon:'🐢', name:'Черепаха', desc:'Копи 6 месяцев без удалений', secret:true,
+    check:()=>{ const d=state._firstSaveDate; return d&&daysBetween(d,new Date().toISOString().slice(0,10))>=180; },
+    progress:()=>({cur:0,max:1}) },
+];
+
+// helpers
+function totalRub(savings) { return savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0); }
+function totalIncome(income) { return income.reduce((s,x)=>s+calcIncomeAmountRub(x),0); }
+function totalGoals(goals) { return goals.reduce((s,x)=>s+Number(x.amount),0); }
+function daysBetween(a,b) { return Math.round((new Date(b)-new Date(a))/86400000); }
+function depositInterestTotal(savings) {
+  return savings.filter(x=>x.isDeposit&&x.rate&&x.dateStart&&x.dateEnd)
+    .reduce((s,x)=>{ const d=calcDeposit(x); return s+(d.currentAmount-Number(x.amount)); },0);
+}
+function fxGainTotal(income) {
+  return income.filter(x=>x.calcMode==='fx').reduce((s,x)=>s+calcFxIncome(x),0);
+}
+function goalsCount(income,goals) {
+  let rem=totalIncome(income), count=0;
+  for(const g of goals){ if(rem>=Number(g.amount)){rem-=Number(g.amount);count++;} }
+  return count;
+}
+function goalsPct(income,goals) {
+  const t=totalGoals(goals); if(!t)return 0;
+  let rem=totalIncome(income),covered=0;
+  for(const g of goals){ const c=Number(g.amount); if(rem>=c){rem-=c;covered+=c;} }
+  return covered/t*100;
+}
+
+// track first save date
+function ensureFirstSaveDate() {
+  if (!state._firstSaveDate) {
+    state._firstSaveDate = new Date().toISOString().slice(0,10);
+    save();
+  }
+}
+
+// track daily adds for Молния
+function trackDailyAdd() {
+  const today2 = new Date().toISOString().slice(0,10);
+  if (!state._dailyAdds) state._dailyAdds = {};
+  state._dailyAdds[today2] = (state._dailyAdds[today2]||0)+1;
+  save();
+}
+
+// check Молния
+function checkMolnia() {
+  const today2 = new Date().toISOString().slice(0,10);
+  return state._dailyAdds && (state._dailyAdds[today2]||0)>=3;
+}
+
+// check Сова
+function checkSova() {
+  return new Date().getHours() >= 0 && new Date().getHours() < 5;
+}
+
+let unlockedSet = new Set();
+
+function checkAchievements() {
+  ensureFirstSaveDate();
+  if (!state._unlocked) state._unlocked = [];
+  const prev = new Set(state._unlocked);
+  const s=state.savings, i=state.income, g=state.goals;
+
+  ACHIEVEMENTS.forEach(a => {
+    let passed = false;
+    if (a.id==='sec2') passed = checkMolnia();
+    else if (a.id==='sec1') passed = checkSova();
+    else { try { passed = a.check(s,i,g); } catch(e){} }
+
+    if (passed && !prev.has(a.id)) {
+      state._unlocked.push(a.id);
+      save();
+      showAchievementPopup(a);
+    }
+  });
+  unlockedSet = new Set(state._unlocked);
+}
+
+function showAchievementPopup(a) {
+  document.getElementById('ach-popup-icon').textContent = a.icon;
+  document.getElementById('ach-popup-name').textContent = a.name;
+  document.getElementById('ach-popup-desc').textContent = a.desc;
+  document.getElementById('ach-popup').style.display='block';
+  startConfetti();
+  setTimeout(()=>{
+    document.getElementById('ach-popup').style.display='none';
+    stopConfetti();
+  }, 4000);
+}
+
+// Simple confetti
+let confettiAnim=null, confettiParts=[];
+function startConfetti() {
+  const canvas=document.getElementById('confetti-canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  confettiParts=Array.from({length:80},()=>({
+    x:Math.random()*canvas.width, y:-10,
+    r:Math.random()*6+3,
+    color:['#4ECDC4','#FFB347','#FF6B6B','#E8F4F8','#88E4DF'][Math.floor(Math.random()*5)],
+    speed:Math.random()*3+2, drift:(Math.random()-.5)*2, rot:Math.random()*360
+  }));
+  function frame(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    confettiParts.forEach(p=>{
+      p.y+=p.speed; p.x+=p.drift; p.rot+=3;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color; ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);
+      ctx.restore();
+    });
+    confettiParts=confettiParts.filter(p=>p.y<canvas.height);
+    confettiAnim=requestAnimationFrame(frame);
+  }
+  frame();
+}
+function stopConfetti(){
+  if(confettiAnim)cancelAnimationFrame(confettiAnim);
+  const canvas=document.getElementById('confetti-canvas');
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+
+function renderAchievements() {
+  if (!state._unlocked) state._unlocked=[];
+  const s=state.savings, inc=state.income, g=state.goals;
+  const unlocked=new Set(state._unlocked);
+  const visible=ACHIEVEMENTS.filter(a=>!a.secret||unlocked.has(a.id));
+  const total=visible.length, done=visible.filter(a=>unlocked.has(a.id)).length;
+
+  document.getElementById('ach-count').innerHTML=`${done} <span>из ${total}</span>`;
+  document.getElementById('ach-sub').textContent=
+    done===0?'Начни копить — и ачивки появятся':
+    done===total?'Все разблокированы! Ты невероятна 🎉':
+    `Ещё ${total-done} впереди`;
+
+  const el=document.getElementById('ach-list');
+  el.innerHTML=visible.map(a=>{
+    const isUnlocked=unlocked.has(a.id);
+    let prog=null;
+    if(!isUnlocked && !a.secret){
+      try{ prog=a.progress(s,inc,g); }catch(e){}
+    }
+    const pct=prog ? Math.min(100,prog.pct ? prog.cur : Math.round(prog.cur/prog.max*100)) : 0;
+    const progStr=prog ? (prog.rub ? `${fmt(Math.min(prog.cur,prog.max))} из ${fmt(prog.max)} ₽` :
+      prog.pct ? `${Math.min(prog.cur,prog.max)}%` :
+      `${Math.min(prog.cur,prog.max)} из ${prog.max}`) : '';
+
+    return `<div class="ach-card ${isUnlocked?'unlocked':''} ${a.secret&&!isUnlocked?'secret':''}">
+      <div class="ach-icon">${a.icon}</div>
+      <div class="ach-info">
+        <div class="ach-name">${a.name}</div>
+        <div class="ach-desc">${a.desc}</div>
+        ${!isUnlocked&&prog&&prog.max>1?`<div class="ach-progress">
+          <div style="font-size:11px;color:var(--text-dim)">${progStr}</div>
+          <div class="ach-progress-bar"><div class="ach-progress-fill" style="width:${pct}%"></div></div>
+        </div>`:''}
+      </div>
+      <div class="ach-badge">${isUnlocked?'✅':'🔒'}</div>
+    </div>`;
+  }).join('');
+}
+
 load();render();fetchRates().then(()=>loadFxBuyRates());
+checkAchievements();
 </script>
 </body>
 </html>
