@@ -1279,15 +1279,28 @@ function renderAchievements() {
     done===total?'Все разблокированы! Ты невероятна 🎉':
     `Ещё ${total-done} впереди`;
 
-  const el=document.getElementById('ach-list');
-  el.innerHTML=visible.map(a=>{
-    const isUnlocked=unlocked.has(a.id);
-    let prog=null;
-    if(!isUnlocked && !a.secret){
-      try{ prog=a.progress(s,inc,g); }catch(e){}
+  // Compute progress for each achievement
+  const withProg = visible.map(a => {
+    const isUnlocked = unlocked.has(a.id);
+    let prog = null;
+    if (!isUnlocked && !a.secret) {
+      try { prog = a.progress(s,inc,g); } catch(e) {}
     }
-    const pct=prog ? Math.min(100,prog.pct ? prog.cur : Math.round(prog.cur/prog.max*100)) : 0;
-    const progStr=prog ? (prog.rub ? `${fmt(Math.min(prog.cur,prog.max))} из ${fmt(prog.max)} ₽` :
+    const pct = prog ? Math.min(100, prog.pct ? prog.cur : Math.round(prog.cur/prog.max*100)) : 0;
+    return { a, isUnlocked, prog, pct };
+  });
+
+  // Sort: 1) closest to done (desc pct, not unlocked), 2) other not unlocked, 3) unlocked
+  withProg.sort((x, y) => {
+    if (x.isUnlocked && !y.isUnlocked) return 1;
+    if (!x.isUnlocked && y.isUnlocked) return -1;
+    if (!x.isUnlocked && !y.isUnlocked) return y.pct - x.pct; // closer to 100% first
+    return 0;
+  });
+
+  const el = document.getElementById('ach-list');
+  el.innerHTML = withProg.map(({a, isUnlocked, prog, pct}) => {
+    const progStr = prog ? (prog.rub ? `${fmt(Math.min(prog.cur,prog.max))} из ${fmt(prog.max)} ₽` :
       prog.pct ? `${Math.min(prog.cur,prog.max)}%` :
       `${Math.min(prog.cur,prog.max)} из ${prog.max}`) : '';
 
