@@ -1310,7 +1310,7 @@ function renderAchievements() {
 // ── DRAG & DROP GOALS ─────────────────────────────────────
 function initGoalDrag() {
   const list = document.getElementById('goals-list');
-  let dragEl = null, touchDragEl = null, touchClone = null, touchStartY = 0;
+  let dragEl = null;
 
   // Desktop drag
   list.querySelectorAll('.goal-item').forEach(item => {
@@ -1341,58 +1341,78 @@ function initGoalDrag() {
       save(); renderGoals();
     });
 
-    // Touch drag
+    // Touch drag — only activate after holding handle for 150ms (long press)
     const handle = item.querySelector('.drag-handle');
+    let holdTimer = null, touchDragEl = null, touchClone = null, touchStartY = 0, isDragging = false;
+
     handle.addEventListener('touchstart', e => {
-      touchDragEl = item;
-      touchStartY = e.touches[0].clientY;
-      touchClone = item.cloneNode(true);
-      touchClone.style.cssText = `position:fixed;left:16px;right:16px;z-index:999;opacity:0.9;pointer-events:none;background:var(--surface2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);`;
-      touchClone.style.top = item.getBoundingClientRect().top + 'px';
-      document.body.appendChild(touchClone);
-      item.classList.add('dragging');
-      // Add touchmove only when drag starts — so normal scroll is never blocked
-      document.addEventListener('touchmove', onDragMove, { passive: false });
+      const startY = e.touches[0].clientY;
+      touchStartY = startY;
+      holdTimer = setTimeout(() => {
+        // Activate drag only after hold
+        isDragging = true;
+        touchDragEl = item;
+        touchClone = item.cloneNode(true);
+        touchClone.style.cssText = `position:fixed;left:16px;right:16px;z-index:999;opacity:0.9;pointer-events:none;background:var(--surface2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);`;
+        touchClone.style.top = item.getBoundingClientRect().top + 'px';
+        document.body.appendChild(touchClone);
+        item.classList.add('dragging');
+        if (navigator.vibrate) navigator.vibrate(30);
+      }, 150);
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', e => {
+      if (!isDragging) {
+        // Not dragging yet — cancel hold timer if moved too much
+        const dy = Math.abs(e.touches[0].clientY - touchStartY);
+        if (dy > 8) { clearTimeout(holdTimer); holdTimer = null; }
+        return; // let scroll happen
+      }
       e.preventDefault();
-    }, { passive: false });
-  });
-
-  function onDragMove(e) {
-    if (!touchDragEl || !touchClone) return;
-    e.preventDefault();
-    const y = e.touches[0].clientY;
-    touchClone.style.top = (touchClone.getBoundingClientRect().top + (y - touchStartY)) + 'px';
-    touchStartY = y;
-
-    list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
-    const elBelow = document.elementFromPoint(e.touches[0].clientX, y);
-    const targetItem = elBelow?.closest('.goal-item');
-    if (targetItem && targetItem !== touchDragEl) targetItem.classList.add('drag-over');
-  }
-
-  document.addEventListener('touchend', e => {
-    if (!touchDragEl || !touchClone) return;
-    document.removeEventListener('touchmove', onDragMove);
-    const y = e.changedTouches[0].clientY;
-    const elBelow = document.elementFromPoint(e.changedTouches[0].clientX, y);
-    const targetItem = elBelow?.closest('.goal-item');
-
-    if (targetItem && targetItem !== touchDragEl) {
-      const ids = [...list.querySelectorAll('.goal-item')].map(i => i.dataset.id);
-      const fromIdx = ids.indexOf(touchDragEl.dataset.id);
-      const toIdx   = ids.indexOf(targetItem.dataset.id);
-      const moved = state.goals.splice(fromIdx, 1)[0];
-      state.goals.splice(toIdx, 0, moved);
-      save(); renderGoals();
-    } else {
-      touchDragEl.classList.remove('dragging');
+      const y = e.touches[0].clientY;
+      if (touchClone) {
+        touchClone.style.top = (touchClone.getBoundingClientRect().top + (y - touchStartY)) + 'px';
+      }
+      touchStartY = y;
       list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
-    }
+      const elBelow = document.elementFromPoint(e.touches[0].clientX, y);
+      const targetItem = elBelow?.closest('.goal-item');
+      if (targetItem && targetItem !== touchDragEl) targetItem.classList.add('drag-over');
+    }, { passive: false });
 
-    document.removeEventListener('touchmove', onDragMove);
-    touchClone.remove();
-    touchClone = null;
-    touchDragEl = null;
+    handle.addEventListener('touchend', e => {
+      clearTimeout(holdTimer);
+      holdTimer = null;
+      if (!isDragging || !touchDragEl || !touchClone) {
+        isDragging = false; touchDragEl = null;
+        list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
+        return;
+      }
+      const y = e.changedTouches[0].clientY;
+      const elBelow = document.elementFromPoint(e.changedTouches[0].clientX, y);
+      const targetItem = elBelow?.closest('.goal-item');
+      if (targetItem && targetItem !== touchDragEl) {
+        const ids = [...list.querySelectorAll('.goal-item')].map(i => i.dataset.id);
+        const fromIdx = ids.indexOf(touchDragEl.dataset.id);
+        const toIdx   = ids.indexOf(targetItem.dataset.id);
+        const moved = state.goals.splice(fromIdx, 1)[0];
+        state.goals.splice(toIdx, 0, moved);
+        save(); renderGoals();
+      } else {
+        touchDragEl.classList.remove('dragging');
+        list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
+      }
+      touchClone.remove();
+      touchClone = null; touchDragEl = null; isDragging = false;
+    }, { passive: true });
+
+    handle.addEventListener('touchcancel', () => {
+      clearTimeout(holdTimer);
+      isDragging = false; touchDragEl = null;
+      if (touchClone) { touchClone.remove(); touchClone = null; }
+      item.classList.remove('dragging');
+      list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
+    }, { passive: true });
   });
 }
 
@@ -1643,26 +1663,24 @@ function renderInflationPage() {
 }
 
 function updateInflationCalc() {
-  const years = parseInt(document.getElementById('inf-years').value) || 5;
-  document.getElementById('inf-years-label').textContent = years + ' ' + plural(years,'год','года','лет');
+  const years = parseInt(document.getElementById('inf-years')?.value) || 5;
+  const label = document.getElementById('inf-years-label');
+  if (label) label.textContent = years + ' ' + plural(years,'год','года','лет');
 
   const currentTotal = totalRub(state.savings);
-  document.getElementById('inf-current').innerHTML = `${fmt(currentTotal)} <span>₽</span>`;
 
-  // Use average inflation for selected horizon
   const horizonYears = Math.min(years, Object.keys(ROSSTAT_INFLATION).length);
   const avgInf = avgInflation(horizonYears);
   const rate = avgInf / 100;
 
-  // Real value in today's purchasing power
   const realValue = currentTotal / Math.pow(1 + rate, years);
   const loss = currentTotal - realValue;
   const lossPct = currentTotal > 0 ? (loss/currentTotal*100) : 0;
 
-  document.getElementById('inf-sub').textContent =
-    `Среднегодовая инфляция за ${horizonYears} лет — ${avgInf.toFixed(1)}% (Росстат)`;
-
-  document.getElementById('inf-result').innerHTML = `
+  const resultEl = document.getElementById('inf-result');
+  if (!resultEl) return;
+  resultEl.innerHTML = `
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">Среднегодовая инфляция за ${horizonYears} лет — ${avgInf.toFixed(1)}% (Росстат)</div>` + `
     <div class="inf-result-row">
       <div>
         <div class="inf-result-label">Сейчас</div>
