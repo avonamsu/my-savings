@@ -128,6 +128,8 @@
   .btn-primary { flex:1; background:var(--accent); color:var(--bg); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:700; padding:14px; cursor:pointer; }
   .btn-cancel { background:var(--surface2); color:var(--text-dim); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:600; padding:14px 20px; cursor:pointer; }
 
+  .backup-btn { flex:1; background:var(--surface); border:1px solid rgba(78,205,196,0.2); border-radius:var(--radius-sm); color:var(--text-dim); font-size:13px; font-weight:600; padding:12px 8px; cursor:pointer; text-align:center; transition:all .2s; }
+  .backup-btn:active { background:var(--accent-dim); color:var(--accent); border-color:var(--accent); }
   .reset-btn { background:none; border:none; color:var(--danger); font-size:13px; opacity:0.4; cursor:pointer; padding:8px; width:100%; text-align:center; }
   .chart-wrap { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); padding:16px; }
   .chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
@@ -189,6 +191,10 @@
     <div class="hero-sub" id="savings-count">Нет счетов</div>
   </div>
   <div class="rate-bar" id="rate-bar">⏳ Загружаю курсы ЦБ РФ...</div>
+  <div id="backup-banner" style="display:none;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text);cursor:pointer;display:none;" onclick="downloadBackupFromBanner()">
+    <div style="font-weight:600;margin-bottom:2px;">💾 Пора сделать резервную копию</div>
+    <div style="font-size:12px;color:var(--text-dim);">Данные менялись, но копия не создавалась 7+ дней. Нажми чтобы скачать.</div>
+  </div>
   <div id="notif-banner" style="display:none;background:rgba(255,179,71,0.12);border:1px solid rgba(255,179,71,0.3);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--warn);cursor:pointer;" onclick="initNotifications()">
     🔔 Разреши уведомления — напомним когда вклад закроется
   </div>
@@ -207,6 +213,11 @@
       <canvas id="savings-chart" style="display:none;width:100%;"></canvas>
       <div class="chart-tooltip" id="chart-tooltip" style="display:none;"></div>
     </div>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:4px;">
+    <button class="backup-btn" onclick="downloadBackup()">⬇️ Скачать резервную копию</button>
+    <button class="backup-btn backup-btn-restore" onclick="document.getElementById('restore-input').click()">⬆️ Восстановить</button>
+    <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(event)">
   </div>
   <button class="reset-btn" onclick="resetAllData()">🗑 Очистить все данные</button>
 </div>
@@ -634,6 +645,7 @@ function renderSavings() {
     const gained = localAmt - origLocal;
     let badges = '';
     let sub = '';
+    let inflWarn = '';
     if (x.isDeposit && x.rate && x.dateStart && x.dateEnd) {
       const d = calcDeposit(x);
       const daysLeft = d.daysTotal - d.daysPassed;
@@ -642,6 +654,11 @@ function renderSavings() {
         badges += `<span class="badge badge-cap">${x.rate}%</span>`;
         if (x.compound) badges += ` <span class="badge badge-cap">капит.</span>`;
         sub = `Осталось ${daysLeft} дн.`;
+        // Check if deposit rate covers inflation
+        const currentInfl = ROSSTAT_INFLATION[2024] || 9.52;
+        if (Number(x.rate) < currentInfl) {
+          inflWarn = `<div style="font-size:11px;color:var(--warn);margin-top:4px;">⚠️ Ставка ниже инфляции ${currentInfl}% — вклад теряет в реальной стоимости</div>`;
+        }
       }
     }
     if (cur !== 'RUB') badges += ` <span class="badge badge-cur">${currSym(cur)}</span>`;
@@ -653,6 +670,7 @@ function renderSavings() {
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
         ${sub ? `<div class="card-sub">${sub}</div>` : ''}
+        ${inflWarn}
       </div>
       <div class="card-amount">
         ${mainAmt}
@@ -1051,7 +1069,7 @@ function saveItem(){
     if(!name||isNaN(amount)||amount<=0)return;
     state.goals.push({id,name,amount});
   }
-  editingId=null;trackDailyAdd();save();render();closeModal();setTimeout(checkAchievements,300);checkNotifBanner();
+  editingId=null;trackDailyAdd();save();render();closeModal();setTimeout(checkAchievements,300);checkNotifBanner();checkBackupReminder();
 }
 
 function deleteItem(list,id){
@@ -1851,6 +1869,101 @@ async function initNotifications() {
   if (granted) checkDepositNotifications();
 }
 
+
+
+// ── BACKUP REMINDER ───────────────────────────────────────
+function markBackupDone() {
+  localStorage.setItem('last_backup_date', new Date().toISOString().slice(0,10));
+  localStorage.setItem('last_backup_state_hash', stateHash());
+}
+
+function stateHash() {
+  // Simple hash to detect if data changed since last backup
+  const str = JSON.stringify({ s: state.savings.length, i: state.income.length, g: state.goals.length,
+    st: (state.savings.reduce((a,x)=>a+Number(x.amount),0)).toFixed(0) });
+  return str;
+}
+
+function checkBackupReminder() {
+  const banner = document.getElementById('backup-banner');
+  if (!banner) return;
+
+  const lastBackup = localStorage.getItem('last_backup_date');
+  const lastHash = localStorage.getItem('last_backup_state_hash');
+  const currentHash = stateHash();
+  const today = new Date().toISOString().slice(0,10);
+
+  // No data yet — don't show
+  if (!state.savings.length && !state.income.length && !state.goals.length) {
+    banner.style.display = 'none'; return;
+  }
+
+  // Data hasn't changed since last backup — don't show
+  if (lastHash === currentHash) { banner.style.display = 'none'; return; }
+
+  // Less than 7 days since last backup — don't show
+  if (lastBackup) {
+    const daysSince = Math.round((new Date(today) - new Date(lastBackup)) / 86400000);
+    if (daysSince < 7) { banner.style.display = 'none'; return; }
+  }
+
+  banner.style.display = '';
+}
+
+function downloadBackupFromBanner() {
+  downloadBackup();
+  markBackupDone();
+  document.getElementById('backup-banner').style.display = 'none';
+}
+
+// ── BACKUP & RESTORE ──────────────────────────────────────
+function downloadBackup() {
+  const data = JSON.stringify(state, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `my-savings-backup-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  markBackupDone();
+  document.getElementById('backup-banner').style.display = 'none';
+}
+
+function restoreBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const restored = JSON.parse(e.target.result);
+      // Basic validation
+      if (!restored.savings || !restored.income || !restored.goals) {
+        alert('Файл повреждён или неверного формата');
+        return;
+      }
+      if (!confirm(`Восстановить данные из резервной копии?
+
+Счетов: ${restored.savings.length}
+Доходов: ${restored.income.length}
+Целей: ${restored.goals.length}
+
+Текущие данные будут заменены.`)) return;
+      state = restored;
+      save();
+      render();
+      drawChart();
+      checkNotifBanner();
+      alert('✅ Данные восстановлены успешно!');
+    } catch(e) {
+      alert('Не удалось прочитать файл. Убедись что это резервная копия приложения.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ''; // reset so same file can be selected again
+}
+
 function checkNotifBanner() {
   const banner = document.getElementById('notif-banner');
   if (!banner) return;
@@ -1866,6 +1979,7 @@ function checkNotifBanner() {
 load();render();fetchRates().then(()=>{ loadFxBuyRates(); recordSnapshot(); drawChart(); fetchCurrentInflation(); });
 initNotifications();
 checkNotifBanner();
+checkBackupReminder();
 checkAchievements();
 </script>
 </body>
