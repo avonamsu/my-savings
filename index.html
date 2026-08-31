@@ -204,14 +204,6 @@
     <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
   </div>
 
-  <!-- Financial freedom card -->
-  <div id="freedom-card" class="chart-wrap" style="display:none;">
-    <div class="chart-header">
-      <span class="chart-title">🏁 ДО ФИНАНСОВОЙ СВОБОДЫ</span>
-    </div>
-    <div id="freedom-content"></div>
-  </div>
-
   <!-- Savings growth chart -->
   <div class="chart-wrap">
     <div class="chart-header">
@@ -245,12 +237,12 @@
       <span id="goals-total-amount">из 0 ₽</span>
     </div>
   </div>
-  <div class="income-summary">
-    <div class="income-summary-icon">💸</div>
-    <div class="income-summary-info">
-      <div class="income-summary-label">Ежемесячный доход</div>
-      <div class="income-summary-val" id="goals-income-ref">0 ₽</div>
+  <div id="freedom-card" class="chart-wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span style="font-size:12px;color:var(--text-dim);font-weight:700;letter-spacing:.06em;">💸 ЕЖЕМЕСЯЧНЫЙ ДОХОД</span>
+      <span class="freedom-val" id="goals-income-ref" style="color:var(--accent);font-size:18px;font-weight:700;">0 ₽</span>
     </div>
+    <div id="freedom-content"></div>
   </div>
   <div class="section-title">Мои цели</div>
   <div class="card" id="goals-list">
@@ -674,7 +666,6 @@ function renderIncome() {
   document.getElementById('total-income-display').innerHTML = `${fmt(total)} <span>₽</span>`;
   const el = document.getElementById('income-list');
   if (!state.income.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`; return; }
-  renderFreedom();
   el.innerHTML = state.income.map(x => {
     const amt = calcIncomeAmountRub(x);
     const linked = x.savingRef ? state.savings.find(s=>s.id===x.savingRef) : null;
@@ -701,62 +692,54 @@ function renderIncome() {
 }
 
 function renderFreedom() {
-  const card = document.getElementById('freedom-card');
   const contentEl = document.getElementById('freedom-content');
-  if (!card || !contentEl) return;
+  if (!contentEl) return;
 
   const totalIncome = state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0);
   const totalGoalsAmt = state.goals.reduce((s,x) => s + Number(x.amount), 0);
 
   if (!totalGoalsAmt) {
-    card.style.display = 'none';
+    contentEl.innerHTML = `<div style="font-size:13px;color:var(--text-dim);">Добавь цели — и увидишь прогресс к финансовой свободе</div>`;
     return;
   }
-  card.style.display = '';
 
   const pct = Math.min(100, totalIncome / totalGoalsAmt * 100);
   const remaining = Math.max(0, totalGoalsAmt - totalIncome);
   const isFree = totalIncome >= totalGoalsAmt;
 
-  let html = '';
-
   if (isFree) {
-    html = `<div style="text-align:center;padding:12px 0;">
-      <div style="font-size:36px;margin-bottom:8px;">🎉</div>
-      <div style="font-size:17px;font-weight:700;color:var(--accent);">Ты финансово свободна!</div>
-      <div style="font-size:13px;color:var(--text-dim);margin-top:6px;">Пассивный доход покрывает все твои цели</div>
+    contentEl.innerHTML = `<div style="text-align:center;padding:8px 0;">
+      <div style="font-size:32px;margin-bottom:6px;">🎉</div>
+      <div style="font-size:15px;font-weight:700;color:var(--accent);">Ты финансово свободна!</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">Пассивный доход покрывает все цели</div>
     </div>`;
-  } else {
-    html = `
-      <div class="freedom-row">
-        <span class="freedom-label">Текущий доход</span>
-        <span class="freedom-val" style="color:var(--accent)">${fmt(totalIncome)} ₽/мес</span>
-      </div>
-      <div class="freedom-row">
-        <span class="freedom-label">Нужно для свободы</span>
-        <span class="freedom-val">${fmt(totalGoalsAmt)} ₽/мес</span>
-      </div>
-      <div class="freedom-row">
-        <span class="freedom-label">Осталось до цели</span>
-        <span class="freedom-val" style="color:var(--warn)">−${fmt(remaining)} ₽/мес</span>
-      </div>
-      <div class="freedom-bar-wrap">
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:6px;">
-          <span>Прогресс к свободе</span>
-          <span>${pct.toFixed(1)}%</span>
-        </div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width:${pct}%"></div>
-        </div>
-      </div>`;
+    return;
   }
 
-  contentEl.innerHTML = html;
+  contentEl.innerHTML = `
+    <div class="freedom-row">
+      <span class="freedom-label">Нужно для свободы</span>
+      <span class="freedom-val">${fmt(totalGoalsAmt)} ₽/мес</span>
+    </div>
+    <div class="freedom-row">
+      <span class="freedom-label">Осталось</span>
+      <span class="freedom-val" style="color:var(--warn)">−${fmt(remaining)} ₽/мес</span>
+    </div>
+    <div class="freedom-bar-wrap">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:6px;">
+        <span>🏁 До финансовой свободы</span>
+        <span>${pct.toFixed(1)}%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:${pct}%"></div>
+      </div>
+    </div>`;
 }
 
 function renderGoals() {
   const totalIncome = state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0);
   document.getElementById('goals-income-ref').textContent = `${fmt(totalIncome)} ₽`;
+  renderFreedom();
   const el = document.getElementById('goals-list');
   if (!state.goals.length) {
     el.innerHTML=`<div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>`;
