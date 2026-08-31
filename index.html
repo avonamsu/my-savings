@@ -189,22 +189,14 @@
     <div class="hero-sub" id="savings-count">Нет счетов</div>
   </div>
   <div class="rate-bar" id="rate-bar">⏳ Загружаю курсы ЦБ РФ...</div>
+  <div id="notif-banner" style="display:none;background:rgba(255,179,71,0.12);border:1px solid rgba(255,179,71,0.3);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--warn);cursor:pointer;" onclick="initNotifications()">
+    🔔 Разреши уведомления — напомним когда вклад закроется
+  </div>
   <div class="section-title">Мои счета</div>
   <div class="card" id="savings-list">
     <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('savings')">＋ Добавить счёт</button>
-  <button class="reset-btn" onclick="resetAllData()">🗑 Очистить все данные</button>
-</div>
-
-<!-- INCOME -->
-<div class="page" id="page-income">
-  <div class="hero">
-    <div class="hero-label">Пассивный доход в месяц</div>
-    <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
-  </div>
-
-  <!-- Savings growth chart -->
   <div class="chart-wrap">
     <div class="chart-header">
       <span class="chart-title">📈 РОСТ НАКОПЛЕНИЙ</span>
@@ -215,6 +207,15 @@
       <canvas id="savings-chart" style="display:none;width:100%;"></canvas>
       <div class="chart-tooltip" id="chart-tooltip" style="display:none;"></div>
     </div>
+  </div>
+  <button class="reset-btn" onclick="resetAllData()">🗑 Очистить все данные</button>
+</div>
+
+<!-- INCOME -->
+<div class="page" id="page-income">
+  <div class="hero">
+    <div class="hero-label">Пассивный доход в месяц</div>
+    <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
   </div>
 
   <div class="section-title">Источники дохода</div>
@@ -1050,7 +1051,7 @@ function saveItem(){
     if(!name||isNaN(amount)||amount<=0)return;
     state.goals.push({id,name,amount});
   }
-  editingId=null;trackDailyAdd();save();render();closeModal();setTimeout(checkAchievements,300);
+  editingId=null;trackDailyAdd();save();render();closeModal();setTimeout(checkAchievements,300);checkNotifBanner();
 }
 
 function deleteItem(list,id){
@@ -1066,7 +1067,7 @@ function showPage(name){
   document.getElementById('nav-'+name).classList.add('active');
   render();
   if(name==='achievements') renderAchievements();
-  if(name==='savings'||name==='income') setTimeout(drawChart, 50);
+  if(name==='savings') setTimeout(drawChart, 50);
   if(name==='inflation') setTimeout(updateInflationCalc, 50);
 }
 
@@ -1798,7 +1799,73 @@ function updateInflationCalc() {
   }
 }
 
+
+// ── DEPOSIT NOTIFICATIONS ─────────────────────────────────
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+function checkDepositNotifications() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  state.savings.filter(s => s.isDeposit && s.dateEnd).forEach(s => {
+    const end = new Date(s.dateEnd);
+    end.setHours(0,0,0,0);
+    const daysLeft = Math.round((end - today) / 86400000);
+    const notifKey = `notif_${s.id}_${s.dateEnd}`;
+
+    // Already notified today?
+    if (localStorage.getItem(notifKey) === new Date().toISOString().slice(0,10)) return;
+
+    let title = null, body = null;
+
+    if (daysLeft < 0) {
+      title = '🏦 Вклад завершён';
+      body = `«${s.name}» закрылся ${Math.abs(daysLeft)} ${plural(Math.abs(daysLeft),'день','дня','дней')} назад. Не забудь переложить деньги!`;
+    } else if (daysLeft === 0) {
+      title = '🏦 Вклад закрывается сегодня!';
+      body = `«${s.name}» — последний день. Реши что делать с деньгами.`;
+    } else if (daysLeft <= 3) {
+      title = `🏦 Вклад закроется через ${daysLeft} ${plural(daysLeft,'день','дня','дней')}`;
+      body = `«${s.name}» завершается ${new Date(s.dateEnd).toLocaleDateString('ru-RU')}. Подумай куда переложить.`;
+    }
+
+    if (title) {
+      new Notification(title, { body, icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%230F1B2D"/><text y=".9em" font-size="80" x="10">🏦</text></svg>' });
+      localStorage.setItem(notifKey, new Date().toISOString().slice(0,10));
+    }
+  });
+}
+
+async function initNotifications() {
+  const hasDeposits = state.savings.some(s => s.isDeposit && s.dateEnd);
+  if (!hasDeposits) return;
+
+  const granted = await requestNotificationPermission();
+  if (granted) checkDepositNotifications();
+}
+
+function checkNotifBanner() {
+  const banner = document.getElementById('notif-banner');
+  if (!banner) return;
+  const hasDeposits = state.savings.some(s => s.isDeposit && s.dateEnd);
+  if (!hasDeposits) { banner.style.display='none'; return; }
+  if (!('Notification' in window) || Notification.permission === 'granted') {
+    banner.style.display='none';
+  } else if (Notification.permission !== 'denied') {
+    banner.style.display='';
+  }
+}
+
 load();render();fetchRates().then(()=>{ loadFxBuyRates(); recordSnapshot(); drawChart(); fetchCurrentInflation(); });
+initNotifications();
+checkNotifBanner();
 checkAchievements();
 </script>
 </body>
