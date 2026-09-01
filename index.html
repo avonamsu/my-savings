@@ -306,7 +306,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 
   <div class="rate-bar" id="rate-bar">⏳ Загружаю курсы ЦБ РФ...</div>
 
-  <div id="home-deposits-card" style="display:none;">
+  <div id="home-deposits-card" style="display:none;display:flex;flex-direction:column;gap:8px;">
     <div class="section-title">Ближайшие вклады</div>
     <div class="card" id="home-deposits-list"></div>
   </div>
@@ -769,13 +769,13 @@ function renderHome() {
   } else {
     let rem=totalInc;
     const items=state.goals.map(g=>{const cost=Number(g.amount),covered=rem>=cost;if(covered)rem-=cost;return{...g,covered};});
-    goalsEl.innerHTML=`<div class="card">${items.slice(0,4).map(g=>`
+    goalsEl.innerHTML=`<div class="card">${items.slice(0,3).map(g=>`
       <div class="goal-item ${g.covered?'covered':''}">
         <div class="goal-check">${g.covered?'✓':''}</div>
         <div class="goal-info"><div class="goal-name">${g.name}</div></div>
         <div class="goal-amount">${fmt(g.amount)} ₽</div>
       </div>`).join('')}
-      ${items.length>4?`<div style="padding:10px;text-align:center;font-size:12px;color:var(--text-dim);">+${items.length-4} ещё → <span style="color:var(--accent);cursor:pointer" onclick="showPage('goals')">посмотреть все</span></div>`:''}
+      ${items.length>3?`<div style="padding:10px;text-align:center;font-size:12px;color:var(--text-dim);">+${items.length-3} ещё → <span style="color:var(--accent);cursor:pointer" onclick="showPage('goals')">посмотреть все</span></div>`:''}
     </div>`;
   }
 
