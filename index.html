@@ -434,6 +434,18 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
     <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('income')">＋ Добавить источник дохода</button>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span class="chart-title">📈 РОСТ ПАССИВНОГО ДОХОДА</span>
+      <button class="chart-add-btn" onclick="addIncomeHistoryPoint()">＋ Добавить прошлое</button>
+    </div>
+    <div id="income-chart-container" style="position:relative;">
+      <div class="chart-empty" id="income-chart-empty">Данные появятся после первого месяца</div>
+      <canvas id="income-chart" style="display:none;width:100%;"></canvas>
+      <div class="chart-tooltip" id="income-chart-tooltip" style="display:none;"></div>
+    </div>
+  </div>
 </div>
 
 <!-- GOALS PAGE -->
@@ -629,6 +641,18 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Отмена</button>
       <button class="btn-primary" onclick="saveItem()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="income-history-modal" onclick="if(event.target===this)closeIncomeHistoryModal()">
+  <div class="modal">
+    <div class="modal-title">Добавить прошлое значение</div>
+    <div class="field"><label>МЕСЯЦ И ГОД</label><input type="month" id="ih-month"></div>
+    <div class="field"><label>ДОХОД В МЕСЯЦ (₽)</label><input type="number" id="ih-amount" placeholder="0" inputmode="decimal"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeIncomeHistoryModal()">Отмена</button>
+      <button class="btn-primary" onclick="saveIncomeHistoryPoint()">Сохранить</button>
     </div>
   </div>
 </div>
@@ -1101,6 +1125,7 @@ function showPage(name) {
   render();
   if(name==='achievements') renderAchievements();
   if(name==='savings') setTimeout(drawChart, 50);
+  if(name==='income') setTimeout(drawIncomeChart, 50);
   if(name==='inflation') setTimeout(updateInflationCalc, 50);
   if(name==='challenge') renderChallengesPage();
 }
@@ -1302,7 +1327,7 @@ function saveItem(){
     if(!name||isNaN(amount)||amount<=0)return;
     state.goals.push({id,name,amount});
   }
-  editingId=null;trackDailyAdd();save();render();closeModal();setTimeout(checkAchievements,300);checkNotifBanner();checkBackupReminder();
+  editingId=null;trackDailyAdd();save();render();closeModal();setTimeout(checkAchievements,300);checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();
 }
 
 function deleteItem(list,id){
@@ -1585,6 +1610,132 @@ function drawChart() {
   };
 }
 
+
+
+// ── INCOME HISTORY & CHART ────────────────────────────────
+function recordIncomeSnapshot() {
+  const ym = new Date().toISOString().slice(0,7);
+  if (!state._incomeHistory) state._incomeHistory = {};
+  const total = state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0);
+  if (total > 0) { state._incomeHistory[ym] = Math.round(total); save(); }
+}
+
+function addIncomeHistoryPoint() {
+  document.getElementById('income-history-modal').classList.add('open');
+  document.getElementById('ih-month').value = new Date().toISOString().slice(0,7);
+  document.getElementById('ih-amount').value = '';
+}
+function closeIncomeHistoryModal() {
+  document.getElementById('income-history-modal').classList.remove('open');
+}
+function saveIncomeHistoryPoint() {
+  const ym = document.getElementById('ih-month').value;
+  const amt = parseFloat(document.getElementById('ih-amount').value);
+  if (!ym || isNaN(amt) || amt < 0) return;
+  if (!state._incomeHistory) state._incomeHistory = {};
+  state._incomeHistory[ym] = Math.round(amt);
+  save(); closeIncomeHistoryModal(); drawIncomeChart();
+}
+
+function drawIncomeChart() {
+  if (!state._incomeHistory) state._incomeHistory = {};
+  // Also add current month
+  const ym = new Date().toISOString().slice(0,7);
+  const currentTotal = Math.round(state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0));
+  if (currentTotal > 0) state._incomeHistory[ym] = currentTotal;
+
+  const entries = Object.entries(state._incomeHistory)
+    .sort(([a],[b]) => a.localeCompare(b))
+    .filter(([,v]) => v >= 0);
+
+  const empty = document.getElementById('income-chart-empty');
+  const canvas = document.getElementById('income-chart');
+  if (!empty || !canvas) return;
+
+  if (entries.length < 2) {
+    empty.style.display = ''; canvas.style.display = 'none'; return;
+  }
+  empty.style.display = 'none'; canvas.style.display = 'block';
+
+  const container = document.getElementById('income-chart-container');
+  const W = container.clientWidth - 32, H = 160;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const vals = entries.map(([,v]) => v);
+  const minV = Math.min(...vals), maxV = Math.max(...vals);
+  const range = maxV - minV || 1;
+  const PAD = { top:16, right:16, bottom:36, left:16 };
+  const gW = W - PAD.left - PAD.right, gH = H - PAD.top - PAD.bottom;
+  const xOf = i => PAD.left + (i / (entries.length-1)) * gW;
+  const yOf = v => PAD.top + gH - ((v - minV) / range) * gH;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1;
+  [0,0.5,1].forEach(t => {
+    const y = PAD.top + gH*(1-t);
+    ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(W-PAD.right,y); ctx.stroke();
+  });
+
+  // Gradient fill — use orange/yellow for income vs teal for savings
+  const grad = ctx.createLinearGradient(0,PAD.top,0,PAD.top+gH);
+  grad.addColorStop(0,'rgba(255,179,71,0.3)');
+  grad.addColorStop(1,'rgba(255,179,71,0)');
+  ctx.beginPath();
+  ctx.moveTo(xOf(0), yOf(vals[0]));
+  for (let i=1; i<vals.length; i++) {
+    const cpx=(xOf(i-1)+xOf(i))/2;
+    ctx.bezierCurveTo(cpx,yOf(vals[i-1]),cpx,yOf(vals[i]),xOf(i),yOf(vals[i]));
+  }
+  ctx.lineTo(xOf(vals.length-1),PAD.top+gH);
+  ctx.lineTo(xOf(0),PAD.top+gH);
+  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+
+  // Line
+  ctx.beginPath(); ctx.strokeStyle='#FFB347'; ctx.lineWidth=2.5; ctx.lineJoin='round';
+  ctx.moveTo(xOf(0),yOf(vals[0]));
+  for (let i=1; i<vals.length; i++) {
+    const cpx=(xOf(i-1)+xOf(i))/2;
+    ctx.bezierCurveTo(cpx,yOf(vals[i-1]),cpx,yOf(vals[i]),xOf(i),yOf(vals[i]));
+  }
+  ctx.stroke();
+
+  // Dots + labels
+  entries.forEach(([ym2,v],i) => {
+    ctx.beginPath(); ctx.arc(xOf(i),yOf(v),4,0,Math.PI*2);
+    ctx.fillStyle='#FFB347'; ctx.fill();
+    ctx.strokeStyle='#0F1B2D'; ctx.lineWidth=2; ctx.stroke();
+    const step = entries.length<=6?1:entries.length<=12?2:3;
+    if (i%step===0||i===entries.length-1) {
+      const [y4,m2]=ym2.split('-');
+      const label=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][parseInt(m2)-1]+' '+y4.slice(2);
+      ctx.fillStyle='rgba(122,155,181,0.8)';
+      ctx.font=`10px -apple-system,sans-serif`;
+      ctx.textAlign=i===0?'left':i===entries.length-1?'right':'center';
+      ctx.fillText(label,xOf(i),H-8);
+    }
+  });
+
+  // Tooltip on tap
+  canvas.onclick = canvas.ontouchend = e => {
+    const rect=canvas.getBoundingClientRect();
+    const cx=(e.touches?e.changedTouches[0].clientX:e.clientX)-rect.left;
+    const tooltip=document.getElementById('income-chart-tooltip');
+    let closest=0,minD=Infinity;
+    entries.forEach(([,v],i)=>{const d=Math.abs(xOf(i)-cx);if(d<minD){minD=d;closest=i;}});
+    const [ym3,v3]=entries[closest];
+    const [y4,m2]=ym3.split('-');
+    const mn=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'][parseInt(m2)-1];
+    tooltip.innerHTML=`<strong>${mn} ${y4}</strong><br>${fmt(v3)} ₽/мес`;
+    const tx=Math.min(xOf(closest),W-120);
+    tooltip.style.left=tx+'px'; tooltip.style.top=(yOf(v3)-60)+'px'; tooltip.style.display='block';
+    setTimeout(()=>tooltip.style.display='none',2500);
+  };
+}
 
 function addHistoryPoint(){document.getElementById('history-modal').classList.add('open');document.getElementById('h-month').value=new Date().toISOString().slice(0,7);document.getElementById('h-amount').value='';}
 function closeHistoryModal(){document.getElementById('history-modal').classList.remove('open');}
@@ -2469,7 +2620,7 @@ function initOnboarding() {
 load();
 if (!state.challenges) state.challenges = [];
 render();
-fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); fetchCurrentInflation(); });
+fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); });
 checkAchievements();
 initNotifications();
 checkNotifBanner();
