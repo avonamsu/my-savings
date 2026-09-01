@@ -8,6 +8,8 @@
 <meta name="theme-color" content="#0F1B2D">
 <title>Мои накопления</title>
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
 <style>
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 :root {
@@ -62,7 +64,9 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 .sidebar-divider { height:1px; background:rgba(255,255,255,0.06); margin:8px 0; }
 
 /* PAGES */
-.page { display:none; flex-direction:column; flex:1; padding:64px 16px 90px; gap:16px; }
+.page { display:none; flex-direction:column; flex:1; padding:64px 16px 90px; gap:16px; opacity:0; transform:translateX(20px); transition:opacity .22s ease, transform .22s ease; }
+.page.active { opacity:1; transform:translateX(0); }
+.page.slide-left { transform:translateX(-20px); }
 .page.active { display:flex; }
 
 /* HERO */
@@ -913,18 +917,57 @@ function navTo(page, anchor) {
 
 const PAGES = ['home','savings','income','goals','achievements','inflation'];
 const PAGE_TITLES = {home:'Мои накопления',savings:'Счета',income:'Доход',goals:'Цели',achievements:'Ачивки',inflation:'Инфляция'};
+let _currentPage = 'home';
 function showPage(name) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  if (name === _currentPage) return;
+  const fromIdx = PAGES.indexOf(_currentPage);
+  const toIdx   = PAGES.indexOf(name);
+  const goRight = toIdx > fromIdx;
+
+  const oldPage = document.getElementById('page-' + _currentPage);
+  const newPage = document.getElementById('page-' + name);
+  if (!newPage) return;
+
+  // Prep new page off-screen
+  newPage.style.display = 'flex';
+  newPage.style.opacity = '0';
+  newPage.style.transform = goRight ? 'translateX(30px)' : 'translateX(-30px)';
+  newPage.style.transition = 'none';
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      // Slide out old
+      if (oldPage) {
+        oldPage.style.transition = 'opacity .2s ease, transform .2s ease';
+        oldPage.style.opacity = '0';
+        oldPage.style.transform = goRight ? 'translateX(-30px)' : 'translateX(30px)';
+        setTimeout(() => {
+          oldPage.style.display = 'none';
+          oldPage.style.opacity = '';
+          oldPage.style.transform = '';
+          oldPage.style.transition = '';
+          oldPage.classList.remove('active');
+        }, 200);
+      }
+      // Slide in new
+      newPage.style.transition = 'opacity .22s ease, transform .22s ease';
+      newPage.style.opacity = '1';
+      newPage.style.transform = 'translateX(0)';
+      newPage.classList.add('active');
+    });
+  });
+
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
   const navBtn = document.getElementById('nav-'+name);
   if (navBtn) navBtn.classList.add('active');
   const titleEl = document.getElementById('topbar-title');
   if (titleEl) titleEl.textContent = PAGE_TITLES[name] || 'Мои накопления';
+
+  _currentPage = name;
   render();
   if(name==='achievements') renderAchievements();
-  if(name==='savings') setTimeout(drawChart,50);
-  if(name==='inflation') setTimeout(updateInflationCalc,50);
+  if(name==='savings') setTimeout(drawChart, 50);
+  if(name==='inflation') setTimeout(updateInflationCalc, 50);
 }
 
 // ── MODAL ─────────────────────────────────────────────────
