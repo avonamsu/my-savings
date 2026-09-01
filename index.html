@@ -39,7 +39,7 @@
 /* ONBOARDING */
 .ob-overlay { display:none; position:fixed; inset:0; z-index:490; pointer-events:none; }
 .ob-overlay.open { display:block; }
-.ob-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.6); pointer-events:all; }
+.ob-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.6); pointer-events:all; touch-action:none; }
 .ob-highlight {
   position:fixed; border-radius:12px; z-index:492;
   box-shadow:0 0 0 4px var(--accent), 0 0 0 9999px rgba(0,0,0,0.6);
@@ -57,6 +57,8 @@
   border-top:2px solid var(--accent); padding:20px 20px 40px;
   z-index:493; pointer-events:all;
   transform:translateY(0); transition:transform .3s ease;
+  max-height:60dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
 }
 .ob-step-label { font-size:11px; color:var(--accent); font-weight:700; letter-spacing:.1em; margin-bottom:6px; }
 .ob-title { font-size:18px; font-weight:700; margin-bottom:8px; }
@@ -620,7 +622,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 <div class="ob-overlay" id="ob-overlay">
   <div class="ob-backdrop" onclick=""></div>
   <div class="ob-highlight" id="ob-highlight" style="display:none;"></div>
-  <div class="ob-tooltip" id="ob-tooltip">
+  <div class="ob-tooltip" id="ob-tooltip" ontouchstart="event.stopPropagation()" ontouchmove="event.stopPropagation()">
     <div class="ob-step-label" id="ob-step-label">ШАГ 1 из 7</div>
     <div class="ob-title" id="ob-title">Добро пожаловать!</div>
     <div class="ob-text" id="ob-text">Это твой трекер накоплений.</div>
