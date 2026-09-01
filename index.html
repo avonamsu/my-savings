@@ -350,7 +350,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
   </button>
   <button class="sidebar-item" onclick="document.getElementById('restore-input').click();closeSidebar()"><span class="si">⬆️</span>Восстановить данные</button>
   <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(event)">
-  <button class="sidebar-item" onclick="resetOnboarding()"><span class="si">📖</span>Показать обучение снова</button>
+  <button class="sidebar-item" onclick="setTimeout(resetOnboarding, 50)"><span class="si">📖</span>Показать обучение снова</button>
   <button class="sidebar-item danger" onclick="resetAllData()"><span class="si">🗑️</span>Очистить все данные</button>
 </div>
 
