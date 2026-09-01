@@ -350,7 +350,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
   </button>
   <button class="sidebar-item" onclick="document.getElementById('restore-input').click();closeSidebar()"><span class="si">⬆️</span>Восстановить данные</button>
   <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(event)">
-  <button class="sidebar-item" onclick="setTimeout(resetOnboarding, 50)"><span class="si">📖</span>Показать обучение снова</button>
+  <button class="sidebar-item" onclick="forceStartOnboarding()"><span class="si">📖</span>Показать обучение снова</button>
   <button class="sidebar-item danger" onclick="resetAllData()"><span class="si">🗑️</span>Очистить все данные</button>
 </div>
 
@@ -2405,6 +2405,36 @@ function obAdvance() {
 function obBackdropTap() {
   const step = OB_STEPS[obStep];
   if (!step.waitFor) obAdvance();
+}
+
+function forceStartOnboarding() {
+  // Reset everything and force open
+  clearInterval(obWatcher);
+  obActive = false;
+  obStep = 0;
+  localStorage.removeItem('onboarding_done');
+
+  // Close sidebar directly
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+
+  // Close overlay first to reset state
+  const overlay = document.getElementById('ob-overlay');
+  overlay.classList.remove('open');
+
+  const tip = document.getElementById('ob-tooltip');
+  const hl = document.getElementById('ob-highlight');
+  if (tip) { tip.style.opacity = '0'; tip.style.visibility = ''; }
+  if (hl) { hl.style.visibility = ''; hl.style.display = 'none'; }
+
+  showPage('home');
+
+  // Force open after everything settles
+  setTimeout(() => {
+    obActive = true;
+    overlay.classList.add('open');
+    obRenderStep();
+  }, 500);
 }
 
 function resetOnboarding() {
