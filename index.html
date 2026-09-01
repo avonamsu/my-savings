@@ -75,7 +75,8 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 
 /* DASHBOARD GRID */
 .dash-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
-.dash-card { background:var(--surface); border-radius:var(--radius-sm); padding:12px 10px; border:1px solid rgba(255,255,255,0.05); text-align:center; }
+.dash-card { background:var(--surface); border-radius:var(--radius-sm); padding:12px 10px; border:1px solid rgba(255,255,255,0.05); text-align:center; transition:background .15s; }
+.dash-card:active { background:var(--surface2); }
 .dash-card-icon { font-size:20px; margin-bottom:4px; }
 .dash-card-val { font-size:15px; font-weight:700; color:var(--accent); }
 .dash-card-label { font-size:10px; color:var(--text-dim); margin-top:2px; }
@@ -143,7 +144,8 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 .income-summary-val { font-size:20px; font-weight:700; color:var(--accent); }
 
 /* RATE BAR */
-.rate-bar { background:var(--surface); border-radius:var(--radius-sm); padding:10px 14px; border:1px solid rgba(255,255,255,0.05); font-size:12px; color:var(--text-dim); }
+.rate-bar { background:var(--surface); border-radius:var(--radius-sm); padding:10px 14px; border:1px solid rgba(255,255,255,0.05); font-size:12px; color:var(--text-dim); transition:background .15s; }
+.rate-bar:active { background:var(--surface2); }
 .rate-bar span { color:var(--text); font-weight:600; }
 
 /* CHART */
@@ -285,34 +287,34 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 
 <!-- HOME PAGE -->
 <div class="page active" id="page-home">
-  <div class="hero">
+  <div class="hero" onclick="showPage('savings')" style="cursor:pointer">
     <div class="hero-label" id="home-greeting">Привет! 👋</div>
     <div class="hero-amount" id="home-total">0 <span>₽</span></div>
     <div class="hero-sub" id="home-sub">Нет счетов</div>
   </div>
 
   <div class="dash-grid" style="grid-template-columns:1fr 1fr;">
-    <div class="dash-card">
+    <div class="dash-card" onclick="showPage('income')" style="cursor:pointer">
       <div class="dash-card-icon">📈</div>
       <div class="dash-card-val" id="dash-income">0 ₽</div>
       <div class="dash-card-label">доход/мес</div>
     </div>
-    <div class="dash-card">
+    <div class="dash-card" onclick="showPage('goals')" style="cursor:pointer">
       <div class="dash-card-icon">🎯</div>
       <div class="dash-card-val" id="dash-goals-pct">0%</div>
       <div class="dash-card-label">целей покрыто</div>
     </div>
   </div>
 
-  <div class="rate-bar" id="rate-bar">⏳ Загружаю курсы ЦБ РФ...</div>
+  <div class="rate-bar" id="rate-bar" onclick="showPage('savings')" style="cursor:pointer">⏳ Загружаю курсы ЦБ РФ...</div>
 
-  <div id="home-deposits-card" style="display:none;flex-direction:column;gap:8px;">
-    <div class="section-title">Ближайшие вклады</div>
+  <div id="home-deposits-card" style="display:none;flex-direction:column;gap:8px;" onclick="showPage('savings')">
+    <div class="section-title">Ближайшие вклады ›</div>
     <div class="card" id="home-deposits-list"></div>
   </div>
 
-  <div class="section-title">Прогресс целей</div>
-  <div id="home-goals-preview">
+  <div class="section-title" onclick="showPage('goals')" style="cursor:pointer">Прогресс целей ›</div>
+  <div id="home-goals-preview" onclick="showPage('goals')" style="cursor:pointer">
     <div class="empty"><div class="empty-icon">🎯</div><p>Добавь цели чтобы видеть прогресс</p></div>
   </div>
 
