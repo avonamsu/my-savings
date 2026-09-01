@@ -2373,6 +2373,17 @@ function obRenderStep() {
 
   if (step.page && step.page !== _currentPage) showPage(step.page);
 
+  // Immediately hide highlight and set position for null-highlight steps
+  if (!step.highlight) {
+    document.getElementById('ob-highlight').style.display = 'none';
+    const tip = document.getElementById('ob-tooltip');
+    tip.className = 'ob-tooltip ob-center';
+    tip.style.top = '50%';
+    tip.style.left = '50%';
+    tip.style.transform = 'translateX(-50%) translateY(-50%)';
+    tip.style.bottom = '';
+    tip.style.right = '';
+  }
   setTimeout(() => {
     obHighlight(step.highlight);
     obPositionTooltip(step.highlight);
