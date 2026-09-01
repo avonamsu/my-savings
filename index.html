@@ -1890,8 +1890,6 @@ function updateInflationCalc() {
 
 
 // ── CHALLENGE SAVINGS ─────────────────────────────────────
-if (!state.challenges) state.challenges = [];
-
 function showNewChallengeForm() {
   document.getElementById('challenge-list-view').style.display = 'none';
   document.getElementById('challenge-form-view').style.display = 'flex';
@@ -2353,7 +2351,16 @@ function initOnboarding() {
   obRenderStep();
 }
 
-setTimeout(initOnboarding, 500);
+// ── INIT ──────────────────────────────────────────────────
+load();
+if (!state.challenges) state.challenges = [];
+render();
+fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); fetchCurrentInflation(); });
+checkAchievements();
+initNotifications();
+checkNotifBanner();
+checkBackupReminder();
+setTimeout(initOnboarding, 600);
 </script>
 </body>
 </html>
