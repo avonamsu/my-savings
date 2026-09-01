@@ -659,6 +659,16 @@ function currSym(code) { return CURRENCY_SYMBOLS[code] || code; }
 function toRub(amount, currency) { return amount * (rates[currency]||1); }
 
 async function fetchRates() {
+  function updateRateBar(source) {
+    const pairs = ['USD','EUR','CNY'].map(c =>
+      `${CURRENCY_SYMBOLS[c]}&nbsp;<span>${rates[c]?rates[c].toLocaleString('ru-RU',{maximumFractionDigits:2}):'—'}</span>`
+    ).join(' · ');
+    const t = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('rate-bar').innerHTML =
+      `Курс ${source}: ${pairs} <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">обновлено ${t}</span>`;
+  }
+
+  // Source 1: ЦБ РФ
   try {
     const res = await fetch('https://www.cbr-xml-daily.ru/daily_json.js');
     const data = await res.json();
@@ -667,17 +677,43 @@ async function fetchRates() {
       if (v[code]) rates[code] = v[code].Value / v[code].Nominal;
     });
     ratesUpdated = new Date();
-    // update rate bar and dashboard
-    const pairs = ['USD','EUR','CNY'].map(c =>
-      `${CURRENCY_SYMBOLS[c]}&nbsp;<span>${rates[c]?rates[c].toLocaleString('ru-RU',{maximumFractionDigits:2}):'—'}</span>`
-    ).join(' · ');
-    const t = ratesUpdated.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('rate-bar').innerHTML = `Курс ЦБ: ${pairs} <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">обновлено ${t}</span>`;
-
+    updateRateBar('ЦБ РФ');
     render();
-  } catch(e) {
-    document.getElementById('rate-bar').innerHTML = '<span style="color:var(--warn)">⚠️ Не удалось загрузить курс ЦБ РФ</span>';
-  }
+    return;
+  } catch(e) {}
+
+  // Source 2: open.er-api.com (CORS friendly)
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/RUB');
+    const data = await res.json();
+    if (data.result === 'success') {
+      ['USD','EUR','CNY','GBP','CHF','AED','TRY','KZT'].forEach(code => {
+        if (data.rates[code]) rates[code] = 1 / data.rates[code];
+      });
+      ratesUpdated = new Date();
+      updateRateBar('er-api');
+      render();
+      return;
+    }
+  } catch(e) {}
+
+  // Source 3: exchangerate.host
+  try {
+    const res = await fetch('https://api.exchangerate.host/live?source=RUB&currencies=USD,EUR,CNY,GBP,CHF,AED,TRY,KZT&access_key=free');
+    const data = await res.json();
+    if (data.quotes) {
+      Object.entries(data.quotes).forEach(([k, v]) => {
+        const code = k.replace('RUB','');
+        rates[code] = 1 / v;
+      });
+      ratesUpdated = new Date();
+      updateRateBar('exchangerate');
+      render();
+      return;
+    }
+  } catch(e) {}
+
+  document.getElementById('rate-bar').innerHTML = '<span style="color:var(--warn)">⚠️ Не удалось загрузить курс валют</span>';
 }
 
 // ── STORAGE ───────────────────────────────────────────────
@@ -685,11 +721,23 @@ const STORAGE_KEY = 'fin_v3';
 const OLD_KEYS = ['fin_state', 'fin_state_v2'];
 function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function load() {
-  let r = localStorage.getItem(STORAGE_KEY);
-  if (r) { state = JSON.parse(r); return; }
-  for (const key of OLD_KEYS) {
-    r = localStorage.getItem(key);
-    if (r) { state = JSON.parse(r); save(); localStorage.removeItem(key); return; }
+  // Check all keys, pick the one with most data
+  const allKeys = [STORAGE_KEY, ...OLD_KEYS];
+  let best = null, bestScore = -1;
+  for (const key of allKeys) {
+    try {
+      const r = localStorage.getItem(key);
+      if (!r) continue;
+      const parsed = JSON.parse(r);
+      if (!parsed.savings) continue;
+      const score = (parsed.savings||[]).length + (parsed.income||[]).length + (parsed.goals||[]).length;
+      if (score > bestScore) { bestScore = score; best = parsed; }
+    } catch(e) {}
+  }
+  if (best) {
+    state = best;
+    save(); // consolidate to STORAGE_KEY
+    return;
   }
 }
 
@@ -2106,7 +2154,13 @@ function restoreBackup(event){
 Целей: ${restored.goals.length}
 
 Текущие данные будут заменены.`))return;
-      state=restored;save();render();drawChart();checkNotifBanner();alert('✅ Данные восстановлены!');
+      state=restored;
+      // Save to all known keys to survive version changes
+      ['fin_v3','fin_state_v2','fin_state'].forEach(k => {
+        localStorage.setItem(k, JSON.stringify(state));
+      });
+      render();drawChart();checkNotifBanner();
+      alert('✅ Данные восстановлены! Не обновляй страницу сразу.');
     }catch(e){alert('Не удалось прочитать файл.');}
   };
   reader.readAsText(file);event.target.value='';
