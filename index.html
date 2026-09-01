@@ -291,7 +291,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
     <div class="hero-sub" id="home-sub">Нет счетов</div>
   </div>
 
-  <div class="dash-grid">
+  <div class="dash-grid" style="grid-template-columns:1fr 1fr;">
     <div class="dash-card">
       <div class="dash-card-icon">📈</div>
       <div class="dash-card-val" id="dash-income">0 ₽</div>
@@ -302,12 +302,9 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
       <div class="dash-card-val" id="dash-goals-pct">0%</div>
       <div class="dash-card-label">целей покрыто</div>
     </div>
-    <div class="dash-card">
-      <div class="dash-card-icon">💵</div>
-      <div class="dash-card-val" id="dash-usd">—</div>
-      <div class="dash-card-label">курс $ ЦБ</div>
-    </div>
   </div>
+
+  <div class="rate-bar" id="rate-bar">⏳ Загружаю курсы ЦБ РФ...</div>
 
   <div id="home-deposits-card" style="display:none;">
     <div class="section-title">Ближайшие вклады</div>
@@ -319,11 +316,6 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
     <div class="empty"><div class="empty-icon">🎯</div><p>Добавь цели чтобы видеть прогресс</p></div>
   </div>
 
-  <div class="section-title">Последняя ачивка</div>
-  <div id="home-ach-preview">
-    <div class="empty"><div class="empty-icon">🏅</div><p>Ачивки разблокируются по мере накоплений</p></div>
-  </div>
-
   <div id="backup-banner" style="display:none;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text);cursor:pointer;" onclick="downloadBackupFromBanner()">
     <div style="font-weight:600;margin-bottom:2px;">💾 Пора сделать резервную копию</div>
     <div style="font-size:12px;color:var(--text-dim);">Данные менялись, но копия не создавалась 7+ дней.</div>
@@ -331,7 +323,6 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
   <div id="notif-banner" style="display:none;background:rgba(255,179,71,0.12);border:1px solid rgba(255,179,71,0.3);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--warn);cursor:pointer;" onclick="initNotifications()">
     🔔 Разреши уведомления — напомним когда вклад закроется
   </div>
-  <div class="rate-bar" id="rate-bar">⏳ Загружаю курсы ЦБ РФ...</div>
 </div>
 
 <!-- SAVINGS PAGE -->
@@ -634,8 +625,7 @@ async function fetchRates() {
     ).join(' · ');
     const t = ratesUpdated.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('rate-bar').innerHTML = `Курс ЦБ: ${pairs} <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">обновлено ${t}</span>`;
-    const usdEl = document.getElementById('dash-usd');
-    if (usdEl && rates.USD) usdEl.textContent = rates.USD.toLocaleString('ru-RU',{maximumFractionDigits:1}) + ' ₽';
+
     render();
   } catch(e) {
     document.getElementById('rate-bar').innerHTML = '<span style="color:var(--warn)">⚠️ Не удалось загрузить курс ЦБ РФ</span>';
@@ -789,22 +779,7 @@ function renderHome() {
     </div>`;
   }
 
-  // Last achievement
-  if (!state._unlocked) state._unlocked=[];
-  const achEl = document.getElementById('home-ach-preview');
-  if (state._unlocked.length) {
-    const lastId = state._unlocked[state._unlocked.length-1];
-    const lastAch = ACHIEVEMENTS.find(a=>a.id===lastId);
-    if (lastAch) {
-      achEl.innerHTML=`<div class="ach-card unlocked">
-        <div class="ach-icon">${lastAch.icon}</div>
-        <div class="ach-info"><div class="ach-name">${lastAch.name}</div><div class="ach-desc">${lastAch.desc}</div></div>
-        <div class="ach-badge">✅</div>
-      </div>`;
-    }
-  } else {
-    achEl.innerHTML='<div class="empty"><div class="empty-icon">🏅</div><p>Ачивки разблокируются по мере накоплений</p></div>';
-  }
+
 }
 
 function toggleExclude(id) {
