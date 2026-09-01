@@ -2255,6 +2255,14 @@ function createChallengeFromPage() {
   document.getElementById('ch-goal-p').value = '';
   hideChallengeFormPage();
 }
+// Track collapsed state
+if (!window._chCollapsed) window._chCollapsed = {};
+
+function toggleChallenge(id) {
+  window._chCollapsed[id] = !window._chCollapsed[id];
+  renderChallengesPage();
+}
+
 function renderChallengesPage() {
   const el = document.getElementById('challenges-container-page');
   if (!el) return;
@@ -2264,15 +2272,22 @@ function renderChallengesPage() {
     const totalGoal = ch.cells.reduce((s,c)=>s+c.amt,0);
     const pct = Math.round(totalDone/totalGoal*100);
     const doneCells = ch.cells.filter(c=>c.done).length;
+    const collapsed = window._chCollapsed[ch.id] !== false && window._chCollapsed[ch.id] !== undefined
+      ? window._chCollapsed[ch.id]
+      : false; // default expanded
     return `<div class="ch-card">
-      <div class="ch-header">
-        <div class="ch-title">${ch.name}</div>
-        <div class="ch-meta">Цель: ${fmt(totalGoal)} ₽ · ${ch.days} дней · ${ch.createdAt}</div>
+      <div class="ch-header" onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="ch-title">${ch.name}</div>
+          <div class="ch-meta">${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽ · ${pct}%</div>
+        </div>
+        <span style="color:var(--accent);font-size:18px;padding-left:8px;flex-shrink:0;">${collapsed?'▸':'▾'}</span>
       </div>
+      ${!collapsed ? `
       <div class="ch-progress-wrap">
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:6px;">
-          <span>${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽</span>
-          <span>${doneCells}/${ch.cells.length} · ${pct}%</span>
+          <span>${doneCells}/${ch.cells.length} ячеек</span>
+          <span>${ch.days} дней · ${ch.createdAt}</span>
         </div>
         <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
       </div>
@@ -2280,7 +2295,7 @@ function renderChallengesPage() {
       <div class="ch-footer">
         ${pct>=100?'<span style="color:var(--accent);font-weight:700;">🎉 Цель достигнута!</span>':`<span style="font-size:12px;color:var(--text-dim);">Нажимай на ячейки когда откладываешь</span>`}
         <button class="ch-delete" onclick="deleteChallenge('${ch.id}')">Удалить</button>
-      </div>
+      </div>` : ''}
     </div>`;
   }).join('');
 }
