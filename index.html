@@ -306,7 +306,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 
   <div class="rate-bar" id="rate-bar">⏳ Загружаю курсы ЦБ РФ...</div>
 
-  <div id="home-deposits-card" style="display:none;display:flex;flex-direction:column;gap:8px;">
+  <div id="home-deposits-card" style="display:none;flex-direction:column;gap:8px;">
     <div class="section-title">Ближайшие вклады</div>
     <div class="card" id="home-deposits-list"></div>
   </div>
@@ -749,7 +749,7 @@ function renderHome() {
   const depCard = document.getElementById('home-deposits-card');
   const depList = document.getElementById('home-deposits-list');
   if (upcoming.length) {
-    depCard.style.display='';
+    depCard.style.display='flex';
     depList.innerHTML = upcoming.slice(0,3).map(s=>`
       <div class="card-item">
         <div class="card-icon">${s.icon}</div>
