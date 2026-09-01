@@ -882,7 +882,11 @@ function renderHome() {
   document.getElementById('home-greeting').textContent = (h<6?'Доброй ночи 🌙':h<12?'Доброе утро ☀️':h<18?'Добрый день 👋':'Добрый вечер 🌆');
   document.getElementById('home-total').innerHTML = `${fmt(totalRubVal)} <span>₽</span>`;
   const n = state.savings.length;
-  document.getElementById('home-sub').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов — добавь первый';
+  const dc = getTodayChange();
+  const dcStr = dc !== null && dc !== 0
+    ? ` &nbsp;·&nbsp; <span style="color:${dc>0?'var(--accent)':'var(--danger)'};">${dc>0?'+':''}${fmt(dc)} ₽ сегодня</span>`
+    : '';
+  document.getElementById('home-sub').innerHTML = (n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов — добавь первый') + dcStr;
   document.getElementById('dash-income').textContent = fmt(totalInc)+' ₽';
   document.getElementById('dash-goals-pct').textContent = goalsPct+'%';
 
@@ -942,7 +946,11 @@ function renderSavings() {
   const total=state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
   document.getElementById('total-savings').innerHTML=`${fmt(total)} <span>₽</span>`;
   const n=state.savings.length;
-  document.getElementById('savings-count').textContent=n?`${n} ${plural(n,'счёт','счёта','счетов')}`:'Нет счетов';
+  const dayChange = getTodayChange();
+  const dayChangeStr = dayChange !== null && dayChange !== 0
+    ? `<span style="font-size:13px;font-weight:600;color:${dayChange>0?'var(--accent)':'var(--danger)'};">${dayChange>0?'+':''}${fmt(dayChange)} ₽ сегодня</span>`
+    : '';
+  document.getElementById('savings-count').innerHTML = (n?`${n} ${plural(n,'счёт','счёта','счетов')}`:'Нет счетов') + (dayChangeStr?' &nbsp;·&nbsp; '+dayChangeStr:'');
   const el=document.getElementById('savings-list');
   if(!n){el.innerHTML=`<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`;return;}
   el.innerHTML=state.savings.map(x=>{
@@ -1613,6 +1621,33 @@ function drawChart() {
 
 
 // ── INCOME HISTORY & CHART ────────────────────────────────
+
+// ── DAILY SNAPSHOT ────────────────────────────────────────
+function recordDailySnapshot() {
+  const todayKey = 'daily_' + today();
+  if (localStorage.getItem(todayKey)) return; // already recorded today
+  const total = Math.round(state.savings.reduce((s,x) => s + (x.excluded?0:getSavingCurrentAmountRub(x)), 0));
+  localStorage.setItem(todayKey, total);
+  // Clean up snapshots older than 7 days
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('daily_') && key < 'daily_' + today()) {
+      // keep yesterday for comparison, remove older
+      const d = key.replace('daily_','');
+      const diff = Math.round((new Date(today()) - new Date(d)) / 86400000);
+      if (diff > 2) localStorage.removeItem(key);
+    }
+  }
+}
+
+function getTodayChange() {
+  const yesterdayKey = 'daily_' + new Date(Date.now() - 86400000).toISOString().slice(0,10);
+  const yesterdayVal = localStorage.getItem(yesterdayKey);
+  if (!yesterdayVal) return null;
+  const current = Math.round(state.savings.reduce((s,x) => s + (x.excluded?0:getSavingCurrentAmountRub(x)), 0));
+  return current - Number(yesterdayVal);
+}
+
 function recordIncomeSnapshot() {
   const ym = new Date().toISOString().slice(0,7);
   if (!state._incomeHistory) state._incomeHistory = {};
@@ -2635,7 +2670,7 @@ function initOnboarding() {
 load();
 if (!state.challenges) state.challenges = [];
 render();
-fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); });
+fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); recordDailySnapshot(); });
 checkAchievements();
 initNotifications();
 checkNotifBanner();
