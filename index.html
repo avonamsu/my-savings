@@ -2365,13 +2365,15 @@ function obRenderStep() {
     obWatcher = setInterval(() => {
       if (step.waitFor()) {
         clearInterval(obWatcher);
+        // Action done — show Далее button, don't auto-advance
+        const nextWrap = document.getElementById('ob-next-wrap');
+        const actionEl = document.getElementById('ob-action');
+        if (nextWrap) nextWrap.style.display = 'block';
+        if (actionEl) actionEl.style.display = 'none';
         setTimeout(() => {
-          setTimeout(() => {
-            obHighlight(step.highlight);
-            obPositionTooltip(step.highlight);
-          }, 300);
-          if (step.waitFor()) obAdvance();
-        }, 400);
+          obHighlight(OB_STEPS[obStep] ? OB_STEPS[obStep].highlight : null);
+          obPositionTooltip(OB_STEPS[obStep] ? OB_STEPS[obStep].highlight : null);
+        }, 300);
       }
     }, 200);
   }
