@@ -2272,9 +2272,7 @@ function renderChallengesPage() {
     const totalGoal = ch.cells.reduce((s,c)=>s+c.amt,0);
     const pct = Math.round(totalDone/totalGoal*100);
     const doneCells = ch.cells.filter(c=>c.done).length;
-    const collapsed = window._chCollapsed[ch.id] !== false && window._chCollapsed[ch.id] !== undefined
-      ? window._chCollapsed[ch.id]
-      : false; // default expanded
+    const collapsed = window._chCollapsed[ch.id] !== false; // default collapsed
     return `<div class="ch-card">
       <div class="ch-header" onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
