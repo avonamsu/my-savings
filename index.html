@@ -341,7 +341,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 
   <div class="sidebar-divider"></div>
   <div class="sidebar-section">⚙️ Настройки</div>
-  <button class="sidebar-item" onclick="downloadBackup();closeSidebar()"><span class="si">⬇️</span>Скачать резервную копию</button>
+  <button class="sidebar-item" onclick="downloadBackup();closeSidebar()"><span class="si">⬇️</span>Создать резервную копию</button>
   <button class="sidebar-item" onclick="document.getElementById('restore-input').click();closeSidebar()"><span class="si">⬆️</span>Восстановить данные</button>
   <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(event)">
   <button class="sidebar-item" onclick="resetOnboarding()"><span class="si">📖</span>Показать обучение снова</button>
@@ -382,7 +382,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
   </div>
 
   <div id="backup-banner" style="display:none;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text);cursor:pointer;" onclick="downloadBackupFromBanner()">
-    <div style="font-weight:600;margin-bottom:2px;">💾 Пора сделать резервную копию</div>
+    <div style="font-weight:600;margin-bottom:2px;">💾 Пора создать резервную копию</div>
     <div style="font-size:12px;color:var(--text-dim);">Данные менялись, но копия не создавалась 7+ дней.</div>
   </div>
   <div id="notif-banner" style="display:none;background:rgba(255,179,71,0.12);border:1px solid rgba(255,179,71,0.3);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--warn);cursor:pointer;" onclick="initNotifications()">
