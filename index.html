@@ -2276,6 +2276,7 @@ const OB_STEPS = [
 
 let obStep = 0;
 let obWatcher = null;
+let obActive = false;
 
 function obGetEl(selector) {
   if (!selector) return null;
@@ -2417,6 +2418,7 @@ function resetOnboarding() {
 
 function closeOnboarding() {
   clearInterval(obWatcher);
+  obActive = false;
   document.getElementById('ob-overlay').classList.remove('open');
   document.getElementById('ob-highlight').style.display = 'none';
   localStorage.setItem('onboarding_done', '1');
