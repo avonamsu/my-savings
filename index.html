@@ -2229,61 +2229,48 @@ const OB_STEPS = [
     text: 'Добро пожаловать в твой личный финансовый трекер! Здесь ты будешь следить за накоплениями, доходом и целями — всё в одном месте.',
     page: 'home',
     highlight: null,
-    action: null,
   },
   {
     title: '🏠 Главный экран',
     text: 'Главная страница показывает самое важное — общая сумма, ежемесячный доход и прогресс по целям.',
     page: 'home',
     highlight: null,
-    action: null,
   },
   {
     title: '💰 Счета',
     text: 'Все твои деньги в одном месте. Вклады считают проценты автоматически, валюта пересчитывается по курсу ЦБ.',
     page: 'savings',
     highlight: '#nav-savings',
-    action: 'Нажми «Счета»',
-    waitFor: () => _currentPage === 'savings',
   },
   {
     title: '📈 Доход',
     text: 'Здесь видно сколько ты зарабатываешь не работая — проценты по вкладам, дивиденды, доход от роста курса валюты. Привяжи к счёту и приложение посчитает доход автоматически.',
     page: 'income',
     highlight: '#nav-income',
-    action: 'Нажми «Доход»',
-    waitFor: () => _currentPage === 'income',
   },
   {
     title: '🎯 Цели',
     text: 'Добавляй ежемесячные расходы в цели — как только пассивный доход их покрывает, они отмечаются выполненными.',
     page: 'goals',
     highlight: '#nav-goals',
-    action: 'Нажми «Цели»',
-    waitFor: () => _currentPage === 'goals',
   },
   {
     title: '🪙 Копилка',
     text: 'Игровой способ копить на цель — сетка ячеек с разными суммами. Откладываешь деньги — закрываешь ячейку. Когда все закрыты — цель достигнута! 🎉',
     page: 'challenge',
     highlight: '#nav-challenge',
-    action: 'Нажми «Копилка»',
-    waitFor: () => _currentPage === 'challenge',
   },
   {
     title: '☰ Боковое меню',
     text: 'Всё остальное живёт здесь — достижения, калькулятор инфляции, экспорт данных.',
     page: 'challenge',
     highlight: '.menu-btn',
-    action: 'Нажми ☰',
-    waitFor: () => document.getElementById('sidebar').classList.contains('open'),
   },
   {
     title: '🚀 Готово!',
     text: 'Всё готово! Начни с добавления первого счёта — и пусть накопления растут 🌱',
     page: 'home',
     highlight: null,
-    action: null,
   },
 ];
 
@@ -2371,18 +2358,12 @@ function obRenderStep() {
   document.getElementById('ob-text').textContent = step.text;
 
   const actionEl = document.getElementById('ob-action');
+  if (actionEl) actionEl.style.display = 'none';
   const nextWrap = document.getElementById('ob-next-wrap');
-  if (step.action) {
-    actionEl.style.display = 'flex';
-    document.getElementById('ob-action-text').textContent = step.action;
-    if (nextWrap) nextWrap.style.display = 'none';
-  } else {
-    actionEl.style.display = 'none';
-    if (nextWrap) {
-      nextWrap.style.display = step.waitFor ? 'none' : 'block';
-      const btn = nextWrap.querySelector('button');
-      if (btn) btn.textContent = obStep === OB_STEPS.length - 1 ? 'Завершить ✓' : 'Далее →';
-    }
+  if (nextWrap) {
+    nextWrap.style.display = 'block';
+    const btn = nextWrap.querySelector('button');
+    if (btn) btn.textContent = obStep === OB_STEPS.length - 1 ? 'Завершить ✓' : 'Далее →';
   }
 
   const dotsEl = document.getElementById('ob-dots');
@@ -2398,26 +2379,6 @@ function obRenderStep() {
   }, 350);
 
   clearInterval(obWatcher);
-  if (step.waitFor) {
-    obWatcher = setInterval(() => {
-      if (step.waitFor()) {
-        clearInterval(obWatcher);
-        // Action done — show Далее button, don't auto-advance
-        const nextWrap = document.getElementById('ob-next-wrap');
-        const actionEl = document.getElementById('ob-action');
-        if (nextWrap) {
-          nextWrap.style.display = 'block';
-          const btn = nextWrap.querySelector('button');
-          if (btn) btn.textContent = obStep === OB_STEPS.length - 1 ? 'Завершить ✓' : 'Далее →';
-        }
-        if (actionEl) actionEl.style.display = 'none';
-        setTimeout(() => {
-          obHighlight(OB_STEPS[obStep] ? OB_STEPS[obStep].highlight : null);
-          obPositionTooltip(OB_STEPS[obStep] ? OB_STEPS[obStep].highlight : null);
-        }, 300);
-      }
-    }, 200);
-  }
 }
 
 function obAdvance() {
