@@ -247,7 +247,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
   <button onclick="showPage('savings')" id="nav-savings"><span class="ni">💰</span>Счета</button>
   <button onclick="showPage('income')" id="nav-income"><span class="ni">📈</span>Доход</button>
   <button onclick="showPage('goals')" id="nav-goals"><span class="ni">🎯</span>Цели</button>
-  <button onclick="showPage('achievements')" id="nav-achievements"><span class="ni">🏅</span>Ачивки</button>
+  <button onclick="showPage('challenge')" id="nav-challenge"><span class="ni">🪙</span>Копилка</button>
 </nav>
 
 <!-- MENU BUTTON -->
@@ -273,7 +273,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 
   <div class="sidebar-section">🎯 Цели</div>
   <button class="sidebar-item" onclick="navTo('goals')"><span class="si">✅</span>Список целей</button>
-  <button class="sidebar-item" onclick="navTo('goals','challenge')"><span class="si">🪙</span>Челлендж-копилки</button>
+  <button class="sidebar-item" onclick="navTo('challenge')"><span class="si">🪙</span>Челлендж-копилки</button>
 
   <div class="sidebar-section">📊 Аналитика</div>
   <button class="sidebar-item" onclick="navTo('inflation')"><span class="si">📉</span>Калькулятор инфляции</button>
@@ -397,39 +397,6 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('goals')">＋ Добавить цель</button>
 
-  <div id="challenge-anchor"></div>
-  <div class="section-title">Челлендж-копилки</div>
-  <div id="challenge-list-view">
-    <button class="add-btn" onclick="showNewChallengeForm()">＋ Создать новый челлендж</button>
-    <div id="challenges-container" style="display:flex;flex-direction:column;gap:12px;margin-top:4px;"></div>
-  </div>
-  <div id="challenge-form-view" style="display:none;flex-direction:column;gap:14px;">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <button onclick="hideChallengeForm()" style="background:none;border:none;color:var(--accent);font-size:22px;cursor:pointer;">←</button>
-      <span style="font-size:16px;font-weight:700;">Новый челлендж</span>
-    </div>
-    <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:14px;">
-      <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="ch-name" placeholder="Например: На отпуск в Турции"></div>
-      <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="ch-goal" placeholder="100 000" inputmode="decimal" oninput="updateChallengePreview()"></div>
-      <div class="field"><label>СРОК</label>
-        <select id="ch-period" onchange="updateChallengePreview()">
-          <option value="30">30 дней</option>
-          <option value="60">60 дней</option>
-          <option value="90" selected>3 месяца</option>
-          <option value="180">6 месяцев</option>
-          <option value="365">1 год</option>
-        </select>
-      </div>
-      <div class="field"><label>РАЗМЕР ЯЧЕЕК</label>
-        <select id="ch-cell-mode">
-          <option value="random">Случайные суммы (интереснее)</option>
-          <option value="equal">Равные части</option>
-        </select>
-      </div>
-      <div class="calc-preview" id="ch-preview" style="display:none;"></div>
-      <button class="btn-primary" onclick="createChallenge()">Создать челлендж</button>
-    </div>
-  </div>
 </div>
 
 <!-- ACHIEVEMENTS PAGE -->
@@ -463,6 +430,41 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
       <input type="number" id="inf-goal" placeholder="1 000 000" inputmode="decimal" oninput="updateInflationCalc()">
     </div>
     <div id="inf-goal-result"></div>
+  </div>
+</div>
+
+<!-- CHALLENGE PAGE -->
+<div class="page" id="page-challenge">
+  <div id="challenge-list-view-page">
+    <button class="add-btn" onclick="showNewChallengeFormPage()">＋ Создать новый челлендж</button>
+    <div id="challenges-container-page" style="display:flex;flex-direction:column;gap:12px;margin-top:4px;"></div>
+  </div>
+  <div id="challenge-form-view-page" style="display:none;flex-direction:column;gap:14px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button onclick="hideChallengeFormPage()" style="background:none;border:none;color:var(--accent);font-size:22px;cursor:pointer;">←</button>
+      <span style="font-size:16px;font-weight:700;">Новый челлендж</span>
+    </div>
+    <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+      <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="ch-name-p" placeholder="Например: На отпуск в Турции"></div>
+      <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="ch-goal-p" placeholder="100 000" inputmode="decimal" oninput="updateChallengePreviewPage()"></div>
+      <div class="field"><label>СРОК</label>
+        <select id="ch-period-p" onchange="updateChallengePreviewPage()">
+          <option value="30">30 дней</option>
+          <option value="60">60 дней</option>
+          <option value="90" selected>3 месяца</option>
+          <option value="180">6 месяцев</option>
+          <option value="365">1 год</option>
+        </select>
+      </div>
+      <div class="field"><label>РАЗМЕР ЯЧЕЕК</label>
+        <select id="ch-cell-mode-p">
+          <option value="random">Случайные суммы (интереснее)</option>
+          <option value="equal">Равные части</option>
+        </select>
+      </div>
+      <div class="calc-preview" id="ch-preview-p" style="display:none;"></div>
+      <button class="btn-primary" onclick="createChallengeFromPage()">Создать челлендж</button>
+    </div>
   </div>
 </div>
 
@@ -892,7 +894,7 @@ function renderGoals() {
   document.getElementById('goals-bar').style.width=pct+'%';
   document.getElementById('goals-covered-amount').textContent=`${fmt(coveredSum)} ₽ покрыто`;
   document.getElementById('goals-total-amount').textContent=`из ${fmt(totalGoals)} ₽`;
-  renderChallenges();
+
 }
 
 // ── SIDEBAR & NAVIGATION ──────────────────────────────────
@@ -915,8 +917,8 @@ function navTo(page, anchor) {
   }
 }
 
-const PAGES = ['home','savings','income','goals','achievements','inflation'];
-const PAGE_TITLES = {home:'Мои накопления',savings:'Счета',income:'Доход',goals:'Цели',achievements:'Ачивки',inflation:'Инфляция'};
+const PAGES = ['home','savings','income','goals','challenge','inflation'];
+const PAGE_TITLES = {home:'Мои накопления',savings:'Счета',income:'Доход',goals:'Цели',challenge:'Копилка',achievements:'Ачивки',inflation:'Инфляция'};
 let _currentPage = 'home';
 function showPage(name) {
   if (name === _currentPage) return;
@@ -968,6 +970,7 @@ function showPage(name) {
   if(name==='achievements') renderAchievements();
   if(name==='savings') setTimeout(drawChart, 50);
   if(name==='inflation') setTimeout(updateInflationCalc, 50);
+  if(name==='challenge') renderChallengesPage();
 }
 
 // ── MODAL ─────────────────────────────────────────────────
@@ -1809,7 +1812,7 @@ function showNewChallengeForm() {
 function hideChallengeForm() {
   document.getElementById('challenge-form-view').style.display = 'none';
   document.getElementById('challenge-list-view').style.display = '';
-  renderChallenges();
+
 }
 
 function updateChallengePreview() {
@@ -1874,7 +1877,7 @@ function createChallenge() {
   document.getElementById('ch-name').value = '';
   document.getElementById('ch-goal').value = '';
   hideChallengeForm();
-  renderChallenges();
+
 }
 
 function toggleCell(challengeId, cellIdx) {
@@ -1882,14 +1885,14 @@ function toggleCell(challengeId, cellIdx) {
   if (!ch) return;
   ch.cells[cellIdx].done = !ch.cells[cellIdx].done;
   save();
-  renderChallenges();
+
 }
 
 function deleteChallenge(id) {
   if (!confirm('Удалить этот челлендж?')) return;
   state.challenges = state.challenges.filter(c => c.id !== id);
   save();
-  renderChallenges();
+
 }
 
 function renderChallenges() {
@@ -1935,6 +1938,71 @@ function renderChallenges() {
   }).join('');
 }
 
+
+
+// ── CHALLENGE PAGE (standalone tab) ──────────────────────
+function showNewChallengeFormPage() {
+  document.getElementById('challenge-list-view-page').style.display = 'none';
+  document.getElementById('challenge-form-view-page').style.display = 'flex';
+  updateChallengePreviewPage();
+}
+function hideChallengeFormPage() {
+  document.getElementById('challenge-form-view-page').style.display = 'none';
+  document.getElementById('challenge-list-view-page').style.display = '';
+  renderChallengesPage();
+}
+function updateChallengePreviewPage() {
+  const goal = parseFloat(document.getElementById('ch-goal-p').value) || 0;
+  const days = parseInt(document.getElementById('ch-period-p').value) || 90;
+  const preview = document.getElementById('ch-preview-p');
+  if (!goal) { preview.style.display='none'; return; }
+  const cells = Math.min(days, 60);
+  preview.style.display = '';
+  preview.innerHTML = `Ячеек: <strong>${cells}</strong> · Среднее: <strong>${fmt(Math.round(goal/cells))} ₽</strong>`;
+}
+function createChallengeFromPage() {
+  const name = document.getElementById('ch-name-p').value.trim();
+  const goal = parseFloat(document.getElementById('ch-goal-p').value);
+  const days = parseInt(document.getElementById('ch-period-p').value);
+  const mode = document.getElementById('ch-cell-mode-p').value;
+  if (!name || !goal || goal <= 0) return;
+  const cells = generateCells(goal, days, mode);
+  if (!state.challenges) state.challenges = [];
+  state.challenges.push({ id:uid(), name, goal, days, mode, cells:cells.map(amt=>({amt,done:false})), createdAt:today() });
+  save();
+  document.getElementById('ch-name-p').value = '';
+  document.getElementById('ch-goal-p').value = '';
+  hideChallengeFormPage();
+}
+function renderChallengesPage() {
+  const el = document.getElementById('challenges-container-page');
+  if (!el) return;
+  if (!state.challenges || !state.challenges.length) { el.innerHTML = ''; return; }
+  el.innerHTML = state.challenges.map(ch => {
+    const totalDone = ch.cells.filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
+    const totalGoal = ch.cells.reduce((s,c)=>s+c.amt,0);
+    const pct = Math.round(totalDone/totalGoal*100);
+    const doneCells = ch.cells.filter(c=>c.done).length;
+    return `<div class="ch-card">
+      <div class="ch-header">
+        <div class="ch-title">${ch.name}</div>
+        <div class="ch-meta">Цель: ${fmt(totalGoal)} ₽ · ${ch.days} дней · ${ch.createdAt}</div>
+      </div>
+      <div class="ch-progress-wrap">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:6px;">
+          <span>${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽</span>
+          <span>${doneCells}/${ch.cells.length} · ${pct}%</span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="ch-grid">${ch.cells.map((c,i)=>`<div class="ch-cell ${c.done?'done':''}" onclick="toggleCell('${ch.id}',${i})">${fmt(c.amt)}</div>`).join('')}</div>
+      <div class="ch-footer">
+        ${pct>=100?'<span style="color:var(--accent);font-weight:700;">🎉 Цель достигнута!</span>':`<span style="font-size:12px;color:var(--text-dim);">Нажимай на ячейки когда откладываешь</span>`}
+        <button class="ch-delete" onclick="deleteChallenge('${ch.id}')">Удалить</button>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 // ── NOTIFICATIONS ─────────────────────────────────────────
 async function requestNotificationPermission(){if(!('Notification'in window))return false;if(Notification.permission==='granted')return true;if(Notification.permission==='denied')return false;return(await Notification.requestPermission())==='granted';}
