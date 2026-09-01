@@ -1013,10 +1013,23 @@ function renderGoals() {
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('sidebar-overlay').classList.add('open');
+  // Hide onboarding tooltip while sidebar is open
+  const tip = document.getElementById('ob-tooltip');
+  const hl = document.getElementById('ob-highlight');
+  if (tip) tip.style.visibility = 'hidden';
+  if (hl) hl.style.visibility = 'hidden';
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+  // Restore onboarding tooltip if active
+  const overlay = document.getElementById('ob-overlay');
+  const tip = document.getElementById('ob-tooltip');
+  const hl = document.getElementById('ob-highlight');
+  if (overlay && overlay.classList.contains('open')) {
+    if (tip) tip.style.visibility = '';
+    if (hl) hl.style.visibility = '';
+  }
 }
 function navTo(page, anchor) {
   closeSidebar();
@@ -2239,7 +2252,7 @@ const OB_STEPS = [
   },
   {
     title: '☰ Боковое меню',
-    text: 'Нажми ☰ чтобы открыть меню. Всё остальное живёт здесь — достижения, калькулятор инфляции, экспорт данных.',
+    text: 'Всё остальное живёт здесь — достижения, калькулятор инфляции, экспорт данных.',
     page: 'challenge',
     highlight: '.menu-btn',
     action: 'Нажми ☰',
@@ -2389,13 +2402,14 @@ function obRenderStep() {
 
 function obAdvance() {
   clearInterval(obWatcher);
+  closeSidebar(); // close sidebar if open before advancing
   if (obStep < OB_STEPS.length - 1) {
     obStep++;
     obRenderStep();
   } else {
     closeOnboarding();
     showPage('savings');
-    setTimeout(() => editingId=null||openModal('savings'), 300);
+    setTimeout(() => { editingId=null; openModal('savings'); }, 300);
   }
 }
 
