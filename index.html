@@ -2166,14 +2166,14 @@ function toggleCell(challengeId, cellIdx) {
   if (!ch) return;
   ch.cells[cellIdx].done = !ch.cells[cellIdx].done;
   save();
-
+  renderChallengesPage();
 }
 
 function deleteChallenge(id) {
   if (!confirm('Удалить этот челлендж?')) return;
   state.challenges = state.challenges.filter(c => c.id !== id);
   save();
-
+  renderChallengesPage();
 }
 
 function renderChallenges() {
