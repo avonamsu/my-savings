@@ -9,212 +9,346 @@
 <title>Мои накопления</title>
 <link rel="manifest" href="manifest.json">
 <style>
-  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-  :root {
-    --bg:#0F1B2D; --surface:#162437; --surface2:#1E3050;
-    --accent:#4ECDC4; --accent-dim:rgba(78,205,196,0.15); --accent-glow:rgba(78,205,196,0.3);
-    --text:#E8F4F8; --text-dim:#7A9BB5;
-    --done:#4ECDC4; --done-bg:rgba(78,205,196,0.12);
-    --danger:#FF6B6B; --warn:#FFB347;
-    --radius:16px; --radius-sm:10px;
-  }
-  body { background:var(--bg); color:var(--text); font-family:-apple-system,'Inter',sans-serif; min-height:100dvh; display:flex; flex-direction:column; max-width:480px; margin:0 auto; }
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+:root {
+  --bg:#0F1B2D; --surface:#162437; --surface2:#1E3050;
+  --accent:#4ECDC4; --accent-dim:rgba(78,205,196,0.15); --accent-glow:rgba(78,205,196,0.3);
+  --text:#E8F4F8; --text-dim:#7A9BB5;
+  --done:#4ECDC4; --done-bg:rgba(78,205,196,0.12);
+  --danger:#FF6B6B; --warn:#FFB347;
+  --radius:16px; --radius-sm:10px;
+}
 
-  nav { display:flex; background:var(--surface); border-bottom:1px solid rgba(78,205,196,0.1); position:sticky; top:0; z-index:100; }
-  nav button { flex:1; background:none; border:none; color:var(--text-dim); font-size:11px; font-weight:600; padding:14px 4px 12px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; transition:color .2s; position:relative; }
-  nav button .ni { font-size:20px; }
-  nav button.active { color:var(--accent); }
-  nav button.active::after { content:''; position:absolute; bottom:0; left:20%; right:20%; height:2px; background:var(--accent); border-radius:2px 2px 0 0; }
+/* ONBOARDING */
+.onboard-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:500; align-items:flex-end; justify-content:center; }
+.onboard-overlay.open { display:flex; }
+.onboard-card { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; padding:32px 24px 48px; width:100%; max-width:480px; border-top:2px solid var(--accent); }
+.onboard-icon { font-size:52px; text-align:center; margin-bottom:16px; }
+.onboard-title { font-size:22px; font-weight:700; text-align:center; margin-bottom:10px; }
+.onboard-text { font-size:15px; color:var(--text-dim); text-align:center; line-height:1.6; margin-bottom:24px; }
+.onboard-dots { display:flex; justify-content:center; gap:8px; margin-bottom:24px; }
+.onboard-dot { width:8px; height:8px; border-radius:50%; background:var(--surface2); transition:all .3s; }
+.onboard-dot.active { background:var(--accent); width:24px; border-radius:4px; }
+.onboard-actions { display:flex; gap:12px; }
+.onboard-skip { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding:13px 16px; }
+.onboard-next { flex:1; background:var(--accent); color:var(--bg); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:700; padding:13px; cursor:pointer; }
 
-  .page { display:none; flex-direction:column; flex:1; padding:20px 16px 100px; gap:16px; }
-  .page.active { display:flex; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,'Inter',sans-serif; min-height:100dvh; display:flex; flex-direction:column; max-width:480px; margin:0 auto; overflow-x:hidden; }
 
-  .hero { background:linear-gradient(135deg,var(--surface2) 0%,#1a2e4a 100%); border-radius:var(--radius); padding:24px; border:1px solid rgba(78,205,196,0.15); position:relative; overflow:hidden; }
-  .hero::before { content:''; position:absolute; top:-40px; right:-40px; width:140px; height:140px; background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%); pointer-events:none; }
-  .hero-label { font-size:12px; color:var(--text-dim); margin-bottom:8px; font-weight:500; }
-  .hero-amount { font-size:38px; font-weight:700; color:var(--text); line-height:1; letter-spacing:-1px; margin-top:4px; }
-  .hero-amount span { color:var(--accent); }
-  .hero-sub { font-size:13px; color:var(--text-dim); margin-top:8px; }
+/* ── NAV ── */
+nav { display:flex; background:var(--surface); border-top:1px solid rgba(78,205,196,0.1); position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; z-index:100; }
+nav button { flex:1; background:none; border:none; color:var(--text-dim); font-size:10px; font-weight:600; padding:10px 2px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; transition:color .2s; }
+nav button .ni { font-size:19px; }
+nav button.active { color:var(--accent); }
+nav button.active::after { content:''; position:absolute; top:0; left:20%; right:20%; height:2px; background:var(--accent); border-radius:0 0 2px 2px; }
 
-  /* RATE BAR */
-  .rate-bar { background:var(--surface); border-radius:var(--radius-sm); padding:10px 14px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); }
-  .rate-bar span { color:var(--text); font-weight:600; }
-  .rate-bar .rate-upd { margin-left:auto; font-size:11px; }
-  .rate-bar .rate-err { color:var(--warn); }
+/* MENU BUTTON */
+.menu-btn { position:fixed; top:0; left:0; z-index:150; width:52px; height:52px; background:none; border:none; color:var(--text-dim); font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.menu-btn:active { color:var(--accent); }
 
-  .section-title { font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--text-dim); text-transform:uppercase; margin-bottom:-4px; }
+/* SIDEBAR MENU */
+.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:200; backdrop-filter:blur(4px); }
+.sidebar-overlay.open { display:block; }
+.sidebar { position:fixed; top:0; left:-300px; width:280px; height:100dvh; background:var(--surface); z-index:201; transition:left .3s cubic-bezier(.4,0,.2,1); overflow-y:auto; padding-bottom:40px; }
+.sidebar.open { left:0; }
+.sidebar-profile { padding:24px 20px 16px; background:linear-gradient(135deg,var(--surface2),#1a2e4a); border-bottom:1px solid rgba(78,205,196,0.1); }
+.sidebar-name { font-size:18px; font-weight:700; margin-bottom:4px; }
+.sidebar-total { font-size:13px; color:var(--accent); font-weight:600; }
+.sidebar-section { padding:12px 20px 4px; font-size:10px; font-weight:700; letter-spacing:.1em; color:var(--text-dim); text-transform:uppercase; }
+.sidebar-item { display:flex; align-items:center; gap:12px; padding:12px 20px; cursor:pointer; transition:background .15s; border:none; background:none; color:var(--text); width:100%; text-align:left; font-size:15px; }
+.sidebar-item:active { background:var(--accent-dim); }
+.sidebar-item .si { font-size:20px; width:28px; text-align:center; }
+.sidebar-item.danger { color:var(--danger); }
+.sidebar-divider { height:1px; background:rgba(255,255,255,0.06); margin:8px 0; }
 
-  .card { background:var(--surface); border-radius:var(--radius); overflow:hidden; border:1px solid rgba(255,255,255,0.05); }
-  .card-item { display:flex; align-items:center; padding:14px 16px; gap:12px; border-bottom:1px solid rgba(255,255,255,0.04); }
-  .card-item:last-child { border-bottom:none; }
-  .card-icon { width:38px; height:38px; border-radius:10px; background:var(--accent-dim); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
-  .card-info { flex:1; min-width:0; }
-  .card-name { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .card-sub { font-size:12px; color:var(--text-dim); margin-top:2px; }
-  .card-amount { font-size:15px; font-weight:600; color:var(--text); flex-shrink:0; text-align:right; }
-  .card-amount .sub-amount { font-size:11px; color:var(--text-dim); display:block; }
-  .card-amount.income { color:var(--accent); }
+/* PAGES */
+.page { display:none; flex-direction:column; flex:1; padding:64px 16px 90px; gap:16px; }
+.page.active { display:flex; }
 
-  .delete-btn { background:none; border:none; color:var(--danger); font-size:18px; cursor:pointer; padding:4px 0 4px 8px; opacity:.5; flex-shrink:0; }
-  .edit-btn { background:none; border:none; color:var(--text-dim); font-size:16px; cursor:pointer; padding:4px 0 4px 4px; opacity:.4; flex-shrink:0; }
-  .edit-btn:active { opacity:1; color:var(--accent); }
+/* HERO */
+.hero { background:linear-gradient(135deg,var(--surface2) 0%,#1a2e4a 100%); border-radius:var(--radius); padding:24px; border:1px solid rgba(78,205,196,0.15); position:relative; overflow:hidden; }
+.hero::before { content:''; position:absolute; top:-40px; right:-40px; width:140px; height:140px; background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%); pointer-events:none; }
+.hero-label { font-size:12px; color:var(--text-dim); margin-bottom:8px; font-weight:500; }
+.hero-amount { font-size:38px; font-weight:700; color:var(--text); line-height:1; letter-spacing:-1px; margin-top:4px; }
+.hero-amount span { color:var(--accent); }
+.hero-sub { font-size:13px; color:var(--text-dim); margin-top:8px; }
 
-  .badge { font-size:10px; border-radius:4px; padding:2px 5px; font-weight:600; flex-shrink:0; white-space:nowrap; }
-  .badge-cap { background:rgba(78,205,196,0.15); color:var(--accent); }
-  .badge-exp { background:rgba(255,179,71,0.15); color:var(--warn); }
-  .badge-link { background:rgba(78,205,196,0.15); color:var(--accent); }
-  .badge-cur { background:rgba(255,255,255,0.08); color:var(--text-dim); }
+/* DASHBOARD GRID */
+.dash-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+.dash-card { background:var(--surface); border-radius:var(--radius-sm); padding:12px 10px; border:1px solid rgba(255,255,255,0.05); text-align:center; }
+.dash-card-icon { font-size:20px; margin-bottom:4px; }
+.dash-card-val { font-size:15px; font-weight:700; color:var(--accent); }
+.dash-card-label { font-size:10px; color:var(--text-dim); margin-top:2px; }
 
-  .goal-item { display:flex; align-items:center; padding:14px 16px; gap:12px; border-bottom:1px solid rgba(255,255,255,0.04); transition:background .2s; touch-action:none; }
-  .goal-item.dragging { opacity:0.4; background:var(--surface2); }
-  .goal-item.drag-over { border-top:2px solid var(--accent); }
-  .drag-handle { color:var(--text-dim); opacity:0.4; font-size:18px; cursor:grab; flex-shrink:0; padding:4px 4px 4px 0; user-select:none; touch-action:none; }
-  .drag-handle:active { cursor:grabbing; opacity:0.8; }
-  .goal-item:last-child { border-bottom:none; }
-  .goal-item.covered { background:var(--done-bg); }
-  .goal-check { width:24px; height:24px; border-radius:50%; border:2px solid var(--text-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; }
-  .goal-item.covered .goal-check { background:var(--done); border-color:var(--done); color:var(--bg); }
-  .goal-info { flex:1; min-width:0; }
-  .goal-name { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .goal-item.covered .goal-name { color:var(--accent); }
-  .goal-amount { font-size:14px; font-weight:600; flex-shrink:0; }
-  .goal-item.covered .goal-amount { color:var(--accent); }
+/* SECTION TITLE */
+.section-title { font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--text-dim); text-transform:uppercase; margin-bottom:-4px; }
 
-  .progress-wrap { background:var(--surface); border-radius:var(--radius); padding:18px; border:1px solid rgba(255,255,255,0.05); }
-  .progress-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; }
-  .progress-label { font-size:13px; color:var(--text-dim); }
-  .progress-pct { font-size:22px; font-weight:700; color:var(--accent); }
-  .progress-bar-bg { height:8px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden; }
-  .progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),#88E4DF); border-radius:4px; transition:width .6s cubic-bezier(.4,0,.2,1); }
-  .progress-amounts { display:flex; justify-content:space-between; margin-top:8px; font-size:12px; color:var(--text-dim); }
+/* CARD */
+.card { background:var(--surface); border-radius:var(--radius); overflow:hidden; border:1px solid rgba(255,255,255,0.05); }
+.card-item { display:flex; align-items:center; padding:13px 14px; gap:10px; border-bottom:1px solid rgba(255,255,255,0.04); }
+.card-item:last-child { border-bottom:none; }
+.card-icon { width:36px; height:36px; border-radius:10px; background:var(--accent-dim); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.card-info { flex:1; min-width:0; }
+.card-name { font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card-sub { font-size:11px; color:var(--text-dim); margin-top:2px; }
+.card-amount { font-size:14px; font-weight:600; color:var(--text); flex-shrink:0; text-align:right; }
+.card-amount .sub-amount { font-size:10px; color:var(--text-dim); display:block; }
+.card-amount.income { color:var(--accent); }
 
-  .income-summary { background:var(--surface); border-radius:var(--radius); padding:18px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:14px; }
-  .income-summary-icon { font-size:28px; }
-  .income-summary-info { flex:1; }
-  .income-summary-label { font-size:12px; color:var(--text-dim); margin-bottom:4px; }
-  .income-summary-val { font-size:22px; font-weight:700; color:var(--accent); }
+/* BUTTONS */
+.delete-btn { background:none; border:none; color:var(--danger); font-size:17px; cursor:pointer; padding:4px 0 4px 6px; opacity:.5; flex-shrink:0; }
+.edit-btn { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding:4px 0 4px 4px; opacity:.4; flex-shrink:0; }
+.excl-btn { background:none; border:none; cursor:pointer; font-size:17px; padding:4px 6px 4px 0; flex-shrink:0; opacity:0.5; line-height:1; }
+.add-btn { background:none; border:2px dashed rgba(78,205,196,0.3); border-radius:var(--radius-sm); color:var(--accent); font-size:14px; font-weight:600; padding:13px; cursor:pointer; width:100%; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.add-btn:active { background:var(--accent-dim); }
+.backup-btn { flex:1; background:var(--surface); border:1px solid rgba(78,205,196,0.2); border-radius:var(--radius-sm); color:var(--text-dim); font-size:12px; font-weight:600; padding:11px 8px; cursor:pointer; text-align:center; }
+.reset-btn { background:none; border:none; color:var(--danger); font-size:13px; opacity:0.4; cursor:pointer; padding:8px; width:100%; text-align:center; }
 
-  .add-btn { background:none; border:2px dashed rgba(78,205,196,0.3); border-radius:var(--radius-sm); color:var(--accent); font-size:14px; font-weight:600; padding:14px; cursor:pointer; width:100%; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
-  .add-btn:active { background:var(--accent-dim); }
+/* BADGES */
+.badge { font-size:10px; border-radius:4px; padding:2px 5px; font-weight:600; flex-shrink:0; white-space:nowrap; }
+.badge-cap { background:rgba(78,205,196,0.15); color:var(--accent); }
+.badge-exp { background:rgba(255,179,71,0.15); color:var(--warn); }
+.badge-link { background:rgba(78,205,196,0.15); color:var(--accent); }
+.badge-cur { background:rgba(255,255,255,0.08); color:var(--text-dim); }
 
-  .tab-switch { display:flex; background:var(--surface2); border-radius:var(--radius-sm); padding:3px; gap:3px; margin-bottom:14px; }
-  .tab-switch button { flex:1; background:none; border:none; color:var(--text-dim); font-size:13px; font-weight:600; padding:9px 4px; border-radius:8px; cursor:pointer; transition:all .2s; }
-  .tab-switch button.active { background:var(--accent); color:var(--bg); }
+/* GOALS */
+.goal-item { display:flex; align-items:center; padding:13px 14px; gap:10px; border-bottom:1px solid rgba(255,255,255,0.04); transition:background .2s; }
+.goal-item:last-child { border-bottom:none; }
+.goal-item.covered { background:var(--done-bg); }
+.goal-check { width:22px; height:22px; border-radius:50%; border:2px solid var(--text-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; }
+.goal-item.covered .goal-check { background:var(--done); border-color:var(--done); color:var(--bg); }
+.goal-info { flex:1; min-width:0; }
+.goal-name { font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.goal-item.covered .goal-name { color:var(--accent); }
+.goal-amount { font-size:13px; font-weight:600; flex-shrink:0; }
+.goal-item.covered .goal-amount { color:var(--accent); }
+.drag-handle { color:var(--text-dim); opacity:0.4; font-size:17px; cursor:grab; flex-shrink:0; padding:4px 4px 4px 0; user-select:none; touch-action:none; }
+.goal-item.dragging { opacity:0.4; background:var(--surface2); }
+.goal-item.drag-over { border-top:2px solid var(--accent); }
 
-  .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); margin-bottom:14px; }
-  .toggle-label { font-size:14px; color:var(--text); }
-  .toggle { position:relative; width:44px; height:26px; flex-shrink:0; }
-  .toggle input { opacity:0; width:0; height:0; }
-  .toggle-slider { position:absolute; inset:0; background:var(--surface2); border-radius:13px; cursor:pointer; transition:.3s; }
-  .toggle-slider::before { content:''; position:absolute; width:20px; height:20px; left:3px; bottom:3px; background:var(--text-dim); border-radius:50%; transition:.3s; }
-  .toggle input:checked + .toggle-slider { background:var(--accent); }
-  .toggle input:checked + .toggle-slider::before { transform:translateX(18px); background:var(--bg); }
+/* PROGRESS */
+.progress-wrap { background:var(--surface); border-radius:var(--radius); padding:16px; border:1px solid rgba(255,255,255,0.05); }
+.progress-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+.progress-label { font-size:13px; color:var(--text-dim); }
+.progress-pct { font-size:20px; font-weight:700; color:var(--accent); }
+.progress-bar-bg { height:7px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden; }
+.progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),#88E4DF); border-radius:4px; transition:width .6s cubic-bezier(.4,0,.2,1); }
+.progress-amounts { display:flex; justify-content:space-between; margin-top:7px; font-size:11px; color:var(--text-dim); }
 
-  .calc-preview { background:var(--accent-dim); border:1px solid rgba(78,205,196,0.25); border-radius:var(--radius-sm); padding:12px 14px; font-size:13px; color:var(--text-dim); margin-bottom:14px; line-height:1.7; }
-  .calc-preview strong { color:var(--accent); font-size:16px; }
+/* INCOME SUMMARY */
+.income-summary { background:var(--surface); border-radius:var(--radius); padding:16px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:12px; }
+.income-summary-icon { font-size:26px; }
+.income-summary-info { flex:1; }
+.income-summary-label { font-size:12px; color:var(--text-dim); margin-bottom:3px; }
+.income-summary-val { font-size:20px; font-weight:700; color:var(--accent); }
 
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
-  .modal-overlay.open { display:flex; }
-  .modal { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; padding:24px 20px 40px; width:100%; max-width:480px; border-top:1px solid rgba(78,205,196,0.2); max-height:92dvh; overflow-y:auto; }
-  .modal-title { font-size:18px; font-weight:700; margin-bottom:20px; }
-  .field { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
-  .field label { font-size:12px; color:var(--text-dim); font-weight:600; letter-spacing:.05em; }
-  .field input, .field select { background:var(--surface2); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-sm); color:var(--text); font-size:16px; padding:12px 14px; outline:none; width:100%; transition:border-color .2s; -webkit-appearance:none; }
-  .field input:focus, .field select:focus { border-color:var(--accent); }
-  .field select option { background:var(--surface2); }
-  .field-row { display:flex; gap:10px; }
-  .field-row .field { flex:1; }
-  .modal-actions { display:flex; gap:10px; margin-top:20px; }
-  .btn-primary { flex:1; background:var(--accent); color:var(--bg); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:700; padding:14px; cursor:pointer; }
-  .btn-cancel { background:var(--surface2); color:var(--text-dim); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:600; padding:14px 20px; cursor:pointer; }
+/* RATE BAR */
+.rate-bar { background:var(--surface); border-radius:var(--radius-sm); padding:10px 14px; border:1px solid rgba(255,255,255,0.05); font-size:12px; color:var(--text-dim); }
+.rate-bar span { color:var(--text); font-weight:600; }
 
-  .backup-btn { flex:1; background:var(--surface); border:1px solid rgba(78,205,196,0.2); border-radius:var(--radius-sm); color:var(--text-dim); font-size:13px; font-weight:600; padding:12px 8px; cursor:pointer; text-align:center; transition:all .2s; }
-  .backup-btn:active { background:var(--accent-dim); color:var(--accent); border-color:var(--accent); }
-  .reset-btn { background:none; border:none; color:var(--danger); font-size:13px; opacity:0.4; cursor:pointer; padding:8px; width:100%; text-align:center; }
-  .chart-wrap { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); padding:16px; }
-  .chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-  .chart-title { font-size:13px; font-weight:600; color:var(--text-dim); }
-  .chart-add-btn { background:none; border:1px solid rgba(78,205,196,0.3); border-radius:6px; color:var(--accent); font-size:11px; font-weight:600; padding:4px 10px; cursor:pointer; }
-  .chart-empty { text-align:center; padding:32px; color:var(--text-dim); font-size:13px; }
-  .chart-tooltip { position:absolute; background:var(--surface2); border:1px solid rgba(78,205,196,0.3); border-radius:8px; padding:8px 12px; font-size:12px; pointer-events:none; z-index:10; white-space:nowrap; }
-  .freedom-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
-  .freedom-row:last-child { border-bottom:none; }
-  .freedom-label { font-size:13px; color:var(--text-dim); }
-  .freedom-val { font-size:15px; font-weight:700; }
-  .freedom-bar-wrap { margin:12px 0 4px; }
-  .ch-card { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); overflow:hidden; }
-  .ch-header { padding:16px; border-bottom:1px solid rgba(255,255,255,0.05); }
-  .ch-title { font-size:16px; font-weight:700; margin-bottom:4px; }
-  .ch-meta { font-size:12px; color:var(--text-dim); }
-  .ch-progress-wrap { padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.05); }
-  .ch-grid { display:flex; flex-wrap:wrap; gap:6px; padding:14px; }
-  .ch-cell { border-radius:8px; border:2px solid rgba(255,255,255,0.1); padding:8px 4px; min-width:52px; text-align:center; cursor:pointer; font-size:13px; font-weight:600; color:var(--text-dim); transition:all .2s; flex:1; min-width:52px; max-width:72px; user-select:none; }
-  .ch-cell.done { background:var(--accent); border-color:var(--accent); color:var(--bg); }
-  .ch-cell:active { transform:scale(.95); }
-  .ch-footer { padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.05); }
-  .ch-delete { background:none; border:none; color:var(--danger); font-size:12px; opacity:0.5; cursor:pointer; }
-  .inf-year-row { display:flex; align-items:center; gap:10px; }
-  .inf-year-label { font-size:12px; color:var(--text-dim); width:36px; flex-shrink:0; }
-  .inf-bar-bg { flex:1; height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
-  .inf-bar-fill { height:100%; border-radius:3px; }
-  .inf-year-val { font-size:12px; font-weight:600; width:44px; text-align:right; flex-shrink:0; }
-  .inf-result-row { background:var(--surface2); border-radius:var(--radius-sm); padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
-  .inf-result-label { font-size:13px; color:var(--text-dim); }
-  .inf-result-val { font-size:17px; font-weight:700; }
-  .card-item.excluded { opacity: 0.4; }
-  .card-item.excluded .card-name { text-decoration: line-through; }
-  .excl-btn { background:none; border:none; cursor:pointer; font-size:18px; padding:4px 8px 4px 0; flex-shrink:0; opacity:0.5; line-height:1; }
-  .excl-btn:active { opacity:1; }
-  .reset-btn:active { opacity:1; }
-  .empty { text-align:center; padding:32px 20px; color:var(--text-dim); }
-  .ach-card { background:var(--surface); border-radius:var(--radius); padding:16px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:14px; transition:all .3s; }
-  .ach-card.unlocked { border-color:rgba(78,205,196,0.3); background:rgba(78,205,196,0.06); }
-  .ach-card.secret { opacity:0.35; }
-  .ach-icon { font-size:32px; flex-shrink:0; width:48px; text-align:center; filter:grayscale(1); }
-  .ach-card.unlocked .ach-icon { filter:none; }
-  .ach-info { flex:1; min-width:0; }
-  .ach-name { font-size:15px; font-weight:600; color:var(--text-dim); }
-  .ach-card.unlocked .ach-name { color:var(--text); }
-  .ach-desc { font-size:12px; color:var(--text-dim); margin-top:3px; }
-  .ach-progress { margin-top:6px; }
-  .ach-progress-bar { height:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; margin-top:4px; }
-  .ach-progress-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .6s; }
-  .ach-badge { font-size:18px; flex-shrink:0; }
-  .empty-icon { font-size:40px; margin-bottom:10px; }
-  .empty p { font-size:14px; line-height:1.5; }
+/* CHART */
+.chart-wrap { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); padding:14px; }
+.chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.chart-title { font-size:11px; font-weight:700; letter-spacing:.07em; color:var(--text-dim); text-transform:uppercase; }
+.chart-add-btn { background:none; border:1px solid rgba(78,205,196,0.3); border-radius:6px; color:var(--accent); font-size:11px; font-weight:600; padding:4px 10px; cursor:pointer; }
+.chart-empty { text-align:center; padding:28px; color:var(--text-dim); font-size:13px; }
+.chart-tooltip { position:absolute; background:var(--surface2); border:1px solid rgba(78,205,196,0.3); border-radius:8px; padding:7px 11px; font-size:12px; pointer-events:none; z-index:10; white-space:nowrap; }
+
+/* TABS (income modal) */
+.tab-switch { display:flex; background:var(--surface2); border-radius:var(--radius-sm); padding:3px; gap:3px; margin-bottom:14px; }
+.tab-switch button { flex:1; background:none; border:none; color:var(--text-dim); font-size:13px; font-weight:600; padding:9px 4px; border-radius:8px; cursor:pointer; transition:all .2s; }
+.tab-switch button.active { background:var(--accent); color:var(--bg); }
+
+/* TOGGLE */
+.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid rgba(255,255,255,0.06); margin-bottom:14px; }
+.toggle-label { font-size:14px; color:var(--text); }
+.toggle { position:relative; width:44px; height:26px; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; }
+.toggle-slider { position:absolute; inset:0; background:var(--surface2); border-radius:13px; cursor:pointer; transition:.3s; }
+.toggle-slider::before { content:''; position:absolute; width:20px; height:20px; left:3px; bottom:3px; background:var(--text-dim); border-radius:50%; transition:.3s; }
+.toggle input:checked + .toggle-slider { background:var(--accent); }
+.toggle input:checked + .toggle-slider::before { transform:translateX(18px); background:var(--bg); }
+
+/* CALC PREVIEW */
+.calc-preview { background:var(--accent-dim); border:1px solid rgba(78,205,196,0.25); border-radius:var(--radius-sm); padding:11px 13px; font-size:13px; color:var(--text-dim); margin-bottom:14px; line-height:1.7; }
+.calc-preview strong { color:var(--accent); font-size:15px; }
+
+/* MODAL */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:300; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; padding:22px 18px 38px; width:100%; max-width:480px; border-top:1px solid rgba(78,205,196,0.2); max-height:92dvh; overflow-y:auto; }
+.modal-title { font-size:17px; font-weight:700; margin-bottom:18px; }
+.field { display:flex; flex-direction:column; gap:6px; margin-bottom:13px; }
+.field label { font-size:11px; color:var(--text-dim); font-weight:600; letter-spacing:.05em; }
+.field input, .field select { background:var(--surface2); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-sm); color:var(--text); font-size:16px; padding:11px 13px; outline:none; width:100%; transition:border-color .2s; -webkit-appearance:none; }
+.field input:focus, .field select:focus { border-color:var(--accent); }
+.field select option { background:var(--surface2); }
+.field-row { display:flex; gap:10px; }
+.field-row .field { flex:1; }
+.modal-actions { display:flex; gap:10px; margin-top:18px; }
+.btn-primary { flex:1; background:var(--accent); color:var(--bg); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:700; padding:13px; cursor:pointer; }
+.btn-cancel { background:var(--surface2); color:var(--text-dim); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:600; padding:13px 18px; cursor:pointer; }
+
+/* EMPTY */
+.empty { text-align:center; padding:28px 18px; color:var(--text-dim); }
+.empty-icon { font-size:36px; margin-bottom:8px; }
+.empty p { font-size:13px; line-height:1.5; }
+
+/* ACHIEVEMENTS */
+.ach-card { background:var(--surface); border-radius:var(--radius); padding:14px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:12px; }
+.ach-card.unlocked { border-color:rgba(78,205,196,0.3); background:rgba(78,205,196,0.06); }
+.ach-card.secret { opacity:0.35; }
+.ach-icon { font-size:30px; flex-shrink:0; width:44px; text-align:center; filter:grayscale(1); }
+.ach-card.unlocked .ach-icon { filter:none; }
+.ach-info { flex:1; min-width:0; }
+.ach-name { font-size:14px; font-weight:600; color:var(--text-dim); }
+.ach-card.unlocked .ach-name { color:var(--text); }
+.ach-desc { font-size:11px; color:var(--text-dim); margin-top:2px; }
+.ach-progress { margin-top:5px; }
+.ach-progress-bar { height:3px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; margin-top:3px; }
+.ach-progress-fill { height:100%; background:var(--accent); border-radius:2px; }
+.ach-badge { font-size:16px; flex-shrink:0; }
+
+/* INFLATION */
+.inf-year-row { display:flex; align-items:center; gap:10px; }
+.inf-year-label { font-size:12px; color:var(--text-dim); width:34px; flex-shrink:0; }
+.inf-bar-bg { flex:1; height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
+.inf-bar-fill { height:100%; border-radius:3px; }
+.inf-year-val { font-size:12px; font-weight:600; width:42px; text-align:right; flex-shrink:0; }
+.inf-result-row { background:var(--surface2); border-radius:var(--radius-sm); padding:13px 15px; display:flex; justify-content:space-between; align-items:center; }
+.inf-result-label { font-size:13px; color:var(--text-dim); }
+.inf-result-val { font-size:16px; font-weight:700; }
+
+/* CHALLENGE */
+.ch-card { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); overflow:hidden; }
+.ch-header { padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.05); }
+.ch-title { font-size:15px; font-weight:700; margin-bottom:3px; }
+.ch-meta { font-size:11px; color:var(--text-dim); }
+.ch-progress-wrap { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.05); }
+.ch-grid { display:flex; flex-wrap:wrap; gap:5px; padding:12px; }
+.ch-cell { border-radius:8px; border:2px solid rgba(255,255,255,0.1); padding:7px 3px; min-width:50px; text-align:center; cursor:pointer; font-size:12px; font-weight:600; color:var(--text-dim); transition:all .2s; flex:1; max-width:70px; user-select:none; }
+.ch-cell.done { background:var(--accent); border-color:var(--accent); color:var(--bg); }
+.ch-footer { padding:11px 14px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.05); }
+.ch-delete { background:none; border:none; color:var(--danger); font-size:12px; opacity:0.5; cursor:pointer; }
+.card-item.excluded { opacity:0.4; }
+.card-item.excluded .card-name { text-decoration:line-through; }
 </style>
 </head>
 <body>
 
 <nav>
-  <button class="active" onclick="showPage('savings')" id="nav-savings"><span class="ni">💰</span>Накопления</button>
+  <button class="active" onclick="showPage('home')" id="nav-home"><span class="ni">🏠</span>Главная</button>
+  <button onclick="showPage('savings')" id="nav-savings"><span class="ni">💰</span>Счета</button>
   <button onclick="showPage('income')" id="nav-income"><span class="ni">📈</span>Доход</button>
   <button onclick="showPage('goals')" id="nav-goals"><span class="ni">🎯</span>Цели</button>
   <button onclick="showPage('achievements')" id="nav-achievements"><span class="ni">🏅</span>Ачивки</button>
-  <button onclick="showPage('inflation')" id="nav-inflation"><span class="ni">📉</span>Инфляция</button>
 </nav>
 
-<!-- SAVINGS -->
-<div class="page active" id="page-savings">
-  <div class="hero">
-    <div class="hero-label">Всего накоплено (в рублях)</div>
-    <div class="hero-amount" id="total-savings">0 <span>₽</span></div>
-    <div class="hero-sub" id="savings-count">Нет счетов</div>
+<!-- MENU BUTTON -->
+<div style="position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;height:52px;z-index:99;background:var(--bg);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;padding:0 16px;">
+  <button class="menu-btn" onclick="openSidebar()">☰</button>
+  <span id="topbar-title" style="position:absolute;left:50%;transform:translateX(-50%);font-size:15px;font-weight:700;color:var(--text);">Мои накопления</span>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-profile">
+    <div class="sidebar-name" id="sb-name">Мои накопления</div>
+    <div class="sidebar-total" id="sb-total">Загрузка...</div>
   </div>
-  <div class="rate-bar" id="rate-bar">⏳ Загружаю курсы ЦБ РФ...</div>
-  <div id="backup-banner" style="display:none;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text);cursor:pointer;display:none;" onclick="downloadBackupFromBanner()">
+
+  <div class="sidebar-section">💰 Накопления</div>
+  <button class="sidebar-item" onclick="navTo('savings')"><span class="si">🏦</span>Мои счета</button>
+  <button class="sidebar-item" onclick="navTo('savings','chart')"><span class="si">📈</span>Рост накоплений</button>
+
+  <div class="sidebar-section">📊 Доход</div>
+  <button class="sidebar-item" onclick="navTo('income')"><span class="si">💸</span>Источники дохода</button>
+
+  <div class="sidebar-section">🎯 Цели</div>
+  <button class="sidebar-item" onclick="navTo('goals')"><span class="si">✅</span>Список целей</button>
+  <button class="sidebar-item" onclick="navTo('goals','challenge')"><span class="si">🪙</span>Челлендж-копилки</button>
+
+  <div class="sidebar-section">📊 Аналитика</div>
+  <button class="sidebar-item" onclick="navTo('inflation')"><span class="si">📉</span>Калькулятор инфляции</button>
+
+  <div class="sidebar-section">🏅 Достижения</div>
+  <button class="sidebar-item" onclick="navTo('achievements')"><span class="si">🏅</span>Мои ачивки</button>
+
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section">⚙️ Настройки</div>
+  <button class="sidebar-item" onclick="downloadBackup();closeSidebar()"><span class="si">⬇️</span>Скачать резервную копию</button>
+  <button class="sidebar-item" onclick="document.getElementById('restore-input').click();closeSidebar()"><span class="si">⬆️</span>Восстановить данные</button>
+  <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(event)">
+  <button class="sidebar-item danger" onclick="resetAllData()"><span class="si">🗑️</span>Очистить все данные</button>
+</div>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-label" id="home-greeting">Привет! 👋</div>
+    <div class="hero-amount" id="home-total">0 <span>₽</span></div>
+    <div class="hero-sub" id="home-sub">Нет счетов</div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="dash-card-icon">📈</div>
+      <div class="dash-card-val" id="dash-income">0 ₽</div>
+      <div class="dash-card-label">доход/мес</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-icon">🎯</div>
+      <div class="dash-card-val" id="dash-goals-pct">0%</div>
+      <div class="dash-card-label">целей покрыто</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-icon">💵</div>
+      <div class="dash-card-val" id="dash-usd">—</div>
+      <div class="dash-card-label">курс $ ЦБ</div>
+    </div>
+  </div>
+
+  <div id="home-deposits-card" style="display:none;">
+    <div class="section-title">Ближайшие вклады</div>
+    <div class="card" id="home-deposits-list"></div>
+  </div>
+
+  <div class="section-title">Прогресс целей</div>
+  <div id="home-goals-preview">
+    <div class="empty"><div class="empty-icon">🎯</div><p>Добавь цели чтобы видеть прогресс</p></div>
+  </div>
+
+  <div class="section-title">Последняя ачивка</div>
+  <div id="home-ach-preview">
+    <div class="empty"><div class="empty-icon">🏅</div><p>Ачивки разблокируются по мере накоплений</p></div>
+  </div>
+
+  <div id="backup-banner" style="display:none;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text);cursor:pointer;" onclick="downloadBackupFromBanner()">
     <div style="font-weight:600;margin-bottom:2px;">💾 Пора сделать резервную копию</div>
-    <div style="font-size:12px;color:var(--text-dim);">Данные менялись, но копия не создавалась 7+ дней. Нажми чтобы скачать.</div>
+    <div style="font-size:12px;color:var(--text-dim);">Данные менялись, но копия не создавалась 7+ дней.</div>
   </div>
   <div id="notif-banner" style="display:none;background:rgba(255,179,71,0.12);border:1px solid rgba(255,179,71,0.3);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--warn);cursor:pointer;" onclick="initNotifications()">
     🔔 Разреши уведомления — напомним когда вклад закроется
+  </div>
+  <div class="rate-bar" id="rate-bar">⏳ Загружаю курсы ЦБ РФ...</div>
+</div>
+
+<!-- SAVINGS PAGE -->
+<div class="page" id="page-savings">
+  <div class="hero">
+    <div class="hero-label">Всего накоплено (с процентами)</div>
+    <div class="hero-amount" id="total-savings">0 <span>₽</span></div>
+    <div class="hero-sub" id="savings-count">Нет счетов</div>
   </div>
   <div class="section-title">Мои счета</div>
   <div class="card" id="savings-list">
     <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('savings')">＋ Добавить счёт</button>
-  <div class="chart-wrap">
+
+  <div id="chart-anchor"></div>
+  <div class="chart-wrap" id="savings-chart-wrap">
     <div class="chart-header">
       <span class="chart-title">📈 РОСТ НАКОПЛЕНИЙ</span>
       <button class="chart-add-btn" onclick="addHistoryPoint()">＋ Добавить прошлое</button>
@@ -225,21 +359,14 @@
       <div class="chart-tooltip" id="chart-tooltip" style="display:none;"></div>
     </div>
   </div>
-  <div style="display:flex;gap:10px;margin-top:4px;">
-    <button class="backup-btn" onclick="downloadBackup()">⬇️ Скачать резервную копию</button>
-    <button class="backup-btn backup-btn-restore" onclick="document.getElementById('restore-input').click()">⬆️ Восстановить</button>
-    <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(event)">
-  </div>
-  <button class="reset-btn" onclick="resetAllData()">🗑 Очистить все данные</button>
 </div>
 
-<!-- INCOME -->
+<!-- INCOME PAGE -->
 <div class="page" id="page-income">
   <div class="hero">
     <div class="hero-label">Пассивный доход в месяц</div>
     <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
   </div>
-
   <div class="section-title">Источники дохода</div>
   <div class="card" id="income-list">
     <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
@@ -247,7 +374,7 @@
   <button class="add-btn" onclick="editingId=null;openModal('income')">＋ Добавить источник дохода</button>
 </div>
 
-<!-- GOALS -->
+<!-- GOALS PAGE -->
 <div class="page" id="page-goals">
   <div class="progress-wrap">
     <div class="progress-header">
@@ -267,17 +394,16 @@
       <div class="income-summary-val" id="goals-income-ref">0 ₽</div>
     </div>
   </div>
-
   <div class="section-title">Мои цели</div>
   <div class="card" id="goals-list">
     <div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('goals')">＋ Добавить цель</button>
 
-  <!-- CHALLENGE SECTION -->
+  <div id="challenge-anchor"></div>
   <div class="section-title">Челлендж-копилки</div>
   <div id="challenge-list-view">
-    <button class="add-btn" onclick="showNewChallengeForm()" style="border-style:dashed;">＋ Создать новый челлендж</button>
+    <button class="add-btn" onclick="showNewChallengeForm()">＋ Создать новый челлендж</button>
     <div id="challenges-container" style="display:flex;flex-direction:column;gap:12px;margin-top:4px;"></div>
   </div>
   <div id="challenge-form-view" style="display:none;flex-direction:column;gap:14px;">
@@ -292,7 +418,7 @@
         <select id="ch-period" onchange="updateChallengePreview()">
           <option value="30">30 дней</option>
           <option value="60">60 дней</option>
-          <option value="90" selected>3 месяца (90 дней)</option>
+          <option value="90" selected>3 месяца</option>
           <option value="180">6 месяцев</option>
           <option value="365">1 год</option>
         </select>
@@ -319,17 +445,6 @@
   <div id="ach-list" style="display:flex;flex-direction:column;gap:10px;"></div>
 </div>
 
-<!-- ACHIEVEMENT POPUP -->
-<div id="ach-popup" style="display:none;position:fixed;inset:0;z-index:300;pointer-events:none;">
-  <canvas id="confetti-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
-  <div id="ach-popup-card" style="position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:340px;text-align:center;pointer-events:all;box-shadow:0 0 40px rgba(78,205,196,0.3);">
-    <div id="ach-popup-icon" style="font-size:48px;margin-bottom:8px;"></div>
-    <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:4px;">АЧИВКА РАЗБЛОКИРОВАНА</div>
-    <div id="ach-popup-name" style="font-size:18px;font-weight:700;margin-bottom:6px;"></div>
-    <div id="ach-popup-desc" style="font-size:13px;color:var(--text-dim);"></div>
-  </div>
-</div>
-
 <!-- INFLATION PAGE -->
 <div class="page" id="page-inflation">
   <div class="chart-wrap">
@@ -343,28 +458,23 @@
     </div>
     <div id="inf-result" style="display:flex;flex-direction:column;gap:10px;"></div>
   </div>
-
   <div class="chart-wrap">
     <div class="chart-header">
       <span class="chart-title">📊 СКОЛЬКО НУЖНО НАКОПИТЬ С УЧЁТОМ ИНФЛЯЦИИ</span>
     </div>
-    <div style="margin-bottom:10px;">
-      <div class="field"><label>ЦЕЛЬ (₽) — сколько хочешь иметь в сегодняшних ценах</label>
-        <input type="number" id="inf-goal" placeholder="1 000 000" inputmode="decimal" oninput="updateInflationCalc()">
-      </div>
+    <div class="field"><label>ЦЕЛЬ (₽) — в сегодняшних ценах</label>
+      <input type="number" id="inf-goal" placeholder="1 000 000" inputmode="decimal" oninput="updateInflationCalc()">
     </div>
     <div id="inf-goal-result"></div>
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODALS -->
 <div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
   <div class="modal">
     <div class="modal-title" id="modal-title"></div>
-
-    <!-- SAVINGS FIELDS -->
     <div id="fields-savings" style="display:none">
-      <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="s-name" placeholder="Например: Наличные доллары"></div>
+      <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="s-name" placeholder="Например: Вклад в Сбере"></div>
       <div class="field">
         <label>ТИП</label>
         <select id="s-icon" onchange="onSavingTypeChange()">
@@ -392,11 +502,9 @@
           </select>
         </div>
       </div>
-      <div id="currency-preview" class="calc-preview" style="display:none"></div>
-
-      <!-- Deposit fields -->
+      <div class="calc-preview" id="currency-preview" style="display:none;"></div>
       <div id="deposit-fields" style="display:none">
-        <div class="field"><label>ПРОЦЕНТ ГОДОВЫХ (%)</label><input type="number" id="s-rate" placeholder="Например: 18" inputmode="decimal" oninput="updateDepositPreview()"></div>
+        <div class="field"><label>ПРОЦЕНТ ГОДОВЫХ (%)</label><input type="number" id="s-rate" placeholder="18" inputmode="decimal" oninput="updateDepositPreview()"></div>
         <div class="field-row">
           <div class="field"><label>ДАТА НАЧАЛА</label><input type="date" id="s-date-start" onchange="updateDepositPreview()"></div>
           <div class="field"><label>ДАТА КОНЦА</label><input type="date" id="s-date-end" onchange="updateDepositPreview()"></div>
@@ -405,11 +513,9 @@
           <span class="toggle-label">Капитализация (% на %)</span>
           <label class="toggle"><input type="checkbox" id="s-compound" onchange="updateDepositPreview()"><span class="toggle-slider"></span></label>
         </div>
-        <div class="calc-preview" id="deposit-preview" style="display:none"></div>
+        <div class="calc-preview" id="deposit-preview" style="display:none;"></div>
       </div>
     </div>
-
-    <!-- INCOME FIELDS -->
     <div id="fields-income" style="display:none">
       <div class="tab-switch">
         <button class="active" id="tab-linked" onclick="switchIncomeTab('linked')">Из накоплений</button>
@@ -419,9 +525,7 @@
         <div class="field"><label>СЧЁТ</label>
           <select id="i-saving-ref" onchange="updateIncomePreview()"><option value="">— выбери счёт —</option></select>
         </div>
-        <div id="income-auto-wrap" style="display:none">
-          <div class="calc-preview" id="income-auto-preview"></div>
-        </div>
+        <div id="income-auto-wrap" style="display:none"><div class="calc-preview" id="income-auto-preview"></div></div>
         <div id="income-manual-wrap">
           <div class="field"><label>КАК СЧИТАТЬ ДОХОД</label>
             <select id="i-calc-mode" onchange="updateIncomePreview()">
@@ -432,18 +536,12 @@
           </div>
           <div class="field" id="field-percent"><label>ПРОЦЕНТ ГОДОВЫХ (%)</label><input type="number" id="i-percent" placeholder="18" inputmode="decimal" oninput="updateIncomePreview()"></div>
           <div class="field" id="field-fixed" style="display:none"><label>ДОХОД В МЕСЯЦ (₽)</label><input type="number" id="i-fixed-amount" placeholder="0" inputmode="decimal"></div>
-          <div class="calc-preview" id="income-linked-preview" style="display:none"></div>
-        </div>
-        <div id="field-fx" style="display:none">
-          <div class="field">
-            <label>ДАТА ПОКУПКИ ВАЛЮТЫ</label>
-            <input type="date" id="i-fx-date" onchange="updateFxPreview()">
+          <div class="calc-preview" id="income-linked-preview" style="display:none;"></div>
+          <div id="field-fx" style="display:none">
+            <div class="field"><label>ДАТА ПОКУПКИ</label><input type="date" id="i-fx-date" onchange="updateFxPreview()"></div>
+            <div class="field"><label>КУРС ПОКУПКИ (₽) — необязательно</label><input type="number" id="i-fx-rate" placeholder="Не заполняй — возьмём из ЦБ" inputmode="decimal" oninput="updateFxPreview()"></div>
+            <div class="calc-preview" id="fx-preview" style="display:none;"></div>
           </div>
-          <div class="field">
-            <label>КУРС ПОКУПКИ (₽) — необязательно, возьмём из ЦБ</label>
-            <input type="number" id="i-fx-rate" placeholder="Не заполняй — возьмём из ЦБ по дате" inputmode="decimal" oninput="updateFxPreview()">
-          </div>
-          <div class="calc-preview" id="fx-preview" style="display:none"></div>
         </div>
       </div>
       <div id="income-manual" style="display:none">
@@ -460,13 +558,10 @@
         <div class="field"><label>ДОХОД В МЕСЯЦ (₽)</label><input type="number" id="i-amount" placeholder="0" inputmode="decimal"></div>
       </div>
     </div>
-
-    <!-- GOALS FIELDS -->
     <div id="fields-goals" style="display:none">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="g-name" placeholder="Например: Коммунальные услуги"></div>
       <div class="field"><label>СУММА В МЕСЯЦ (₽)</label><input type="number" id="g-amount" placeholder="0" inputmode="decimal"></div>
     </div>
-
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Отмена</button>
       <button class="btn-primary" onclick="saveItem()">Сохранить</button>
@@ -474,7 +569,6 @@
   </div>
 </div>
 
-<!-- HISTORY POINT MODAL -->
 <div class="modal-overlay" id="history-modal" onclick="if(event.target===this)closeHistoryModal()">
   <div class="modal">
     <div class="modal-title">Добавить прошлое значение</div>
@@ -487,71 +581,77 @@
   </div>
 </div>
 
+
+<!-- ONBOARDING -->
+<div class="onboard-overlay" id="onboard-overlay">
+  <div class="onboard-card">
+    <div class="onboard-icon" id="ob-icon">💰</div>
+    <div class="onboard-title" id="ob-title">Добро пожаловать!</div>
+    <div class="onboard-text" id="ob-text">Это твой личный трекер накоплений. Давай быстро покажем как всё устроено.</div>
+    <div class="onboard-dots" id="ob-dots"></div>
+    <div class="onboard-actions">
+      <button class="onboard-skip" onclick="closeOnboarding()">Пропустить</button>
+      <button class="onboard-next" id="ob-next-btn" onclick="onboardNext()">Далее →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACHIEVEMENT POPUP -->
+<div id="ach-popup" style="display:none;position:fixed;inset:0;z-index:400;pointer-events:none;">
+  <canvas id="confetti-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+  <div id="ach-popup-card" style="position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:340px;text-align:center;pointer-events:all;box-shadow:0 0 40px rgba(78,205,196,0.3);">
+    <div id="ach-popup-icon" style="font-size:48px;margin-bottom:8px;"></div>
+    <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:4px;">АЧИВКА РАЗБЛОКИРОВАНА</div>
+    <div id="ach-popup-name" style="font-size:18px;font-weight:700;margin-bottom:6px;"></div>
+    <div id="ach-popup-desc" style="font-size:13px;color:var(--text-dim);"></div>
+  </div>
+</div>
+
 <script>
 // ── STATE ─────────────────────────────────────────────────
-let state = { savings:[], income:[], goals:[] };
+let state = { savings:[], income:[], goals:[], challenges:[] };
 let modalMode = null, incomeTab = 'linked', editingId = null;
 
-// ── CURRENCY RATES ────────────────────────────────────────
-// rates: { USD: 89.5, EUR: 97.2, ... } — how many RUB per 1 unit of currency
-let rates = { RUB: 1 };
+// ── CURRENCY ──────────────────────────────────────────────
+let rates = { RUB:1 };
 let ratesUpdated = null;
-
 const CURRENCY_SYMBOLS = { RUB:'₽', USD:'$', EUR:'€', CNY:'¥', GBP:'£', CHF:'₣', AED:'د', TRY:'₺', KZT:'₸' };
-const CURRENCY_NAMES   = { RUB:'Рубль', USD:'Доллар', EUR:'Евро', CNY:'Юань', GBP:'Фунт', CHF:'Франк', AED:'Дирхам', TRY:'Лира', KZT:'Тенге' };
+function currSym(code) { return CURRENCY_SYMBOLS[code] || code; }
+function toRub(amount, currency) { return amount * (rates[currency]||1); }
 
-// CBR API via CORS proxy
 async function fetchRates() {
   try {
     const res = await fetch('https://www.cbr-xml-daily.ru/daily_json.js');
     const data = await res.json();
     const v = data.Valute;
-    // CBR gives "Value per Nominal units" e.g. USD: value=89.5 nominal=1, KZT: value=19.5 nominal=100
     ['USD','EUR','CNY','GBP','CHF','AED','TRY','KZT'].forEach(code => {
       if (v[code]) rates[code] = v[code].Value / v[code].Nominal;
     });
     ratesUpdated = new Date();
-    renderRateBar();
+    // update rate bar and dashboard
+    const pairs = ['USD','EUR','CNY'].map(c =>
+      `${CURRENCY_SYMBOLS[c]}&nbsp;<span>${rates[c]?rates[c].toLocaleString('ru-RU',{maximumFractionDigits:2}):'—'}</span>`
+    ).join(' · ');
+    const t = ratesUpdated.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('rate-bar').innerHTML = `Курс ЦБ: ${pairs} <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">обновлено ${t}</span>`;
+    const usdEl = document.getElementById('dash-usd');
+    if (usdEl && rates.USD) usdEl.textContent = rates.USD.toLocaleString('ru-RU',{maximumFractionDigits:1}) + ' ₽';
     render();
   } catch(e) {
-    document.getElementById('rate-bar').innerHTML =
-      '<span class="rate-err">⚠️ Не удалось загрузить курс ЦБ РФ. Суммы в иностранной валюте показаны без конвертации.</span>';
+    document.getElementById('rate-bar').innerHTML = '<span style="color:var(--warn)">⚠️ Не удалось загрузить курс ЦБ РФ</span>';
   }
-}
-
-function toRub(amount, currency) {
-  const r = rates[currency] || 1;
-  return amount * r;
-}
-
-function renderRateBar() {
-  if (!ratesUpdated) return;
-  const pairs = ['USD','EUR','CNY'].map(c =>
-    `${CURRENCY_SYMBOLS[c]}&nbsp;<span>${rates[c] ? rates[c].toLocaleString('ru-RU',{maximumFractionDigits:2}) : '—'}</span>`
-  ).join(' &nbsp;·&nbsp; ');
-  const t = ratesUpdated.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
-  document.getElementById('rate-bar').innerHTML =
-    `Курс ЦБ: ${pairs} <span class="rate-upd">обновлено ${t}</span>`;
 }
 
 // ── STORAGE ───────────────────────────────────────────────
 const STORAGE_KEY = 'fin_v3';
 const OLD_KEYS = ['fin_state', 'fin_state_v2'];
-
 function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function load() {
-  // Try current key first
   let r = localStorage.getItem(STORAGE_KEY);
   if (r) { state = JSON.parse(r); return; }
-  // Migrate from older keys
   for (const key of OLD_KEYS) {
     r = localStorage.getItem(key);
-    if (r) {
-      state = JSON.parse(r);
-      save(); // save under new key
-      localStorage.removeItem(key);
-      return;
-    }
+    if (r) { state = JSON.parse(r); save(); localStorage.removeItem(key); return; }
   }
 }
 
@@ -560,306 +660,317 @@ const fmt2 = n => Number(n).toLocaleString('ru-RU', {maximumFractionDigits:2});
 const uid  = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 const today = () => new Date().toISOString().slice(0,10);
 
-function currSym(code) { return CURRENCY_SYMBOLS[code] || code; }
-
 // ── DEPOSIT MATH ──────────────────────────────────────────
 function calcDeposit(s) {
-  const principal = Number(s.amount);
-  const rate = Number(s.rate)/100;
-  const start = new Date(s.dateStart);
-  const end   = new Date(s.dateEnd);
-  const now   = new Date();
-  const clampedNow = now > end ? end : now;
-  const expired = now > end;
-  const ms = 86400000;
-  const daysTotal  = Math.max(1, Math.round((end-start)/ms));
-  const daysPassed = Math.max(0, Math.round((clampedNow-start)/ms));
-  const monthsPassed = daysPassed/30.4375;
-  let currentAmount;
-  if (s.compound) {
-    currentAmount = principal * Math.pow(1 + rate/12, monthsPassed);
-  } else {
-    currentAmount = principal + principal * rate * (daysPassed/365);
-  }
-  const monthlyIncome = s.compound
-    ? currentAmount * (rate/12)
-    : principal * rate / 12;
-  return { currentAmount, monthlyIncome, daysTotal, daysPassed, expired };
+  const principal=Number(s.amount), rate=Number(s.rate)/100;
+  const start=new Date(s.dateStart), end=new Date(s.dateEnd), now=new Date();
+  const clampedNow=now>end?end:now, expired=now>end;
+  const ms=86400000;
+  const daysTotal=Math.max(1,Math.round((end-start)/ms));
+  const daysPassed=Math.max(0,Math.round((clampedNow-start)/ms));
+  const monthsPassed=daysPassed/30.4375;
+  const currentAmount=s.compound
+    ? principal*Math.pow(1+rate/12,monthsPassed)
+    : principal+principal*rate*(daysPassed/365);
+  const monthlyIncome=s.compound ? currentAmount*(rate/12) : principal*rate/12;
+  return {currentAmount,monthlyIncome,daysTotal,daysPassed,expired};
 }
-
 function getSavingCurrentAmountLocal(s) {
-  if (s.isDeposit && s.rate && s.dateStart && s.dateEnd) return calcDeposit(s).currentAmount;
+  if (s.isDeposit&&s.rate&&s.dateStart&&s.dateEnd) return calcDeposit(s).currentAmount;
   return Number(s.amount);
 }
+function getSavingCurrentAmountRub(s) { return toRub(getSavingCurrentAmountLocal(s), s.currency||'RUB'); }
 
-function getSavingCurrentAmountRub(s) {
-  const local = getSavingCurrentAmountLocal(s);
-  const cur = s.currency || 'RUB';
-  return toRub(local, cur);
-}
-
-// ── INCOME CALC ───────────────────────────────────────────
-// Cache for historical CBR rates: { 'USD_2024-01-15': 89.5 }
+// ── FX & INCOME CALC ──────────────────────────────────────
 const historicalRates = {};
-
 async function fetchHistoricalRate(currency, date) {
-  const key = currency + '_' + date;
+  const key=currency+'_'+date;
   if (historicalRates[key]) return historicalRates[key];
   try {
-    // CBR daily archive URL format
-    const [y, m, d] = date.split('-');
-    const dateStr = d + '/' + m + '/' + y;
-    const url = `https://www.cbr-xml-daily.ru/archive/${y}/${m}/${d}/daily_json.js`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const v = data.Valute;
-    if (v[currency]) {
-      const r = v[currency].Value / v[currency].Nominal;
-      historicalRates[key] = r;
-      return r;
-    }
+    const [y,m,d]=date.split('-');
+    const res=await fetch(`https://www.cbr-xml-daily.ru/archive/${y}/${m}/${d}/daily_json.js`);
+    const data=await res.json();
+    const v=data.Valute;
+    if (v[currency]) { const r=v[currency].Value/v[currency].Nominal; historicalRates[key]=r; return r; }
   } catch(e) {}
   return null;
 }
-
 async function loadFxBuyRates() {
-  // For all fx income items without fxBuyRate, fetch and cache historical rate
-  const fxItems = state.income.filter(x => x.calcMode === 'fx' && !x.fxBuyRate && x.fxDate);
+  const fxItems=state.income.filter(x=>x.calcMode==='fx'&&!x.fxBuyRate&&x.fxDate);
   for (const item of fxItems) {
-    const saving = state.savings.find(s => s.id === item.savingRef);
-    if (!saving || !saving.currency || saving.currency === 'RUB') continue;
-    const r = await fetchHistoricalRate(saving.currency, item.fxDate);
-    if (r) {
-      // Store fetched rate in item for display, but don't persist — refetch next time
-      item._fetchedBuyRate = r;
-    }
+    const saving=state.savings.find(s=>s.id===item.savingRef);
+    if (!saving||!saving.currency||saving.currency==='RUB') continue;
+    const r=await fetchHistoricalRate(saving.currency,item.fxDate);
+    if (r) item._fetchedBuyRate=r;
   }
   render();
 }
-
 function calcFxIncome(item) {
-  if (!item.savingRef || item.calcMode !== 'fx') return 0;
-  const saving = state.savings.find(s => s.id === item.savingRef);
-  if (!saving || !saving.currency || saving.currency === 'RUB') return 0;
-  const buyRate = Number(item.fxBuyRate) || Number(item._fetchedBuyRate) || 0;
+  if (!item.savingRef||item.calcMode!=='fx') return 0;
+  const saving=state.savings.find(s=>s.id===item.savingRef);
+  if (!saving||!saving.currency||saving.currency==='RUB') return 0;
+  const buyRate=Number(item.fxBuyRate)||Number(item._fetchedBuyRate)||0;
   if (!buyRate) return 0;
-  const currentRate = rates[saving.currency] || 0;
-  if (!currentRate) return 0;
-  const amount = Number(saving.amount);
-  return (currentRate - buyRate) * amount;
+  return (rates[saving.currency]||0-buyRate)*Number(saving.amount);
 }
-
 function calcIncomeAmountRub(item) {
-  if (item.calcMode === 'fx') return calcFxIncome(item);
+  if (item.calcMode==='fx') return calcFxIncome(item);
   if (item.savingRef) {
-    const saving = state.savings.find(s => s.id===item.savingRef);
+    const saving=state.savings.find(s=>s.id===item.savingRef);
     if (!saving) return 0;
-    if (saving.isDeposit && saving.rate && saving.dateStart && saving.dateEnd) {
-      const d = calcDeposit(saving);
-      return toRub(d.monthlyIncome, saving.currency||'RUB');
-    }
-    if (item.calcMode==='percent' && item.rate) {
-      return getSavingCurrentAmountRub(saving) * Number(item.rate)/100/12;
-    }
+    if (saving.isDeposit&&saving.rate&&saving.dateStart&&saving.dateEnd)
+      return toRub(calcDeposit(saving).monthlyIncome, saving.currency||'RUB');
+    if (item.calcMode==='percent'&&item.rate)
+      return getSavingCurrentAmountRub(saving)*Number(item.rate)/100/12;
     return Number(item.amount)||0;
   }
   return Number(item.amount)||0;
 }
 
 // ── RENDER ────────────────────────────────────────────────
-function render() { renderSavings(); renderIncome(); renderGoals(); }
+function render() { renderHome(); renderSavings(); renderIncome(); renderGoals(); }
+
+function renderHome() {
+  const totalRubVal = state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
+  const totalInc = state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0);
+  const totalGoalsAmt = state.goals.reduce((s,x)=>s+Number(x.amount),0);
+  const goalsPct = totalGoalsAmt ? Math.min(100,Math.round(totalInc/totalGoalsAmt*100)) : 0;
+
+  // Greeting
+  const h = new Date().getHours();
+  const greet = h<6?'Доброй ночи':'h<12'?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
+  document.getElementById('home-greeting').textContent = (h<6?'Доброй ночи 🌙':h<12?'Доброе утро ☀️':h<18?'Добрый день 👋':'Добрый вечер 🌆');
+  document.getElementById('home-total').innerHTML = `${fmt(totalRubVal)} <span>₽</span>`;
+  const n = state.savings.length;
+  document.getElementById('home-sub').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов — добавь первый';
+  document.getElementById('dash-income').textContent = fmt(totalInc)+' ₽';
+  document.getElementById('dash-goals-pct').textContent = goalsPct+'%';
+
+  // Sidebar
+  document.getElementById('sb-total').textContent = fmt(totalRubVal)+' ₽ накоплено';
+
+  // Upcoming deposits
+  const now = new Date(); now.setHours(0,0,0,0);
+  const upcoming = state.savings.filter(s=>s.isDeposit&&s.dateEnd).map(s=>{
+    const end=new Date(s.dateEnd); end.setHours(0,0,0,0);
+    return {...s, daysLeft:Math.round((end-now)/86400000)};
+  }).filter(s=>s.daysLeft<=30).sort((a,b)=>a.daysLeft-b.daysLeft);
+
+  const depCard = document.getElementById('home-deposits-card');
+  const depList = document.getElementById('home-deposits-list');
+  if (upcoming.length) {
+    depCard.style.display='';
+    depList.innerHTML = upcoming.slice(0,3).map(s=>`
+      <div class="card-item">
+        <div class="card-icon">${s.icon}</div>
+        <div class="card-info"><div class="card-name">${s.name}</div>
+          <div class="card-sub">${s.daysLeft<=0?'Истёк!':s.daysLeft===0?'Сегодня!':'Через '+s.daysLeft+' дн.'}</div>
+        </div>
+        <div class="card-amount" style="color:${s.daysLeft<=0?'var(--danger)':s.daysLeft<=3?'var(--warn)':'var(--text)'}">
+          ${fmt(getSavingCurrentAmountRub(s))} ₽
+        </div>
+      </div>`).join('');
+  } else depCard.style.display='none';
+
+  // Goals preview
+  const goalsEl = document.getElementById('home-goals-preview');
+  if (!state.goals.length) {
+    goalsEl.innerHTML='<div class="empty"><div class="empty-icon">🎯</div><p>Добавь цели чтобы видеть прогресс</p></div>';
+  } else {
+    let rem=totalInc;
+    const items=state.goals.map(g=>{const cost=Number(g.amount),covered=rem>=cost;if(covered)rem-=cost;return{...g,covered};});
+    goalsEl.innerHTML=`<div class="card">${items.slice(0,4).map(g=>`
+      <div class="goal-item ${g.covered?'covered':''}">
+        <div class="goal-check">${g.covered?'✓':''}</div>
+        <div class="goal-info"><div class="goal-name">${g.name}</div></div>
+        <div class="goal-amount">${fmt(g.amount)} ₽</div>
+      </div>`).join('')}
+      ${items.length>4?`<div style="padding:10px;text-align:center;font-size:12px;color:var(--text-dim);">+${items.length-4} ещё → <span style="color:var(--accent);cursor:pointer" onclick="showPage('goals')">посмотреть все</span></div>`:''}
+    </div>`;
+  }
+
+  // Last achievement
+  if (!state._unlocked) state._unlocked=[];
+  const achEl = document.getElementById('home-ach-preview');
+  if (state._unlocked.length) {
+    const lastId = state._unlocked[state._unlocked.length-1];
+    const lastAch = ACHIEVEMENTS.find(a=>a.id===lastId);
+    if (lastAch) {
+      achEl.innerHTML=`<div class="ach-card unlocked">
+        <div class="ach-icon">${lastAch.icon}</div>
+        <div class="ach-info"><div class="ach-name">${lastAch.name}</div><div class="ach-desc">${lastAch.desc}</div></div>
+        <div class="ach-badge">✅</div>
+      </div>`;
+    }
+  } else {
+    achEl.innerHTML='<div class="empty"><div class="empty-icon">🏅</div><p>Ачивки разблокируются по мере накоплений</p></div>';
+  }
+}
 
 function toggleExclude(id) {
-  const s = state.savings.find(x => x.id === id);
-  if (s) s.excluded = !s.excluded;
-  save(); renderSavings();
+  const s=state.savings.find(x=>x.id===id);
+  if(s)s.excluded=!s.excluded;
+  save();render();
 }
 
 function renderSavings() {
-  const total = state.savings.reduce((s,x) => s + (x.excluded ? 0 : getSavingCurrentAmountRub(x)), 0);
-  document.getElementById('total-savings').innerHTML = `${fmt(total)} <span>₽</span>`;
-  const n = state.savings.length;
-  document.getElementById('savings-count').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов';
-  const el = document.getElementById('savings-list');
-  if (!n) { el.innerHTML=`<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`; return; }
-  el.innerHTML = state.savings.map(x => {
-    const cur = x.currency||'RUB';
-    const localAmt = getSavingCurrentAmountLocal(x);
-    const rubAmt   = getSavingCurrentAmountRub(x);
-    const origLocal = Number(x.amount);
-    const gained = localAmt - origLocal;
-    let badges = '';
-    let sub = '';
-    let inflWarn = '';
-    if (x.isDeposit && x.rate && x.dateStart && x.dateEnd) {
-      const d = calcDeposit(x);
-      const daysLeft = d.daysTotal - d.daysPassed;
-      if (d.expired) badges += `<span class="badge badge-exp">Истёк</span>`;
-      else {
-        badges += `<span class="badge badge-cap">${x.rate}%</span>`;
-        if (x.compound) badges += ` <span class="badge badge-cap">капит.</span>`;
-        sub = `Осталось ${daysLeft} дн.`;
-        // Check if deposit rate covers inflation
-        const currentInfl = ROSSTAT_INFLATION[2024] || 9.52;
-        if (Number(x.rate) < currentInfl) {
-          inflWarn = `<div style="font-size:11px;color:var(--warn);margin-top:4px;">⚠️ Ставка ниже инфляции ${currentInfl}% — вклад теряет в реальной стоимости</div>`;
-        }
+  const total=state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
+  document.getElementById('total-savings').innerHTML=`${fmt(total)} <span>₽</span>`;
+  const n=state.savings.length;
+  document.getElementById('savings-count').textContent=n?`${n} ${plural(n,'счёт','счёта','счетов')}`:'Нет счетов';
+  const el=document.getElementById('savings-list');
+  if(!n){el.innerHTML=`<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`;return;}
+  el.innerHTML=state.savings.map(x=>{
+    const cur=x.currency||'RUB';
+    const localAmt=getSavingCurrentAmountLocal(x), rubAmt=getSavingCurrentAmountRub(x);
+    const gained=localAmt-Number(x.amount);
+    let badges='',sub='',inflWarn='';
+    if(x.isDeposit&&x.rate&&x.dateStart&&x.dateEnd){
+      const d=calcDeposit(x), daysLeft=d.daysTotal-d.daysPassed;
+      if(d.expired) badges+=`<span class="badge badge-exp">Истёк</span>`;
+      else{
+        badges+=`<span class="badge badge-cap">${x.rate}%</span>`;
+        if(x.compound) badges+=` <span class="badge badge-cap">капит.</span>`;
+        sub=`Осталось ${daysLeft} дн.`;
+        const curInfl=ROSSTAT_INFLATION[2024]||9.52;
+        if(Number(x.rate)<curInfl) inflWarn=`<div style="font-size:11px;color:var(--warn);margin-top:3px;">⚠️ Ставка ниже инфляции ${curInfl}%</div>`;
       }
     }
-    if (cur !== 'RUB') badges += ` <span class="badge badge-cur">${currSym(cur)}</span>`;
-    const mainAmt = cur==='RUB' ? `${fmt(localAmt)} ₽` : `${fmt2(localAmt)} ${currSym(cur)}`;
-    const subAmt  = cur!=='RUB' ? `≈ ${fmt(rubAmt)} ₽` : (gained>0.01 ? `+${fmt2(gained)} ${currSym(cur)}` : '');
+    if(cur!=='RUB') badges+=` <span class="badge badge-cur">${currSym(cur)}</span>`;
+    const mainAmt=cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
+    const subAmt=cur!=='RUB'?`≈ ${fmt(rubAmt)} ₽`:(gained>0.01?`+${fmt2(gained)} ₽`:'');
     return `<div class="card-item${x.excluded?' excluded':''}">
-      <button class="excl-btn" onclick="toggleExclude('${x.id}')" title="${x.excluded?'Включить в накопления':'Исключить из накоплений'}">${x.excluded?'🔘':'⚫'}</button>
+      <button class="excl-btn" onclick="toggleExclude('${x.id}')">${x.excluded?'🔘':'⚫'}</button>
       <div class="card-icon">${x.icon}</div>
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
-        ${sub ? `<div class="card-sub">${sub}</div>` : ''}
+        ${sub?`<div class="card-sub">${sub}</div>`:''}
         ${inflWarn}
       </div>
-      <div class="card-amount">
-        ${mainAmt}
-        ${subAmt ? `<span class="sub-amount">${subAmt}</span>` : ''}
-      </div>
-      <button class="edit-btn" onclick="openEdit('savings','${x.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
+      <div class="card-amount">${mainAmt}${subAmt?`<span class="sub-amount">${subAmt}</span>`:''}</div>
+      <button class="edit-btn" onclick="openEdit('savings','${x.id}')">✏️</button>
+      <button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
     </div>`;
   }).join('');
 }
 
 function renderIncome() {
-  const total = state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0);
-  document.getElementById('total-income-display').innerHTML = `${fmt(total)} <span>₽</span>`;
-  const el = document.getElementById('income-list');
-  if (!state.income.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`; return; }
-  el.innerHTML = state.income.map(x => {
-    const amt = calcIncomeAmountRub(x);
-    const linked = x.savingRef ? state.savings.find(s=>s.id===x.savingRef) : null;
-    let sub = 'в месяц';
-    if (linked) {
-      const cur = linked.currency||'RUB';
-      if (x.calcMode==='fx') {
-        const buyR = Number(x.fxBuyRate) || Number(x._fetchedBuyRate) || 0;
-        const curR = rates[cur]||0;
-        const buyRStr = buyR ? buyR.toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽' : (x.fxDate ? 'загрузка...' : '?');
-        sub = `покупка: ${buyRStr} · сейчас: ${curR ? curR.toLocaleString('ru-RU',{maximumFractionDigits:2}) : '?'} ₽ · ${linked.name}`;
-      } else if (linked.isDeposit && linked.rate) sub = `авто · ${linked.name}${cur!=='RUB'?' · '+currSym(cur):''}`;
-      else if (x.calcMode==='percent') sub = `${x.rate}% годовых · ${linked.name}`;
-      else sub = linked.name;
+  const total=state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0);
+  document.getElementById('total-income-display').innerHTML=`${fmt(total)} <span>₽</span>`;
+  const el=document.getElementById('income-list');
+  if(!state.income.length){el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`;return;}
+  el.innerHTML=state.income.map(x=>{
+    const amt=calcIncomeAmountRub(x);
+    const linked=x.savingRef?state.savings.find(s=>s.id===x.savingRef):null;
+    let sub='в месяц';
+    if(linked){
+      const cur=linked.currency||'RUB';
+      if(x.calcMode==='fx'){const buyR=Number(x.fxBuyRate)||Number(x._fetchedBuyRate)||0;const curR=rates[cur]||0;sub=`покупка: ${buyR?buyR.toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽':'загрузка...'} · сейчас: ${curR?curR.toLocaleString('ru-RU',{maximumFractionDigits:2}):'?'} ₽`;}
+      else if(linked.isDeposit&&linked.rate) sub=`авто · ${linked.name}`;
+      else if(x.calcMode==='percent') sub=`${x.rate}% годовых · ${linked.name}`;
+      else sub=linked.name;
     }
     return `<div class="card-item">
       <div class="card-icon">${x.icon}</div>
       <div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">${sub}</div></div>
       ${linked?`<span class="badge badge-link">🔗</span>`:''}
-      <div class="card-amount income">${x.calcMode==='fx' ? (amt>=0?'+':'') : '+'}${fmt(amt)} ₽${x.calcMode==='fx'?'<span class="sub-amount">курсовая разница</span>':''}</div>
-      <button class="edit-btn" onclick="openEdit('income','${x.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('income','${x.id}')">✕</button>
+      <div class="card-amount income">${x.calcMode==='fx'?(amt>=0?'+':''):'+'}${fmt(amt)} ₽${x.calcMode==='fx'?'<span class="sub-amount">курсовая разница</span>':''}</div>
+      <button class="edit-btn" onclick="openEdit('income','${x.id}')">✏️</button>
+      <button class="delete-btn" onclick="deleteItem('income','${x.id}')">✕</button>
     </div>`;
   }).join('');
 }
 
-function renderFreedom() {
-  const contentEl = document.getElementById('freedom-content');
-  if (!contentEl) return;
-
-  const totalIncome = state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0);
-  const totalGoalsAmt = state.goals.reduce((s,x) => s + Number(x.amount), 0);
-
-  if (!totalGoalsAmt) {
-    contentEl.innerHTML = `<div style="font-size:13px;color:var(--text-dim);">Добавь цели — и увидишь прогресс к финансовой свободе</div>`;
-    return;
-  }
-
-  const pct = Math.min(100, totalIncome / totalGoalsAmt * 100);
-  const remaining = Math.max(0, totalGoalsAmt - totalIncome);
-  const isFree = totalIncome >= totalGoalsAmt;
-
-  if (isFree) {
-    contentEl.innerHTML = `<div style="text-align:center;padding:8px 0;">
-      <div style="font-size:32px;margin-bottom:6px;">🎉</div>
-      <div style="font-size:15px;font-weight:700;color:var(--accent);">Ты финансово свободна!</div>
-      <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">Пассивный доход покрывает все цели</div>
-    </div>`;
-    return;
-  }
-
-  contentEl.innerHTML = `
-    <div class="freedom-row">
-      <span class="freedom-label">Нужно для свободы</span>
-      <span class="freedom-val">${fmt(totalGoalsAmt)} ₽/мес</span>
-    </div>
-    <div class="freedom-row">
-      <span class="freedom-label">Осталось</span>
-      <span class="freedom-val" style="color:var(--warn)">−${fmt(remaining)} ₽/мес</span>
-    </div>
-    <div class="freedom-bar-wrap">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:6px;">
-        <span>🏁 До финансовой свободы</span>
-        <span>${pct.toFixed(1)}%</span>
-      </div>
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" style="width:${pct}%"></div>
-      </div>
-    </div>`;
-}
-
 function renderGoals() {
-  const totalIncome = state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0);
-  document.getElementById('goals-income-ref').textContent = `${fmt(totalIncome)} ₽`;
-  const el = document.getElementById('goals-list');
-  if (!state.goals.length) {
+  const totalIncome=state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0);
+  document.getElementById('goals-income-ref').textContent=`${fmt(totalIncome)} ₽`;
+  const el=document.getElementById('goals-list');
+  const totalGoals=state.goals.reduce((s,x)=>s+Number(x.amount),0);
+  if(!state.goals.length){
     el.innerHTML=`<div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>`;
     document.getElementById('goals-pct').textContent='0%';
     document.getElementById('goals-bar').style.width='0%';
     document.getElementById('goals-covered-amount').textContent='0 ₽ покрыто';
     document.getElementById('goals-total-amount').textContent='из 0 ₽';
+    renderChallenges();
     return;
   }
-  let remaining=totalIncome, coveredSum=0;
-  const totalGoals = state.goals.reduce((s,x)=>s+Number(x.amount),0);
-  const items = state.goals.map(g => {
-    const cost=Number(g.amount), covered=remaining>=cost;
-    if(covered){remaining-=cost;coveredSum+=cost;}
-    return {...g,covered};
-  });
-  el.innerHTML = items.map(g=>`<div class="goal-item ${g.covered?'covered':''}" data-id="${g.id}" draggable="true">
-    <div class="drag-handle" title="Перетащи для сортировки">⠿</div>
+  let remaining=totalIncome,coveredSum=0;
+  const items=state.goals.map(g=>{const cost=Number(g.amount),covered=remaining>=cost;if(covered){remaining-=cost;coveredSum+=cost;}return{...g,covered};});
+  el.innerHTML=items.map(g=>`<div class="goal-item ${g.covered?'covered':''}" data-id="${g.id}" draggable="true">
+    <div class="drag-handle">⠿</div>
     <div class="goal-check">${g.covered?'✓':''}</div>
     <div class="goal-info"><div class="goal-name">${g.name}</div></div>
     <div class="goal-amount">${fmt(g.amount)} ₽</div>
-    <button class="edit-btn" onclick="openEdit('goals','${g.id}')">✏️</button><button class="delete-btn" onclick="deleteItem('goals','${g.id}')">✕</button>
+    <button class="edit-btn" onclick="openEdit('goals','${g.id}')">✏️</button>
+    <button class="delete-btn" onclick="deleteItem('goals','${g.id}')">✕</button>
   </div>`).join('');
   initGoalDrag();
-  const pct = totalGoals?Math.min(100,Math.round(coveredSum/totalGoals*100)):0;
+  const pct=totalGoals?Math.min(100,Math.round(coveredSum/totalGoals*100)):0;
   document.getElementById('goals-pct').textContent=pct+'%';
   document.getElementById('goals-bar').style.width=pct+'%';
   document.getElementById('goals-covered-amount').textContent=`${fmt(coveredSum)} ₽ покрыто`;
   document.getElementById('goals-total-amount').textContent=`из ${fmt(totalGoals)} ₽`;
+  renderChallenges();
+}
+
+// ── SIDEBAR & NAVIGATION ──────────────────────────────────
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+function navTo(page, anchor) {
+  closeSidebar();
+  showPage(page);
+  if (anchor) {
+    setTimeout(() => {
+      const el = document.getElementById(anchor+'-anchor') || document.getElementById(anchor+'-wrap');
+      if (el) el.scrollIntoView({behavior:'smooth'});
+    }, 100);
+  }
+}
+
+const PAGES = ['home','savings','income','goals','achievements','inflation'];
+const PAGE_TITLES = {home:'Мои накопления',savings:'Счета',income:'Доход',goals:'Цели',achievements:'Ачивки',inflation:'Инфляция'};
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const navBtn = document.getElementById('nav-'+name);
+  if (navBtn) navBtn.classList.add('active');
+  const titleEl = document.getElementById('topbar-title');
+  if (titleEl) titleEl.textContent = PAGE_TITLES[name] || 'Мои накопления';
+  render();
+  if(name==='achievements') renderAchievements();
+  if(name==='savings') setTimeout(drawChart,50);
+  if(name==='inflation') setTimeout(updateInflationCalc,50);
 }
 
 // ── MODAL ─────────────────────────────────────────────────
 function openModal(mode) {
-  if (!editingId) editingId = null;
-  modalMode = mode;
+  if(!editingId) editingId=null;
+  modalMode=mode;
   ['savings','income','goals'].forEach(m=>document.getElementById('fields-'+m).style.display=m===mode?'':'none');
-  const titles = editingId
-    ? {savings:'Редактировать счёт',income:'Редактировать доход',goals:'Редактировать цель'}
-    : {savings:'Добавить счёт',income:'Добавить доход',goals:'Добавить цель'};
-  document.getElementById('modal-title').textContent = titles[mode];
-  if (mode==='savings') {
+  const titles=editingId?{savings:'Редактировать счёт',income:'Редактировать доход',goals:'Редактировать цель'}:{savings:'Добавить счёт',income:'Добавить доход',goals:'Добавить цель'};
+  document.getElementById('modal-title').textContent=titles[mode];
+  if(mode==='savings'){
     document.getElementById('s-icon').selectedIndex=0;
     document.getElementById('s-currency').value='RUB';
     document.getElementById('s-compound').checked=false;
     document.getElementById('s-date-start').value=today();
     onSavingTypeChange();
   }
-  if (mode==='income') {
+  if(mode==='income'){
     const sel=document.getElementById('i-saving-ref');
-    sel.innerHTML='<option value="">— выбери счёт —</option>'+
-      state.savings.map(s=>`<option value="${s.id}">${s.icon} ${s.name}${(s.currency&&s.currency!=='RUB')?' ('+currSym(s.currency)+')':''}</option>`).join('');
+    sel.innerHTML='<option value="">— выбери счёт —</option>'+state.savings.map(s=>`<option value="${s.id}">${s.icon} ${s.name}${(s.currency&&s.currency!=='RUB')?' ('+currSym(s.currency)+')':''}</option>`).join('');
     switchIncomeTab('linked');
     updateIncomePreview();
   }
-  ['s-name','s-amount','s-rate','s-date-end','i-percent','i-fixed-amount','i-fx-rate','i-fx-date','i-name','i-amount','g-name','g-amount']
-    .forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['s-name','s-amount','s-rate','s-date-end','i-percent','i-fixed-amount','i-fx-rate','i-fx-date','i-name','i-amount','g-name','g-amount'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('deposit-preview').style.display='none';
   document.getElementById('currency-preview').style.display='none';
   document.getElementById('modal').classList.add('open');
@@ -869,8 +980,7 @@ function onSavingTypeChange() {
   const sel=document.getElementById('s-icon');
   const isDeposit=sel.options[sel.selectedIndex].dataset.deposit==='1';
   document.getElementById('deposit-fields').style.display=isDeposit?'':'none';
-  // deposits are RUB only for simplicity
-  if (isDeposit) { document.getElementById('s-currency').value='RUB'; }
+  if(isDeposit) document.getElementById('s-currency').value='RUB';
   updateDepositPreview();
 }
 
@@ -878,28 +988,20 @@ function updateDepositPreview() {
   const amount=parseFloat(document.getElementById('s-amount').value)||0;
   const currency=document.getElementById('s-currency').value;
   const curPreview=document.getElementById('currency-preview');
-
-  // show RUB equivalent if foreign currency
-  if (currency!=='RUB' && amount>0 && rates[currency]) {
-    const rub=toRub(amount,currency);
+  if(currency!=='RUB'&&amount>0&&rates[currency]){
     curPreview.style.display='';
-    curPreview.innerHTML=`${fmt2(amount)} ${currSym(currency)} = <strong>${fmt(rub)} ₽</strong> по курсу ЦБ`;
-  } else {
-    curPreview.style.display='none';
-  }
-
+    curPreview.innerHTML=`${fmt2(amount)} ${currSym(currency)} = <strong>${fmt(toRub(amount,currency))} ₽</strong> по курсу ЦБ`;
+  } else curPreview.style.display='none';
   const rate=parseFloat(document.getElementById('s-rate').value)||0;
   const dateStart=document.getElementById('s-date-start').value;
   const dateEnd=document.getElementById('s-date-end').value;
   const compound=document.getElementById('s-compound').checked;
   const preview=document.getElementById('deposit-preview');
-  if (!amount||!rate||!dateStart||!dateEnd){preview.style.display='none';return;}
+  if(!amount||!rate||!dateStart||!dateEnd){preview.style.display='none';return;}
   const d=calcDeposit({amount,rate,dateStart,dateEnd,compound,isDeposit:true});
   if(d.daysTotal<=0){preview.style.display='none';return;}
   preview.style.display='';
-  preview.innerHTML=`Срок: <strong>${d.daysTotal}</strong> дн. · Прошло: <strong>${d.daysPassed}</strong> дн.<br>
-    Сейчас: <strong>${fmt2(d.currentAmount)} ₽</strong><br>
-    Доход в месяц: <strong>${fmt2(d.monthlyIncome)} ₽</strong>`;
+  preview.innerHTML=`Срок: <strong>${d.daysTotal}</strong> дн. · Прошло: <strong>${d.daysPassed}</strong> дн.<br>Сейчас: <strong>${fmt2(d.currentAmount)} ₽</strong><br>Доход в месяц: <strong>${fmt2(d.monthlyIncome)} ₽</strong>`;
 }
 
 function switchIncomeTab(tab) {
@@ -917,44 +1019,31 @@ function updateIncomePreview() {
   const manWrap=document.getElementById('income-manual-wrap');
   const autoPreview=document.getElementById('income-auto-preview');
   const linkedPreview=document.getElementById('income-linked-preview');
-
   document.getElementById('field-percent').style.display=calcMode==='percent'?'':'none';
   document.getElementById('field-fixed').style.display=calcMode==='fixed'?'':'none';
   document.getElementById('field-fx').style.display=calcMode==='fx'?'':'none';
   document.getElementById('fx-preview').style.display='none';
-
   if(!refId){autoWrap.style.display='none';manWrap.style.display='';linkedPreview.style.display='none';return;}
   const saving=state.savings.find(s=>s.id===refId);
   if(!saving)return;
   const cur=saving.currency||'RUB';
-
-  // hide fx option if account is RUB
   const calcSel=document.getElementById('i-calc-mode');
   const fxOption=calcSel.querySelector('option[value="fx"]');
-  if(fxOption) fxOption.style.display = (cur!=='RUB')?'':'none';
-  if(calcMode==='fx' && cur==='RUB') { calcSel.value='percent'; }
-
+  if(fxOption) fxOption.style.display=(cur!=='RUB')?'':'none';
+  if(calcMode==='fx'&&cur==='RUB') calcSel.value='percent';
   if(saving.isDeposit&&saving.rate&&saving.dateStart&&saving.dateEnd){
     autoWrap.style.display='';manWrap.style.display='none';
     const d=calcDeposit(saving);
     const rubIncome=toRub(d.monthlyIncome,cur);
-    autoPreview.innerHTML=`Вклад: <strong>${saving.name}</strong><br>
-      ${saving.rate}% годовых${saving.compound?' с капитализацией':''}<br>
-      Доход: <strong>${fmt2(d.monthlyIncome)} ${currSym(cur)}</strong> = <strong>${fmt(rubIncome)} ₽</strong>/мес
-      ${d.expired?'<br><span style="color:var(--warn)">⚠️ Вклад истёк</span>':''}`;
+    autoPreview.innerHTML=`Вклад: <strong>${saving.name}</strong><br>${saving.rate}% годовых${saving.compound?' с капитализацией':''}<br>Доход: <strong>${fmt2(d.monthlyIncome)} ${currSym(cur)}</strong> = <strong>${fmt(rubIncome)} ₽</strong>/мес${d.expired?'<br><span style="color:var(--warn)">⚠️ Вклад истёк</span>':''}`;
   } else {
     autoWrap.style.display='none';manWrap.style.display='';
     if(calcMode==='percent'){
       const rate=parseFloat(document.getElementById('i-percent').value)||0;
-      if(rate>0){
-        const rubAmt=getSavingCurrentAmountRub(saving);
-        const monthly=rubAmt*rate/100/12;
-        linkedPreview.style.display='';
-        linkedPreview.innerHTML=`Доход в месяц: <strong>${fmt(monthly)} ₽</strong>`;
-      } else linkedPreview.style.display='none';
-    } else if(calcMode==='fx'){
-      updateFxPreview();
-    } else linkedPreview.style.display='none';
+      if(rate>0){linkedPreview.style.display='';linkedPreview.innerHTML=`Доход в месяц: <strong>${fmt(getSavingCurrentAmountRub(saving)*rate/100/12)} ₽</strong>`;}
+      else linkedPreview.style.display='none';
+    } else if(calcMode==='fx') updateFxPreview();
+    else linkedPreview.style.display='none';
   }
 }
 
@@ -969,83 +1058,52 @@ async function updateFxPreview() {
   const cur=saving.currency;
   const currentRate=rates[cur]||0;
   if(!currentRate){preview.style.display='none';return;}
-
-  let buyRate = manualRate;
-  let rateSource = 'вручную';
-  if(!buyRate && fxDate) {
-    preview.style.display='';
-    preview.innerHTML='⏳ Загружаю курс ЦБ на эту дату...';
-    const fetched = await fetchHistoricalRate(cur, fxDate);
-    if(fetched) { buyRate=fetched; rateSource='ЦБ РФ на '+fxDate; }
+  let buyRate=manualRate, rateSource='вручную';
+  if(!buyRate&&fxDate){
+    preview.style.display='';preview.innerHTML='⏳ Загружаю курс ЦБ...';
+    const fetched=await fetchHistoricalRate(cur,fxDate);
+    if(fetched){buyRate=fetched;rateSource='ЦБ РФ на '+fxDate;}
   }
   if(!buyRate){preview.style.display='none';return;}
-
-  const amount=Number(saving.amount);
-  const gain=(currentRate-buyRate)*amount;
-  const gainPct=((currentRate-buyRate)/buyRate*100);
+  const amount=Number(saving.amount),gain=(currentRate-buyRate)*amount,gainPct=(currentRate-buyRate)/buyRate*100;
   preview.style.display='';
-  preview.innerHTML=`Куплено: <strong>${fmt2(amount)} ${currSym(cur)}</strong> по <strong>${fmt2(buyRate)} ₽</strong> (${rateSource})<br>
-    Текущий курс ЦБ: <strong>${fmt2(currentRate)} ₽</strong><br>
-    Курсовая разница: <strong style="color:${gain>=0?'var(--accent)':'var(--danger)'}">
-    ${gain>=0?'+':''}${fmt(gain)} ₽ (${gain>=0?'+':''}${gainPct.toFixed(1)}%)</strong>`;
+  preview.innerHTML=`Куплено: <strong>${fmt2(amount)} ${currSym(cur)}</strong> по <strong>${fmt2(buyRate)} ₽</strong> (${rateSource})<br>Текущий курс ЦБ: <strong>${fmt2(currentRate)} ₽</strong><br>Курсовая разница: <strong style="color:${gain>=0?'var(--accent)':'var(--danger)'}">${gain>=0?'+':''}${fmt(gain)} ₽ (${gain>=0?'+':''}${gainPct.toFixed(1)}%)</strong>`;
 }
 
-function openEdit(list, id) {
-  editingId = id;
-  if (list === 'savings') {
-    const x = state.savings.find(s => s.id === id);
-    if (!x) return;
+function openEdit(list,id) {
+  editingId=id;
+  if(list==='savings'){
+    const x=state.savings.find(s=>s.id===id);if(!x)return;
     openModal('savings');
-    document.getElementById('s-name').value = x.name;
-    document.getElementById('s-amount').value = x.amount;
-    document.getElementById('s-currency').value = x.currency || 'RUB';
-    // set icon select
-    const sel = document.getElementById('s-icon');
-    for (let i = 0; i < sel.options.length; i++) {
-      if (sel.options[i].value === x.icon) { sel.selectedIndex = i; break; }
-    }
+    document.getElementById('s-name').value=x.name;
+    document.getElementById('s-amount').value=x.amount;
+    document.getElementById('s-currency').value=x.currency||'RUB';
+    const sel=document.getElementById('s-icon');
+    for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===x.icon){sel.selectedIndex=i;break;}}
     onSavingTypeChange();
-    if (x.isDeposit) {
-      document.getElementById('s-rate').value = x.rate || '';
-      document.getElementById('s-date-start').value = x.dateStart || '';
-      document.getElementById('s-date-end').value = x.dateEnd || '';
-      document.getElementById('s-compound').checked = !!x.compound;
-      updateDepositPreview();
-    }
-  } else if (list === 'income') {
-    const x = state.income.find(i => i.id === id);
-    if (!x) return;
+    if(x.isDeposit){document.getElementById('s-rate').value=x.rate||'';document.getElementById('s-date-start').value=x.dateStart||'';document.getElementById('s-date-end').value=x.dateEnd||'';document.getElementById('s-compound').checked=!!x.compound;updateDepositPreview();}
+  } else if(list==='income'){
+    const x=state.income.find(i=>i.id===id);if(!x)return;
     openModal('income');
-    if (x.savingRef) {
+    if(x.savingRef){
       switchIncomeTab('linked');
-      document.getElementById('i-saving-ref').value = x.savingRef;
-      if (x.calcMode === 'percent') {
-        document.getElementById('i-calc-mode').value = 'percent';
-        document.getElementById('i-percent').value = x.rate || '';
-      } else if (x.calcMode === 'fixed') {
-        document.getElementById('i-calc-mode').value = 'fixed';
-        document.getElementById('i-fixed-amount').value = x.amount || '';
-      } else if (x.calcMode === 'fx') {
-        document.getElementById('i-calc-mode').value = 'fx';
-        document.getElementById('i-fx-rate').value = x.fxBuyRate || '';
-        document.getElementById('i-fx-date').value = x.fxDate || '';
-      }
+      document.getElementById('i-saving-ref').value=x.savingRef;
+      if(x.calcMode==='percent'){document.getElementById('i-calc-mode').value='percent';document.getElementById('i-percent').value=x.rate||'';}
+      else if(x.calcMode==='fixed'){document.getElementById('i-calc-mode').value='fixed';document.getElementById('i-fixed-amount').value=x.amount||'';}
+      else if(x.calcMode==='fx'){document.getElementById('i-calc-mode').value='fx';document.getElementById('i-fx-rate').value=x.fxBuyRate||'';document.getElementById('i-fx-date').value=x.fxDate||'';}
       updateIncomePreview();
     } else {
       switchIncomeTab('manual');
-      document.getElementById('i-name').value = x.name;
-      document.getElementById('i-amount').value = x.amount;
-      const isel = document.getElementById('i-icon');
-      for (let i = 0; i < isel.options.length; i++) {
-        if (isel.options[i].value === x.icon) { isel.selectedIndex = i; break; }
-      }
+      document.getElementById('i-name').value=x.name;
+      document.getElementById('i-amount').value=x.amount;
+      const isel=document.getElementById('i-icon');
+      for(let i=0;i<isel.options.length;i++){if(isel.options[i].value===x.icon){isel.selectedIndex=i;break;}}
     }
-  } else if (list === 'goals') {
-    const x = state.goals.find(g => g.id === id);
-    if (!x) return;
+  } else {
+    const x=state.goals.find(g=>g.id===id);if(!x)return;
     openModal('goals');
-    document.getElementById('g-name').value = x.name;
-    document.getElementById('g-amount').value = x.amount;
+    document.getElementById('g-name').value=x.name;
+    document.getElementById('g-amount').value=x.amount;
   }
 }
 
@@ -1053,54 +1111,29 @@ function closeModal(){editingId=null;document.getElementById('modal').classList.
 function closeModalOutside(e){if(e.target===document.getElementById('modal'))closeModal();}
 
 function saveItem(){
-  const id = editingId || uid();
-  if (editingId) {
-    // remove old item first, then re-add with same id
-    ['savings','income','goals'].forEach(list => {
-      state[list] = state[list].filter(x => x.id !== editingId);
-    });
-  }
+  const id=editingId||uid();
+  if(editingId) ['savings','income','goals'].forEach(list=>{state[list]=state[list].filter(x=>x.id!==editingId);});
   if(modalMode==='savings'){
     const name=document.getElementById('s-name').value.trim();
     const amount=parseFloat(document.getElementById('s-amount').value);
     if(!name||isNaN(amount)||amount<=0)return;
     const sel=document.getElementById('s-icon');
-    const icon=sel.value;
-    const isDeposit=sel.options[sel.selectedIndex].dataset.deposit==='1';
+    const icon=sel.value,isDeposit=sel.options[sel.selectedIndex].dataset.deposit==='1';
     const currency=document.getElementById('s-currency').value;
     const item={id,name,icon,amount,isDeposit,currency};
-    if(isDeposit){
-      item.rate=parseFloat(document.getElementById('s-rate').value)||0;
-      item.dateStart=document.getElementById('s-date-start').value;
-      item.dateEnd=document.getElementById('s-date-end').value;
-      item.compound=document.getElementById('s-compound').checked;
-    }
+    if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
     state.savings.push(item);
-
   } else if(modalMode==='income'){
     if(incomeTab==='linked'){
-      const refId=document.getElementById('i-saving-ref').value;
-      if(!refId)return;
+      const refId=document.getElementById('i-saving-ref').value;if(!refId)return;
       const saving=state.savings.find(s=>s.id===refId);
       if(saving.isDeposit&&saving.rate&&saving.dateStart&&saving.dateEnd){
         state.income.push({id,name:saving.name,icon:saving.icon,amount:0,savingRef:refId,calcMode:'auto'});
       } else {
         const calcMode=document.getElementById('i-calc-mode').value;
-        if(calcMode==='percent'){
-          const rate=parseFloat(document.getElementById('i-percent').value);
-          if(!rate||rate<=0)return;
-          state.income.push({id,name:saving.name,icon:saving.icon,amount:0,savingRef:refId,calcMode:'percent',rate});
-        } else if(calcMode==='fx'){
-          const fxBuyRateRaw=parseFloat(document.getElementById('i-fx-rate').value);
-          const fxDate=document.getElementById('i-fx-date').value;
-          if(!fxDate)return; // date is required
-          const fxBuyRate=fxBuyRateRaw>0 ? fxBuyRateRaw : null; // null = fetch from CBR
-          state.income.push({id,name:'Курсовая разница · '+saving.name,icon:'💱',amount:0,savingRef:refId,calcMode:'fx',fxBuyRate,fxDate});
-        } else {
-          const amt=parseFloat(document.getElementById('i-fixed-amount').value);
-          if(!amt||amt<=0)return;
-          state.income.push({id,name:saving.name,icon:saving.icon,amount:amt,savingRef:refId,calcMode:'fixed'});
-        }
+        if(calcMode==='percent'){const rate=parseFloat(document.getElementById('i-percent').value);if(!rate||rate<=0)return;state.income.push({id,name:saving.name,icon:saving.icon,amount:0,savingRef:refId,calcMode:'percent',rate});}
+        else if(calcMode==='fx'){const fxBuyRateRaw=parseFloat(document.getElementById('i-fx-rate').value);const fxDate=document.getElementById('i-fx-date').value;if(!fxDate)return;state.income.push({id,name:'Курсовая разница · '+saving.name,icon:'💱',amount:0,savingRef:refId,calcMode:'fx',fxBuyRate:fxBuyRateRaw>0?fxBuyRateRaw:null,fxDate});}
+        else{const amt=parseFloat(document.getElementById('i-fixed-amount').value);if(!amt||amt<=0)return;state.income.push({id,name:saving.name,icon:saving.icon,amount:amt,savingRef:refId,calcMode:'fixed'});}
       }
     } else {
       const name=document.getElementById('i-name').value.trim();
@@ -1123,322 +1156,30 @@ function deleteItem(list,id){
   save();render();
 }
 
-function showPage(name){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  document.getElementById('nav-'+name).classList.add('active');
-  render();
-  if(name==='achievements') renderAchievements();
-  if(name==='savings') setTimeout(drawChart, 50);
-  if(name==='inflation') setTimeout(updateInflationCalc, 50);
-}
-
-function plural(n,one,few,many){
-  const m=n%10,h=n%100;
-  if(m===1&&h!==11)return one;
-  if([2,3,4].includes(m)&&![12,13,14].includes(h))return few;
-  return many;
-}
-
-document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&document.getElementById('modal').classList.contains('open'))saveItem();
-  if(e.key==='Escape')closeModal();
-});
-
-function resetAllData() {
-  if (confirm('Удалить все данные приложения? Это нельзя отменить.')) {
-    ['fin_v3','fin_state_v2','fin_state'].forEach(k => localStorage.removeItem(k));
+function resetAllData(){
+  if(confirm('Удалить все данные приложения? Это нельзя отменить.')){
+    ['fin_v3','fin_state_v2','fin_state'].forEach(k=>localStorage.removeItem(k));
     location.reload();
   }
 }
 
+function plural(n,one,few,many){const m=n%10,h=n%100;if(m===1&&h!==11)return one;if([2,3,4].includes(m)&&![12,13,14].includes(h))return few;return many;}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('modal').classList.contains('open'))saveItem();
+  if(e.key==='Escape'){closeModal();closeSidebar();}
+});
+
 setInterval(render,60000);
 setInterval(fetchRates,3600000);
 
-
-// ── ACHIEVEMENTS ──────────────────────────────────────────
-const ACHIEVEMENTS = [
-  // Savings milestones
-  { id:'s1', icon:'🌱', name:'Первый росток', desc:'Добавь первый счёт', secret:false,
-    check:(s,i,g)=> s.length >= 1, progress:(s)=>({cur:s.length,max:1}) },
-  { id:'s1b', icon:'🌿', name:'Пять тысяч', desc:'Накопи 5 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=5000, progress:(s)=>({cur:totalRub(s),max:5000,rub:true}) },
-  { id:'s2', icon:'🪨', name:'Подушка', desc:'Накопи 10 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=10000, progress:(s)=>({cur:totalRub(s),max:10000,rub:true}) },
-  { id:'s2b', icon:'🏗️', name:'Строю будущее', desc:'Накопи 50 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=50000, progress:(s)=>({cur:totalRub(s),max:50000,rub:true}) },
-  { id:'s3', icon:'💼', name:'Серьёзно', desc:'Накопи 100 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=100000, progress:(s)=>({cur:totalRub(s),max:100000,rub:true}) },
-  { id:'s3b', icon:'🎓', name:'На образование', desc:'Накопи 200 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=200000, progress:(s)=>({cur:totalRub(s),max:200000,rub:true}) },
-  { id:'s3c', icon:'🚗', name:'На машину', desc:'Накопи 300 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=300000, progress:(s)=>({cur:totalRub(s),max:300000,rub:true}) },
-  { id:'s4', icon:'🏠', name:'На первоначальный взнос', desc:'Накопи 500 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=500000, progress:(s)=>({cur:totalRub(s),max:500000,rub:true}) },
-  { id:'s4b', icon:'✈️', name:'На крыльях', desc:'Накопи 750 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=750000, progress:(s)=>({cur:totalRub(s),max:750000,rub:true}) },
-  { id:'s5', icon:'🚀', name:'Миллион', desc:'Накопи 1 000 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=1000000, progress:(s)=>({cur:totalRub(s),max:1000000,rub:true}) },
-  { id:'s5b', icon:'🌟', name:'Два миллиона', desc:'Накопи 2 000 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=2000000, progress:(s)=>({cur:totalRub(s),max:2000000,rub:true}) },
-  { id:'s6', icon:'💎', name:'Три миллиона', desc:'Накопи 3 000 000 ₽', secret:false,
-    check:(s)=>totalRub(s)>=3000000, progress:(s)=>({cur:totalRub(s),max:3000000,rub:true}) },
-
-  // Passive income
-  { id:'i1', icon:'☕', name:'Кофе за свой счёт', desc:'Пассивный доход 500 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=500, progress:(s,inc)=>({cur:totalIncome(inc),max:500,rub:true}) },
-  { id:'i1b', icon:'🍵', name:'Чай с булочкой', desc:'Пассивный доход 1 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=1000, progress:(s,inc)=>({cur:totalIncome(inc),max:1000,rub:true}) },
-  { id:'i2', icon:'📱', name:'Подписки закрыты', desc:'Пассивный доход 3 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=3000, progress:(s,inc)=>({cur:totalIncome(inc),max:3000,rub:true}) },
-  { id:'i2b', icon:'💈', name:'Стрижка', desc:'Пассивный доход 2 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=2000, progress:(s,inc)=>({cur:totalIncome(inc),max:2000,rub:true}) },
-  { id:'i3', icon:'🚌', name:'Транспорт', desc:'Пассивный доход 5 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=5000, progress:(s,inc)=>({cur:totalIncome(inc),max:5000,rub:true}) },
-  { id:'i3b', icon:'🎬', name:'Кино раз в неделю', desc:'Пассивный доход 4 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=4000, progress:(s,inc)=>({cur:totalIncome(inc),max:4000,rub:true}) },
-  { id:'i4', icon:'💊', name:'Аптека', desc:'Пассивный доход 7 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=7000, progress:(s,inc)=>({cur:totalIncome(inc),max:7000,rub:true}) },
-  { id:'i4b', icon:'👗', name:'Обновить гардероб', desc:'Пассивный доход 8 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=8000, progress:(s,inc)=>({cur:totalIncome(inc),max:8000,rub:true}) },
-  { id:'i5', icon:'🛒', name:'Продукты', desc:'Пассивный доход 10 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=10000, progress:(s,inc)=>({cur:totalIncome(inc),max:10000,rub:true}) },
-  { id:'i5b', icon:'💆', name:'Массаж', desc:'Пассивный доход 12 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=12000, progress:(s,inc)=>({cur:totalIncome(inc),max:12000,rub:true}) },
-  { id:'i5c', icon:'🍽️', name:'Ресторан раз в неделю', desc:'Пассивный доход 15 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=15000, progress:(s,inc)=>({cur:totalIncome(inc),max:15000,rub:true}) },
-  { id:'i6', icon:'🍕', name:'Еда вне дома', desc:'Пассивный доход 20 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=20000, progress:(s,inc)=>({cur:totalIncome(inc),max:20000,rub:true}) },
-  { id:'i6b', icon:'🏋️', name:'Зал и тренер', desc:'Пассивный доход 25 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=25000, progress:(s,inc)=>({cur:totalIncome(inc),max:25000,rub:true}) },
-  { id:'i6c', icon:'🎮', name:'Игровой ПК', desc:'Пассивный доход 30 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=30000, progress:(s,inc)=>({cur:totalIncome(inc),max:30000,rub:true}) },
-  { id:'i6d', icon:'🚕', name:'Такси вместо метро', desc:'Пассивный доход 40 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=40000, progress:(s,inc)=>({cur:totalIncome(inc),max:40000,rub:true}) },
-  { id:'i6e', icon:'🧳', name:'Отпуск раз в год', desc:'Пассивный доход 50 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=50000, progress:(s,inc)=>({cur:totalIncome(inc),max:50000,rub:true}) },
-  { id:'i7', icon:'🏖️', name:'Живу на проценты', desc:'Пассивный доход 60 000 ₽/мес', secret:false,
-    check:(s,inc)=>totalIncome(inc)>=60000, progress:(s,inc)=>({cur:totalIncome(inc),max:60000,rub:true}) },
-
-  // Goals
-  { id:'g1', icon:'🎯', name:'Первая цель', desc:'Добавь первую цель', secret:false,
-    check:(s,i,g)=>g.length>=1, progress:(s,i,g)=>({cur:g.length,max:1}) },
-  { id:'g2', icon:'✅', name:'Первая цель покрыта', desc:'Пассивный доход покрывает хотя бы одну цель', secret:false,
-    check:(s,inc,g)=>goalsCount(inc,g)>=1, progress:(s,inc,g)=>({cur:goalsCount(inc,g),max:1}) },
-  { id:'g3', icon:'🏆', name:'Все цели покрыты', desc:'Пассивный доход покрывает все цели', secret:false,
-    check:(s,inc,g)=>g.length>0&&goalsPct(inc,g)>=100, progress:(s,inc,g)=>({cur:Math.round(goalsPct(inc,g)),max:100,pct:true}) },
-  { id:'g4', icon:'♾️', name:'С запасом', desc:'Доход в 2× больше суммы всех целей', secret:false,
-    check:(s,inc,g)=>{ const t=totalGoals(g); return t>0&&totalIncome(inc)>=t*2; },
-    progress:(s,inc,g)=>{ const t=totalGoals(g)||1; return {cur:Math.round(totalIncome(inc)/t*50),max:100,pct:true}; } },
-
-  // Diversification
-  { id:'d1', icon:'🌍', name:'Валютчица', desc:'Добавь счёт в иностранной валюте', secret:false,
-    check:(s)=>s.some(x=>x.currency&&x.currency!=='RUB'), progress:(s)=>({cur:s.filter(x=>x.currency&&x.currency!=='RUB').length,max:1}) },
-  { id:'d2', icon:'🎲', name:'Портфель', desc:'Есть вклад, инвестиции и наличные одновременно', secret:false,
-    check:(s)=>s.some(x=>x.isDeposit)&&s.some(x=>x.icon==='📈')&&s.some(x=>x.icon==='💵'),
-    progress:(s)=>({cur:[s.some(x=>x.isDeposit),s.some(x=>x.icon==='📈'),s.some(x=>x.icon==='💵')].filter(Boolean).length,max:3}) },
-  { id:'d3', icon:'🦉', name:'Стратег', desc:'5 и более разных счетов', secret:false,
-    check:(s)=>s.length>=5, progress:(s)=>({cur:s.length,max:5}) },
-  { id:'d4', icon:'🏦', name:'Финансист', desc:'Счета в 3 и более валютах', secret:false,
-    check:(s)=>new Set(s.map(x=>x.currency||'RUB')).size>=3,
-    progress:(s)=>({cur:new Set(s.map(x=>x.currency||'RUB')).size,max:3}) },
-
-  // Deposits
-  { id:'dep1', icon:'🔒', name:'Заморозила', desc:'Открой вклад сроком от 1 года', secret:false,
-    check:(s)=>s.some(x=>x.isDeposit&&x.dateStart&&x.dateEnd&&daysBetween(x.dateStart,x.dateEnd)>=365),
-    progress:(s)=>({cur:s.filter(x=>x.isDeposit&&x.dateStart&&x.dateEnd&&daysBetween(x.dateStart,x.dateEnd)>=365).length,max:1}) },
-  { id:'dep2', icon:'🌊', name:'Капитализация', desc:'Набери 5 000 ₽ процентами по вкладам', secret:false,
-    check:(s)=>depositInterestTotal(s)>=5000, progress:(s)=>({cur:depositInterestTotal(s),max:5000,rub:true}) },
-
-  // FX
-  { id:'fx1', icon:'📈', name:'В плюсе', desc:'Курсовая прибыль от валюты 1 000 ₽', secret:false,
-    check:(s,inc)=>fxGainTotal(inc)>=1000, progress:(s,inc)=>({cur:Math.max(0,fxGainTotal(inc)),max:1000,rub:true}) },
-  { id:'fx2', icon:'💹', name:'Трейдер', desc:'Курсовая прибыль 30 000 ₽', secret:false,
-    check:(s,inc)=>fxGainTotal(inc)>=30000, progress:(s,inc)=>({cur:Math.max(0,fxGainTotal(inc)),max:30000,rub:true}) },
-
-  // Secret
-  { id:'sec1', icon:'🌙', name:'Сова', desc:'Открой приложение после полуночи', secret:true,
-    check:()=>new Date().getHours()<4||new Date().getHours()===0, progress:()=>({cur:0,max:1}) },
-  { id:'sec2', icon:'⚡', name:'Молния', desc:'Добавь 3 счёта за один день', secret:true,
-    check:()=>false, progress:()=>({cur:0,max:3}) }, // tracked via dailyAdded
-  { id:'sec3', icon:'🐢', name:'Черепаха', desc:'Копи 6 месяцев без удалений', secret:true,
-    check:()=>{ const d=state._firstSaveDate; return d&&daysBetween(d,new Date().toISOString().slice(0,10))>=180; },
-    progress:()=>({cur:0,max:1}) },
-];
-
-// helpers
-function totalRub(savings) { return savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0); }
-function totalIncome(income) { return income.reduce((s,x)=>s+calcIncomeAmountRub(x),0); }
-function totalGoals(goals) { return goals.reduce((s,x)=>s+Number(x.amount),0); }
-function daysBetween(a,b) { return Math.round((new Date(b)-new Date(a))/86400000); }
-function depositInterestTotal(savings) {
-  return savings.filter(x=>x.isDeposit&&x.rate&&x.dateStart&&x.dateEnd)
-    .reduce((s,x)=>{ const d=calcDeposit(x); return s+(d.currentAmount-Number(x.amount)); },0);
-}
-function fxGainTotal(income) {
-  return income.filter(x=>x.calcMode==='fx').reduce((s,x)=>s+calcFxIncome(x),0);
-}
-function goalsCount(income,goals) {
-  let rem=totalIncome(income), count=0;
-  for(const g of goals){ if(rem>=Number(g.amount)){rem-=Number(g.amount);count++;} }
-  return count;
-}
-function goalsPct(income,goals) {
-  const t=totalGoals(goals); if(!t)return 0;
-  let rem=totalIncome(income),covered=0;
-  for(const g of goals){ const c=Number(g.amount); if(rem>=c){rem-=c;covered+=c;} }
-  return covered/t*100;
-}
-
-// track first save date
-function ensureFirstSaveDate() {
-  if (!state._firstSaveDate) {
-    state._firstSaveDate = new Date().toISOString().slice(0,10);
-    save();
-  }
-}
-
-// track daily adds for Молния
-function trackDailyAdd() {
-  const today2 = new Date().toISOString().slice(0,10);
-  if (!state._dailyAdds) state._dailyAdds = {};
-  state._dailyAdds[today2] = (state._dailyAdds[today2]||0)+1;
-  save();
-}
-
-// check Молния
-function checkMolnia() {
-  const today2 = new Date().toISOString().slice(0,10);
-  return state._dailyAdds && (state._dailyAdds[today2]||0)>=3;
-}
-
-// check Сова
-function checkSova() {
-  return new Date().getHours() >= 0 && new Date().getHours() < 5;
-}
-
-let unlockedSet = new Set();
-
-function checkAchievements() {
-  ensureFirstSaveDate();
-  if (!state._unlocked) state._unlocked = [];
-  const prev = new Set(state._unlocked);
-  const s=state.savings, i=state.income, g=state.goals;
-
-  ACHIEVEMENTS.forEach(a => {
-    let passed = false;
-    if (a.id==='sec2') passed = checkMolnia();
-    else if (a.id==='sec1') passed = checkSova();
-    else { try { passed = a.check(s,i,g); } catch(e){} }
-
-    if (passed && !prev.has(a.id)) {
-      state._unlocked.push(a.id);
-      save();
-      showAchievementPopup(a);
-    }
-  });
-  unlockedSet = new Set(state._unlocked);
-}
-
-function showAchievementPopup(a) {
-  document.getElementById('ach-popup-icon').textContent = a.icon;
-  document.getElementById('ach-popup-name').textContent = a.name;
-  document.getElementById('ach-popup-desc').textContent = a.desc;
-  document.getElementById('ach-popup').style.display='block';
-  startConfetti();
-  setTimeout(()=>{
-    document.getElementById('ach-popup').style.display='none';
-    stopConfetti();
-  }, 4000);
-}
-
-// Simple confetti
-let confettiAnim=null, confettiParts=[];
-function startConfetti() {
-  const canvas=document.getElementById('confetti-canvas');
-  const ctx=canvas.getContext('2d');
-  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-  confettiParts=Array.from({length:80},()=>({
-    x:Math.random()*canvas.width, y:-10,
-    r:Math.random()*6+3,
-    color:['#4ECDC4','#FFB347','#FF6B6B','#E8F4F8','#88E4DF'][Math.floor(Math.random()*5)],
-    speed:Math.random()*3+2, drift:(Math.random()-.5)*2, rot:Math.random()*360
-  }));
-  function frame(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    confettiParts.forEach(p=>{
-      p.y+=p.speed; p.x+=p.drift; p.rot+=3;
-      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
-      ctx.fillStyle=p.color; ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);
-      ctx.restore();
-    });
-    confettiParts=confettiParts.filter(p=>p.y<canvas.height);
-    confettiAnim=requestAnimationFrame(frame);
-  }
-  frame();
-}
-function stopConfetti(){
-  if(confettiAnim)cancelAnimationFrame(confettiAnim);
-  const canvas=document.getElementById('confetti-canvas');
-  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-}
-
-function renderAchievements() {
-  if (!state._unlocked) state._unlocked=[];
-  const s=state.savings, inc=state.income, g=state.goals;
-  const unlocked=new Set(state._unlocked);
-  const visible=ACHIEVEMENTS.filter(a=>!a.secret||unlocked.has(a.id));
-  const total=visible.length, done=visible.filter(a=>unlocked.has(a.id)).length;
-
-  document.getElementById('ach-count').innerHTML=`${done} <span>из ${total}</span>`;
-  document.getElementById('ach-sub').textContent=
-    done===0?'Начни копить — и ачивки появятся':
-    done===total?'Все разблокированы! Ты невероятна 🎉':
-    `Ещё ${total-done} впереди`;
-
-  // Compute progress for each achievement
-  const withProg = visible.map(a => {
-    const isUnlocked = unlocked.has(a.id);
-    let prog = null;
-    if (!isUnlocked && !a.secret) {
-      try { prog = a.progress(s,inc,g); } catch(e) {}
-    }
-    const pct = prog ? Math.min(100, prog.pct ? prog.cur : Math.round(prog.cur/prog.max*100)) : 0;
-    return { a, isUnlocked, prog, pct };
-  });
-
-  // Sort: 1) closest to done (desc pct, not unlocked), 2) other not unlocked, 3) unlocked
-  withProg.sort((x, y) => {
-    if (x.isUnlocked && !y.isUnlocked) return 1;
-    if (!x.isUnlocked && y.isUnlocked) return -1;
-    if (!x.isUnlocked && !y.isUnlocked) return y.pct - x.pct; // closer to 100% first
-    return 0;
-  });
-
-  const el = document.getElementById('ach-list');
-  el.innerHTML = withProg.map(({a, isUnlocked, prog, pct}) => {
-    const progStr = prog ? (prog.rub ? `${fmt(Math.min(prog.cur,prog.max))} из ${fmt(prog.max)} ₽` :
-      prog.pct ? `${Math.min(prog.cur,prog.max)}%` :
-      `${Math.min(prog.cur,prog.max)} из ${prog.max}`) : '';
-
-    return `<div class="ach-card ${isUnlocked?'unlocked':''} ${a.secret&&!isUnlocked?'secret':''}">
-      <div class="ach-icon">${a.icon}</div>
-      <div class="ach-info">
-        <div class="ach-name">${a.name}</div>
-        <div class="ach-desc">${a.desc}</div>
-        ${!isUnlocked&&prog&&prog.max>1?`<div class="ach-progress">
-          <div style="font-size:11px;color:var(--text-dim)">${progStr}</div>
-          <div class="ach-progress-bar"><div class="ach-progress-fill" style="width:${pct}%"></div></div>
-        </div>`:''}
-      </div>
-      <div class="ach-badge">${isUnlocked?'✅':'🔒'}</div>
-    </div>`;
-  }).join('');
-}
+const ROSSTAT_INFLATION = {
+  2010: 8.78, 2011: 6.10, 2012: 6.58, 2013: 6.45, 2014: 11.36,
+  2015: 12.91, 2016: 5.38, 2017: 2.52, 2018: 4.27, 2019: 3.05,
+  2020: 4.91, 2021: 8.39, 2022: 11.94, 2023: 7.42, 2024: 9.52
+};
 
 
-// ── DRAG & DROP GOALS ─────────────────────────────────────
 function initGoalDrag() {
   const list = document.getElementById('goals-list');
   let dragEl = null;
@@ -1549,7 +1290,6 @@ function initGoalDrag() {
 
 
 // ── SWIPE NAVIGATION ──────────────────────────────────────
-const PAGES = ['savings','income','goals','achievements','inflation'];
 let swipeStartX = 0, swipeStartY = 0, swipeStartTime = 0;
 
 document.addEventListener('touchstart', e => {
@@ -1560,53 +1300,6 @@ document.addEventListener('touchstart', e => {
   swipeStartTime = Date.now();
 }, { passive: true });
 
-document.addEventListener('touchend', e => {
-  if (document.getElementById('modal').classList.contains('open')) return;
-  if (e.target.closest('.drag-handle')) return;
-
-  const dx = e.changedTouches[0].clientX - swipeStartX;
-  const dy = e.changedTouches[0].clientY - swipeStartY;
-  const dt = Date.now() - swipeStartTime;
-
-  // must be fast, horizontal, and long enough
-  if (dt > 400) return;
-  if (Math.abs(dx) < 60) return;
-  if (Math.abs(dy) > Math.abs(dx) * 0.7) return; // too vertical
-
-  const current = PAGES.find(p => document.getElementById('page-'+p).classList.contains('active'));
-  const idx = PAGES.indexOf(current);
-  if (dx < 0 && idx < PAGES.length - 1) showPage(PAGES[idx + 1]); // swipe left → next
-  if (dx > 0 && idx > 0) showPage(PAGES[idx - 1]);                 // swipe right → prev
-}, { passive: true });
-
-
-// ── SAVINGS HISTORY & CHART ───────────────────────────────
-function recordSnapshot() {
-  const ym = new Date().toISOString().slice(0,7); // YYYY-MM
-  if (!state._history) state._history = {};
-  state._history[ym] = Math.round(totalRub(state.savings));
-  save();
-}
-
-function addHistoryPoint() {
-  document.getElementById('history-modal').classList.add('open');
-  const now = new Date();
-  document.getElementById('h-month').value = now.toISOString().slice(0,7);
-  document.getElementById('h-amount').value = '';
-}
-function closeHistoryModal() {
-  document.getElementById('history-modal').classList.remove('open');
-}
-function saveHistoryPoint() {
-  const ym = document.getElementById('h-month').value;
-  const amt = parseFloat(document.getElementById('h-amount').value);
-  if (!ym || isNaN(amt) || amt < 0) return;
-  if (!state._history) state._history = {};
-  state._history[ym] = Math.round(amt);
-  save();
-  closeHistoryModal();
-  drawChart();
-}
 
 function drawChart() {
   if (!state._history) state._history = {};
@@ -1738,15 +1431,236 @@ function drawChart() {
 }
 
 
-// ── INFLATION CALCULATOR ──────────────────────────────────
-// Official Rosstat annual CPI data (% change year-on-year)
-const ROSSTAT_INFLATION = {
-  2010: 8.78, 2011: 6.10, 2012: 6.58, 2013: 6.45, 2014: 11.36,
-  2015: 12.91, 2016: 5.38, 2017: 2.52, 2018: 4.27, 2019: 3.05,
-  2020: 4.91, 2021: 8.39, 2022: 11.94, 2023: 7.42, 2024: 9.52
-};
+function addHistoryPoint(){document.getElementById('history-modal').classList.add('open');document.getElementById('h-month').value=new Date().toISOString().slice(0,7);document.getElementById('h-amount').value='';}
+function closeHistoryModal(){document.getElementById('history-modal').classList.remove('open');}
+function saveHistoryPoint(){const ym=document.getElementById('h-month').value;const amt=parseFloat(document.getElementById('h-amount').value);if(!ym||isNaN(amt)||amt<0)return;if(!state._history)state._history={};state._history[ym]=Math.round(amt);save();closeHistoryModal();drawChart();}
+function recordSnapshot(){const ym=new Date().toISOString().slice(0,7);if(!state._history)state._history={};state._history[ym]=Math.round(state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0));save();}
 
-let currentInflation = null; // will try to fetch from CBR
+const ACHIEVEMENTS = [
+  // Savings milestones
+  { id:'s1', icon:'🌱', name:'Первый росток', desc:'Добавь первый счёт', secret:false,
+    check:(s,i,g)=> s.length >= 1, progress:(s)=>({cur:s.length,max:1}) },
+  { id:'s1b', icon:'🌿', name:'Пять тысяч', desc:'Накопи 5 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=5000, progress:(s)=>({cur:totalRub(s),max:5000,rub:true}) },
+  { id:'s2', icon:'🪨', name:'Подушка', desc:'Накопи 10 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=10000, progress:(s)=>({cur:totalRub(s),max:10000,rub:true}) },
+  { id:'s2b', icon:'🏗️', name:'Строю будущее', desc:'Накопи 50 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=50000, progress:(s)=>({cur:totalRub(s),max:50000,rub:true}) },
+  { id:'s3', icon:'💼', name:'Серьёзно', desc:'Накопи 100 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=100000, progress:(s)=>({cur:totalRub(s),max:100000,rub:true}) },
+  { id:'s3b', icon:'🎓', name:'На образование', desc:'Накопи 200 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=200000, progress:(s)=>({cur:totalRub(s),max:200000,rub:true}) },
+  { id:'s3c', icon:'🚗', name:'На машину', desc:'Накопи 300 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=300000, progress:(s)=>({cur:totalRub(s),max:300000,rub:true}) },
+  { id:'s4', icon:'🏠', name:'На первоначальный взнос', desc:'Накопи 500 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=500000, progress:(s)=>({cur:totalRub(s),max:500000,rub:true}) },
+  { id:'s4b', icon:'✈️', name:'На крыльях', desc:'Накопи 750 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=750000, progress:(s)=>({cur:totalRub(s),max:750000,rub:true}) },
+  { id:'s5', icon:'🚀', name:'Миллион', desc:'Накопи 1 000 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=1000000, progress:(s)=>({cur:totalRub(s),max:1000000,rub:true}) },
+  { id:'s5b', icon:'🌟', name:'Два миллиона', desc:'Накопи 2 000 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=2000000, progress:(s)=>({cur:totalRub(s),max:2000000,rub:true}) },
+  { id:'s6', icon:'💎', name:'Три миллиона', desc:'Накопи 3 000 000 ₽', secret:false,
+    check:(s)=>totalRub(s)>=3000000, progress:(s)=>({cur:totalRub(s),max:3000000,rub:true}) },
+
+  // Passive income
+  { id:'i1', icon:'☕', name:'Кофе за свой счёт', desc:'Пассивный доход 500 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=500, progress:(s,inc)=>({cur:totalIncome(inc),max:500,rub:true}) },
+  { id:'i1b', icon:'🍵', name:'Чай с булочкой', desc:'Пассивный доход 1 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=1000, progress:(s,inc)=>({cur:totalIncome(inc),max:1000,rub:true}) },
+  { id:'i2', icon:'📱', name:'Подписки закрыты', desc:'Пассивный доход 3 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=3000, progress:(s,inc)=>({cur:totalIncome(inc),max:3000,rub:true}) },
+  { id:'i2b', icon:'💈', name:'Стрижка', desc:'Пассивный доход 2 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=2000, progress:(s,inc)=>({cur:totalIncome(inc),max:2000,rub:true}) },
+  { id:'i3', icon:'🚌', name:'Транспорт', desc:'Пассивный доход 5 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=5000, progress:(s,inc)=>({cur:totalIncome(inc),max:5000,rub:true}) },
+  { id:'i3b', icon:'🎬', name:'Кино раз в неделю', desc:'Пассивный доход 4 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=4000, progress:(s,inc)=>({cur:totalIncome(inc),max:4000,rub:true}) },
+  { id:'i4', icon:'💊', name:'Аптека', desc:'Пассивный доход 7 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=7000, progress:(s,inc)=>({cur:totalIncome(inc),max:7000,rub:true}) },
+  { id:'i4b', icon:'👗', name:'Обновить гардероб', desc:'Пассивный доход 8 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=8000, progress:(s,inc)=>({cur:totalIncome(inc),max:8000,rub:true}) },
+  { id:'i5', icon:'🛒', name:'Продукты', desc:'Пассивный доход 10 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=10000, progress:(s,inc)=>({cur:totalIncome(inc),max:10000,rub:true}) },
+  { id:'i5b', icon:'💆', name:'Массаж', desc:'Пассивный доход 12 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=12000, progress:(s,inc)=>({cur:totalIncome(inc),max:12000,rub:true}) },
+  { id:'i5c', icon:'🍽️', name:'Ресторан раз в неделю', desc:'Пассивный доход 15 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=15000, progress:(s,inc)=>({cur:totalIncome(inc),max:15000,rub:true}) },
+  { id:'i6', icon:'🍕', name:'Еда вне дома', desc:'Пассивный доход 20 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=20000, progress:(s,inc)=>({cur:totalIncome(inc),max:20000,rub:true}) },
+  { id:'i6b', icon:'🏋️', name:'Зал и тренер', desc:'Пассивный доход 25 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=25000, progress:(s,inc)=>({cur:totalIncome(inc),max:25000,rub:true}) },
+  { id:'i6c', icon:'🎮', name:'Игровой ПК', desc:'Пассивный доход 30 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=30000, progress:(s,inc)=>({cur:totalIncome(inc),max:30000,rub:true}) },
+  { id:'i6d', icon:'🚕', name:'Такси вместо метро', desc:'Пассивный доход 40 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=40000, progress:(s,inc)=>({cur:totalIncome(inc),max:40000,rub:true}) },
+  { id:'i6e', icon:'🧳', name:'Отпуск раз в год', desc:'Пассивный доход 50 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=50000, progress:(s,inc)=>({cur:totalIncome(inc),max:50000,rub:true}) },
+  { id:'i7', icon:'🏖️', name:'Живу на проценты', desc:'Пассивный доход 60 000 ₽/мес', secret:false,
+    check:(s,inc)=>totalIncome(inc)>=60000, progress:(s,inc)=>({cur:totalIncome(inc),max:60000,rub:true}) },
+
+  // Goals
+  { id:'g1', icon:'🎯', name:'Первая цель', desc:'Добавь первую цель', secret:false,
+    check:(s,i,g)=>g.length>=1, progress:(s,i,g)=>({cur:g.length,max:1}) },
+  { id:'g2', icon:'✅', name:'Первая цель покрыта', desc:'Пассивный доход покрывает хотя бы одну цель', secret:false,
+    check:(s,inc,g)=>goalsCount(inc,g)>=1, progress:(s,inc,g)=>({cur:goalsCount(inc,g),max:1}) },
+  { id:'g3', icon:'🏆', name:'Все цели покрыты', desc:'Пассивный доход покрывает все цели', secret:false,
+    check:(s,inc,g)=>g.length>0&&goalsPct(inc,g)>=100, progress:(s,inc,g)=>({cur:Math.round(goalsPct(inc,g)),max:100,pct:true}) },
+  { id:'g4', icon:'♾️', name:'С запасом', desc:'Доход в 2× больше суммы всех целей', secret:false,
+    check:(s,inc,g)=>{ const t=totalGoals(g); return t>0&&totalIncome(inc)>=t*2; },
+    progress:(s,inc,g)=>{ const t=totalGoals(g)||1; return {cur:Math.round(totalIncome(inc)/t*50),max:100,pct:true}; } },
+
+  // Diversification
+  { id:'d1', icon:'🌍', name:'Валютчица', desc:'Добавь счёт в иностранной валюте', secret:false,
+    check:(s)=>s.some(x=>x.currency&&x.currency!=='RUB'), progress:(s)=>({cur:s.filter(x=>x.currency&&x.currency!=='RUB').length,max:1}) },
+  { id:'d2', icon:'🎲', name:'Портфель', desc:'Есть вклад, инвестиции и наличные одновременно', secret:false,
+    check:(s)=>s.some(x=>x.isDeposit)&&s.some(x=>x.icon==='📈')&&s.some(x=>x.icon==='💵'),
+    progress:(s)=>({cur:[s.some(x=>x.isDeposit),s.some(x=>x.icon==='📈'),s.some(x=>x.icon==='💵')].filter(Boolean).length,max:3}) },
+  { id:'d3', icon:'🦉', name:'Стратег', desc:'5 и более разных счетов', secret:false,
+    check:(s)=>s.length>=5, progress:(s)=>({cur:s.length,max:5}) },
+  { id:'d4', icon:'🏦', name:'Финансист', desc:'Счета в 3 и более валютах', secret:false,
+    check:(s)=>new Set(s.map(x=>x.currency||'RUB')).size>=3,
+    progress:(s)=>({cur:new Set(s.map(x=>x.currency||'RUB')).size,max:3}) },
+
+  // Deposits
+  { id:'dep1', icon:'🔒', name:'Заморозила', desc:'Открой вклад сроком от 1 года', secret:false,
+    check:(s)=>s.some(x=>x.isDeposit&&x.dateStart&&x.dateEnd&&daysBetween(x.dateStart,x.dateEnd)>=365),
+    progress:(s)=>({cur:s.filter(x=>x.isDeposit&&x.dateStart&&x.dateEnd&&daysBetween(x.dateStart,x.dateEnd)>=365).length,max:1}) },
+  { id:'dep2', icon:'🌊', name:'Капитализация', desc:'Набери 5 000 ₽ процентами по вкладам', secret:false,
+    check:(s)=>depositInterestTotal(s)>=5000, progress:(s)=>({cur:depositInterestTotal(s),max:5000,rub:true}) },
+
+  // FX
+  { id:'fx1', icon:'📈', name:'В плюсе', desc:'Курсовая прибыль от валюты 1 000 ₽', secret:false,
+    check:(s,inc)=>fxGainTotal(inc)>=1000, progress:(s,inc)=>({cur:Math.max(0,fxGainTotal(inc)),max:1000,rub:true}) },
+  { id:'fx2', icon:'💹', name:'Трейдер', desc:'Курсовая прибыль 30 000 ₽', secret:false,
+    check:(s,inc)=>fxGainTotal(inc)>=30000, progress:(s,inc)=>({cur:Math.max(0,fxGainTotal(inc)),max:30000,rub:true}) },
+
+  // Secret
+  { id:'sec1', icon:'🌙', name:'Сова', desc:'Открой приложение после полуночи', secret:true,
+    check:()=>new Date().getHours()<4||new Date().getHours()===0, progress:()=>({cur:0,max:1}) },
+  { id:'sec2', icon:'⚡', name:'Молния', desc:'Добавь 3 счёта за один день', secret:true,
+    check:()=>false, progress:()=>({cur:0,max:3}) }, // tracked via dailyAdded
+  { id:'sec3', icon:'🐢', name:'Черепаха', desc:'Копи 6 месяцев без удалений', secret:true,
+    check:()=>{ const d=state._firstSaveDate; return d&&daysBetween(d,new Date().toISOString().slice(0,10))>=180; },
+    progress:()=>({cur:0,max:1}) },
+];
+
+
+function totalRub(savings){return savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);}
+function totalIncome(income){return income.reduce((s,x)=>s+calcIncomeAmountRub(x),0);}
+function totalGoals(goals){return goals.reduce((s,x)=>s+Number(x.amount),0);}
+function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
+function depositInterestTotal(savings){return savings.filter(x=>x.isDeposit&&x.rate&&x.dateStart&&x.dateEnd).reduce((s,x)=>{const d=calcDeposit(x);return s+(d.currentAmount-Number(x.amount));},0);}
+function fxGainTotal(income){return income.filter(x=>x.calcMode==='fx').reduce((s,x)=>s+calcFxIncome(x),0);}
+function goalsCount(income,goals){let rem=totalIncome(income),count=0;for(const g of goals){if(rem>=Number(g.amount)){rem-=Number(g.amount);count++;}}return count;}
+function goalsPct(income,goals){const t=totalGoals(goals);if(!t)return 0;let rem=totalIncome(income),covered=0;for(const g of goals){const c=Number(g.amount);if(rem>=c){rem-=c;covered+=c;}}return covered/t*100;}
+
+function ensureFirstSaveDate(){if(!state._firstSaveDate){state._firstSaveDate=new Date().toISOString().slice(0,10);save();}}
+function trackDailyAdd(){const t=today();if(!state._dailyAdds)state._dailyAdds={};state._dailyAdds[t]=(state._dailyAdds[t]||0)+1;save();}
+function checkMolnia(){const t=today();return state._dailyAdds&&(state._dailyAdds[t]||0)>=3;}
+function checkSova(){return new Date().getHours()>=0&&new Date().getHours()<5;}
+
+let unlockedSet=new Set();
+function checkAchievements(){
+  ensureFirstSaveDate();
+  if(!state._unlocked)state._unlocked=[];
+  const prev=new Set(state._unlocked);
+  const s=state.savings,i=state.income,g=state.goals;
+  ACHIEVEMENTS.forEach(a=>{
+    let passed=false;
+    if(a.id==='sec2')passed=checkMolnia();
+    else if(a.id==='sec1')passed=checkSova();
+    else{try{passed=a.check(s,i,g);}catch(e){}}
+    if(passed&&!prev.has(a.id)){state._unlocked.push(a.id);save();showAchievementPopup(a);}
+  });
+  unlockedSet=new Set(state._unlocked);
+}
+
+// Simple confetti
+let confettiAnim=null, confettiParts=[];
+function startConfetti() {
+  const canvas=document.getElementById('confetti-canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  confettiParts=Array.from({length:80},()=>({
+    x:Math.random()*canvas.width, y:-10,
+    r:Math.random()*6+3,
+    color:['#4ECDC4','#FFB347','#FF6B6B','#E8F4F8','#88E4DF'][Math.floor(Math.random()*5)],
+    speed:Math.random()*3+2, drift:(Math.random()-.5)*2, rot:Math.random()*360
+  }));
+  function frame(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    confettiParts.forEach(p=>{
+      p.y+=p.speed; p.x+=p.drift; p.rot+=3;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color; ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);
+      ctx.restore();
+    });
+    confettiParts=confettiParts.filter(p=>p.y<canvas.height);
+    confettiAnim=requestAnimationFrame(frame);
+  }
+  frame();
+}
+function stopConfetti(){
+  if(confettiAnim)cancelAnimationFrame(confettiAnim);
+  const canvas=document.getElementById('confetti-canvas');
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+
+
+function renderAchievements() {
+  if (!state._unlocked) state._unlocked=[];
+  const s=state.savings, inc=state.income, g=state.goals;
+  const unlocked=new Set(state._unlocked);
+  const visible=ACHIEVEMENTS.filter(a=>!a.secret||unlocked.has(a.id));
+  const total=visible.length, done=visible.filter(a=>unlocked.has(a.id)).length;
+
+  document.getElementById('ach-count').innerHTML=`${done} <span>из ${total}</span>`;
+  document.getElementById('ach-sub').textContent=
+    done===0?'Начни копить — и ачивки появятся':
+    done===total?'Все разблокированы! Ты невероятна 🎉':
+    `Ещё ${total-done} впереди`;
+
+  // Compute progress for each achievement
+  const withProg = visible.map(a => {
+    const isUnlocked = unlocked.has(a.id);
+    let prog = null;
+    if (!isUnlocked && !a.secret) {
+      try { prog = a.progress(s,inc,g); } catch(e) {}
+    }
+    const pct = prog ? Math.min(100, prog.pct ? prog.cur : Math.round(prog.cur/prog.max*100)) : 0;
+    return { a, isUnlocked, prog, pct };
+  });
+
+  // Sort: 1) closest to done (desc pct, not unlocked), 2) other not unlocked, 3) unlocked
+  withProg.sort((x, y) => {
+    if (x.isUnlocked && !y.isUnlocked) return 1;
+    if (!x.isUnlocked && y.isUnlocked) return -1;
+    if (!x.isUnlocked && !y.isUnlocked) return y.pct - x.pct; // closer to 100% first
+    return 0;
+  });
+
+  const el = document.getElementById('ach-list');
+  el.innerHTML = withProg.map(({a, isUnlocked, prog, pct}) => {
+    const progStr = prog ? (prog.rub ? `${fmt(Math.min(prog.cur,prog.max))} из ${fmt(prog.max)} ₽` :
+      prog.pct ? `${Math.min(prog.cur,prog.max)}%` :
+      `${Math.min(prog.cur,prog.max)} из ${prog.max}`) : '';
+
+    return `<div class="ach-card ${isUnlocked?'unlocked':''} ${a.secret&&!isUnlocked?'secret':''}">
+      <div class="ach-icon">${a.icon}</div>
+      <div class="ach-info">
+        <div class="ach-name">${a.name}</div>
+        <div class="ach-desc">${a.desc}</div>
+        ${!isUnlocked&&prog&&prog.max>1?`<div class="ach-progress">
+          <div style="font-size:11px;color:var(--text-dim)">${progStr}</div>
+          <div class="ach-progress-bar"><div class="ach-progress-fill" style="width:${pct}%"></div></div>
+        </div>`:''}
+      </div>
+      <div class="ach-badge">${isUnlocked?'✅':'🔒'}</div>
+    </div>`;
+  }).join('');
+}
+
 
 async function fetchCurrentInflation() {
   try {
@@ -1792,6 +1706,7 @@ function renderInflationPage() {
 
   updateInflationCalc();
 }
+
 
 function updateInflationCalc() {
   const years = parseInt(document.getElementById('inf-years')?.value) || 5;
@@ -1860,153 +1775,6 @@ function updateInflationCalc() {
   } else {
     goalEl.innerHTML = '<div style="font-size:13px;color:var(--text-dim);padding:8px 4px;">Введи цель выше — покажу сколько нужно накопить с учётом инфляции.</div>';
   }
-}
-
-
-// ── DEPOSIT NOTIFICATIONS ─────────────────────────────────
-async function requestNotificationPermission() {
-  if (!('Notification' in window)) return false;
-  if (Notification.permission === 'granted') return true;
-  if (Notification.permission === 'denied') return false;
-  const result = await Notification.requestPermission();
-  return result === 'granted';
-}
-
-function checkDepositNotifications() {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const today = new Date();
-  today.setHours(0,0,0,0);
-
-  state.savings.filter(s => s.isDeposit && s.dateEnd).forEach(s => {
-    const end = new Date(s.dateEnd);
-    end.setHours(0,0,0,0);
-    const daysLeft = Math.round((end - today) / 86400000);
-    const notifKey = `notif_${s.id}_${s.dateEnd}`;
-
-    // Already notified today?
-    if (localStorage.getItem(notifKey) === new Date().toISOString().slice(0,10)) return;
-
-    let title = null, body = null;
-
-    if (daysLeft < 0) {
-      title = '🏦 Вклад завершён';
-      body = `«${s.name}» закрылся ${Math.abs(daysLeft)} ${plural(Math.abs(daysLeft),'день','дня','дней')} назад. Не забудь переложить деньги!`;
-    } else if (daysLeft === 0) {
-      title = '🏦 Вклад закрывается сегодня!';
-      body = `«${s.name}» — последний день. Реши что делать с деньгами.`;
-    } else if (daysLeft <= 3) {
-      title = `🏦 Вклад закроется через ${daysLeft} ${plural(daysLeft,'день','дня','дней')}`;
-      body = `«${s.name}» завершается ${new Date(s.dateEnd).toLocaleDateString('ru-RU')}. Подумай куда переложить.`;
-    }
-
-    if (title) {
-      new Notification(title, { body, icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%230F1B2D"/><text y=".9em" font-size="80" x="10">🏦</text></svg>' });
-      localStorage.setItem(notifKey, new Date().toISOString().slice(0,10));
-    }
-  });
-}
-
-async function initNotifications() {
-  const hasDeposits = state.savings.some(s => s.isDeposit && s.dateEnd);
-  if (!hasDeposits) return;
-
-  const granted = await requestNotificationPermission();
-  if (granted) checkDepositNotifications();
-}
-
-
-
-// ── BACKUP REMINDER ───────────────────────────────────────
-function markBackupDone() {
-  localStorage.setItem('last_backup_date', new Date().toISOString().slice(0,10));
-  localStorage.setItem('last_backup_state_hash', stateHash());
-}
-
-function stateHash() {
-  // Simple hash to detect if data changed since last backup
-  const str = JSON.stringify({ s: state.savings.length, i: state.income.length, g: state.goals.length,
-    st: (state.savings.reduce((a,x)=>a+Number(x.amount),0)).toFixed(0) });
-  return str;
-}
-
-function checkBackupReminder() {
-  const banner = document.getElementById('backup-banner');
-  if (!banner) return;
-
-  const lastBackup = localStorage.getItem('last_backup_date');
-  const lastHash = localStorage.getItem('last_backup_state_hash');
-  const currentHash = stateHash();
-  const today = new Date().toISOString().slice(0,10);
-
-  // No data yet — don't show
-  if (!state.savings.length && !state.income.length && !state.goals.length) {
-    banner.style.display = 'none'; return;
-  }
-
-  // Data hasn't changed since last backup — don't show
-  if (lastHash === currentHash) { banner.style.display = 'none'; return; }
-
-  // Less than 7 days since last backup — don't show
-  if (lastBackup) {
-    const daysSince = Math.round((new Date(today) - new Date(lastBackup)) / 86400000);
-    if (daysSince < 7) { banner.style.display = 'none'; return; }
-  }
-
-  banner.style.display = '';
-}
-
-function downloadBackupFromBanner() {
-  downloadBackup();
-  markBackupDone();
-  document.getElementById('backup-banner').style.display = 'none';
-}
-
-// ── BACKUP & RESTORE ──────────────────────────────────────
-function downloadBackup() {
-  const data = JSON.stringify(state, null, 2);
-  const blob = new Blob([data], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const date = new Date().toISOString().slice(0,10);
-  a.href = url;
-  a.download = `my-savings-backup-${date}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  markBackupDone();
-  document.getElementById('backup-banner').style.display = 'none';
-}
-
-function restoreBackup(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const restored = JSON.parse(e.target.result);
-      // Basic validation
-      if (!restored.savings || !restored.income || !restored.goals) {
-        alert('Файл повреждён или неверного формата');
-        return;
-      }
-      if (!confirm(`Восстановить данные из резервной копии?
-
-Счетов: ${restored.savings.length}
-Доходов: ${restored.income.length}
-Целей: ${restored.goals.length}
-
-Текущие данные будут заменены.`)) return;
-      state = restored;
-      save();
-      render();
-      drawChart();
-      checkNotifBanner();
-      alert('✅ Данные восстановлены успешно!');
-    } catch(e) {
-      alert('Не удалось прочитать файл. Убедись что это резервная копия приложения.');
-    }
-  };
-  reader.readAsText(file);
-  event.target.value = ''; // reset so same file can be selected again
 }
 
 
@@ -2147,23 +1915,136 @@ function renderChallenges() {
   }).join('');
 }
 
-function checkNotifBanner() {
-  const banner = document.getElementById('notif-banner');
-  if (!banner) return;
-  const hasDeposits = state.savings.some(s => s.isDeposit && s.dateEnd);
-  if (!hasDeposits) { banner.style.display='none'; return; }
-  if (!('Notification' in window) || Notification.permission === 'granted') {
-    banner.style.display='none';
-  } else if (Notification.permission !== 'denied') {
-    banner.style.display='';
+
+// ── NOTIFICATIONS ─────────────────────────────────────────
+async function requestNotificationPermission(){if(!('Notification'in window))return false;if(Notification.permission==='granted')return true;if(Notification.permission==='denied')return false;return(await Notification.requestPermission())==='granted';}
+function checkDepositNotifications(){
+  if(!('Notification'in window)||Notification.permission!=='granted')return;
+  const t=new Date();t.setHours(0,0,0,0);
+  state.savings.filter(s=>s.isDeposit&&s.dateEnd).forEach(s=>{
+    const end=new Date(s.dateEnd);end.setHours(0,0,0,0);
+    const daysLeft=Math.round((end-t)/86400000);
+    const notifKey=`notif_${s.id}_${s.dateEnd}`;
+    if(localStorage.getItem(notifKey)===today())return;
+    let title=null,body=null;
+    if(daysLeft<0){title='🏦 Вклад завершён';body=`«${s.name}» закрылся ${Math.abs(daysLeft)} ${plural(Math.abs(daysLeft),'день','дня','дней')} назад.`;}
+    else if(daysLeft===0){title='🏦 Вклад закрывается сегодня!';body=`«${s.name}» — последний день.`;}
+    else if(daysLeft<=3){title=`🏦 Вклад закроется через ${daysLeft} ${plural(daysLeft,'день','дня','дней')}`;body=`«${s.name}» завершается ${new Date(s.dateEnd).toLocaleDateString('ru-RU')}.`;}
+    if(title){new Notification(title,{body});localStorage.setItem(notifKey,today());}
+  });
+}
+async function initNotifications(){const hasDeposits=state.savings.some(s=>s.isDeposit&&s.dateEnd);if(!hasDeposits)return;const granted=await requestNotificationPermission();if(granted)checkDepositNotifications();}
+function checkNotifBanner(){
+  const banner=document.getElementById('notif-banner');if(!banner)return;
+  const hasDeposits=state.savings.some(s=>s.isDeposit&&s.dateEnd);
+  if(!hasDeposits){banner.style.display='none';return;}
+  if(!('Notification'in window)||Notification.permission==='granted')banner.style.display='none';
+  else if(Notification.permission!=='denied')banner.style.display='';
+}
+
+// ── BACKUP ────────────────────────────────────────────────
+function stateHash(){return JSON.stringify({s:state.savings.length,i:state.income.length,g:state.goals.length,st:(state.savings.reduce((a,x)=>a+Number(x.amount),0)).toFixed(0)});}
+function markBackupDone(){localStorage.setItem('last_backup_date',today());localStorage.setItem('last_backup_state_hash',stateHash());}
+function checkBackupReminder(){
+  const banner=document.getElementById('backup-banner');if(!banner)return;
+  if(!state.savings.length&&!state.income.length&&!state.goals.length){banner.style.display='none';return;}
+  const lastHash=localStorage.getItem('last_backup_state_hash');
+  if(lastHash===stateHash()){banner.style.display='none';return;}
+  const lastBackup=localStorage.getItem('last_backup_date');
+  if(lastBackup&&Math.round((new Date(today())-new Date(lastBackup))/86400000)<7){banner.style.display='none';return;}
+  banner.style.display='';
+}
+function downloadBackupFromBanner(){downloadBackup();document.getElementById('backup-banner').style.display='none';}
+function downloadBackup(){
+  const data=JSON.stringify(state,null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`my-savings-backup-${today()}.json`;a.click();
+  URL.revokeObjectURL(url);markBackupDone();
+  document.getElementById('backup-banner').style.display='none';
+}
+function restoreBackup(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const restored=JSON.parse(e.target.result);
+      if(!restored.savings||!restored.income||!restored.goals){alert('Файл повреждён или неверного формата');return;}
+      if(!confirm(`Восстановить данные?
+
+Счетов: ${restored.savings.length}
+Доходов: ${restored.income.length}
+Целей: ${restored.goals.length}
+
+Текущие данные будут заменены.`))return;
+      state=restored;save();render();drawChart();checkNotifBanner();alert('✅ Данные восстановлены!');
+    }catch(e){alert('Не удалось прочитать файл.');}
+  };
+  reader.readAsText(file);event.target.value='';
+}
+
+
+// ── ONBOARDING ────────────────────────────────────────────
+const ONBOARD_STEPS = [
+  { icon:'💰', title:'Добро пожаловать!', text:'Это твой личный трекер накоплений. Здесь можно следить за всеми деньгами в одном месте — вклады, инвестиции, наличка в разных валютах.' },
+  { icon:'🏠', title:'Главный экран', text:'Тут сводка всего важного — общая сумма, доход в месяц, курс доллара и прогресс твоих целей. Заходи сюда чтобы быстро оценить ситуацию.' },
+  { icon:'💰', title:'Счета', text:'Добавляй счета — банковские вклады с процентами и датами, инвестиции, наличку в рублях или валюте. Приложение само считает сколько набежало процентов.' },
+  { icon:'📈', title:'Доход', text:'Здесь отслеживается пассивный доход — проценты по вкладам, дивиденды, курсовая разница от валюты. Можно привязать к счёту и доход будет считаться автоматически.' },
+  { icon:'🎯', title:'Цели', text:'Добавляй ежемесячные расходы — коммунальные, продукты, подписки. Как только доход покрывает цель, она отмечается зелёным. Ещё есть челлендж-копилки!' },
+  { icon:'☰', title:'Боковое меню', text:'Нажми кнопку ☰ в правом нижнем углу — там доступ ко всем разделам: калькулятор инфляции, ачивки, резервная копия и настройки.' },
+  { icon:'🏅', title:'Ачивки', text:'Зарабатывай достижения по мере накоплений — от первой тысячи до миллиона, за диверсификацию, покрытие целей и многое другое. Есть и секретные 🔐' },
+  { icon:'🚀', title:'Готово!', text:'Начни с добавления первого счёта. Удачи в накоплениях! 💚' },
+];
+
+let onboardStep = 0;
+
+function renderOnboardStep() {
+  const step = ONBOARD_STEPS[onboardStep];
+  document.getElementById('ob-icon').textContent = step.icon;
+  document.getElementById('ob-title').textContent = step.title;
+  document.getElementById('ob-text').textContent = step.text;
+
+  const dotsEl = document.getElementById('ob-dots');
+  dotsEl.innerHTML = ONBOARD_STEPS.map((_,i) =>
+    `<div class="onboard-dot ${i===onboardStep?'active':''}"></div>`
+  ).join('');
+
+  const btn = document.getElementById('ob-next-btn');
+  btn.textContent = onboardStep === ONBOARD_STEPS.length-1 ? 'Начать! 🚀' : 'Далее →';
+}
+
+function onboardNext() {
+  if (onboardStep < ONBOARD_STEPS.length-1) {
+    onboardStep++;
+    renderOnboardStep();
+  } else {
+    closeOnboarding();
   }
 }
 
-load();if(!state.challenges)state.challenges=[];render();fetchRates().then(()=>{ loadFxBuyRates(); recordSnapshot(); drawChart(); fetchCurrentInflation(); });
+function closeOnboarding() {
+  document.getElementById('onboard-overlay').classList.remove('open');
+  localStorage.setItem('onboarding_done', '1');
+}
+
+function initOnboarding() {
+  if (localStorage.getItem('onboarding_done')) return;
+  onboardStep = 0;
+  renderOnboardStep();
+  document.getElementById('onboard-overlay').classList.add('open');
+}
+
+// ── INIT ──────────────────────────────────────────────────
+load();
+if(!state.challenges)state.challenges=[];
+render();
+fetchRates().then(()=>{loadFxBuyRates();recordSnapshot();drawChart();fetchCurrentInflation();});
+checkAchievements();
 initNotifications();
 checkNotifBanner();
 checkBackupReminder();
-checkAchievements();
+setTimeout(initOnboarding, 500);
 </script>
 </body>
 </html>
