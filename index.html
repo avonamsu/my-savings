@@ -52,23 +52,46 @@
   50%      { box-shadow:0 0 0 6px rgba(78,205,196,0.4); }
 }
 .ob-tooltip {
-  position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto;
-  background:var(--surface); border-radius:var(--radius) var(--radius) 0 0;
-  border-top:2px solid var(--accent); padding:20px 20px 36px;
-  z-index:493; pointer-events:all;
-  max-height:45dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
-  touch-action:pan-y;
+  position:fixed;
+  background:var(--surface2);
+  border:1.5px solid var(--accent);
+  border-radius:12px;
+  padding:12px 14px 14px;
+  z-index:493;
+  pointer-events:all;
+  box-shadow:0 4px 24px rgba(0,0,0,0.5);
+  max-width:260px;
+  min-width:180px;
 }
-.ob-step-label { font-size:11px; color:var(--accent); font-weight:700; letter-spacing:.1em; margin-bottom:6px; }
-.ob-title { font-size:18px; font-weight:700; margin-bottom:8px; }
-.ob-text { font-size:14px; color:var(--text-dim); line-height:1.6; margin-bottom:18px; }
-.ob-action { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--accent); font-weight:600; margin-bottom:16px; }
+.ob-tooltip::after {
+  content:'';
+  position:absolute;
+  width:10px; height:10px;
+  background:var(--surface2);
+  border-right:1.5px solid var(--accent);
+  border-bottom:1.5px solid var(--accent);
+  transform:rotate(45deg);
+}
+.ob-tooltip.arrow-bottom::after { bottom:-6px; left:50%; margin-left:-5px; }
+.ob-tooltip.arrow-top::after    { top:-6px;    left:50%; margin-left:-5px; transform:rotate(225deg); border-color:var(--accent); border-right:1.5px solid var(--accent); border-bottom:1.5px solid var(--accent); }
+.ob-tooltip.arrow-left::after   { left:-6px;   top:50%;  margin-top:-5px;  transform:rotate(135deg); }
+.ob-tooltip.arrow-right::after  { right:-6px;  top:50%;  margin-top:-5px;  transform:rotate(-45deg); }
+/* welcome card - centered */
+.ob-tooltip.ob-center {
+  left:50%; transform:translateX(-50%);
+  max-width:300px; text-align:center;
+}
+.ob-tooltip.ob-center::after { display:none; }
+.ob-step-label { font-size:9px; color:var(--accent); font-weight:700; letter-spacing:.08em; margin-bottom:3px; }
+.ob-title { font-size:14px; font-weight:700; margin-bottom:4px; }
+.ob-text { font-size:12px; color:var(--text-dim); line-height:1.4; margin-bottom:8px; }
+.ob-action { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--accent); font-weight:600; margin-bottom:6px; }
 .ob-action-icon { font-size:20px; animation:ob-bounce .8s infinite; }
 @keyframes ob-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
-.ob-dots { display:flex; justify-content:center; gap:6px; margin-bottom:16px; }
-.ob-dot { width:6px; height:6px; border-radius:50%; background:var(--surface2); transition:all .3s; }
-.ob-dot.active { background:var(--accent); width:18px; border-radius:3px; }
-.ob-skip { background:none; border:none; color:var(--text-dim); font-size:13px; cursor:pointer; width:100%; text-align:center; padding:4px; }
+.ob-dots { display:flex; justify-content:center; gap:5px; margin-bottom:8px; }
+.ob-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.2); transition:all .3s; }
+.ob-dot.active { background:var(--accent); width:14px; border-radius:3px; }
+.ob-skip { background:none; border:none; color:var(--text-dim); font-size:11px; cursor:pointer; width:100%; text-align:center; padding:2px; opacity:0.7; }
 
 body { background:var(--bg); color:var(--text); font-family:-apple-system,'Inter',sans-serif; min-height:100dvh; display:flex; flex-direction:column; max-width:480px; margin:0 auto; overflow-x:hidden; }
 
@@ -629,8 +652,8 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
       <span id="ob-action-text">Нажми кнопку</span>
     </div>
     <div class="ob-dots" id="ob-dots"></div>
-    <div id="ob-next-wrap" style="display:none;margin-bottom:12px;">
-    <button onclick="obAdvance()" style="width:100%;background:var(--accent);color:var(--bg);border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:700;padding:13px;cursor:pointer;">Далее →</button>
+    <div id="ob-next-wrap" style="display:none;margin-bottom:8px;">
+    <button onclick="obAdvance()" style="width:100%;background:var(--accent);color:var(--bg);border:none;border-radius:8px;font-size:13px;font-weight:700;padding:9px;cursor:pointer;">Далее →</button>
   </div>
   <button class="ob-skip" onclick="closeOnboarding()">Пропустить обучение</button>
   </div>
@@ -2262,6 +2285,59 @@ function obHighlight(selector) {
   hl.style.height = (r.height + pad*2) + 'px';
 }
 
+function obPositionTooltip(highlightSel) {
+  const tip = document.getElementById('ob-tooltip');
+  tip.className = 'ob-tooltip';
+
+  if (!highlightSel) {
+    // Center in middle of screen
+    tip.classList.add('ob-center');
+    tip.style.top = '50%';
+    tip.style.left = '50%';
+    tip.style.transform = 'translateX(-50%) translateY(-50%)';
+    tip.style.bottom = '';
+    tip.style.right = '';
+    return;
+  }
+
+  tip.style.transform = '';
+  const el = obGetEl(highlightSel);
+  if (!el) {
+    tip.classList.add('ob-center');
+    tip.style.bottom = '90px';
+    tip.style.left = '50%';
+    tip.style.transform = 'translateX(-50%)';
+    return;
+  }
+
+  const r = el.getBoundingClientRect();
+  const vh = window.innerHeight;
+  const vw = window.innerWidth;
+  const tipW = 260, tipH = 160;
+  const pad = 12;
+
+  // Decide arrow direction based on element position
+  if (r.bottom < vh / 2) {
+    // Element in top half → show tooltip below
+    tip.classList.add('arrow-top');
+    tip.style.top  = (r.bottom + pad) + 'px';
+    tip.style.bottom = '';
+    let left = r.left + r.width/2 - tipW/2;
+    left = Math.max(8, Math.min(vw - tipW - 8, left));
+    tip.style.left = left + 'px';
+    tip.style.right = '';
+  } else {
+    // Element in bottom half → show tooltip above
+    tip.classList.add('arrow-bottom');
+    tip.style.bottom = (vh - r.top + pad) + 'px';
+    tip.style.top = '';
+    let left = r.left + r.width/2 - tipW/2;
+    left = Math.max(8, Math.min(vw - tipW - 8, left));
+    tip.style.left = left + 'px';
+    tip.style.right = '';
+  }
+}
+
 function obRenderStep() {
   const step = OB_STEPS[obStep];
   const total = OB_STEPS.length;
@@ -2286,24 +2362,23 @@ function obRenderStep() {
     `<div class="ob-dot ${i===obStep?'active':''}"></div>`
   ).join('');
 
-  // Navigate to step's page
-  if (step.page && step.page !== _currentPage) {
-    showPage(step.page);
-  }
+  if (step.page && step.page !== _currentPage) showPage(step.page);
 
-  // Highlight after navigation settles
-  setTimeout(() => obHighlight(step.highlight), 350);
+  setTimeout(() => {
+    obHighlight(step.highlight);
+    obPositionTooltip(step.highlight);
+  }, 350);
 
-  // Watch for user action
   clearInterval(obWatcher);
   if (step.waitFor) {
     obWatcher = setInterval(() => {
       if (step.waitFor()) {
         clearInterval(obWatcher);
         setTimeout(() => {
-          // Re-highlight after page settles
-          setTimeout(() => obHighlight(step.highlight), 300);
-          // Auto-advance if no further action needed on this step
+          setTimeout(() => {
+            obHighlight(step.highlight);
+            obPositionTooltip(step.highlight);
+          }, 300);
           if (step.waitFor()) obAdvance();
         }, 400);
       }
