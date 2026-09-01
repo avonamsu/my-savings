@@ -21,7 +21,7 @@
   --radius:16px; --radius-sm:10px;
 }
 
-/* ONBOARDING */
+
 .onboard-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:500; align-items:flex-end; justify-content:center; }
 .onboard-overlay.open { display:flex; }
 .onboard-card { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; padding:32px 24px 48px; width:100%; max-width:480px; border-top:2px solid var(--accent); }
@@ -34,6 +34,40 @@
 .onboard-actions { display:flex; gap:12px; }
 .onboard-skip { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding:13px 16px; }
 .onboard-next { flex:1; background:var(--accent); color:var(--bg); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:700; padding:13px; cursor:pointer; }
+
+
+/* ONBOARDING */
+.ob-overlay { display:none; position:fixed; inset:0; z-index:490; pointer-events:none; }
+.ob-overlay.open { display:block; }
+.ob-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.6); pointer-events:all; }
+.ob-highlight {
+  position:fixed; border-radius:12px; z-index:492;
+  box-shadow:0 0 0 4px var(--accent), 0 0 0 9999px rgba(0,0,0,0.6);
+  pointer-events:none;
+  transition:all .35s cubic-bezier(.4,0,.2,1);
+  animation:ob-pulse 1.5s infinite;
+}
+@keyframes ob-pulse {
+  0%,100% { box-shadow:0 0 0 4px var(--accent), 0 0 0 9999px rgba(0,0,0,0.6); }
+  50%      { box-shadow:0 0 0 8px rgba(78,205,196,0.5), 0 0 0 9999px rgba(0,0,0,0.6); }
+}
+.ob-tooltip {
+  position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto;
+  background:var(--surface); border-radius:var(--radius) var(--radius) 0 0;
+  border-top:2px solid var(--accent); padding:20px 20px 40px;
+  z-index:493; pointer-events:all;
+  transform:translateY(0); transition:transform .3s ease;
+}
+.ob-step-label { font-size:11px; color:var(--accent); font-weight:700; letter-spacing:.1em; margin-bottom:6px; }
+.ob-title { font-size:18px; font-weight:700; margin-bottom:8px; }
+.ob-text { font-size:14px; color:var(--text-dim); line-height:1.6; margin-bottom:18px; }
+.ob-action { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--accent); font-weight:600; margin-bottom:16px; }
+.ob-action-icon { font-size:20px; animation:ob-bounce .8s infinite; }
+@keyframes ob-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+.ob-dots { display:flex; justify-content:center; gap:6px; margin-bottom:16px; }
+.ob-dot { width:6px; height:6px; border-radius:50%; background:var(--surface2); transition:all .3s; }
+.ob-dot.active { background:var(--accent); width:18px; border-radius:3px; }
+.ob-skip { background:none; border:none; color:var(--text-dim); font-size:13px; cursor:pointer; width:100%; text-align:center; padding:4px; }
 
 body { background:var(--bg); color:var(--text); font-family:-apple-system,'Inter',sans-serif; min-height:100dvh; display:flex; flex-direction:column; max-width:480px; margin:0 auto; overflow-x:hidden; }
 
@@ -582,16 +616,19 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 
 
 <!-- ONBOARDING -->
-<div class="onboard-overlay" id="onboard-overlay">
-  <div class="onboard-card">
-    <div class="onboard-icon" id="ob-icon">💰</div>
-    <div class="onboard-title" id="ob-title">Добро пожаловать!</div>
-    <div class="onboard-text" id="ob-text">Это твой личный трекер накоплений. Давай быстро покажем как всё устроено.</div>
-    <div class="onboard-dots" id="ob-dots"></div>
-    <div class="onboard-actions">
-      <button class="onboard-skip" onclick="closeOnboarding()">Пропустить</button>
-      <button class="onboard-next" id="ob-next-btn" onclick="onboardNext()">Далее →</button>
+<div class="ob-overlay" id="ob-overlay">
+  <div class="ob-backdrop" onclick=""></div>
+  <div class="ob-highlight" id="ob-highlight" style="display:none;"></div>
+  <div class="ob-tooltip" id="ob-tooltip">
+    <div class="ob-step-label" id="ob-step-label">ШАГ 1 из 7</div>
+    <div class="ob-title" id="ob-title">Добро пожаловать!</div>
+    <div class="ob-text" id="ob-text">Это твой трекер накоплений.</div>
+    <div class="ob-action" id="ob-action" style="display:none;">
+      <span class="ob-action-icon">👆</span>
+      <span id="ob-action-text">Нажми кнопку</span>
     </div>
+    <div class="ob-dots" id="ob-dots"></div>
+    <button class="ob-skip" onclick="closeOnboarding()">Пропустить обучение</button>
   </div>
 </div>
 
@@ -2074,64 +2111,181 @@ function restoreBackup(event){
 
 
 // ── ONBOARDING ────────────────────────────────────────────
-const ONBOARD_STEPS = [
-  { icon:'💰', title:'Добро пожаловать!', text:'Это твой личный трекер накоплений. Здесь можно следить за всеми деньгами в одном месте — вклады, инвестиции, наличка в разных валютах.' },
-  { icon:'🏠', title:'Главный экран', text:'Тут сводка всего важного — общая сумма, доход в месяц, курс доллара и прогресс твоих целей. Заходи сюда чтобы быстро оценить ситуацию.' },
-  { icon:'💰', title:'Счета', text:'Добавляй счета — банковские вклады с процентами и датами, инвестиции, наличку в рублях или валюте. Приложение само считает сколько набежало процентов.' },
-  { icon:'📈', title:'Доход', text:'Здесь отслеживается пассивный доход — проценты по вкладам, дивиденды, курсовая разница от валюты. Можно привязать к счёту и доход будет считаться автоматически.' },
-  { icon:'🎯', title:'Цели', text:'Добавляй ежемесячные расходы — коммунальные, продукты, подписки. Как только доход покрывает цель, она отмечается зелёным. Ещё есть челлендж-копилки!' },
-  { icon:'☰', title:'Боковое меню', text:'Нажми кнопку ☰ в правом нижнем углу — там доступ ко всем разделам: калькулятор инфляции, ачивки, резервная копия и настройки.' },
-  { icon:'🏅', title:'Ачивки', text:'Зарабатывай достижения по мере накоплений — от первой тысячи до миллиона, за диверсификацию, покрытие целей и многое другое. Есть и секретные 🔐' },
-  { icon:'🚀', title:'Готово!', text:'Начни с добавления первого счёта. Удачи в накоплениях! 💚' },
+const OB_STEPS = [
+  {
+    title: 'Добро пожаловать! 👋',
+    text: 'Это твой личный трекер накоплений. Пройди короткое обучение — покажем как всё работает.',
+    page: 'home',
+    highlight: null,
+    action: null,
+  },
+  {
+    title: 'Главный экран',
+    text: 'Здесь сводка всего важного — сумма накоплений, доход и прогресс целей. Нажми на вкладку «Счета» внизу.',
+    page: 'home',
+    highlight: '#nav-savings',
+    action: 'Нажми «Счета» в нижнем меню',
+    waitFor: () => _currentPage === 'savings',
+  },
+  {
+    title: '💰 Счета',
+    text: 'Сюда добавляешь все свои накопления — вклады, инвестиции, наличку в любой валюте. Нажми кнопку «Добавить счёт».',
+    page: 'savings',
+    highlight: '.add-btn',
+    action: 'Нажми «＋ Добавить счёт»',
+    waitFor: () => document.getElementById('modal').classList.contains('open'),
+  },
+  {
+    title: 'Заполни данные',
+    text: 'Введи название, тип и сумму счёта. Для вкладов можно указать процент и дату — приложение само посчитает доход.',
+    page: 'savings',
+    highlight: '#modal',
+    action: 'Заполни и нажми «Сохранить»',
+    waitFor: () => state.savings.length > 0 && !document.getElementById('modal').classList.contains('open'),
+  },
+  {
+    title: '📈 Доход',
+    text: 'Здесь отслеживается пассивный доход — проценты, дивиденды, курсовая разница. Нажми вкладку «Доход».',
+    page: 'savings',
+    highlight: '#nav-income',
+    action: 'Нажми «Доход» в нижнем меню',
+    waitFor: () => _currentPage === 'income',
+  },
+  {
+    title: '🎯 Цели',
+    text: 'Добавляй ежемесячные расходы — как только доход их покрывает, они становятся зелёными. Нажми «Цели».',
+    page: 'income',
+    highlight: '#nav-goals',
+    action: 'Нажми «Цели» в нижнем меню',
+    waitFor: () => _currentPage === 'goals',
+  },
+  {
+    title: '🪙 Копилка',
+    text: 'Создавай челленджи — таблица с ячейками-суммами. Отмечай когда откладываешь деньги и следи за прогрессом.',
+    page: 'goals',
+    highlight: '#nav-challenge',
+    action: 'Нажми «Копилка» в нижнем меню',
+    waitFor: () => _currentPage === 'challenge',
+  },
+  {
+    title: '☰ Боковое меню',
+    text: 'Нажми кнопку ☰ слева вверху — там доступ к ачивкам, калькулятору инфляции, резервной копии и настройкам.',
+    page: 'challenge',
+    highlight: '.menu-btn',
+    action: 'Нажми кнопку ☰',
+    waitFor: () => document.getElementById('sidebar').classList.contains('open'),
+  },
+  {
+    title: '🚀 Готово!',
+    text: 'Ты знаешь всё самое важное. Начни с добавления первого счёта. Удачи в накоплениях! 💚',
+    page: 'challenge',
+    highlight: null,
+    action: null,
+  },
 ];
 
-let onboardStep = 0;
+let obStep = 0;
+let obWatcher = null;
 
-function renderOnboardStep() {
-  const step = ONBOARD_STEPS[onboardStep];
-  document.getElementById('ob-icon').textContent = step.icon;
+function obGetEl(selector) {
+  if (!selector) return null;
+  try { return document.querySelector(selector); } catch(e) { return null; }
+}
+
+function obHighlight(selector) {
+  const hl = document.getElementById('ob-highlight');
+  if (!selector) { hl.style.display='none'; return; }
+  const el = obGetEl(selector);
+  if (!el) { hl.style.display='none'; return; }
+  const r = el.getBoundingClientRect();
+  const pad = 4;
+  hl.style.display = 'block';
+  hl.style.left   = (r.left - pad) + 'px';
+  hl.style.top    = (r.top  - pad) + 'px';
+  hl.style.width  = (r.width  + pad*2) + 'px';
+  hl.style.height = (r.height + pad*2) + 'px';
+}
+
+function obRenderStep() {
+  const step = OB_STEPS[obStep];
+  const total = OB_STEPS.length;
+
+  document.getElementById('ob-step-label').textContent = `ШАГ ${obStep+1} из ${total}`;
   document.getElementById('ob-title').textContent = step.title;
   document.getElementById('ob-text').textContent = step.text;
 
+  const actionEl = document.getElementById('ob-action');
+  if (step.action) {
+    actionEl.style.display = 'flex';
+    document.getElementById('ob-action-text').textContent = step.action;
+  } else {
+    actionEl.style.display = 'none';
+  }
+
   const dotsEl = document.getElementById('ob-dots');
-  dotsEl.innerHTML = ONBOARD_STEPS.map((_,i) =>
-    `<div class="onboard-dot ${i===onboardStep?'active':''}"></div>`
+  dotsEl.innerHTML = OB_STEPS.map((_,i) =>
+    `<div class="ob-dot ${i===obStep?'active':''}"></div>`
   ).join('');
 
-  const btn = document.getElementById('ob-next-btn');
-  btn.textContent = onboardStep === ONBOARD_STEPS.length-1 ? 'Начать! 🚀' : 'Далее →';
+  // Navigate to step's page
+  if (step.page && step.page !== _currentPage) {
+    showPage(step.page);
+  }
+
+  // Highlight after navigation settles
+  setTimeout(() => obHighlight(step.highlight), 350);
+
+  // Watch for user action
+  clearInterval(obWatcher);
+  if (step.waitFor) {
+    obWatcher = setInterval(() => {
+      if (step.waitFor()) {
+        clearInterval(obWatcher);
+        setTimeout(() => {
+          // Re-highlight after page settles
+          setTimeout(() => obHighlight(step.highlight), 300);
+          // Auto-advance if no further action needed on this step
+          if (step.waitFor()) obAdvance();
+        }, 400);
+      }
+    }, 200);
+  }
 }
 
-function onboardNext() {
-  if (onboardStep < ONBOARD_STEPS.length-1) {
-    onboardStep++;
-    renderOnboardStep();
+function obAdvance() {
+  clearInterval(obWatcher);
+  if (obStep < OB_STEPS.length - 1) {
+    obStep++;
+    obRenderStep();
   } else {
     closeOnboarding();
   }
 }
 
+// Allow tapping non-highlighted areas to advance on info steps
+function obBackdropTap() {
+  const step = OB_STEPS[obStep];
+  if (!step.waitFor) obAdvance();
+}
+
 function closeOnboarding() {
-  document.getElementById('onboard-overlay').classList.remove('open');
+  clearInterval(obWatcher);
+  document.getElementById('ob-overlay').classList.remove('open');
+  document.getElementById('ob-highlight').style.display = 'none';
   localStorage.setItem('onboarding_done', '1');
+  closeModal();
+  closeSidebar();
 }
 
 function initOnboarding() {
   if (localStorage.getItem('onboarding_done')) return;
-  onboardStep = 0;
-  renderOnboardStep();
-  document.getElementById('onboard-overlay').classList.add('open');
+  obStep = 0;
+  document.getElementById('ob-overlay').classList.add('open');
+  // backdrop tap advances on non-interactive steps
+  document.querySelector('.ob-backdrop').onclick = obBackdropTap;
+  obRenderStep();
 }
 
-// ── INIT ──────────────────────────────────────────────────
-load();
-if(!state.challenges)state.challenges=[];
-render();
-fetchRates().then(()=>{loadFxBuyRates();recordSnapshot();drawChart();fetchCurrentInflation();});
-checkAchievements();
-initNotifications();
-checkNotifBanner();
-checkBackupReminder();
 setTimeout(initOnboarding, 500);
 </script>
 </body>
