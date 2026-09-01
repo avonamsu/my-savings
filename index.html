@@ -37,27 +37,26 @@
 
 
 /* ONBOARDING */
-.ob-overlay { display:none; position:fixed; inset:0; z-index:490; pointer-events:none; }
+.ob-overlay { display:none; position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; z-index:490; pointer-events:none; }
 .ob-overlay.open { display:block; }
-.ob-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.6); pointer-events:all; touch-action:none; }
+
 .ob-highlight {
   position:fixed; border-radius:12px; z-index:492;
-  box-shadow:0 0 0 4px var(--accent), 0 0 0 9999px rgba(0,0,0,0.6);
+  box-shadow:0 0 0 3px var(--accent);
   pointer-events:none;
   transition:all .35s cubic-bezier(.4,0,.2,1);
   animation:ob-pulse 1.5s infinite;
 }
 @keyframes ob-pulse {
-  0%,100% { box-shadow:0 0 0 4px var(--accent), 0 0 0 9999px rgba(0,0,0,0.6); }
-  50%      { box-shadow:0 0 0 8px rgba(78,205,196,0.5), 0 0 0 9999px rgba(0,0,0,0.6); }
+  0%,100% { box-shadow:0 0 0 3px var(--accent); }
+  50%      { box-shadow:0 0 0 6px rgba(78,205,196,0.4); }
 }
 .ob-tooltip {
   position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto;
   background:var(--surface); border-radius:var(--radius) var(--radius) 0 0;
-  border-top:2px solid var(--accent); padding:20px 20px 40px;
+  border-top:2px solid var(--accent); padding:20px 20px 36px;
   z-index:493; pointer-events:all;
-  transform:translateY(0); transition:transform .3s ease;
-  max-height:60dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  max-height:45dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
   touch-action:pan-y;
 }
 .ob-step-label { font-size:11px; color:var(--accent); font-weight:700; letter-spacing:.1em; margin-bottom:6px; }
@@ -620,9 +619,8 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 
 <!-- ONBOARDING -->
 <div class="ob-overlay" id="ob-overlay">
-  <div class="ob-backdrop" onclick=""></div>
   <div class="ob-highlight" id="ob-highlight" style="display:none;"></div>
-  <div class="ob-tooltip" id="ob-tooltip" ontouchstart="event.stopPropagation()" ontouchmove="event.stopPropagation()">
+  <div class="ob-tooltip" id="ob-tooltip">
     <div class="ob-step-label" id="ob-step-label">ШАГ 1 из 7</div>
     <div class="ob-title" id="ob-title">Добро пожаловать!</div>
     <div class="ob-text" id="ob-text">Это твой трекер накоплений.</div>
@@ -631,7 +629,10 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
       <span id="ob-action-text">Нажми кнопку</span>
     </div>
     <div class="ob-dots" id="ob-dots"></div>
-    <button class="ob-skip" onclick="closeOnboarding()">Пропустить обучение</button>
+    <div id="ob-next-wrap" style="display:none;margin-bottom:12px;">
+    <button onclick="obAdvance()" style="width:100%;background:var(--accent);color:var(--bg);border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:700;padding:13px;cursor:pointer;">Далее →</button>
+  </div>
+  <button class="ob-skip" onclick="closeOnboarding()">Пропустить обучение</button>
   </div>
 </div>
 
@@ -2270,11 +2271,14 @@ function obRenderStep() {
   document.getElementById('ob-text').textContent = step.text;
 
   const actionEl = document.getElementById('ob-action');
+  const nextWrap = document.getElementById('ob-next-wrap');
   if (step.action) {
     actionEl.style.display = 'flex';
     document.getElementById('ob-action-text').textContent = step.action;
+    if (nextWrap) nextWrap.style.display = 'none';
   } else {
     actionEl.style.display = 'none';
+    if (nextWrap) nextWrap.style.display = step.waitFor ? 'none' : 'block';
   }
 
   const dotsEl = document.getElementById('ob-dots');
@@ -2328,7 +2332,6 @@ function resetOnboarding() {
   localStorage.removeItem('onboarding_done');
   obStep = 0;
   document.getElementById('ob-overlay').classList.add('open');
-  document.querySelector('.ob-backdrop').onclick = obBackdropTap;
   showPage('home');
   obRenderStep();
 }
