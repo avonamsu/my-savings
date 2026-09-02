@@ -883,8 +883,8 @@ function renderHome() {
   document.getElementById('home-total').innerHTML = `${fmt(totalRubVal)} <span>₽</span>`;
   const n = state.savings.length;
   const dc = getTodayChange();
-  const dcStr = dc !== null && dc !== 0
-    ? ` &nbsp;·&nbsp; <span style="color:${dc>0?'var(--accent)':'var(--danger)'};">${dc>0?'+':''}${fmt(dc)} ₽ сегодня</span>`
+  const dcStr = dc
+    ? ` &nbsp;·&nbsp; <span style="color:${dc.diff>0?'var(--accent)':'var(--danger)'};">${dc.diff>0?'+':''}${fmt(dc.diff)} ₽ ${dc.label}</span>`
     : '';
   document.getElementById('home-sub').innerHTML = (n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов — добавь первый') + dcStr;
   document.getElementById('dash-income').textContent = fmt(totalInc)+' ₽';
@@ -947,8 +947,8 @@ function renderSavings() {
   document.getElementById('total-savings').innerHTML=`${fmt(total)} <span>₽</span>`;
   const n=state.savings.length;
   const dayChange = getTodayChange();
-  const dayChangeStr = dayChange !== null && dayChange !== 0
-    ? `<span style="font-size:13px;font-weight:600;color:${dayChange>0?'var(--accent)':'var(--danger)'};">${dayChange>0?'+':''}${fmt(dayChange)} ₽ сегодня</span>`
+  const dayChangeStr = dayChange
+    ? `<span style="font-size:13px;font-weight:600;color:${dayChange.diff>0?'var(--accent)':'var(--danger)'};">${dayChange.diff>0?'+':''}${fmt(dayChange.diff)} ₽ ${dayChange.label}</span>`
     : '';
   document.getElementById('savings-count').innerHTML = (n?`${n} ${plural(n,'счёт','счёта','счетов')}`:'Нет счетов') + (dayChangeStr?' &nbsp;·&nbsp; '+dayChangeStr:'');
   const el=document.getElementById('savings-list');
@@ -1353,6 +1353,10 @@ function resetAllData(){
 
 function plural(n,one,few,many){const m=n%10,h=n%100;if(m===1&&h!==11)return one;if([2,3,4].includes(m)&&![12,13,14].includes(h))return few;return many;}
 
+// Save snapshot when user leaves page
+window.addEventListener('pagehide', saveDailySnapshot);
+window.addEventListener('beforeunload', saveDailySnapshot);
+// Also save when adding/editing accounts
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&document.getElementById('modal').classList.contains('open'))saveItem();
   if(e.key==='Escape'){closeModal();closeSidebar();}
@@ -1623,29 +1627,37 @@ function drawChart() {
 // ── INCOME HISTORY & CHART ────────────────────────────────
 
 // ── DAILY SNAPSHOT ────────────────────────────────────────
-function recordDailySnapshot() {
-  const todayKey = 'daily_' + today();
-  if (localStorage.getItem(todayKey)) return; // already recorded today
+function saveDailySnapshot() {
   const total = Math.round(state.savings.reduce((s,x) => s + (x.excluded?0:getSavingCurrentAmountRub(x)), 0));
-  localStorage.setItem(todayKey, total);
-  // Clean up snapshots older than 7 days
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('daily_') && key < 'daily_' + today()) {
-      // keep yesterday for comparison, remove older
-      const d = key.replace('daily_','');
-      const diff = Math.round((new Date(today()) - new Date(d)) / 86400000);
-      if (diff > 2) localStorage.removeItem(key);
-    }
-  }
+  if (total <= 0) return;
+  localStorage.setItem('daily_snapshot', JSON.stringify({ date: today(), amount: total }));
 }
 
 function getTodayChange() {
-  const yesterdayKey = 'daily_' + new Date(Date.now() - 86400000).toISOString().slice(0,10);
-  const yesterdayVal = localStorage.getItem(yesterdayKey);
-  if (!yesterdayVal) return null;
-  const current = Math.round(state.savings.reduce((s,x) => s + (x.excluded?0:getSavingCurrentAmountRub(x)), 0));
-  return current - Number(yesterdayVal);
+  const raw = localStorage.getItem('daily_snapshot');
+  if (!raw) return null;
+  try {
+    const snap = JSON.parse(raw);
+    // Only show if snapshot is from today
+    if (snap.date !== today()) return null;
+    const current = Math.round(state.savings.reduce((s,x) => s + (x.excluded?0:getSavingCurrentAmountRub(x)), 0));
+    const diff = current - snap.amount;
+    if (diff === 0) return null;
+    return { diff, label: 'сегодня' };
+  } catch(e) { return null; }
+}
+
+function recordDailySnapshot() {
+  const raw = localStorage.getItem('daily_snapshot');
+  if (!raw) { saveDailySnapshot(); return; }
+  try {
+    const snap = JSON.parse(raw);
+    if (snap.date !== today()) {
+      // New day — save fresh snapshot as today's opening balance
+      saveDailySnapshot();
+    }
+    // Same day — don't overwrite, so we keep the opening balance
+  } catch(e) { saveDailySnapshot(); }
 }
 
 function recordIncomeSnapshot() {
