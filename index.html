@@ -882,11 +882,7 @@ function renderHome() {
   document.getElementById('home-greeting').textContent = (h<6?'Доброй ночи 🌙':h<12?'Доброе утро ☀️':h<18?'Добрый день 👋':'Добрый вечер 🌆');
   document.getElementById('home-total').innerHTML = `${fmt(totalRubVal)} <span>₽</span>`;
   const n = state.savings.length;
-  const dc = getTodayChange();
-  const dcStr = dc
-    ? ` &nbsp;·&nbsp; <span style="color:${dc.diff>0?'var(--accent)':'var(--danger)'};">${dc.diff>0?'+':''}${fmt(dc.diff)} ₽ ${dc.label}</span>`
-    : '';
-  document.getElementById('home-sub').innerHTML = (n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов — добавь первый') + dcStr;
+  document.getElementById('home-sub').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов — добавь первый';
   document.getElementById('dash-income').textContent = fmt(totalInc)+' ₽';
   document.getElementById('dash-goals-pct').textContent = goalsPct+'%';
 
@@ -946,11 +942,7 @@ function renderSavings() {
   const total=state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
   document.getElementById('total-savings').innerHTML=`${fmt(total)} <span>₽</span>`;
   const n=state.savings.length;
-  const dayChange = getTodayChange();
-  const dayChangeStr = dayChange
-    ? `<span style="font-size:13px;font-weight:600;color:${dayChange.diff>0?'var(--accent)':'var(--danger)'};">${dayChange.diff>0?'+':''}${fmt(dayChange.diff)} ₽ ${dayChange.label}</span>`
-    : '';
-  document.getElementById('savings-count').innerHTML = (n?`${n} ${plural(n,'счёт','счёта','счетов')}`:'Нет счетов') + (dayChangeStr?' &nbsp;·&nbsp; '+dayChangeStr:'');
+  document.getElementById('savings-count').textContent = n?`${n} ${plural(n,'счёт','счёта','счетов')}`:'Нет счетов';
   const el=document.getElementById('savings-list');
   if(!n){el.innerHTML=`<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`;return;}
   el.innerHTML=state.savings.map(x=>{
@@ -1353,10 +1345,6 @@ function resetAllData(){
 
 function plural(n,one,few,many){const m=n%10,h=n%100;if(m===1&&h!==11)return one;if([2,3,4].includes(m)&&![12,13,14].includes(h))return few;return many;}
 
-// Save snapshot when user leaves page
-window.addEventListener('pagehide', saveDailySnapshot);
-window.addEventListener('beforeunload', saveDailySnapshot);
-// Also save when adding/editing accounts
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&document.getElementById('modal').classList.contains('open'))saveItem();
   if(e.key==='Escape'){closeModal();closeSidebar();}
@@ -1626,39 +1614,7 @@ function drawChart() {
 
 // ── INCOME HISTORY & CHART ────────────────────────────────
 
-// ── DAILY SNAPSHOT ────────────────────────────────────────
-function saveDailySnapshot() {
-  const total = Math.round(state.savings.reduce((s,x) => s + (x.excluded?0:getSavingCurrentAmountRub(x)), 0));
-  if (total <= 0) return;
-  localStorage.setItem('daily_snapshot', JSON.stringify({ date: today(), amount: total }));
-}
 
-function getTodayChange() {
-  const raw = localStorage.getItem('daily_snapshot');
-  if (!raw) return null;
-  try {
-    const snap = JSON.parse(raw);
-    // Only show if snapshot is from today
-    if (snap.date !== today()) return null;
-    const current = Math.round(state.savings.reduce((s,x) => s + (x.excluded?0:getSavingCurrentAmountRub(x)), 0));
-    const diff = current - snap.amount;
-    if (diff === 0) return null;
-    return { diff, label: 'сегодня' };
-  } catch(e) { return null; }
-}
-
-function recordDailySnapshot() {
-  const raw = localStorage.getItem('daily_snapshot');
-  if (!raw) { saveDailySnapshot(); return; }
-  try {
-    const snap = JSON.parse(raw);
-    if (snap.date !== today()) {
-      // New day — save fresh snapshot as today's opening balance
-      saveDailySnapshot();
-    }
-    // Same day — don't overwrite, so we keep the opening balance
-  } catch(e) { saveDailySnapshot(); }
-}
 
 function recordIncomeSnapshot() {
   const ym = new Date().toISOString().slice(0,7);
@@ -2681,8 +2637,6 @@ function initOnboarding() {
 // ── INIT ──────────────────────────────────────────────────
 load();
 if (!state.challenges) state.challenges = [];
-// Record daily snapshot BEFORE fetching rates (uses cached rates or RUB-only)
-recordDailySnapshot();
 render();
 fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); });
 checkAchievements();
