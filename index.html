@@ -2681,8 +2681,10 @@ function initOnboarding() {
 // ── INIT ──────────────────────────────────────────────────
 load();
 if (!state.challenges) state.challenges = [];
+// Record daily snapshot BEFORE fetching rates (uses cached rates or RUB-only)
+recordDailySnapshot();
 render();
-fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); recordDailySnapshot(); });
+fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); });
 checkAchievements();
 initNotifications();
 checkNotifBanner();
