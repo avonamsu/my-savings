@@ -294,6 +294,12 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 .ch-cell.done { background:var(--accent); border-color:var(--accent); color:var(--bg); }
 .ch-footer { padding:11px 14px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.05); }
 .ch-delete { background:none; border:none; color:var(--danger); font-size:12px; opacity:0.5; cursor:pointer; }
+  .emoji-pick-btn { background:var(--surface2); border:2px solid transparent; border-radius:8px; font-size:20px; width:38px; height:38px; cursor:pointer; transition:all .15s; }
+  .emoji-pick-btn.selected { border-color:var(--accent); background:var(--accent-dim); }
+  .color-pick-btn { width:28px; height:28px; border-radius:50%; border:3px solid transparent; cursor:pointer; transition:all .15s; flex-shrink:0; }
+  .color-pick-btn.selected { border-color:var(--text); transform:scale(1.2); }
+  .ch-streak { font-size:12px; color:var(--warn); font-weight:600; }
+  .ch-random-btn { background:none; border:1px solid rgba(78,205,196,0.3); border-radius:8px; color:var(--accent); font-size:12px; padding:5px 10px; cursor:pointer; }
 .card-item.excluded { opacity:0.4; }
 .card-item.excluded .card-name { text-decoration:line-through; }
 </style>
@@ -513,8 +519,18 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 <!-- CHALLENGE PAGE -->
 <div class="page" id="page-challenge">
   <div id="challenge-list-view-page">
-    <button class="add-btn" onclick="showNewChallengeFormPage()">＋ Создать новый челлендж</button>
-    <div id="challenges-container-page" style="display:flex;flex-direction:column;gap:12px;margin-top:4px;"></div>
+    <div class="tab-switch" id="ch-tabs">
+      <button class="active" id="ch-tab-active" onclick="switchChTab('active')">Активные</button>
+      <button id="ch-tab-archive" onclick="switchChTab('archive')">Архив</button>
+    </div>
+    <div id="ch-active-view">
+      <button class="add-btn" onclick="showNewChallengeFormPage()">＋ Создать новый челлендж</button>
+      <div id="challenges-container-page" style="display:flex;flex-direction:column;gap:12px;margin-top:4px;"></div>
+    </div>
+    <div id="ch-archive-view" style="display:none;">
+      <div id="challenges-archive-page" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <div id="ch-archive-empty" class="empty" style="display:none;"><div class="empty-icon">📦</div><p>Завершённые челленджи появятся здесь</p></div>
+    </div>
   </div>
   <div id="challenge-form-view-page" style="display:none;flex-direction:column;gap:14px;">
     <div style="display:flex;align-items:center;gap:12px;">
@@ -538,6 +554,22 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
           <option value="random">Случайные суммы (интереснее)</option>
           <option value="equal">Равные части</option>
         </select>
+      </div>
+      <div class="field"><label>ЭМОДЗИ-ИКОНКА</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="ch-emoji-picker-p">
+          ${['🎯','✈️','🏠','🚗','💍','👗','📱','🎮','🌴','🎓','💄','🐱'].map(e =>
+            `<button type="button" onclick="selectEmoji('${e}','p')" class="emoji-pick-btn" id="epb-p-${e}">${e}</button>`
+          ).join('')}
+        </div>
+        <input type="hidden" id="ch-emoji-p" value="🎯">
+      </div>
+      <div class="field"><label>ЦВЕТ</label>
+        <div style="display:flex;gap:8px;">
+          ${[['#4ECDC4','мятный'],['#FF6B9D','розовый'],['#FFB347','оранжевый'],['#7B68EE','фиолетовый'],['#5BC8AF','зелёный'],['#64B5F6','синий']].map(([c,n]) =>
+            `<button type="button" onclick="selectColor('${c}','p')" class="color-pick-btn" id="cpb-p-${c.replace('#','')}" style="background:${c};" title="${n}"></button>`
+          ).join('')}
+        </div>
+        <input type="hidden" id="ch-color-p" value="#4ECDC4">
       </div>
       <div class="calc-preview" id="ch-preview-p" style="display:none;"></div>
       <button class="btn-primary" onclick="createChallengeFromPage()">Создать челлендж</button>
@@ -2198,9 +2230,30 @@ function createChallenge() {
 function toggleCell(challengeId, cellIdx) {
   const ch = state.challenges.find(c => c.id === challengeId);
   if (!ch) return;
-  ch.cells[cellIdx].done = !ch.cells[cellIdx].done;
+  const wasDone = ch.cells[cellIdx].done;
+  ch.cells[cellIdx].done = !wasDone;
+
+  // Track streak
+  if (!wasDone) { // just checked a cell
+    const t = today();
+    if (ch.lastChecked === t) {
+      // already checked today, streak stays
+    } else if (ch.lastChecked && Math.round((new Date(t)-new Date(ch.lastChecked))/86400000) === 1) {
+      ch.streak = (ch.streak||0) + 1; // consecutive day
+    } else {
+      ch.streak = 1; // reset
+    }
+    ch.lastChecked = t;
+  }
+
+  // Confetti if last cell just closed
+  const allDone = ch.cells.every(c => c.done);
+  if (allDone && !wasDone) {
+    startConfetti();
+    setTimeout(stopConfetti, 4000);
+  }
+
   save();
-  // Keep the card open after toggling
   window._chCollapsed[challengeId] = false;
   renderChallengesPage();
 }
@@ -2222,122 +2275,123 @@ function renderChallenges() {
     return;
   }
 
-  el.innerHTML = state.challenges.map(ch => {
-    const totalDone = ch.cells.filter(c => c.done).reduce((s,c) => s+c.amt, 0);
-    const totalGoal = ch.cells.reduce((s,c) => s+c.amt, 0);
-    const pct = Math.round(totalDone / totalGoal * 100);
-    const doneCells = ch.cells.filter(c => c.done).length;
-    const totalCells = ch.cells.length;
-
-    return `<div class="ch-card">
-      <div class="ch-header">
-        <div class="ch-title">${ch.name}</div>
-        <div class="ch-meta">Цель: ${fmt(totalGoal)} ₽ · ${ch.days} дней · создан ${ch.createdAt}</div>
-      </div>
-      <div class="ch-progress-wrap">
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:6px;">
-          <span>${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽</span>
-          <span>${doneCells}/${totalCells} ячеек · ${pct}%</span>
-        </div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
-      </div>
-      <div class="ch-grid">
-        ${ch.cells.map((c,i) => `
-          <div class="ch-cell ${c.done?'done':''}" onclick="toggleCell('${ch.id}',${i})">
-            ${fmt(c.amt)}
-          </div>`).join('')}
-      </div>
-      <div class="ch-footer">
-        ${pct>=100 ? '<span style="color:var(--accent);font-weight:700;">🎉 Цель достигнута!</span>' : `<span style="font-size:12px;color:var(--text-dim);">Нажимай на ячейки когда откладываешь</span>`}
-        <button class="ch-delete" onclick="deleteChallenge('${ch.id}')">Удалить</button>
-      </div>
-    </div>`;
-  }).join('');
+  el.innerHTML = activeChallenges.map(ch => renderChCard(ch)).join('');
 }
 
-
-
-// ── CHALLENGE PAGE (standalone tab) ──────────────────────
-function showNewChallengeFormPage() {
-  document.getElementById('challenge-list-view-page').style.display = 'none';
-  document.getElementById('challenge-form-view-page').style.display = 'flex';
-  updateChallengePreviewPage();
-}
-function hideChallengeFormPage() {
-  document.getElementById('challenge-form-view-page').style.display = 'none';
-  document.getElementById('challenge-list-view-page').style.display = '';
-  renderChallengesPage();
-}
-function updateChallengePreviewPage() {
-  const goal = parseFloat(document.getElementById('ch-goal-p').value) || 0;
-  const days = parseInt(document.getElementById('ch-period-p').value) || 90;
-  const preview = document.getElementById('ch-preview-p');
-  if (!goal) { preview.style.display='none'; return; }
-  const cells = Math.min(days, 60);
-  preview.style.display = '';
-  preview.innerHTML = `Ячеек: <strong>${cells}</strong> · Среднее: <strong>${fmt(Math.round(goal/cells))} ₽</strong>`;
-}
-function createChallengeFromPage() {
-  const name = document.getElementById('ch-name-p').value.trim();
-  const goal = parseFloat(document.getElementById('ch-goal-p').value);
-  const days = parseInt(document.getElementById('ch-period-p').value);
-  const mode = document.getElementById('ch-cell-mode-p').value;
-  if (!name || !goal || goal <= 0) return;
-  const cells = generateCells(goal, days, mode);
-  if (!state.challenges) state.challenges = [];
-  state.challenges.push({ id:uid(), name, goal, days, mode, cells:cells.map(amt=>({amt,done:false})), createdAt:today() });
-  save();
-  document.getElementById('ch-name-p').value = '';
-  document.getElementById('ch-goal-p').value = '';
-  hideChallengeFormPage();
-}
-// Track collapsed state
-if (!window._chCollapsed) window._chCollapsed = {};
-
-function toggleChallenge(id) {
-  window._chCollapsed[id] = !window._chCollapsed[id];
-  renderChallengesPage();
-}
-
-function renderChallengesPage() {
-  const el = document.getElementById('challenges-container-page');
-  if (!el) return;
-  if (!state.challenges || !state.challenges.length) { el.innerHTML = ''; return; }
-  el.innerHTML = state.challenges.map(ch => {
-    const totalDone = ch.cells.filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
+function renderChCard(ch) {
+  const totalDone = ch.cells.filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
     const totalGoal = ch.cells.reduce((s,c)=>s+c.amt,0);
     const pct = Math.round(totalDone/totalGoal*100);
     const doneCells = ch.cells.filter(c=>c.done).length;
     const collapsed = window._chCollapsed[ch.id] !== false; // default collapsed
-    return `<div class="ch-card">
-      <div class="ch-header" onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;">
-        <div>
-          <div class="ch-title">${ch.name}</div>
-          <div class="ch-meta">${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽ · ${pct}%</div>
+    const color = ch.color || '#4ECDC4';
+    const emoji = ch.emoji || '🎯';
+    const streak = ch.streak || 0;
+    // Days remaining
+    const createdDate = new Date(ch.createdAt);
+    const endDate = new Date(createdDate.getTime() + ch.days * 86400000);
+    const daysLeft = Math.max(0, Math.round((endDate - new Date()) / 86400000));
+    const daysUsed = ch.days - daysLeft;
+    // Forecast
+    const undoneCount = ch.cells.length - doneCells;
+    const avgPerDay = daysUsed > 0 ? doneCells / daysUsed : 0;
+    const daysNeeded = avgPerDay > 0 ? Math.ceil(undoneCount / avgPerDay) : null;
+    const onTrack = daysNeeded !== null && daysNeeded <= daysLeft;
+    const forecastStr = pct >= 100 ? '' : daysNeeded === null ? '' :
+      onTrack ? `<span style="color:var(--accent);font-size:11px;">✓ Успеваешь</span>` :
+                `<span style="color:var(--warn);font-size:11px;">⚠ Нужно ускориться</span>`;
+
+  return `<div class="ch-card" data-ch="${ch.id}" style="border-color:${color}22;">
+      <div class="ch-header" onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-left:3px solid ${color};padding-left:12px;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+          <span style="font-size:22px;">${emoji}</span>
+          <div style="min-width:0;">
+            <div class="ch-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.name}</div>
+            <div class="ch-meta">${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽ · ${pct}%${streak>1?' · 🔥'+streak+' дн.':''}</div>
+          </div>
         </div>
-        <span style="color:var(--accent);font-size:18px;padding-left:8px;flex-shrink:0;">${collapsed?'▸':'▾'}</span>
+        <span style="color:${color};font-size:18px;padding-left:8px;flex-shrink:0;">${collapsed?'▸':'▾'}</span>
       </div>
       ${!collapsed ? `
       <div class="ch-progress-wrap">
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:6px;">
           <span>${doneCells}/${ch.cells.length} ячеек</span>
-          <span>${ch.days} дней · ${ch.createdAt}</span>
+          <span style="display:flex;align-items:center;gap:6px;">${forecastStr} ${daysLeft>0?daysLeft+' дн. осталось':'срок истёк'}</span>
         </div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${color},${color}99);"></div></div>
       </div>
-      <div class="ch-grid">${ch.cells.map((c,i)=>`<div class="ch-cell ${c.done?'done':''}" onclick="toggleCell('${ch.id}',${i})">${fmt(c.amt)}</div>`).join('')}</div>
+      <div class="ch-grid" data-ch="${ch.id}">${ch.cells.map((c,i)=>`<div class="ch-cell ${c.done?'done':''}" onclick="toggleCell('${ch.id}',${i})" style="${c.done?`background:${color};border-color:${color};`:''}">
+        ${fmt(c.amt)}</div>`).join('')}</div>
       <div class="ch-footer">
-        ${pct>=100?'<span style="color:var(--accent);font-weight:700;">🎉 Цель достигнута!</span>':`<span style="font-size:12px;color:var(--text-dim);">Нажимай на ячейки когда откладываешь</span>`}
+        ${pct>=100?`<span style="color:${color};font-weight:700;">🎉 Цель достигнута!</span>`:`<button class="ch-random-btn" onclick="highlightRandomCell('${ch.id}')">🎲 Случайная</button>`}
         <div style="display:flex;gap:12px;">
-          <button class="ch-delete" onclick="editChallenge('${ch.id}')" style="color:var(--accent);opacity:0.7;">Изменить</button>
+          <button class="ch-delete" onclick="editChallenge('${ch.id}')" style="color:${color};opacity:0.8;">Изменить</button>
           <button class="ch-delete" onclick="deleteChallenge('${ch.id}')">Удалить</button>
         </div>
       </div>` : ''}
     </div>`;
-  }).join('');
 }
 
+function selectEmoji(e, suffix) {
+  document.getElementById('ch-emoji-'+suffix).value = e;
+  document.querySelectorAll(`[id^="epb-${suffix}-"]`).forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById(`epb-${suffix}-${e}`);
+  if (btn) btn.classList.add('selected');
+}
+function selectColor(c, suffix) {
+  document.getElementById('ch-color-'+suffix).value = c;
+  document.querySelectorAll(`[id^="cpb-${suffix}-"]`).forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById(`cpb-${suffix}-${c.replace('#','')}`);
+  if (btn) btn.classList.add('selected');
+}
+function highlightRandomCell(id) {
+  const ch = state.challenges.find(c => c.id === id);
+  if (!ch) return;
+  const undone = ch.cells.map((c,i) => c.done ? null : i).filter(i => i !== null);
+  if (!undone.length) return;
+  const idx = undone[Math.floor(Math.random() * undone.length)];
+  // Flash the cell
+  window._chCollapsed[id] = false;
+  renderChallengesPage();
+  setTimeout(() => {
+    const cells = document.querySelectorAll(`[data-ch="${id}"] .ch-cell`);
+    if (cells[idx]) {
+      cells[idx].style.background = 'rgba(78,205,196,0.4)';
+      cells[idx].style.borderColor = 'var(--accent)';
+      cells[idx].scrollIntoView({ behavior:'smooth', block:'center' });
+      setTimeout(() => {
+        if (cells[idx]) { cells[idx].style.background=''; cells[idx].style.borderColor=''; }
+      }, 2000);
+    }
+  }, 100);
+}
 
+function getChStreak(ch) {
+  if (!ch.lastChecked) return 0;
+  const today2 = today();
+  const last = ch.lastChecked;
+  const diff = Math.round((new Date(today2) - new Date(last)) / 86400000);
+  if (diff > 1) return 0;
+  return ch.streak || 0;
+}
+
+function checkChNotifications() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  state.challenges.forEach(ch => {
+    if (!ch.cells.some(c => !c.done)) return; // all done
+    const last = ch.lastChecked;
+    if (!last) return;
+    const diff = Math.round((new Date(today()) - new Date(last)) / 86400000);
+    if (diff >= 7) {
+      const notifKey = 'ch_notif_' + ch.id + '_' + today();
+      if (localStorage.getItem(notifKey)) return;
+      new Notification('🪙 Не забывай про копилку!', {
+        body: `«${ch.name}» ждёт тебя уже ${diff} дней`
+      });
+      localStorage.setItem(notifKey, '1');
+    }
+  });
+}
 // ── EDIT CHALLENGE ────────────────────────────────────────
 function editChallenge(id) {
   const ch = state.challenges.find(c => c.id === id);
@@ -2747,6 +2801,7 @@ checkNotifBanner();
 checkBackupReminder();
 updateBackupDateDisplay();
 setTimeout(initOnboarding, 600);
+checkChNotifications();
 </script>
 </body>
 </html>
