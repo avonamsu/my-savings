@@ -545,6 +545,37 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
   </div>
 </div>
 
+<!-- EDIT CHALLENGE MODAL -->
+<div class="modal-overlay" id="edit-challenge-modal" onclick="if(event.target===this)closeEditChallenge()">
+  <div class="modal">
+    <div class="modal-title">Изменить челлендж</div>
+    <input type="hidden" id="ech-id">
+    <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="ech-name" placeholder="Название"></div>
+    <div class="field"><label>НОВАЯ ЦЕЛЬ (₽) — ячейки пересчитаются</label><input type="number" id="ech-goal" placeholder="100 000" inputmode="decimal" oninput="updateEditChallengePreview()"></div>
+    <div class="field"><label>СРОК</label>
+      <select id="ech-period">
+        <option value="30">30 дней</option>
+        <option value="60">60 дней</option>
+        <option value="90">3 месяца</option>
+        <option value="180">6 месяцев</option>
+        <option value="365">1 год</option>
+      </select>
+    </div>
+    <div class="field"><label>РАЗМЕР ЯЧЕЕК</label>
+      <select id="ech-cell-mode">
+        <option value="random">Случайные суммы</option>
+        <option value="equal">Равные части</option>
+      </select>
+    </div>
+    <div class="calc-preview" id="ech-preview" style="display:none;"></div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">⚠️ Уже отмеченные ячейки сохранятся. Если изменишь сумму — незакрытые ячейки пересчитаются.</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeEditChallenge()">Отмена</button>
+      <button class="btn-primary" onclick="saveEditChallenge()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODALS -->
 <div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
   <div class="modal">
@@ -2297,10 +2328,81 @@ function renderChallengesPage() {
       <div class="ch-grid">${ch.cells.map((c,i)=>`<div class="ch-cell ${c.done?'done':''}" onclick="toggleCell('${ch.id}',${i})">${fmt(c.amt)}</div>`).join('')}</div>
       <div class="ch-footer">
         ${pct>=100?'<span style="color:var(--accent);font-weight:700;">🎉 Цель достигнута!</span>':`<span style="font-size:12px;color:var(--text-dim);">Нажимай на ячейки когда откладываешь</span>`}
-        <button class="ch-delete" onclick="deleteChallenge('${ch.id}')">Удалить</button>
+        <div style="display:flex;gap:12px;">
+          <button class="ch-delete" onclick="editChallenge('${ch.id}')" style="color:var(--accent);opacity:0.7;">Изменить</button>
+          <button class="ch-delete" onclick="deleteChallenge('${ch.id}')">Удалить</button>
+        </div>
       </div>` : ''}
     </div>`;
   }).join('');
+}
+
+
+// ── EDIT CHALLENGE ────────────────────────────────────────
+function editChallenge(id) {
+  const ch = state.challenges.find(c => c.id === id);
+  if (!ch) return;
+  document.getElementById('ech-id').value = id;
+  document.getElementById('ech-name').value = ch.name;
+  document.getElementById('ech-goal').value = ch.goal || ch.cells.reduce((s,c)=>s+c.amt,0);
+  document.getElementById('ech-period').value = ch.days || 90;
+  document.getElementById('ech-cell-mode').value = ch.mode || 'random';
+  document.getElementById('ech-preview').style.display = 'none';
+  document.getElementById('edit-challenge-modal').classList.add('open');
+}
+
+function closeEditChallenge() {
+  document.getElementById('edit-challenge-modal').classList.remove('open');
+}
+
+function updateEditChallengePreview() {
+  const goal = parseFloat(document.getElementById('ech-goal').value) || 0;
+  const ch = state.challenges.find(c => c.id === document.getElementById('ech-id').value);
+  const preview = document.getElementById('ech-preview');
+  if (!goal || !ch) { preview.style.display='none'; return; }
+  const doneCells = ch.cells.filter(c=>c.done).length;
+  const doneAmt = ch.cells.filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
+  const remaining = Math.max(0, goal - doneAmt);
+  const newCellCount = ch.cells.length - doneCells;
+  preview.style.display = '';
+  preview.innerHTML = `Уже отложено: <strong>${fmt(doneAmt)} ₽</strong> (${doneCells} ячеек сохранятся)<br>Осталось пересчитать: <strong>${fmt(remaining)} ₽</strong> в ${newCellCount} ячейках`;
+}
+
+function saveEditChallenge() {
+  const id = document.getElementById('ech-id').value;
+  const ch = state.challenges.find(c => c.id === id);
+  if (!ch) return;
+
+  const name = document.getElementById('ech-name').value.trim();
+  const newGoal = parseFloat(document.getElementById('ech-goal').value);
+  const days = parseInt(document.getElementById('ech-period').value);
+  const mode = document.getElementById('ech-cell-mode').value;
+
+  if (!name) return;
+
+  ch.name = name;
+  ch.days = days;
+  ch.mode = mode;
+
+  if (newGoal > 0) {
+    ch.goal = newGoal;
+    // Keep done cells, regenerate only undone ones
+    const doneCells = ch.cells.filter(c => c.done);
+    const doneAmt = doneCells.reduce((s,c) => s+c.amt, 0);
+    const remaining = Math.max(0, newGoal - doneAmt);
+    const undoneCount = ch.cells.length - doneCells.length;
+
+    if (undoneCount > 0 && remaining > 0) {
+      const newUndone = generateCells(remaining, undoneCount, mode).map(amt => ({ amt, done: false }));
+      // Rebuild cells: keep done ones in their positions, replace undone
+      let undoneIdx = 0;
+      ch.cells = ch.cells.map(c => c.done ? c : newUndone[undoneIdx++] || { amt: 0, done: false });
+    }
+  }
+
+  save();
+  closeEditChallenge();
+  renderChallengesPage();
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────
