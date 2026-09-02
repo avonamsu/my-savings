@@ -2265,17 +2265,39 @@ function deleteChallenge(id) {
   renderChallengesPage();
 }
 
-function renderChallenges() {
+function renderChallenges() {} // legacy stub
+
+function renderChallengesPage() {
   if (!state.challenges) state.challenges = [];
-  const el = document.getElementById('challenges-container');
-  if (!el) return;
 
-  if (!state.challenges.length) {
-    el.innerHTML = '';
-    return;
+  const el = document.getElementById('challenges-container-page');
+  const archiveEl = document.getElementById('challenges-archive-page');
+  const archiveEmpty = document.getElementById('ch-archive-empty');
+
+  const activeChallenges = state.challenges.filter(ch => {
+    const done = ch.cells.filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
+    const total = ch.cells.reduce((s,c)=>s+c.amt,0);
+    return done < total;
+  });
+  const archivedChallenges = state.challenges.filter(ch => {
+    const done = ch.cells.filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
+    const total = ch.cells.reduce((s,c)=>s+c.amt,0);
+    return done >= total;
+  });
+
+  if (el) el.innerHTML = activeChallenges.length
+    ? activeChallenges.map(ch => renderChCard(ch)).join('')
+    : '<div class="empty"><div class="empty-icon">🪙</div><p>Нет активных челленджей</p></div>';
+
+  if (archiveEl) {
+    if (archivedChallenges.length) {
+      archiveEl.innerHTML = archivedChallenges.map(ch => renderChCard(ch)).join('');
+      if (archiveEmpty) archiveEmpty.style.display = 'none';
+    } else {
+      archiveEl.innerHTML = '';
+      if (archiveEmpty) archiveEmpty.style.display = '';
+    }
   }
-
-  el.innerHTML = activeChallenges.map(ch => renderChCard(ch)).join('');
 }
 
 function renderChCard(ch) {
