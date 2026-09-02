@@ -2265,6 +2265,62 @@ function deleteChallenge(id) {
   renderChallengesPage();
 }
 
+
+// ── CHALLENGE PAGE FUNCTIONS ──────────────────────────────
+let _chTab = 'active';
+
+function switchChTab(tab) {
+  _chTab = tab;
+  document.getElementById('ch-tab-active').classList.toggle('active', tab==='active');
+  document.getElementById('ch-tab-archive').classList.toggle('active', tab==='archive');
+  document.getElementById('ch-active-view').style.display = tab==='active' ? '' : 'none';
+  document.getElementById('ch-archive-view').style.display = tab==='archive' ? '' : 'none';
+  renderChallengesPage();
+}
+
+function showNewChallengeFormPage() {
+  document.getElementById('challenge-list-view-page').style.display = 'none';
+  document.getElementById('challenge-form-view-page').style.display = 'flex';
+  updateChallengePreviewPage();
+}
+
+function hideChallengeFormPage() {
+  document.getElementById('challenge-form-view-page').style.display = 'none';
+  document.getElementById('challenge-list-view-page').style.display = '';
+  renderChallengesPage();
+}
+
+function updateChallengePreviewPage() {
+  const goal = parseFloat(document.getElementById('ch-goal-p').value) || 0;
+  const days = parseInt(document.getElementById('ch-period-p').value) || 90;
+  const preview = document.getElementById('ch-preview-p');
+  if (!goal) { preview.style.display='none'; return; }
+  const cells = Math.min(days, 60);
+  preview.style.display = '';
+  preview.innerHTML = `Ячеек: <strong>${cells}</strong> · Среднее: <strong>${fmt(Math.round(goal/cells))} ₽</strong>`;
+}
+
+function createChallengeFromPage() {
+  const name = document.getElementById('ch-name-p').value.trim();
+  const goal = parseFloat(document.getElementById('ch-goal-p').value);
+  const days = parseInt(document.getElementById('ch-period-p').value);
+  const mode = document.getElementById('ch-cell-mode-p').value;
+  const emoji = document.getElementById('ch-emoji-p').value || '🎯';
+  const color = document.getElementById('ch-color-p').value || '#4ECDC4';
+  if (!name || !goal || goal <= 0) return;
+  const cells = generateCells(goal, days, mode);
+  if (!state.challenges) state.challenges = [];
+  state.challenges.push({
+    id:uid(), name, goal, days, mode, emoji, color,
+    cells: cells.map(amt=>({amt, done:false})),
+    createdAt: today(), streak: 0, lastChecked: null
+  });
+  save();
+  document.getElementById('ch-name-p').value = '';
+  document.getElementById('ch-goal-p').value = '';
+  hideChallengeFormPage();
+}
+
 function renderChallenges() {} // legacy stub
 
 function renderChallengesPage() {
