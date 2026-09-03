@@ -138,7 +138,16 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 /* DASHBOARD GRID */
 .dash-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
 .dash-card { background:var(--surface); border-radius:var(--radius-sm); padding:12px 10px; border:1px solid rgba(255,255,255,0.05); text-align:center; transition:background .15s; }
-.dash-card:active { background:var(--surface2); }
+  .dash-card:active { background:var(--surface2); }
+  .dash-stat { flex:1; background:var(--surface); border-radius:var(--radius-sm); padding:12px 14px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:10px; transition:background .15s; }
+  .dash-stat:active { background:var(--surface2); }
+  .dash-stat-icon { font-size:22px; flex-shrink:0; }
+  .dash-stat-val { font-size:16px; font-weight:700; color:var(--accent); }
+  .dash-stat-label { font-size:11px; color:var(--text-dim); margin-top:1px; }
+  .dash-divider { width:1px; background:rgba(255,255,255,0.06); align-self:stretch; flex-shrink:0; }
+  .quick-actions { display:flex; gap:10px; }
+  .quick-btn { flex:1; background:var(--surface); border:1px solid rgba(78,205,196,0.25); border-radius:var(--radius-sm); color:var(--accent); font-size:13px; font-weight:600; padding:11px 8px; cursor:pointer; text-align:center; transition:all .15s; }
+  .quick-btn:active { background:var(--accent-dim); }
 .dash-card-icon { font-size:20px; margin-bottom:4px; }
 .dash-card-val { font-size:15px; font-weight:700; color:var(--accent); }
 .dash-card-label { font-size:10px; color:var(--text-dim); margin-top:2px; }
@@ -368,17 +377,28 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
     <div class="hero-sub" id="home-sub">Нет счетов</div>
   </div>
 
-  <div class="dash-grid" style="grid-template-columns:1fr 1fr;">
-    <div class="dash-card" onclick="showPage('income')" style="cursor:pointer">
-      <div class="dash-card-icon">📈</div>
-      <div class="dash-card-val" id="dash-income">0 ₽</div>
-      <div class="dash-card-label">доход/мес</div>
+  <div style="display:flex;gap:12px;">
+    <div class="dash-stat" onclick="showPage('income')" style="cursor:pointer">
+      <span class="dash-stat-icon">📈</span>
+      <div>
+        <div class="dash-stat-val" id="dash-income">0 ₽</div>
+        <div class="dash-stat-label">доход/мес</div>
+      </div>
     </div>
-    <div class="dash-card" onclick="showPage('goals')" style="cursor:pointer">
-      <div class="dash-card-icon">🎯</div>
-      <div class="dash-card-val" id="dash-goals-pct">0%</div>
-      <div class="dash-card-label">целей покрыто</div>
+    <div class="dash-divider"></div>
+    <div class="dash-stat" onclick="showPage('goals')" style="cursor:pointer">
+      <span class="dash-stat-icon">🎯</span>
+      <div>
+        <div class="dash-stat-val" id="dash-goals-pct">0%</div>
+        <div class="dash-stat-label">целей покрыто</div>
+      </div>
     </div>
+  </div>
+
+  <div class="quick-actions">
+    <button class="quick-btn" onclick="editingId=null;openModal('savings')">＋ Счёт</button>
+    <button class="quick-btn" onclick="editingId=null;openModal('goals')">＋ Цель</button>
+    <button class="quick-btn" onclick="editingId=null;openModal('income')">＋ Доход</button>
   </div>
 
   <div class="rate-bar" id="rate-bar" onclick="showPage('savings')" style="cursor:pointer">⏳ Загружаю курсы ЦБ РФ...</div>
@@ -995,13 +1015,18 @@ function renderHome() {
   } else {
     let rem=totalInc;
     const items=state.goals.map(g=>{const cost=Number(g.amount),covered=rem>=cost;if(covered)rem-=cost;return{...g,covered};});
-    goalsEl.innerHTML=`<div class="card">${items.slice(0,3).map(g=>`
+    // Show last 2 covered + first 1 uncovered
+    const covered = items.filter(g=>g.covered);
+    const uncovered = items.filter(g=>!g.covered);
+    const show = [...covered.slice(-2), ...uncovered.slice(0,1)];
+    const remaining = items.length - show.length;
+    goalsEl.innerHTML=`<div class="card">${show.map(g=>`
       <div class="goal-item ${g.covered?'covered':''}">
         <div class="goal-check">${g.covered?'✓':''}</div>
         <div class="goal-info"><div class="goal-name">${g.name}</div></div>
         <div class="goal-amount">${fmt(g.amount)} ₽</div>
       </div>`).join('')}
-      ${items.length>3?`<div style="padding:10px;text-align:center;font-size:12px;color:var(--text-dim);">+${items.length-3} ещё → <span style="color:var(--accent);cursor:pointer" onclick="showPage('goals')">посмотреть все</span></div>`:''}
+      ${remaining>0?`<div style="padding:10px;text-align:center;font-size:12px;color:var(--text-dim);">+${remaining} ещё → <span style="color:var(--accent);cursor:pointer" onclick="showPage('goals')">посмотреть все</span></div>`:''}
     </div>`;
   }
 
