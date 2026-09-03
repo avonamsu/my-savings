@@ -2338,14 +2338,27 @@ function renderChallenges() {} // legacy stub
 function renderChallengesPage() {
   if (!state.challenges) state.challenges = [];
 
-  // Fix any challenges missing required fields
-  state.challenges = state.challenges.filter(ch => ch && ch.cells && Array.isArray(ch.cells));
+  // Fix any challenges missing required fields or using old format
+  state.challenges = state.challenges.filter(ch => ch && (ch.cells || ch.amounts));
   state.challenges.forEach(ch => {
+    // Migrate old format: amounts array → cells array
+    if (!ch.cells && ch.amounts) {
+      ch.cells = ch.amounts.map(amt => ({ amt: Number(amt), done: false }));
+      delete ch.amounts;
+    }
+    // Migrate cells where amt might be stored as 'amount'
+    if (ch.cells) {
+      ch.cells = ch.cells.map(c => ({
+        amt: Number(c.amt || c.amount || c || 0),
+        done: !!(c.done || c.checked || c.completed)
+      }));
+    }
     if (!ch.emoji) ch.emoji = '🎯';
     if (!ch.color) ch.color = '#4ECDC4';
     if (!ch.streak) ch.streak = 0;
     if (!ch.createdAt) ch.createdAt = today();
     if (!ch.days) ch.days = 90;
+    if (!ch.name) ch.name = 'Челлендж';
   });
 
   const el = document.getElementById('challenges-container-page');
