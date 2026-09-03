@@ -157,7 +157,15 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 
 /* CARD */
 .card { background:var(--surface); border-radius:var(--radius); overflow:hidden; border:1px solid rgba(255,255,255,0.05); }
-.card-item { display:flex; align-items:center; padding:13px 14px; gap:10px; border-bottom:1px solid rgba(255,255,255,0.04); }
+.card-item { display:flex; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); position:relative; overflow:hidden; }
+  .card-item-inner { display:flex; align-items:center; padding:13px 14px; gap:10px; flex:1; min-width:0; transition:transform .25s cubic-bezier(.4,0,.2,1); background:var(--surface); }
+  .swipe-actions { position:absolute; right:0; top:0; bottom:0; display:none; }
+  .swipe-del { background:var(--danger); color:#fff; border:none; padding:0 20px; font-size:16px; cursor:pointer; }
+  .swipe-edit { background:var(--accent); color:var(--bg); border:none; padding:0 20px; font-size:16px; cursor:pointer; }
+  .group-header { display:flex; justify-content:space-between; align-items:center; padding:8px 4px 4px; }
+  .group-title { font-size:11px; font-weight:700; letter-spacing:.07em; color:var(--text-dim); text-transform:uppercase; }
+  .group-total { font-size:12px; font-weight:600; color:var(--accent); }
+  .group-block { background:var(--surface); border-radius:var(--radius); overflow:hidden; border:1px solid rgba(255,255,255,0.05); margin-bottom:4px; }
 .card-item:last-child { border-bottom:none; }
 .card-icon { width:36px; height:36px; border-radius:10px; background:var(--accent-dim); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
 .card-info { flex:1; min-width:0; }
@@ -429,8 +437,17 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
     <div class="hero-amount" id="total-savings">0 <span>₽</span></div>
     <div class="hero-sub" id="savings-count">Нет счетов</div>
   </div>
-  <div class="section-title">Мои счета</div>
-  <div class="card" id="savings-list">
+  <div style="display:flex;gap:8px;">
+    <input type="text" id="savings-search" placeholder="🔍 Поиск..." oninput="renderSavings()"
+      style="flex:1;background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:9px 12px;outline:none;">
+    <select id="savings-sort" onchange="renderSavings()"
+      style="background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text-dim);font-size:13px;padding:9px 10px;outline:none;-webkit-appearance:none;cursor:pointer;">
+      <option value="type">По типу</option>
+      <option value="amount">По сумме ↓</option>
+      <option value="added">По дате</option>
+    </select>
+  </div>
+  <div id="savings-list">
     <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('savings')">＋ Добавить счёт</button>
@@ -1040,45 +1057,121 @@ function toggleExclude(id) {
 }
 
 function renderSavings() {
-  const total=state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
-  document.getElementById('total-savings').innerHTML=`${fmt(total)} <span>₽</span>`;
-  const n=state.savings.length;
-  document.getElementById('savings-count').textContent = n?`${n} ${plural(n,'счёт','счёта','счетов')}`:'Нет счетов';
-  const el=document.getElementById('savings-list');
-  if(!n){el.innerHTML=`<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`;return;}
-  el.innerHTML=state.savings.map(x=>{
-    const cur=x.currency||'RUB';
-    const localAmt=getSavingCurrentAmountLocal(x), rubAmt=getSavingCurrentAmountRub(x);
-    const gained=localAmt-Number(x.amount);
-    let badges='',sub='',inflWarn='';
-    if(x.isDeposit&&x.rate&&x.dateStart&&x.dateEnd){
-      const d=calcDeposit(x), daysLeft=d.daysTotal-d.daysPassed;
-      if(d.expired) badges+=`<span class="badge badge-exp">Истёк</span>`;
-      else{
-        badges+=`<span class="badge badge-cap">${x.rate}%</span>`;
-        if(x.compound) badges+=` <span class="badge badge-cap">капит.</span>`;
-        sub=`Осталось ${daysLeft} дн.`;
-        const curInfl=ROSSTAT_INFLATION[2024]||9.52;
-        if(Number(x.rate)<curInfl) inflWarn=`<div style="font-size:11px;color:var(--warn);margin-top:3px;">⚠️ Ставка ниже инфляции ${curInfl}%</div>`;
-      }
+  const total = state.savings.reduce((s,x) => s+(x.excluded?0:getSavingCurrentAmountRub(x)), 0);
+  document.getElementById('total-savings').innerHTML = `${fmt(total)} <span>₽</span>`;
+  const n = state.savings.length;
+  document.getElementById('savings-count').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов';
+
+  const searchEl = document.getElementById('savings-search');
+  const sortEl = document.getElementById('savings-sort');
+  const query = searchEl ? searchEl.value.toLowerCase() : '';
+  const sortBy = sortEl ? sortEl.value : 'type';
+
+  let items = state.savings.filter(x => !query || x.name.toLowerCase().includes(query));
+  if (sortBy === 'amount') items = [...items].sort((a,b) => getSavingCurrentAmountRub(b)-getSavingCurrentAmountRub(a));
+
+  const el = document.getElementById('savings-list');
+  if (!n) { el.innerHTML=`<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`; return; }
+  if (!items.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`; return; }
+
+  const groups = sortBy === 'type' ? {
+    '🏦 Вклады':       items.filter(x => x.isDeposit),
+    '📈 Инвестиции':   items.filter(x => !x.isDeposit && x.icon==='📈'),
+    '💵 Наличные':     items.filter(x => x.icon==='💵'),
+    '🏠 Недвижимость': items.filter(x => x.icon==='🏠'),
+    '₿ Крипто':        items.filter(x => x.icon==='₿'),
+    '💼 Другое':       items.filter(x => !x.isDeposit && !['📈','💵','🏠','₿'].includes(x.icon)),
+  } : { 'Все счета': items };
+
+  el.innerHTML = Object.entries(groups).filter(([,g])=>g.length>0).map(([groupName, group]) => {
+    const groupTotal = group.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
+    return `<div class="group-header">
+        <span class="group-title">${groupName}</span>
+        <span class="group-total">${fmt(groupTotal)} ₽</span>
+      </div>
+      <div class="group-block">${group.map(x=>renderSavingCard(x,total)).join('')}</div>`;
+  }).join('');
+
+  initSavingsSwipe();
+}
+
+function renderSavingCard(x, grandTotal) {
+  const cur = x.currency||'RUB';
+  const localAmt = getSavingCurrentAmountLocal(x);
+  const rubAmt = getSavingCurrentAmountRub(x);
+  const pctOfTotal = grandTotal>0 ? Math.round(rubAmt/grandTotal*100) : 0;
+  let badges='', sub='', inflWarn='', depositBar='';
+
+  if (x.isDeposit&&x.rate&&x.dateStart&&x.dateEnd) {
+    const d = calcDeposit(x);
+    const daysLeft = d.daysTotal-d.daysPassed;
+    const yearlyIncome = Math.round(Number(x.amount)*Number(x.rate)/100);
+    if (d.expired) {
+      badges+=`<span class="badge badge-exp">Истёк</span>`;
+    } else {
+      badges+=`<span class="badge badge-cap">${x.rate}%</span>`;
+      if(x.compound) badges+=` <span class="badge badge-cap">капит.</span>`;
+      sub=`${fmt(yearlyIncome)} ₽/год · ${daysLeft} дн. осталось`;
+      const pctDone=Math.round(d.daysPassed/d.daysTotal*100);
+      depositBar=`<div style="margin-top:4px;height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pctDone}%;background:var(--accent);border-radius:2px;"></div></div>`;
+      const curInfl=ROSSTAT_INFLATION[2024]||9.52;
+      if(Number(x.rate)<curInfl) inflWarn=`<div style="font-size:11px;color:var(--warn);margin-top:3px;">⚠️ Ставка ниже инфляции ${curInfl}%</div>`;
     }
-    if(cur!=='RUB') badges+=` <span class="badge badge-cur">${currSym(cur)}</span>`;
-    const mainAmt=cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
-    const subAmt=cur!=='RUB'?`≈ ${fmt(rubAmt)} ₽`:(gained>0.01?`+${fmt2(gained)} ₽`:'');
-    return `<div class="card-item${x.excluded?' excluded':''}">
+  }
+  if(cur!=='RUB') badges+=` <span class="badge badge-cur">${currSym(cur)}</span>`;
+  const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
+  const subAmt = cur!=='RUB'?`≈ ${fmt(rubAmt)} ₽`:'';
+
+  return `<div class="card-item" data-id="${x.id}">
+    <div class="card-item-inner">
       <button class="excl-btn" onclick="toggleExclude('${x.id}')">${x.excluded?'🔘':'⚫'}</button>
       <div class="card-icon">${x.icon}</div>
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
         ${sub?`<div class="card-sub">${sub}</div>`:''}
+        ${depositBar}
         ${inflWarn}
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${pctOfTotal}% от всех накоплений</div>
       </div>
       <div class="card-amount">${mainAmt}${subAmt?`<span class="sub-amount">${subAmt}</span>`:''}</div>
-      <button class="edit-btn" onclick="openEdit('savings','${x.id}')">✏️</button>
-      <button class="delete-btn" onclick="deleteItem('savings','${x.id}')">✕</button>
-    </div>`;
-  }).join('');
+    </div>
+    <div class="swipe-actions" id="sw-${x.id}" style="display:none;">
+      <button class="swipe-edit" onclick="openEdit('savings','${x.id}')">✏️</button>
+      <button class="swipe-del" onclick="deleteItem('savings','${x.id}')">🗑</button>
+    </div>
+  </div>`;
 }
+
+function initSavingsSwipe() {
+  document.querySelectorAll('#savings-list .card-item').forEach(item => {
+    let startX=0, startY=0, swiping=false;
+    const inner = item.querySelector('.card-item-inner');
+    const actions = item.querySelector('.swipe-actions');
+    if (!inner||!actions) return;
+
+    item.addEventListener('touchstart', e=>{
+      startX=e.touches[0].clientX; startY=e.touches[0].clientY; swiping=false;
+    },{passive:true});
+
+    item.addEventListener('touchmove', e=>{
+      const dx=e.touches[0].clientX-startX;
+      const dy=e.touches[0].clientY-startY;
+      if(Math.abs(dy)>Math.abs(dx)) return;
+      swiping=true;
+      const x=Math.max(-140,Math.min(0,dx));
+      inner.style.transform=`translateX(${x}px)`;
+      if(Math.abs(x)>5){ actions.style.display='flex'; actions.style.width=Math.abs(x)+'px'; }
+    },{passive:true});
+
+    item.addEventListener('touchend', e=>{
+      if(!swiping) return;
+      const dx=e.changedTouches[0].clientX-startX;
+      if(dx<-60){ inner.style.transform='translateX(-140px)'; actions.style.display='flex'; actions.style.width='140px'; }
+      else { inner.style.transform=''; actions.style.display='none'; }
+    },{passive:true});
+  });
+}
+
 
 function renderIncome() {
   const total=state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0);
