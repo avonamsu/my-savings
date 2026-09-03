@@ -557,17 +557,29 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
       </div>
       <div class="field"><label>ЭМОДЗИ-ИКОНКА</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;" id="ch-emoji-picker-p">
-          ${['🎯','✈️','🏠','🚗','💍','👗','📱','🎮','🌴','🎓','💄','🐱'].map(e =>
-            `<button type="button" onclick="selectEmoji('${e}','p')" class="emoji-pick-btn" id="epb-p-${e}">${e}</button>`
-          ).join('')}
+          <button type="button" onclick="selectEmoji('🎯','p')" class="emoji-pick-btn selected" id="epb-p-🎯">🎯</button>
+          <button type="button" onclick="selectEmoji('✈️','p')" class="emoji-pick-btn" id="epb-p-✈️">✈️</button>
+          <button type="button" onclick="selectEmoji('🏠','p')" class="emoji-pick-btn" id="epb-p-🏠">🏠</button>
+          <button type="button" onclick="selectEmoji('🚗','p')" class="emoji-pick-btn" id="epb-p-🚗">🚗</button>
+          <button type="button" onclick="selectEmoji('💍','p')" class="emoji-pick-btn" id="epb-p-💍">💍</button>
+          <button type="button" onclick="selectEmoji('👗','p')" class="emoji-pick-btn" id="epb-p-👗">👗</button>
+          <button type="button" onclick="selectEmoji('📱','p')" class="emoji-pick-btn" id="epb-p-📱">📱</button>
+          <button type="button" onclick="selectEmoji('🎮','p')" class="emoji-pick-btn" id="epb-p-🎮">🎮</button>
+          <button type="button" onclick="selectEmoji('🌴','p')" class="emoji-pick-btn" id="epb-p-🌴">🌴</button>
+          <button type="button" onclick="selectEmoji('🎓','p')" class="emoji-pick-btn" id="epb-p-🎓">🎓</button>
+          <button type="button" onclick="selectEmoji('💄','p')" class="emoji-pick-btn" id="epb-p-💄">💄</button>
+          <button type="button" onclick="selectEmoji('🐱','p')" class="emoji-pick-btn" id="epb-p-🐱">🐱</button>
         </div>
         <input type="hidden" id="ch-emoji-p" value="🎯">
       </div>
       <div class="field"><label>ЦВЕТ</label>
         <div style="display:flex;gap:8px;">
-          ${[['#4ECDC4','мятный'],['#FF6B9D','розовый'],['#FFB347','оранжевый'],['#7B68EE','фиолетовый'],['#5BC8AF','зелёный'],['#64B5F6','синий']].map(([c,n]) =>
-            `<button type="button" onclick="selectColor('${c}','p')" class="color-pick-btn" id="cpb-p-${c.replace('#','')}" style="background:${c};" title="${n}"></button>`
-          ).join('')}
+          <button type="button" onclick="selectColor('#4ECDC4','p')" class="color-pick-btn selected" id="cpb-p-4ECDC4" style="background:#4ECDC4;" title="мятный"></button>
+          <button type="button" onclick="selectColor('#FF6B9D','p')" class="color-pick-btn" id="cpb-p-FF6B9D" style="background:#FF6B9D;" title="розовый"></button>
+          <button type="button" onclick="selectColor('#FFB347','p')" class="color-pick-btn" id="cpb-p-FFB347" style="background:#FFB347;" title="оранжевый"></button>
+          <button type="button" onclick="selectColor('#7B68EE','p')" class="color-pick-btn" id="cpb-p-7B68EE" style="background:#7B68EE;" title="фиолетовый"></button>
+          <button type="button" onclick="selectColor('#5BC8AF','p')" class="color-pick-btn" id="cpb-p-5BC8AF" style="background:#5BC8AF;" title="зелёный"></button>
+          <button type="button" onclick="selectColor('#64B5F6','p')" class="color-pick-btn" id="cpb-p-64B5F6" style="background:#64B5F6;" title="синий"></button>
         </div>
         <input type="hidden" id="ch-color-p" value="#4ECDC4">
       </div>
