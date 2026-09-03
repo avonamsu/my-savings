@@ -2336,6 +2336,7 @@ function createChallengeFromPage() {
 function renderChallenges() {} // legacy stub
 
 function renderChallengesPage() {
+  if (!window._chCollapsed) window._chCollapsed = {};
   if (!state.challenges) state.challenges = [];
 
   // Fix any challenges missing required fields or using old format
