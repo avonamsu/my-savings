@@ -2338,6 +2338,16 @@ function renderChallenges() {} // legacy stub
 function renderChallengesPage() {
   if (!state.challenges) state.challenges = [];
 
+  // Fix any challenges missing required fields
+  state.challenges = state.challenges.filter(ch => ch && ch.cells && Array.isArray(ch.cells));
+  state.challenges.forEach(ch => {
+    if (!ch.emoji) ch.emoji = '🎯';
+    if (!ch.color) ch.color = '#4ECDC4';
+    if (!ch.streak) ch.streak = 0;
+    if (!ch.createdAt) ch.createdAt = today();
+    if (!ch.days) ch.days = 90;
+  });
+
   const el = document.getElementById('challenges-container-page');
   const archiveEl = document.getElementById('challenges-archive-page');
   const archiveEmpty = document.getElementById('ch-archive-empty');
