@@ -778,6 +778,7 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 <script>
 // ── STATE ─────────────────────────────────────────────────
 let state = { savings:[], income:[], goals:[], challenges:[] };
+if (!window._chCollapsed) window._chCollapsed = {};
 let modalMode = null, incomeTab = 'linked', editingId = null;
 
 // ── CURRENCY ──────────────────────────────────────────────
@@ -2331,6 +2332,12 @@ function createChallengeFromPage() {
   document.getElementById('ch-name-p').value = '';
   document.getElementById('ch-goal-p').value = '';
   hideChallengeFormPage();
+}
+
+function toggleChallenge(id) {
+  if (!window._chCollapsed) window._chCollapsed = {};
+  window._chCollapsed[id] = !window._chCollapsed[id];
+  renderChallengesPage();
 }
 
 function renderChallenges() {} // legacy stub
