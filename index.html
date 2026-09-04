@@ -955,6 +955,17 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 </div>
 
 <script>
+
+// ── HAPTIC FEEDBACK ───────────────────────────────────────
+function haptic(type) {
+  if (!navigator.vibrate) return;
+  if (type === 'light')  navigator.vibrate(10);
+  if (type === 'medium') navigator.vibrate(25);
+  if (type === 'heavy')  navigator.vibrate([30, 10, 30]);
+  if (type === 'success') navigator.vibrate([10, 50, 20]);
+  if (type === 'error')  navigator.vibrate([50, 30, 50]);
+}
+
 // ── STATE ─────────────────────────────────────────────────
 let state = { savings:[], income:[], goals:[], challenges:[] };
 if (!window._chCollapsed) window._chCollapsed = {};
@@ -1324,7 +1335,7 @@ function initSavingsSwipe() {
     item.addEventListener('touchend', e=>{
       if(!swiping) return;
       const dx=e.changedTouches[0].clientX-startX;
-      const nBtns2=actions.querySelectorAll('button').length;const snapW=nBtns2*64;if(dx<-40){inner.style.transform='translateX(-'+snapW+'px)';actions.style.display='flex';actions.style.width=snapW+'px';}else{inner.style.transform='';actions.style.display='none';}
+      const nBtns2=actions.querySelectorAll('button').length;const snapW=nBtns2*64;if(dx<-40){haptic('light');inner.style.transform='translateX(-'+snapW+'px)';actions.style.display='flex';actions.style.width=snapW+'px';}else{inner.style.transform='';actions.style.display='none';}
     },{passive:true});
   });
 }
@@ -1404,7 +1415,7 @@ function initIncomeSwipe() {
     if(!inner||!actions)return;
     item.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;startY=e.touches[0].clientY;swiping=false;},{passive:true});
     item.addEventListener('touchmove',e=>{const dx=e.touches[0].clientX-startX,dy=e.touches[0].clientY-startY;if(Math.abs(dy)>Math.abs(dx))return;swiping=true;const x=Math.max(-128,Math.min(0,dx));inner.style.transform='translateX('+x+'px)';if(Math.abs(x)>5){actions.style.display='flex';actions.style.width=Math.abs(x)+'px';}},{passive:true});
-    item.addEventListener('touchend',e=>{if(!swiping)return;const dx=e.changedTouches[0].clientX-startX;if(dx<-50){inner.style.transform='translateX(-100px)';actions.style.display='flex';actions.style.width='100px';}else{inner.style.transform='';actions.style.display='none';}},{passive:true});
+    item.addEventListener('touchend',e=>{if(!swiping)return;const dx=e.changedTouches[0].clientX-startX;if(dx<-50){haptic('light');inner.style.transform='translateX(-100px)';actions.style.display='flex';actions.style.width='100px';}else{inner.style.transform='';actions.style.display='none';}},{passive:true});
   });
 }
 
@@ -1673,9 +1684,10 @@ function showPage(name) {
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   const navBtn = document.getElementById('nav-'+name);
   if (navBtn) {
+    haptic('light');
     navBtn.classList.add('active');
     navBtn.classList.remove('nav-bounce');
-    void navBtn.offsetWidth; // reflow to restart animation
+    void navBtn.offsetWidth;
     navBtn.classList.add('nav-bounce');
     setTimeout(() => navBtn.classList.remove('nav-bounce'), 400);
   }
@@ -1984,7 +1996,7 @@ function saveItem(){
     const color=document.getElementById('g-color')?.value||'#4ECDC4';
     state.goals.push({id,name,amount,emoji,color});
   }
-  editingId=null;trackDailyAdd();save();render();closeModal();setTimeout(checkAchievements,300);checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();
+  editingId=null;trackDailyAdd();save();render();closeModal();setTimeout(checkAchievements,300);checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();haptic("success");
 }
 
 function deleteItem(list,id){
@@ -2560,7 +2572,7 @@ function checkAchievements(){
     if(a.id==='sec2')passed=checkMolnia();
     else if(a.id==='sec1')passed=checkSova();
     else{try{passed=a.check(s,i,g);}catch(e){}}
-    if(passed&&!prev.has(a.id)){state._unlocked.push(a.id);save();showAchievementPopup(a);}
+    if(passed&&!prev.has(a.id)){state._unlocked.push(a.id);save();haptic('heavy');showAchievementPopup(a);}
   });
   unlockedSet=new Set(state._unlocked);
 }
@@ -2969,8 +2981,11 @@ function toggleCell(challengeId, cellIdx) {
   // Confetti if last cell just closed
   const allDone = ch.cells.every(c => c.done);
   if (allDone && !wasDone) {
+    haptic('heavy');
     startConfetti();
     setTimeout(stopConfetti, 4000);
+  } else if (!wasDone) {
+    haptic('light');
   }
 
   save();
@@ -3411,6 +3426,7 @@ function checkBackupReminder(){
 function downloadBackupFromBanner(){ downloadBackup(); document.getElementById('backup-banner').style.display='none'; }
 
 function downloadBackup(){
+  haptic("success");
   const data = { ...state, _appVersion: APP_VERSION, _exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -3649,6 +3665,7 @@ function obBack() {
 }
 
 function obAdvance() {
+  haptic("light");
   clearInterval(obWatcher);
   closeSidebar();
   if (obStep < OB_STEPS.length-1) { obStep++; obRenderStep(); }
