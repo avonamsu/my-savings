@@ -272,6 +272,14 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .field label { font-size:11px; color:var(--text-dim); font-weight:600; letter-spacing:.05em; }
 .field input, .field select { background:var(--surface2); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-sm); color:var(--text); font-size:16px; padding:11px 13px; outline:none; width:100%; transition:border-color .2s; -webkit-appearance:none; }
 .field input:focus, .field select:focus { border-color:var(--accent); }
+  .field input.invalid { border-color:var(--danger) !important; }
+  .field input.invalid:focus { border-color:var(--danger) !important; }
+  .field-hint { font-size:11px; margin-top:4px; }
+  .field-hint.error { color:var(--danger); }
+  .field-hint.info { color:var(--text-dim); }
+  .quick-months { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  .quick-month-btn { background:var(--surface2); border:1px solid rgba(255,255,255,0.08); border-radius:6px; color:var(--text-dim); font-size:12px; padding:5px 10px; cursor:pointer; transition:all .15s; }
+  .quick-month-btn:active { background:var(--accent-dim); color:var(--accent); border-color:var(--accent); }
 .field select option { background:var(--surface2); }
 .field-row { display:flex; gap:10px; }
 .field-row .field { flex:1; }
@@ -676,7 +684,11 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div class="modal">
     <div class="modal-title" id="modal-title"></div>
     <div id="fields-savings" style="display:none">
-      <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="s-name" placeholder="Например: Вклад в Сбере"></div>
+      <div class="field">
+        <label>НАЗВАНИЕ</label>
+        <input type="text" id="s-name" placeholder="Например: Вклад в Сбере" oninput="validateSavingsForm()">
+        <div class="field-hint error" id="s-name-err" style="display:none">Введи название</div>
+      </div>
       <div class="field">
         <label>ТИП</label>
         <select id="s-icon" onchange="onSavingTypeChange()">
@@ -689,7 +701,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </select>
       </div>
       <div class="field-row">
-        <div class="field" style="flex:2"><label>СУММА</label><input type="number" id="s-amount" placeholder="0" inputmode="decimal" oninput="updateDepositPreview()"></div>
+        <div class="field" style="flex:2">
+          <label>СУММА</label>
+          <input type="text" id="s-amount" placeholder="0" inputmode="decimal"
+            oninput="formatAmountInput(this);updateDepositPreview();validateSavingsForm()">
+          <div class="field-hint error" id="s-amount-err" style="display:none">Введи сумму больше 0</div>
+        </div>
         <div class="field" style="flex:1"><label>ВАЛЮТА</label>
           <select id="s-currency" onchange="updateDepositPreview()">
             <option value="RUB">₽ RUB</option>
@@ -706,11 +723,29 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
       <div class="calc-preview" id="currency-preview" style="display:none;"></div>
       <div id="deposit-fields" style="display:none">
-        <div class="field"><label>ПРОЦЕНТ ГОДОВЫХ (%)</label><input type="number" id="s-rate" placeholder="18" inputmode="decimal" oninput="updateDepositPreview()"></div>
-        <div class="field-row">
-          <div class="field"><label>ДАТА НАЧАЛА</label><input type="date" id="s-date-start" onchange="updateDepositPreview()"></div>
-          <div class="field"><label>ДАТА КОНЦА</label><input type="date" id="s-date-end" onchange="updateDepositPreview()"></div>
+        <div class="field">
+          <label>ПРОЦЕНТ ГОДОВЫХ (%)</label>
+          <input type="number" id="s-rate" placeholder="18" inputmode="decimal" oninput="updateDepositPreview()">
+          <div class="field-hint info">Средняя ставка по вкладам сейчас ~18–21%</div>
         </div>
+        <div class="field-row">
+          <div class="field">
+            <label>ДАТА НАЧАЛА</label>
+            <input type="date" id="s-date-start" onchange="updateDepositPreview();validateDateRange()">
+          </div>
+          <div class="field">
+            <label>ДАТА КОНЦА</label>
+            <input type="date" id="s-date-end" onchange="updateDepositPreview();validateDateRange()">
+          </div>
+        </div>
+        <div class="quick-months">
+          <button type="button" class="quick-month-btn" onclick="setDepositMonths(3)">3 мес</button>
+          <button type="button" class="quick-month-btn" onclick="setDepositMonths(6)">6 мес</button>
+          <button type="button" class="quick-month-btn" onclick="setDepositMonths(12)">1 год</button>
+          <button type="button" class="quick-month-btn" onclick="setDepositMonths(18)">18 мес</button>
+          <button type="button" class="quick-month-btn" onclick="setDepositMonths(24)">2 года</button>
+        </div>
+        <div class="field-hint error" id="s-date-err" style="display:none;margin-top:4px;">Дата конца раньше даты начала</div>
         <div class="toggle-row">
           <span class="toggle-label">Капитализация (% на %)</span>
           <label class="toggle"><input type="checkbox" id="s-compound" onchange="updateDepositPreview()"><span class="toggle-slider"></span></label>
@@ -1165,6 +1200,7 @@ function renderSavingCard(x, grandTotal) {
       <div class="card-amount">${mainAmt}${subAmt?`<span class="sub-amount">${subAmt}</span>`:''}</div>
     </div>
     <div class="swipe-actions" id="sw-${x.id}" style="display:none;">
+      <button class="swipe-edit" onclick="duplicateSaving('${x.id}')" style="background:var(--surface2);color:var(--text);">⧉</button>
       <button class="swipe-edit" onclick="openEdit('savings','${x.id}')">✏️</button>
       <button class="swipe-del" onclick="deleteItem('savings','${x.id}')">🗑</button>
     </div>
@@ -1260,6 +1296,61 @@ function renderGoals() {
   document.getElementById('goals-covered-amount').textContent=`${fmt(coveredSum)} ₽ покрыто`;
   document.getElementById('goals-total-amount').textContent=`из ${fmt(totalGoals)} ₽`;
 
+}
+
+// ── SAVINGS FORM HELPERS ──────────────────────────────────
+function formatAmountInput(el) {
+  const raw = el.value.replace(/ /g, '').replace(',', '.');
+  el._rawValue = isNaN(parseFloat(raw)) ? '' : String(parseFloat(raw));
+}
+function getSavingAmountValue() {
+  const el = document.getElementById('s-amount');
+  if (!el) return 0;
+  const raw = ((el._rawValue !== undefined ? el._rawValue : el.value) + '').replace(/ /g,'').replace(',','.');
+  return parseFloat(raw) || 0;
+}
+function setDepositMonths(months) {
+  const startEl = document.getElementById('s-date-start');
+  const endEl = document.getElementById('s-date-end');
+  if (!startEl.value) startEl.value = today();
+  const start = new Date(startEl.value);
+  start.setMonth(start.getMonth() + months);
+  endEl.value = start.toISOString().slice(0, 10);
+  updateDepositPreview(); validateDateRange();
+}
+function validateDateRange() {
+  const start = document.getElementById('s-date-start').value;
+  const end = document.getElementById('s-date-end').value;
+  const errEl = document.getElementById('s-date-err');
+  const endInput = document.getElementById('s-date-end');
+  if (start && end && end <= start) {
+    if(errEl) errEl.style.display = '';
+    if(endInput) endInput.classList.add('invalid');
+  } else {
+    if(errEl) errEl.style.display = 'none';
+    if(endInput) endInput.classList.remove('invalid');
+  }
+}
+function validateSavingsForm() {
+  const nameEl = document.getElementById('s-name');
+  const amountEl = document.getElementById('s-amount');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const amount = getSavingAmountValue();
+  const nameErr = document.getElementById('s-name-err');
+  const amountErr = document.getElementById('s-amount-err');
+  let valid = true;
+  if (!name) { if(nameEl) nameEl.classList.add('invalid'); if(nameErr) nameErr.style.display=''; valid=false; }
+  else { if(nameEl) nameEl.classList.remove('invalid'); if(nameErr) nameErr.style.display='none'; }
+  if (amount <= 0) { if(amountEl) amountEl.classList.add('invalid'); if(amountErr) amountErr.style.display=''; valid=false; }
+  else { if(amountEl) amountEl.classList.remove('invalid'); if(amountErr) amountErr.style.display='none'; }
+  return valid;
+}
+function duplicateSaving(id) {
+  const original = state.savings.find(x => x.id === id);
+  if (!original) return;
+  const copy = Object.assign({}, JSON.parse(JSON.stringify(original)), { id: uid(), name: original.name + ' (копия)' });
+  state.savings.push(copy);
+  save(); renderSavings();
 }
 
 // ── SIDEBAR & NAVIGATION ──────────────────────────────────
@@ -1396,7 +1487,11 @@ function openModal(mode) {
     switchIncomeTab('linked');
     updateIncomePreview();
   }
-  ['s-name','s-amount','s-rate','s-date-end','i-percent','i-fixed-amount','i-fx-rate','i-fx-date','i-name','i-amount','g-name','g-amount'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['s-name','s-amount','s-rate','s-date-end','i-percent','i-fixed-amount','i-fx-rate','i-fx-date','i-name','i-amount','g-name','g-amount'].forEach(id=>{const e=document.getElementById(id);if(e){e.value='';e.classList.remove('invalid');}});
+  ['s-name-err','s-amount-err','s-date-err'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  if(mode==='savings') setTimeout(()=>{ const el=document.getElementById('s-name'); if(el) el.focus(); }, 200);
+  if(mode==='goals') setTimeout(()=>{ const el=document.getElementById('g-name'); if(el) el.focus(); }, 200);
+  if(mode==='income') setTimeout(()=>{ const el=document.getElementById('i-name'); if(el) el.focus(); }, 200);
   document.getElementById('deposit-preview').style.display='none';
   document.getElementById('currency-preview').style.display='none';
   document.getElementById('modal').classList.add('open');
@@ -1411,7 +1506,7 @@ function onSavingTypeChange() {
 }
 
 function updateDepositPreview() {
-  const amount=parseFloat(document.getElementById('s-amount').value)||0;
+  const amount=getSavingAmountValue()||0;
   const currency=document.getElementById('s-currency').value;
   const curPreview=document.getElementById('currency-preview');
   if(currency!=='RUB'&&amount>0&&rates[currency]){
@@ -1540,9 +1635,10 @@ function saveItem(){
   const id=editingId||uid();
   if(editingId) ['savings','income','goals'].forEach(list=>{state[list]=state[list].filter(x=>x.id!==editingId);});
   if(modalMode==='savings'){
+    if(!validateSavingsForm()) return;
     const name=document.getElementById('s-name').value.trim();
-    const amount=parseFloat(document.getElementById('s-amount').value);
-    if(!name||isNaN(amount)||amount<=0)return;
+    const amount=getSavingAmountValue();
+    if(!name||!amount||amount<=0)return;
     const sel=document.getElementById('s-icon');
     const icon=sel.value,isDeposit=sel.options[sel.selectedIndex].dataset.deposit==='1';
     const currency=document.getElementById('s-currency').value;
