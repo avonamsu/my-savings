@@ -280,6 +280,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   .quick-months { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
   .quick-month-btn { background:var(--surface2); border:1px solid rgba(255,255,255,0.08); border-radius:6px; color:var(--text-dim); font-size:12px; padding:5px 10px; cursor:pointer; transition:all .15s; }
   .quick-month-btn:active { background:var(--accent-dim); color:var(--accent); border-color:var(--accent); }
+  .income-type-btn { background:var(--surface2); border:2px solid transparent; border-radius:var(--radius-sm); color:var(--text-dim); font-size:13px; font-weight:600; padding:10px 8px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all .15s; width:100%; }
+  .income-type-btn.active { border-color:var(--accent); background:var(--accent-dim); color:var(--accent); }
+  .income-type-btn:active { transform:scale(.97); }
 .field select option { background:var(--surface2); }
 .field-row { display:flex; gap:10px; }
 .field-row .field { flex:1; }
@@ -770,45 +773,84 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
     </div>
     <div id="fields-income" style="display:none">
-      <div class="tab-switch">
-        <button class="active" id="tab-linked" onclick="switchIncomeTab('linked')">Из накоплений</button>
-        <button id="tab-manual" onclick="switchIncomeTab('manual')">Вручную</button>
-      </div>
-      <div id="income-linked">
-        <div class="field"><label>СЧЁТ</label>
-          <select id="i-saving-ref" onchange="updateIncomePreview()"><option value="">— выбери счёт —</option></select>
-        </div>
-        <div id="income-auto-wrap" style="display:none"><div class="calc-preview" id="income-auto-preview"></div></div>
-        <div id="income-manual-wrap">
-          <div class="field"><label>КАК СЧИТАТЬ ДОХОД</label>
-            <select id="i-calc-mode" onchange="updateIncomePreview()">
-              <option value="percent">% годовых → считаю сам</option>
-              <option value="fixed">Фиксированная сумма в месяц</option>
-              <option value="fx">💱 Курсовая разница</option>
-            </select>
-          </div>
-          <div class="field" id="field-percent"><label>ПРОЦЕНТ ГОДОВЫХ (%)</label><input type="number" id="i-percent" placeholder="18" inputmode="decimal" oninput="updateIncomePreview()"></div>
-          <div class="field" id="field-fixed" style="display:none"><label>ДОХОД В МЕСЯЦ (₽)</label><input type="number" id="i-fixed-amount" placeholder="0" inputmode="decimal"></div>
-          <div class="calc-preview" id="income-linked-preview" style="display:none;"></div>
-          <div id="field-fx" style="display:none">
-            <div class="field"><label>ДАТА ПОКУПКИ</label><input type="date" id="i-fx-date" onchange="updateFxPreview()"></div>
-            <div class="field"><label>КУРС ПОКУПКИ (₽) — необязательно</label><input type="number" id="i-fx-rate" placeholder="Не заполняй — возьмём из ЦБ" inputmode="decimal" oninput="updateFxPreview()"></div>
-            <div class="calc-preview" id="fx-preview" style="display:none;"></div>
-          </div>
+      <!-- Type selector with icons -->
+      <div class="field">
+        <label>ТИП ДОХОДА</label>
+        <div id="income-type-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+          <button type="button" class="income-type-btn active" onclick="selectIncomeType('deposit')" id="itype-deposit">
+            <span style="font-size:20px;">🏦</span><span>Вклад / счёт</span>
+          </button>
+          <button type="button" class="income-type-btn" onclick="selectIncomeType('dividend')" id="itype-dividend">
+            <span style="font-size:20px;">📊</span><span>Дивиденды</span>
+          </button>
+          <button type="button" class="income-type-btn" onclick="selectIncomeType('rent')" id="itype-rent">
+            <span style="font-size:20px;">🏠</span><span>Аренда</span>
+          </button>
+          <button type="button" class="income-type-btn" onclick="selectIncomeType('fx')" id="itype-fx">
+            <span style="font-size:20px;">💱</span><span>Валюта (FX)</span>
+          </button>
+          <button type="button" class="income-type-btn" onclick="selectIncomeType('coupon')" id="itype-coupon">
+            <span style="font-size:20px;">💸</span><span>Купоны</span>
+          </button>
+          <button type="button" class="income-type-btn" onclick="selectIncomeType('other')" id="itype-other">
+            <span style="font-size:20px;">✨</span><span>Другое</span>
+          </button>
         </div>
       </div>
-      <div id="income-manual" style="display:none">
-        <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="i-name" placeholder="Например: Дивиденды"></div>
-        <div class="field"><label>ТИП</label>
-          <select id="i-icon">
-            <option value="💰">💰 Проценты по вкладу</option>
-            <option value="📊">📊 Дивиденды</option>
-            <option value="🏠">🏠 Аренда</option>
-            <option value="💸">💸 Купоны / облигации</option>
-            <option value="✨">✨ Другое</option>
+
+      <!-- Linked account (for deposit/fx/dividend) -->
+      <div id="income-account-row" class="field">
+        <label>СЧЁТ</label>
+        <select id="i-saving-ref" onchange="onIncomeSavingChange()">
+          <option value="">— выбери счёт —</option>
+        </select>
+        <div class="field-hint error" id="i-account-err" style="display:none;">Этот счёт уже привязан к источнику дохода</div>
+      </div>
+
+      <!-- Auto deposit preview -->
+      <div id="income-auto-block" style="display:none;">
+        <div class="calc-preview" id="income-auto-preview"></div>
+      </div>
+
+      <!-- Manual fields -->
+      <div id="income-manual-block" style="display:none;">
+        <div class="field">
+          <label>НАЗВАНИЕ</label>
+          <input type="text" id="i-name" placeholder="Например: Дивиденды Газпром">
+          <div class="field-hint error" id="i-name-err" style="display:none;">Введи название</div>
+        </div>
+        <div class="field">
+          <label>ДОХОД В МЕСЯЦ (₽)</label>
+          <input type="number" id="i-amount" placeholder="0" inputmode="decimal">
+          <div class="field-hint error" id="i-amount-err" style="display:none;">Введи сумму больше 0</div>
+        </div>
+      </div>
+
+      <!-- Percent mode (for non-deposit linked) -->
+      <div id="income-percent-block" style="display:none;">
+        <div class="field">
+          <label>КАК СЧИТАТЬ ДОХОД</label>
+          <select id="i-calc-mode" onchange="onIncomeCalcModeChange()">
+            <option value="percent">% годовых</option>
+            <option value="fixed">Фиксированная сумма</option>
           </select>
         </div>
-        <div class="field"><label>ДОХОД В МЕСЯЦ (₽)</label><input type="number" id="i-amount" placeholder="0" inputmode="decimal"></div>
+        <div class="field" id="field-percent">
+          <label>ПРОЦЕНТ ГОДОВЫХ (%)</label>
+          <input type="number" id="i-percent" placeholder="18" inputmode="decimal" oninput="updateIncomeLivePreview()">
+        </div>
+        <div class="field" id="field-fixed" style="display:none;">
+          <label>ДОХОД В МЕСЯЦ (₽)</label>
+          <input type="number" id="i-fixed-amount" placeholder="0" inputmode="decimal">
+        </div>
+        <div class="calc-preview" id="income-linked-preview" style="display:none;"></div>
+      </div>
+
+      <!-- FX block -->
+      <div id="income-fx-block" style="display:none;">
+        <div class="field"><label>ДАТА ПОКУПКИ</label><input type="date" id="i-fx-date" onchange="updateFxPreview()"></div>
+        <div class="field"><label>КУРС ПОКУПКИ (₽) — необязательно</label><input type="number" id="i-fx-rate" placeholder="Не заполняй — возьмём из ЦБ" inputmode="decimal" oninput="updateFxPreview()"></div>
+        <div class="calc-preview" id="fx-preview" style="display:none;"></div>
       </div>
     </div>
     <div id="fields-goals" style="display:none">
@@ -1550,10 +1592,14 @@ function openModal(mode) {
     onSavingTypeChange();
   }
   if(mode==='income'){
+    _incomeType = 'deposit';
     const sel=document.getElementById('i-saving-ref');
     sel.innerHTML='<option value="">— выбери счёт —</option>'+state.savings.map(s=>`<option value="${s.id}">${s.icon} ${s.name}${(s.currency&&s.currency!=='RUB')?' ('+currSym(s.currency)+')':''}</option>`).join('');
-    switchIncomeTab('linked');
-    updateIncomePreview();
+    document.querySelectorAll('.income-type-btn').forEach(b=>b.classList.remove('active'));
+    const defBtn = document.getElementById('itype-deposit');
+    if(defBtn) defBtn.classList.add('active');
+    selectIncomeType('deposit');
+    setTimeout(()=>{ const el=document.getElementById('i-saving-ref'); if(el) el.focus(); }, 200);
   }
   ['s-name','s-amount','s-rate','s-date-end','i-percent','i-fixed-amount','i-fx-rate','i-fx-date','i-name','i-amount','g-name','g-amount'].forEach(id=>{const e=document.getElementById(id);if(e){e.value='';e.classList.remove('invalid');}});
   ['s-name-err','s-amount-err','s-date-err'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
@@ -1593,48 +1639,115 @@ function updateDepositPreview() {
   preview.innerHTML=`Срок: <strong>${d.daysTotal}</strong> дн. · Прошло: <strong>${d.daysPassed}</strong> дн.<br>Сейчас: <strong>${fmt2(d.currentAmount)} ₽</strong><br>Доход в месяц: <strong>${fmt2(d.monthlyIncome)} ₽</strong>`;
 }
 
-function switchIncomeTab(tab) {
-  incomeTab=tab;
-  document.getElementById('tab-linked').classList.toggle('active',tab==='linked');
-  document.getElementById('tab-manual').classList.toggle('active',tab==='manual');
-  document.getElementById('income-linked').style.display=tab==='linked'?'':'none';
-  document.getElementById('income-manual').style.display=tab==='manual'?'':'none';
+
+// ── INCOME FORM ───────────────────────────────────────────
+let _incomeType = 'deposit';
+
+function selectIncomeType(type) {
+  _incomeType = type;
+  document.querySelectorAll('.income-type-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('itype-' + type);
+  if (btn) btn.classList.add('active');
+
+  const showAccount = ['deposit','fx','dividend','coupon'].includes(type);
+  const showManual = ['rent','other','dividend','coupon'].includes(type) && !showAccount;
+  const showFX = type === 'fx';
+
+  document.getElementById('income-account-row').style.display = '';
+  document.getElementById('income-auto-block').style.display = 'none';
+  document.getElementById('income-manual-block').style.display = showManual ? '' : 'none';
+  document.getElementById('income-percent-block').style.display = 'none';
+  document.getElementById('income-fx-block').style.display = showFX ? '' : 'none';
+
+  if (type === 'rent' || type === 'other') {
+    document.getElementById('income-account-row').style.display = 'none';
+    document.getElementById('income-manual-block').style.display = '';
+    setTimeout(() => { const el = document.getElementById('i-name'); if(el) el.focus(); }, 200);
+  }
+
+  onIncomeSavingChange();
 }
 
-function updateIncomePreview() {
-  const refId=document.getElementById('i-saving-ref').value;
-  const calcMode=document.getElementById('i-calc-mode').value;
-  const autoWrap=document.getElementById('income-auto-wrap');
-  const manWrap=document.getElementById('income-manual-wrap');
-  const autoPreview=document.getElementById('income-auto-preview');
-  const linkedPreview=document.getElementById('income-linked-preview');
-  document.getElementById('field-percent').style.display=calcMode==='percent'?'':'none';
-  document.getElementById('field-fixed').style.display=calcMode==='fixed'?'':'none';
-  document.getElementById('field-fx').style.display=calcMode==='fx'?'':'none';
-  document.getElementById('fx-preview').style.display='none';
-  if(!refId){autoWrap.style.display='none';manWrap.style.display='';linkedPreview.style.display='none';return;}
-  const saving=state.savings.find(s=>s.id===refId);
-  if(!saving)return;
-  const cur=saving.currency||'RUB';
-  const calcSel=document.getElementById('i-calc-mode');
-  const fxOption=calcSel.querySelector('option[value="fx"]');
-  if(fxOption) fxOption.style.display=(cur!=='RUB')?'':'none';
-  if(calcMode==='fx'&&cur==='RUB') calcSel.value='percent';
-  if(saving.isDeposit&&saving.rate&&saving.dateStart&&saving.dateEnd){
-    autoWrap.style.display='';manWrap.style.display='none';
-    const d=calcDeposit(saving);
-    const rubIncome=toRub(d.monthlyIncome,cur);
-    autoPreview.innerHTML=`Вклад: <strong>${saving.name}</strong><br>${saving.rate}% годовых${saving.compound?' с капитализацией':''}<br>Доход: <strong>${fmt2(d.monthlyIncome)} ${currSym(cur)}</strong> = <strong>${fmt(rubIncome)} ₽</strong>/мес${d.expired?'<br><span style="color:var(--warn)">⚠️ Вклад истёк</span>':''}`;
+function onIncomeSavingChange() {
+  const refId = document.getElementById('i-saving-ref').value;
+  const errEl = document.getElementById('i-account-err');
+  const autoBlock = document.getElementById('income-auto-block');
+  const percentBlock = document.getElementById('income-percent-block');
+
+  // Check if already linked
+  if (refId && !editingId) {
+    const alreadyLinked = state.income.some(x => x.savingRef === refId);
+    if (errEl) errEl.style.display = alreadyLinked ? '' : 'none';
   } else {
-    autoWrap.style.display='none';manWrap.style.display='';
-    if(calcMode==='percent'){
-      const rate=parseFloat(document.getElementById('i-percent').value)||0;
-      if(rate>0){linkedPreview.style.display='';linkedPreview.innerHTML=`Доход в месяц: <strong>${fmt(getSavingCurrentAmountRub(saving)*rate/100/12)} ₽</strong>`;}
-      else linkedPreview.style.display='none';
-    } else if(calcMode==='fx') updateFxPreview();
-    else linkedPreview.style.display='none';
+    if (errEl) errEl.style.display = 'none';
+  }
+
+  if (!refId) { if(autoBlock) autoBlock.style.display='none'; if(percentBlock) percentBlock.style.display='none'; return; }
+
+  const saving = state.savings.find(s => s.id === refId);
+  if (!saving) return;
+
+  // Auto-fill name
+  const nameEl = document.getElementById('i-name');
+  if (nameEl && !nameEl.value) nameEl.value = saving.name;
+
+  if (_incomeType === 'fx') { updateFxPreview(); return; }
+
+  if (saving.isDeposit && saving.rate && saving.dateStart && saving.dateEnd) {
+    // Auto deposit - show preview only
+    if(autoBlock) autoBlock.style.display = '';
+    if(percentBlock) percentBlock.style.display = 'none';
+    const d = calcDeposit(saving);
+    const cur = saving.currency || 'RUB';
+    const rubIncome = toRub(d.monthlyIncome, cur);
+    const preview = document.getElementById('income-auto-preview');
+    if (preview) preview.innerHTML = `Вклад <strong>${saving.name}</strong><br>${saving.rate}% годовых${saving.compound ? ' с капитализацией' : ''}<br>Доход: <strong>${fmt2(d.monthlyIncome)} ${currSym(cur)}</strong> = <strong>${fmt(Math.round(rubIncome))} ₽</strong>/мес${d.expired ? '<br><span style="color:var(--warn)">⚠️ Вклад истёк</span>' : ''}`;
+  } else {
+    if(autoBlock) autoBlock.style.display = 'none';
+    if(percentBlock) percentBlock.style.display = '';
+    updateIncomeLivePreview();
   }
 }
+
+function updateIncomeLivePreview() {
+  const refId = document.getElementById('i-saving-ref').value;
+  const rate = parseFloat(document.getElementById('i-percent').value) || 0;
+  const preview = document.getElementById('income-linked-preview');
+  if (!preview) return;
+  if (!refId || !rate) { preview.style.display='none'; return; }
+  const saving = state.savings.find(s => s.id === refId);
+  if (!saving) return;
+  const monthly = getSavingCurrentAmountRub(saving) * rate / 100 / 12;
+  preview.style.display = '';
+  preview.innerHTML = `Доход в месяц: <strong>${fmt(Math.round(monthly))} ₽</strong>`;
+}
+
+function onIncomeCalcModeChange() {
+  const mode = document.getElementById('i-calc-mode').value;
+  document.getElementById('field-percent').style.display = mode === 'percent' ? '' : 'none';
+  document.getElementById('field-fixed').style.display = mode === 'fixed' ? '' : 'none';
+}
+
+function validateIncomeForm() {
+  const type = _incomeType;
+  if (type === 'rent' || type === 'other') {
+    const name = (document.getElementById('i-name')?.value||'').trim();
+    const amt = parseFloat(document.getElementById('i-amount')?.value||0);
+    const nameEl = document.getElementById('i-name');
+    const nameErr = document.getElementById('i-name-err');
+    const amtEl = document.getElementById('i-amount');
+    const amtErr = document.getElementById('i-amount-err');
+    let ok = true;
+    if (!name) { if(nameEl) nameEl.classList.add('invalid'); if(nameErr) nameErr.style.display=''; ok=false; }
+    else { if(nameEl) nameEl.classList.remove('invalid'); if(nameErr) nameErr.style.display='none'; }
+    if (!amt||amt<=0) { if(amtEl) amtEl.classList.add('invalid'); if(amtErr) amtErr.style.display=''; ok=false; }
+    else { if(amtEl) amtEl.classList.remove('invalid'); if(amtErr) amtErr.style.display='none'; }
+    return ok;
+  }
+  const refId = document.getElementById('i-saving-ref').value;
+  return !!refId;
+}
+
 
 async function updateFxPreview() {
   const refId=document.getElementById('i-saving-ref').value;
@@ -1714,22 +1827,30 @@ function saveItem(){
     if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
     state.savings.push(item);
   } else if(modalMode==='income'){
-    if(incomeTab==='linked'){
-      const refId=document.getElementById('i-saving-ref').value;if(!refId)return;
-      const saving=state.savings.find(s=>s.id===refId);
-      if(saving.isDeposit&&saving.rate&&saving.dateStart&&saving.dateEnd){
+    if (!validateIncomeForm()) return;
+    const type = _incomeType;
+    const ICONS = {deposit:'💰',dividend:'📊',rent:'🏠',coupon:'💸',fx:'💱',other:'✨'};
+    const icon = ICONS[type] || '✨';
+
+    if (type === 'rent' || type === 'other') {
+      const name=document.getElementById('i-name').value.trim();
+      const amount=parseFloat(document.getElementById('i-amount').value);
+      if(!name||!amount||amount<=0)return;
+      state.income.push({id,name,icon,amount});
+    } else {
+      const refId=document.getElementById('i-saving-ref').value; if(!refId)return;
+      const saving=state.savings.find(s=>s.id===refId); if(!saving)return;
+      if (type === 'fx') {
+        const fxDate=document.getElementById('i-fx-date').value; if(!fxDate)return;
+        const fxBuyRateRaw=parseFloat(document.getElementById('i-fx-rate').value);
+        state.income.push({id,name:'Курсовая разница · '+saving.name,icon:'💱',amount:0,savingRef:refId,calcMode:'fx',fxBuyRate:fxBuyRateRaw>0?fxBuyRateRaw:null,fxDate});
+      } else if (saving.isDeposit&&saving.rate&&saving.dateStart&&saving.dateEnd) {
         state.income.push({id,name:saving.name,icon:saving.icon,amount:0,savingRef:refId,calcMode:'auto'});
       } else {
         const calcMode=document.getElementById('i-calc-mode').value;
-        if(calcMode==='percent'){const rate=parseFloat(document.getElementById('i-percent').value);if(!rate||rate<=0)return;state.income.push({id,name:saving.name,icon:saving.icon,amount:0,savingRef:refId,calcMode:'percent',rate});}
-        else if(calcMode==='fx'){const fxBuyRateRaw=parseFloat(document.getElementById('i-fx-rate').value);const fxDate=document.getElementById('i-fx-date').value;if(!fxDate)return;state.income.push({id,name:'Курсовая разница · '+saving.name,icon:'💱',amount:0,savingRef:refId,calcMode:'fx',fxBuyRate:fxBuyRateRaw>0?fxBuyRateRaw:null,fxDate});}
-        else{const amt=parseFloat(document.getElementById('i-fixed-amount').value);if(!amt||amt<=0)return;state.income.push({id,name:saving.name,icon:saving.icon,amount:amt,savingRef:refId,calcMode:'fixed'});}
+        if(calcMode==='percent'){const rate=parseFloat(document.getElementById('i-percent').value);if(!rate||rate<=0)return;state.income.push({id,name:saving.name,icon,amount:0,savingRef:refId,calcMode:'percent',rate});}
+        else{const amt=parseFloat(document.getElementById('i-fixed-amount').value);if(!amt||amt<=0)return;state.income.push({id,name:saving.name,icon,amount:amt,savingRef:refId,calcMode:'fixed'});}
       }
-    } else {
-      const name=document.getElementById('i-name').value.trim();
-      const amount=parseFloat(document.getElementById('i-amount').value);
-      if(!name||isNaN(amount)||amount<=0)return;
-      state.income.push({id,name,icon:document.getElementById('i-icon').value,amount});
     }
   } else {
     const name=document.getElementById('g-name').value.trim();
