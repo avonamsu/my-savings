@@ -166,15 +166,15 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* CARD */
 .card { background:var(--surface); border-radius:var(--radius); overflow:hidden; border:1px solid rgba(255,255,255,0.05); }
 .card-item { display:flex; align-items:center; padding:13px 14px; gap:10px; border-bottom:1px solid rgba(255,255,255,0.04); }
-  .savings-card-item { position:relative; overflow:hidden; padding:0; }
+  .savings-card-item { position:relative; overflow:hidden; padding:0; isolation:isolate; }
   .card-item-inner { display:flex; align-items:center; padding:13px 14px; gap:10px; flex:1; min-width:0; transition:transform .25s cubic-bezier(.4,0,.2,1); }
-  .swipe-actions { position:absolute; right:0; top:0; bottom:0; display:none; }
+  .swipe-actions { position:absolute; right:0; top:0; bottom:0; display:none; z-index:2; }
   .swipe-del { background:var(--danger); color:#fff; border:none; padding:0 20px; font-size:16px; cursor:pointer; }
   .swipe-edit { background:var(--accent); color:var(--bg); border:none; padding:0 20px; font-size:16px; cursor:pointer; }
   .group-header { display:flex; justify-content:space-between; align-items:center; padding:8px 4px 4px; }
   .group-title { font-size:11px; font-weight:700; letter-spacing:.07em; color:var(--text-dim); text-transform:uppercase; }
   .group-total { font-size:12px; font-weight:600; color:var(--accent); }
-  .group-block { background:var(--surface); border-radius:var(--radius); overflow:hidden; border:1px solid rgba(255,255,255,0.05); margin-bottom:4px; }
+  .group-block { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); margin-bottom:4px; }
 .card-item:last-child { border-bottom:none; }
 .card-icon { width:36px; height:36px; border-radius:10px; background:var(--accent-dim); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
 .card-info { flex:1; min-width:0; }
