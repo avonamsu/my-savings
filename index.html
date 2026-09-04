@@ -60,28 +60,36 @@
   z-index:493;
   pointer-events:all;
   box-shadow:0 4px 24px rgba(0,0,0,0.5);
-  max-width:260px;
-  min-width:180px;
+  max-width:270px;
+  min-width:200px;
+  transform:translateY(20px);
+  opacity:0;
+  transition:opacity .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.ob-tooltip.ob-visible {
+  transform:translateY(0);
+  opacity:1;
 }
 .ob-tooltip::after {
   content:'';
   position:absolute;
   width:10px; height:10px;
   background:var(--surface2);
-  border-right:1.5px solid var(--accent);
-  border-bottom:1.5px solid var(--accent);
+  border-right:1.5px solid var(--ob-color, var(--accent));
+  border-bottom:1.5px solid var(--ob-color, var(--accent));
   transform:rotate(45deg);
 }
 .ob-tooltip.arrow-bottom::after { bottom:-6px; left:50%; margin-left:-5px; }
-.ob-tooltip.arrow-top::after    { top:-6px;    left:50%; margin-left:-5px; transform:rotate(225deg); border-color:var(--accent); border-right:1.5px solid var(--accent); border-bottom:1.5px solid var(--accent); }
-.ob-tooltip.arrow-left::after   { left:-6px;   top:50%;  margin-top:-5px;  transform:rotate(135deg); }
-.ob-tooltip.arrow-right::after  { right:-6px;  top:50%;  margin-top:-5px;  transform:rotate(-45deg); }
-/* welcome card - centered */
-.ob-tooltip.ob-center {
-  left:50%; transform:translateX(-50%);
-  max-width:300px; text-align:center;
-}
+.ob-tooltip.arrow-top::after    { top:-6px; left:50%; margin-left:-5px; transform:rotate(225deg); }
+.ob-tooltip.arrow-left::after   { left:-6px; top:50%; margin-top:-5px; transform:rotate(135deg); }
+.ob-tooltip.arrow-right::after  { right:-6px; top:50%; margin-top:-5px; transform:rotate(-45deg); }
+.ob-tooltip.ob-center { left:50%; transform:translateX(-50%) translateY(20px); max-width:300px; text-align:center; }
+.ob-tooltip.ob-center.ob-visible { transform:translateX(-50%) translateY(0); }
 .ob-tooltip.ob-center::after { display:none; }
+.ob-progress-bar { height:3px; background:rgba(255,255,255,0.1); border-radius:2px; margin-bottom:10px; overflow:hidden; }
+.ob-progress-fill { height:100%; border-radius:2px; background:var(--ob-color, var(--accent)); transition:width .3s ease; }
+.ob-anim { font-size:28px; text-align:center; margin-bottom:6px; animation:ob-anim-bounce 1s infinite; }
+@keyframes ob-anim-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
 .ob-step-label { font-size:9px; color:var(--accent); font-weight:700; letter-spacing:.08em; margin-bottom:3px; }
 .ob-title { font-size:14px; font-weight:700; margin-bottom:4px; }
 .ob-text { font-size:12px; color:var(--text-dim); line-height:1.4; margin-bottom:8px; }
@@ -3405,14 +3413,55 @@ updateBackupDateDisplay();
 
 // ── ONBOARDING ────────────────────────────────────────────
 const OB_STEPS = [
-  { title:'Добро пожаловать! 👋', text:'Добро пожаловать в твой личный финансовый трекер! Здесь ты будешь следить за накоплениями, доходом и целями — всё в одном месте.', page:'home', highlight:null },
-  { title:'🏠 Главный экран', text:'Главная страница показывает самое важное — общая сумма, ежемесячный доход и прогресс по целям.', page:'home', highlight:null },
-  { title:'💰 Счета', text:'Все твои деньги в одном месте. Вклады считают проценты автоматически, валюта пересчитывается по курсу ЦБ.', page:'savings', highlight:'#nav-savings' },
-  { title:'📈 Доход', text:'Здесь видно сколько ты зарабатываешь не работая — проценты по вкладам, дивиденды, доход от роста курса валюты. Привяжи к счёту и приложение посчитает доход автоматически.', page:'income', highlight:'#nav-income' },
-  { title:'🎯 Цели', text:'Добавляй ежемесячные расходы в цели — как только пассивный доход их покрывает, они отмечаются выполненными.', page:'goals', highlight:'#nav-goals' },
-  { title:'🪙 Копилка', text:'Игровой способ копить на цель — сетка ячеек с разными суммами. Откладываешь деньги — закрываешь ячейку. Когда все закрыты — цель достигнута! 🎉', page:'challenge', highlight:'#nav-challenge' },
-  { title:'☰ Боковое меню', text:'Всё остальное живёт здесь — достижения, калькулятор инфляции, экспорт данных.', page:'challenge', highlight:'.menu-btn' },
-  { title:'🚀 Готово!', text:'Всё готово! Начни с добавления первого счёта — и пусть накопления растут 🌱', page:'home', highlight:null },
+  {
+    title: 'Добро пожаловать! 👋',
+    text: () => state.savings.length > 0
+      ? 'С возвращением! Давай быстро напомним как всё устроено.'
+      : 'Добро пожаловать в твой личный финансовый трекер! Здесь ты будешь следить за накоплениями, доходом и целями — всё в одном месте.',
+    page: 'home', highlight: null, anim: '💰', color: '#4ECDC4'
+  },
+  {
+    title: '🏠 Главный экран',
+    text: 'Главная страница показывает самое важное — общая сумма, ежемесячный доход и прогресс по целям.',
+    page: 'home', highlight: null, anim: '👀', color: '#4ECDC4'
+  },
+  {
+    title: '💰 Счета',
+    text: 'Все твои деньги в одном месте. Вклады считают проценты автоматически, валюта пересчитывается по курсу ЦБ.',
+    page: 'savings', highlight: '#nav-savings', anim: '🏦', color: '#64B5F6'
+  },
+  {
+    title: '📈 Доход',
+    text: 'Здесь видно сколько ты зарабатываешь не работая — проценты по вкладам, дивиденды, курсовая разница. Привяжи к счёту и приложение посчитает доход автоматически.',
+    page: 'income', highlight: '#nav-income', anim: '📈', color: '#5BC8AF'
+  },
+  {
+    title: '🎯 Цели',
+    text: 'Добавляй ежемесячные расходы в цели — как только пассивный доход их покрывает, они отмечаются выполненными.',
+    page: 'goals', highlight: '#nav-goals', anim: '✅', color: '#FFB347'
+  },
+  {
+    title: '🪙 Копилка',
+    text: 'Игровой способ копить на цель — сетка ячеек с разными суммами. Откладываешь деньги — закрываешь ячейку. Когда все закрыты — цель достигнута! 🎉',
+    page: 'challenge', highlight: '#nav-challenge', anim: '🎯', color: '#FF6B9D'
+  },
+  {
+    title: '☰ Боковое меню',
+    text: 'Всё остальное живёт здесь — достижения, калькулятор инфляции, экспорт данных.',
+    page: 'challenge', highlight: '.menu-btn', anim: '☰', color: '#7B68EE'
+  },
+  {
+    title: '💾 Резервная копия',
+    text: 'Важно! Данные хранятся в браузере. Создавай резервную копию через боковое меню ☰ — это защитит тебя от потери данных.',
+    page: 'home', highlight: null, anim: '💾', color: '#FFB347'
+  },
+  {
+    title: '🚀 Готово!',
+    text: () => state.savings.length > 0
+      ? 'Ты знаешь всё самое важное. Продолжай копить — ты на верном пути! 💚'
+      : 'Всё готово! Начни с добавления первого счёта — и пусть накопления растут 🌱',
+    page: 'home', highlight: null, anim: '🚀', color: '#4ECDC4'
+  },
 ];
 
 let obStep = 0, obWatcher = null, obActive = false;
@@ -3432,7 +3481,9 @@ function obHighlight(selector) {
 function obPositionTooltip(highlightSel) {
   const tip = document.getElementById('ob-tooltip');
   if(!tip) return;
+  const wasVisible = tip.classList.contains('ob-visible');
   tip.className = 'ob-tooltip';
+  if(wasVisible) tip.classList.add('ob-visible');
   if (!highlightSel) {
     tip.classList.add('ob-center');
     tip.style.top='50%'; tip.style.left='50%'; tip.style.transform='translateX(-50%) translateY(-50%)'; tip.style.bottom=''; tip.style.right='';
@@ -3453,22 +3504,68 @@ function obPositionTooltip(highlightSel) {
 
 function obRenderStep() {
   const step = OB_STEPS[obStep], total = OB_STEPS.length;
-  const labelEl=document.getElementById('ob-step-label'), titleEl=document.getElementById('ob-title'), textEl=document.getElementById('ob-text');
-  if(labelEl) labelEl.textContent='ШАГ '+(obStep+1)+' из '+total;
-  if(titleEl) titleEl.textContent=step.title;
-  if(textEl) textEl.textContent=step.text;
-  const actionEl=document.getElementById('ob-action');
-  if(actionEl) actionEl.style.display='none';
-  const nextWrap=document.getElementById('ob-next-wrap');
-  if(nextWrap){ nextWrap.style.display='block'; const btn=nextWrap.querySelector('button'); if(btn) btn.textContent=obStep===OB_STEPS.length-1?'Завершить ✓':'Далее →'; }
-  const dotsEl=document.getElementById('ob-dots');
-  if(dotsEl) dotsEl.innerHTML=OB_STEPS.map((_,i)=>`<div class="ob-dot ${i===obStep?'active':''}"></div>`).join('');
-  if(step.page && step.page!==_currentPage) showPage(step.page);
-  const tip=document.getElementById('ob-tooltip');
-  if(tip){ tip.style.opacity='0'; tip.style.transition='none'; }
-  if(!step.highlight){ const hl=document.getElementById('ob-highlight'); if(hl){ hl.style.display='none'; } }
-  setTimeout(()=>{ obHighlight(step.highlight); obPositionTooltip(step.highlight); if(tip){ tip.style.transition='opacity .2s ease'; tip.style.opacity='1'; } }, 350);
+  const color = step.color || '#4ECDC4';
+
+  // Adaptive text
+  const text = typeof step.text === 'function' ? step.text() : step.text;
+  const title = typeof step.title === 'function' ? step.title() : step.title;
+
+  const labelEl = document.getElementById('ob-step-label');
+  const titleEl = document.getElementById('ob-title');
+  const textEl  = document.getElementById('ob-text');
+  const animEl  = document.getElementById('ob-anim');
+  const progressEl = document.getElementById('ob-progress-fill');
+  const backBtn = document.getElementById('ob-back-btn');
+  const tip = document.getElementById('ob-tooltip');
+
+  if(labelEl) labelEl.textContent = 'ШАГ '+(obStep+1)+' из '+total;
+  if(titleEl) titleEl.textContent = title;
+  if(textEl)  textEl.textContent  = text;
+
+  // Progress bar
+  if(progressEl) progressEl.style.width = Math.round((obStep+1)/total*100)+'%';
+
+  // Anim emoji
+  if(animEl){ animEl.textContent = step.anim||''; animEl.style.display = step.anim ? '' : 'none'; }
+
+  // Dynamic color via CSS var
+  if(tip) tip.style.setProperty('--ob-color', color);
+
+  // Highlight border color
+  const hl = document.getElementById('ob-highlight');
+  if(hl) hl.style.boxShadow = `0 0 0 3px ${color}`;
+
+  // Back button
+  if(backBtn) backBtn.style.display = obStep > 0 ? '' : 'none';
+
+  // Next button
+  const nextWrap = document.getElementById('ob-next-wrap');
+  if(nextWrap){
+    nextWrap.style.display = 'block';
+    const btn = document.getElementById('ob-next-btn');
+    if(btn){ btn.textContent = obStep===total-1 ? 'Завершить ✓' : 'Далее →'; btn.style.background = color; }
+  }
+
+  if(step.page && step.page !== _currentPage) showPage(step.page);
+
+  // Animate tooltip out then in
+  if(tip){ tip.classList.remove('ob-visible'); }
+  if(!step.highlight){ if(hl) hl.style.display='none'; }
+
+  setTimeout(() => {
+    obHighlight(step.highlight);
+    obPositionTooltip(step.highlight);
+    if(tip) setTimeout(() => tip.classList.add('ob-visible'), 30);
+  }, 300);
+
   clearInterval(obWatcher);
+}
+
+function obBack() {
+  if (obStep <= 0) return;
+  clearInterval(obWatcher);
+  obStep--;
+  obRenderStep();
 }
 
 function obAdvance() {
@@ -3497,6 +3594,9 @@ function initOnboarding() {
   obActive=true; obStep=0;
   const overlay=document.getElementById('ob-overlay');
   if(overlay) overlay.classList.add('open');
+  // Ensure tooltip starts hidden for animation
+  const tip=document.getElementById('ob-tooltip');
+  if(tip) tip.classList.remove('ob-visible');
   obRenderStep();
 }
 
