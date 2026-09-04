@@ -3601,15 +3601,26 @@ function initOnboarding() {
 }
 
 function forceStartOnboarding() {
-  obActive=false;
+  obActive = false;
+  obStep = 0;
   localStorage.removeItem('onboarding_done');
+
+  // Close sidebar directly
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
-  const tip=document.getElementById('ob-tooltip'), hl=document.getElementById('ob-highlight');
-  if(tip){ tip.style.opacity='0'; tip.style.visibility=''; }
-  if(hl){ hl.style.visibility=''; hl.style.display='none'; }
-  obStep=0; showPage('home');
-  setTimeout(()=>{ obActive=true; const overlay=document.getElementById('ob-overlay'); if(overlay) overlay.classList.add('open'); obRenderStep(); }, 350);
+
+  // Reset tooltip state fully
+  const tip = document.getElementById('ob-tooltip');
+  const hl  = document.getElementById('ob-highlight');
+  if(tip) { tip.classList.remove('ob-visible'); tip.style.visibility=''; tip.style.opacity=''; tip.style.transition='none'; }
+  if(hl)  { hl.style.visibility=''; hl.style.display='none'; }
+
+  // Open overlay and render
+  const overlay = document.getElementById('ob-overlay');
+  if(overlay) overlay.classList.add('open');
+
+  showPage('home');
+  setTimeout(() => { obActive = true; obRenderStep(); }, 400);
 }
 
 function resetOnboarding() { forceStartOnboarding(); }
