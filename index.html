@@ -376,6 +376,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
   <div class="sidebar-divider"></div>
   <div class="sidebar-section"><span>⚙️ Настройки</span></div>
+  <button class="sidebar-item" onclick="exportCSV();closeSidebar()"><span class="si">📊</span>Экспорт в CSV</button>
+  <button class="sidebar-item" onclick="restoreFromIDB();closeSidebar()"><span class="si">🔄</span>Восстановить из резервного хранилища</button>
   <button class="sidebar-item" onclick="downloadBackup();closeSidebar()">
     <span class="si">⬇️</span>
     <span>
@@ -898,9 +900,14 @@ async function fetchRates() {
 // ── STORAGE ───────────────────────────────────────────────
 const STORAGE_KEY = 'fin_v3';
 const OLD_KEYS = ['fin_state', 'fin_state_v2'];
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+let _idbSaveTimer = null;
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  // Debounce IDB save to avoid too many writes
+  clearTimeout(_idbSaveTimer);
+  _idbSaveTimer = setTimeout(saveToIDB, 2000);
+}
 function load() {
-  // Check all keys, pick the one with most data
   const allKeys = [STORAGE_KEY, ...OLD_KEYS];
   let best = null, bestScore = -1;
   for (const key of allKeys) {
@@ -913,11 +920,16 @@ function load() {
       if (score > bestScore) { bestScore = score; best = parsed; }
     } catch(e) {}
   }
-  if (best) {
-    state = best;
-    save(); // consolidate to STORAGE_KEY
-    return;
-  }
+  if (best) { state = best; save(); return; }
+  // Fallback: try IDB (async, will trigger re-render if found)
+  loadFromIDB().then(data => {
+    if (data && data.savings && data.savings.length > 0) {
+      state = data;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      render(); drawChart();
+      console.log('Restored from IndexedDB fallback');
+    }
+  });
 }
 
 const fmt  = n => Number(n).toLocaleString('ru-RU', {maximumFractionDigits:0});
@@ -2780,310 +2792,171 @@ function checkNotifBanner(){
   else if(Notification.permission!=='denied')banner.style.display='';
 }
 
+// ── INDEXEDDB BACKUP ─────────────────────────────────────
+const IDB_NAME = 'MySavingsDB', IDB_STORE = 'state', IDB_VER = 1;
+
+function openIDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VER);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+    req.onsuccess = e => res(e.target.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+async function saveToIDB() {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(JSON.stringify(state), 'main');
+    tx.objectStore(IDB_STORE).put(new Date().toISOString(), 'savedAt');
+  } catch(e) { console.warn('IDB save failed:', e); }
+}
+
+async function loadFromIDB() {
+  try {
+    const db = await openIDB();
+    return new Promise(res => {
+      const req = db.transaction(IDB_STORE).objectStore(IDB_STORE).get('main');
+      req.onsuccess = () => res(req.result ? JSON.parse(req.result) : null);
+      req.onerror = () => res(null);
+    });
+  } catch(e) { return null; }
+}
+
+async function restoreFromIDB() {
+  const data = await loadFromIDB();
+  if (!data || !data.savings) { alert('Нет данных в резервном хранилище.'); return; }
+  const total = Math.round(data.savings.reduce((s,x)=>s+Number(x.amount||0),0));
+  if (!confirm(`Восстановить из резервного хранилища?
+
+Счетов: ${data.savings.length}
+Целей: ${data.goals?.length||0}
+Примерная сумма: ${fmt(total)} ₽
+
+Текущие данные будут заменены.`)) return;
+  state = data;
+  save(); saveToIDB(); render(); drawChart();
+  alert('✅ Данные восстановлены из IndexedDB!');
+}
+
 // ── BACKUP ────────────────────────────────────────────────
+const APP_VERSION = '2.0';
+
 function stateHash(){return JSON.stringify({s:state.savings.length,i:state.income.length,g:state.goals.length,st:(state.savings.reduce((a,x)=>a+Number(x.amount),0)).toFixed(0)});}
+
 function markBackupDone(){
   const now = new Date();
-  const dt = now.toLocaleDateString('ru-RU') + ' в ' + now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  const dt = now.toLocaleDateString('ru-RU')+' в '+now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
   localStorage.setItem('last_backup_date', today());
   localStorage.setItem('last_backup_datetime', dt);
   localStorage.setItem('last_backup_state_hash', stateHash());
   updateBackupDateDisplay();
 }
+
 function updateBackupDateDisplay(){
   const el = document.getElementById('sb-last-backup');
   if (!el) return;
   const dt = localStorage.getItem('last_backup_datetime');
-  el.textContent = dt ? 'Последняя: ' + dt : 'Ещё не создавалась';
+  const hash = localStorage.getItem('last_backup_state_hash');
+  const changed = hash && hash !== stateHash();
+  if (!dt) { el.textContent = 'Ещё не создавалась'; el.style.color='var(--warn)'; return; }
+  el.textContent = 'Последняя: ' + dt + (changed ? ' · данные изменились' : '');
+  el.style.color = changed ? 'var(--warn)' : '';
 }
+
 function checkBackupReminder(){
-  const banner=document.getElementById('backup-banner');if(!banner)return;
-  if(!state.savings.length&&!state.income.length&&!state.goals.length){banner.style.display='none';return;}
-  const lastHash=localStorage.getItem('last_backup_state_hash');
-  if(lastHash===stateHash()){banner.style.display='none';return;}
-  const lastBackup=localStorage.getItem('last_backup_date');
-  if(lastBackup&&Math.round((new Date(today())-new Date(lastBackup))/86400000)<7){banner.style.display='none';return;}
+  const banner = document.getElementById('backup-banner');
+  if (!banner) return;
+  if (!state.savings.length && !state.income.length && !state.goals.length){ banner.style.display='none'; return; }
+  const lastHash = localStorage.getItem('last_backup_state_hash');
+  if (lastHash === stateHash()){ banner.style.display='none'; return; }
+  const lastBackup = localStorage.getItem('last_backup_date');
+  if (lastBackup && Math.round((new Date(today())-new Date(lastBackup))/86400000)<7){ banner.style.display='none'; return; }
   banner.style.display='';
+  // Push notification reminder
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const notifKey = 'backup_notif_' + today();
+    if (!localStorage.getItem(notifKey)) {
+      new Notification('💾 Пора создать резервную копию', {
+        body: 'Данные менялись, но копия не создавалась 7+ дней'
+      });
+      localStorage.setItem(notifKey, '1');
+    }
+  }
 }
-function downloadBackupFromBanner(){downloadBackup();document.getElementById('backup-banner').style.display='none';}
+
+function downloadBackupFromBanner(){ downloadBackup(); document.getElementById('backup-banner').style.display='none'; }
+
 function downloadBackup(){
-  const data=JSON.stringify(state,null,2);
-  const blob=new Blob([data],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`my-savings-backup-${today()}.json`;a.click();
-  URL.revokeObjectURL(url);markBackupDone();
+  const data = { ...state, _appVersion: APP_VERSION, _exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `my-savings-backup-${today()}.json`; a.click();
+  URL.revokeObjectURL(url);
+  markBackupDone();
+  saveToIDB(); // also update IDB
   document.getElementById('backup-banner').style.display='none';
 }
+
 function restoreBackup(event){
-  const file=event.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const restored=JSON.parse(e.target.result);
-      if(!restored.savings||!restored.income||!restored.goals){alert('Файл повреждён или неверного формата');return;}
-      if(!confirm(`Восстановить данные?
+  const file = event.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const restored = JSON.parse(e.target.result);
+      if (!restored.savings || !restored.income || !restored.goals){ alert('Файл повреждён или неверного формата'); return; }
 
-Счетов: ${restored.savings.length}
-Доходов: ${restored.income.length}
-Целей: ${restored.goals.length}
+      // Check version
+      const ver = restored._appVersion;
+      const exportedAt = restored._exportedAt ? new Date(restored._exportedAt).toLocaleDateString('ru-RU') : 'неизвестно';
+      const isOld = ver && ver < '1.5';
 
-Текущие данные будут заменены.`))return;
-      state=restored;
-      // Save to all known keys to survive version changes
-      ['fin_v3','fin_state_v2','fin_state'].forEach(k => {
-        localStorage.setItem(k, JSON.stringify(state));
-      });
-      render();drawChart();checkNotifBanner();
-      alert('✅ Данные восстановлены! Не обновляй страницу сразу.');
-    }catch(e){alert('Не удалось прочитать файл.');}
+      // Calculate preview
+      const totalAmt = Math.round(restored.savings.reduce((s,x)=>s+(x.excluded?0:Number(x.amount||0)),0));
+
+      const msg = '📋 Данные резервной копии:\n\n' +
+        '💰 Счетов: ' + restored.savings.length + '\n' +
+        '📈 Источников дохода: ' + restored.income.length + '\n' +
+        '🎯 Целей: ' + restored.goals.length + '\n' +
+        '🪙 Челленджей: ' + (restored.challenges ? restored.challenges.length : 0) + '\n' +
+        '💵 Примерная сумма: ' + fmt(totalAmt) + ' ₽\n' +
+        '📅 Дата создания: ' + exportedAt + '\n\n' +
+        (isOld ? 'Файл старой версии — некоторые данные могут не загрузиться.\n\n' : '') +
+        'Текущие данные будут заменены. Продолжить?';
+
+      if (!confirm(msg)) return;
+
+      // Clean service fields before restoring
+      delete restored._appVersion; delete restored._exportedAt;
+      state = restored;
+      save(); saveToIDB(); render(); drawChart(); checkNotifBanner();
+      alert('✅ Данные восстановлены!');
+    } catch(e){ alert('Не удалось прочитать файл.'); }
   };
-  reader.readAsText(file);event.target.value='';
+  reader.readAsText(file); event.target.value='';
 }
 
+function exportCSV(){
+  const rows = [['Тип','Название','Сумма','Валюта','Процент','Дата начала','Дата конца']];
+  state.savings.forEach(x => rows.push([
+    x.isDeposit?'Вклад':'Счёт', x.name, x.amount, x.currency||'RUB',
+    x.rate||'', x.dateStart||'', x.dateEnd||''
+  ]));
+  rows.push([],[' ЦЕЛИ','Название','Сумма в месяц']);
+  state.goals.forEach(g => rows.push(['',g.name,g.amount]));
+  rows.push([],['ДОХОД','Название','Сумма в месяц']);
+  state.income.forEach(i => rows.push(['',i.name,Math.round(calcIncomeAmountRub(i))]));
 
-// ── ONBOARDING ────────────────────────────────────────────
-const OB_STEPS = [
-  {
-    title: 'Добро пожаловать! 👋',
-    text: 'Добро пожаловать в твой личный финансовый трекер! Здесь ты будешь следить за накоплениями, доходом и целями — всё в одном месте.',
-    page: 'home',
-    highlight: null,
-  },
-  {
-    title: '🏠 Главный экран',
-    text: 'Главная страница показывает самое важное — общая сумма, ежемесячный доход и прогресс по целям.',
-    page: 'home',
-    highlight: null,
-  },
-  {
-    title: '💰 Счета',
-    text: 'Все твои деньги в одном месте. Вклады считают проценты автоматически, валюта пересчитывается по курсу ЦБ.',
-    page: 'savings',
-    highlight: '#nav-savings',
-  },
-  {
-    title: '📈 Доход',
-    text: 'Здесь видно сколько ты зарабатываешь не работая — проценты по вкладам, дивиденды, доход от роста курса валюты. Привяжи к счёту и приложение посчитает доход автоматически.',
-    page: 'income',
-    highlight: '#nav-income',
-  },
-  {
-    title: '🎯 Цели',
-    text: 'Добавляй ежемесячные расходы в цели — как только пассивный доход их покрывает, они отмечаются выполненными.',
-    page: 'goals',
-    highlight: '#nav-goals',
-  },
-  {
-    title: '🪙 Копилка',
-    text: 'Игровой способ копить на цель — сетка ячеек с разными суммами. Откладываешь деньги — закрываешь ячейку. Когда все закрыты — цель достигнута! 🎉',
-    page: 'challenge',
-    highlight: '#nav-challenge',
-  },
-  {
-    title: '☰ Боковое меню',
-    text: 'Всё остальное живёт здесь — достижения, калькулятор инфляции, экспорт данных.',
-    page: 'challenge',
-    highlight: '.menu-btn',
-  },
-  {
-    title: '🚀 Готово!',
-    text: 'Всё готово! Начни с добавления первого счёта — и пусть накопления растут 🌱',
-    page: 'home',
-    highlight: null,
-  },
-];
-
-let obStep = 0;
-let obWatcher = null;
-let obActive = false;
-
-function obGetEl(selector) {
-  if (!selector) return null;
-  try { return document.querySelector(selector); } catch(e) { return null; }
+  const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `my-savings-${today()}.csv`; a.click();
+  URL.revokeObjectURL(url);
 }
 
-function obHighlight(selector) {
-  const hl = document.getElementById('ob-highlight');
-  if (!selector) { hl.style.display='none'; return; }
-  const el = obGetEl(selector);
-  if (!el) { hl.style.display='none'; return; }
-  const r = el.getBoundingClientRect();
-  const pad = 4;
-  hl.style.display = 'block';
-  hl.style.left   = (r.left - pad) + 'px';
-  hl.style.top    = (r.top  - pad) + 'px';
-  hl.style.width  = (r.width  + pad*2) + 'px';
-  hl.style.height = (r.height + pad*2) + 'px';
-}
-
-function obPositionTooltip(highlightSel) {
-  const tip = document.getElementById('ob-tooltip');
-  tip.className = 'ob-tooltip';
-
-  if (!highlightSel) {
-    // Center in middle of screen
-    tip.classList.add('ob-center');
-    tip.style.top = '50%';
-    tip.style.left = '50%';
-    tip.style.transform = 'translateX(-50%) translateY(-50%)';
-    tip.style.bottom = '';
-    tip.style.right = '';
-    return;
-  }
-
-  tip.style.transform = '';
-  const el = obGetEl(highlightSel);
-  if (!el) {
-    tip.classList.add('ob-center');
-    tip.style.bottom = '90px';
-    tip.style.left = '50%';
-    tip.style.transform = 'translateX(-50%)';
-    return;
-  }
-
-  const r = el.getBoundingClientRect();
-  const vh = window.innerHeight;
-  const vw = window.innerWidth;
-  const tipW = 260, tipH = 160;
-  const pad = 12;
-
-  // Decide arrow direction based on element position
-  if (r.bottom < vh / 2) {
-    // Element in top half → show tooltip below
-    tip.classList.add('arrow-top');
-    tip.style.top  = (r.bottom + pad) + 'px';
-    tip.style.bottom = '';
-    let left = r.left + r.width/2 - tipW/2;
-    left = Math.max(8, Math.min(vw - tipW - 8, left));
-    tip.style.left = left + 'px';
-    tip.style.right = '';
-  } else {
-    // Element in bottom half → show tooltip above
-    tip.classList.add('arrow-bottom');
-    tip.style.bottom = (vh - r.top + pad) + 'px';
-    tip.style.top = '';
-    let left = r.left + r.width/2 - tipW/2;
-    left = Math.max(8, Math.min(vw - tipW - 8, left));
-    tip.style.left = left + 'px';
-    tip.style.right = '';
-  }
-}
-
-function obRenderStep() {
-  const step = OB_STEPS[obStep];
-  const total = OB_STEPS.length;
-
-  document.getElementById('ob-step-label').textContent = `ШАГ ${obStep+1} из ${total}`;
-  document.getElementById('ob-title').textContent = step.title;
-  document.getElementById('ob-text').textContent = step.text;
-
-  const actionEl = document.getElementById('ob-action');
-  if (actionEl) actionEl.style.display = 'none';
-  const nextWrap = document.getElementById('ob-next-wrap');
-  if (nextWrap) {
-    nextWrap.style.display = 'block';
-    const btn = nextWrap.querySelector('button');
-    if (btn) btn.textContent = obStep === OB_STEPS.length - 1 ? 'Завершить ✓' : 'Далее →';
-  }
-
-  const dotsEl = document.getElementById('ob-dots');
-  dotsEl.innerHTML = OB_STEPS.map((_,i) =>
-    `<div class="ob-dot ${i===obStep?'active':''}"></div>`
-  ).join('');
-
-  if (step.page && step.page !== _currentPage) showPage(step.page);
-
-  // Hide tooltip instantly, position it, then fade in
-  const tip = document.getElementById('ob-tooltip');
-  tip.style.opacity = '0';
-  tip.style.transition = 'none';
-  setTimeout(() => {
-    obHighlight(step.highlight);
-    obPositionTooltip(step.highlight);
-    tip.style.transition = 'opacity .2s ease';
-    tip.style.opacity = '1';
-  }, 350);
-
-  clearInterval(obWatcher);
-}
-
-function obAdvance() {
-  clearInterval(obWatcher);
-  closeSidebar(); // close sidebar if open before advancing
-  if (obStep < OB_STEPS.length - 1) {
-    obStep++;
-    obRenderStep();
-  } else {
-    closeOnboarding();
-    showPage('savings');
-    setTimeout(() => { editingId=null; openModal('savings'); }, 300);
-  }
-}
-
-// Allow tapping non-highlighted areas to advance on info steps
-function obBackdropTap() {
-  const step = OB_STEPS[obStep];
-  if (!step.waitFor) obAdvance();
-}
-
-function forceStartOnboarding() {
-  // Reset everything and force open
-  clearInterval(obWatcher);
-  obActive = false;
-  obStep = 0;
-  localStorage.removeItem('onboarding_done');
-
-  // Close sidebar directly
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebar-overlay').classList.remove('open');
-
-  // Close overlay first to reset state
-  const overlay = document.getElementById('ob-overlay');
-  overlay.classList.remove('open');
-
-  const tip = document.getElementById('ob-tooltip');
-  const hl = document.getElementById('ob-highlight');
-  if (tip) { tip.style.opacity = '0'; tip.style.visibility = ''; }
-  if (hl) { hl.style.visibility = ''; hl.style.display = 'none'; }
-
-  showPage('home');
-
-  // Force open after everything settles
-  setTimeout(() => {
-    obActive = true;
-    overlay.classList.add('open');
-    obRenderStep();
-  }, 500);
-}
-
-function resetOnboarding() {
-  closeSidebar();
-  localStorage.removeItem('onboarding_done');
-  obStep = 0;
-  document.getElementById('ob-overlay').classList.add('open');
-  showPage('home');
-  obRenderStep();
-}
-
-function closeOnboarding() {
-  clearInterval(obWatcher);
-  obActive = false;
-  document.getElementById('ob-overlay').classList.remove('open');
-  document.getElementById('ob-highlight').style.display = 'none';
-  localStorage.setItem('onboarding_done', '1');
-  closeModal();
-  closeSidebar();
-}
-
-function initOnboarding() {
-  if (localStorage.getItem('onboarding_done')) return;
-  obStep = 0;
-  document.getElementById('ob-overlay').classList.add('open');
-  // backdrop tap advances on non-interactive steps
-  document.querySelector('.ob-backdrop').onclick = obBackdropTap;
-  obRenderStep();
-}
 
 // ── INIT ──────────────────────────────────────────────────
 load();
@@ -3095,6 +2968,118 @@ initNotifications();
 checkNotifBanner();
 checkBackupReminder();
 updateBackupDateDisplay();
+
+// ── ONBOARDING ────────────────────────────────────────────
+const OB_STEPS = [
+  { title:'Добро пожаловать! 👋', text:'Добро пожаловать в твой личный финансовый трекер! Здесь ты будешь следить за накоплениями, доходом и целями — всё в одном месте.', page:'home', highlight:null },
+  { title:'🏠 Главный экран', text:'Главная страница показывает самое важное — общая сумма, ежемесячный доход и прогресс по целям.', page:'home', highlight:null },
+  { title:'💰 Счета', text:'Все твои деньги в одном месте. Вклады считают проценты автоматически, валюта пересчитывается по курсу ЦБ.', page:'savings', highlight:'#nav-savings' },
+  { title:'📈 Доход', text:'Здесь видно сколько ты зарабатываешь не работая — проценты по вкладам, дивиденды, доход от роста курса валюты. Привяжи к счёту и приложение посчитает доход автоматически.', page:'income', highlight:'#nav-income' },
+  { title:'🎯 Цели', text:'Добавляй ежемесячные расходы в цели — как только пассивный доход их покрывает, они отмечаются выполненными.', page:'goals', highlight:'#nav-goals' },
+  { title:'🪙 Копилка', text:'Игровой способ копить на цель — сетка ячеек с разными суммами. Откладываешь деньги — закрываешь ячейку. Когда все закрыты — цель достигнута! 🎉', page:'challenge', highlight:'#nav-challenge' },
+  { title:'☰ Боковое меню', text:'Всё остальное живёт здесь — достижения, калькулятор инфляции, экспорт данных.', page:'challenge', highlight:'.menu-btn' },
+  { title:'🚀 Готово!', text:'Всё готово! Начни с добавления первого счёта — и пусть накопления растут 🌱', page:'home', highlight:null },
+];
+
+let obStep = 0, obWatcher = null, obActive = false;
+if (!window._chCollapsed) window._chCollapsed = {};
+
+function obGetEl(selector) { if(!selector)return null; try{return document.querySelector(selector);}catch(e){return null;} }
+
+function obHighlight(selector) {
+  const hl = document.getElementById('ob-highlight');
+  if (!selector) { if(hl) hl.style.display='none'; return; }
+  const el = obGetEl(selector);
+  if (!el) { if(hl) hl.style.display='none'; return; }
+  const r = el.getBoundingClientRect(), pad = 4;
+  if(hl){ hl.style.display='block'; hl.style.left=(r.left-pad)+'px'; hl.style.top=(r.top-pad)+'px'; hl.style.width=(r.width+pad*2)+'px'; hl.style.height=(r.height+pad*2)+'px'; }
+}
+
+function obPositionTooltip(highlightSel) {
+  const tip = document.getElementById('ob-tooltip');
+  if(!tip) return;
+  tip.className = 'ob-tooltip';
+  if (!highlightSel) {
+    tip.classList.add('ob-center');
+    tip.style.top='50%'; tip.style.left='50%'; tip.style.transform='translateX(-50%) translateY(-50%)'; tip.style.bottom=''; tip.style.right='';
+    return;
+  }
+  tip.style.transform='';
+  const el = obGetEl(highlightSel);
+  if (!el) { tip.classList.add('ob-center'); tip.style.bottom='90px'; tip.style.left='50%'; tip.style.transform='translateX(-50%)'; return; }
+  const r=el.getBoundingClientRect(), vh=window.innerHeight, vw=window.innerWidth, tipW=260, pad=12;
+  if (r.bottom < vh/2) {
+    tip.classList.add('arrow-top'); tip.style.top=(r.bottom+pad)+'px'; tip.style.bottom='';
+    let left=r.left+r.width/2-tipW/2; left=Math.max(8,Math.min(vw-tipW-8,left)); tip.style.left=left+'px'; tip.style.right='';
+  } else {
+    tip.classList.add('arrow-bottom'); tip.style.bottom=(vh-r.top+pad)+'px'; tip.style.top='';
+    let left=r.left+r.width/2-tipW/2; left=Math.max(8,Math.min(vw-tipW-8,left)); tip.style.left=left+'px'; tip.style.right='';
+  }
+}
+
+function obRenderStep() {
+  const step = OB_STEPS[obStep], total = OB_STEPS.length;
+  const labelEl=document.getElementById('ob-step-label'), titleEl=document.getElementById('ob-title'), textEl=document.getElementById('ob-text');
+  if(labelEl) labelEl.textContent='ШАГ '+(obStep+1)+' из '+total;
+  if(titleEl) titleEl.textContent=step.title;
+  if(textEl) textEl.textContent=step.text;
+  const actionEl=document.getElementById('ob-action');
+  if(actionEl) actionEl.style.display='none';
+  const nextWrap=document.getElementById('ob-next-wrap');
+  if(nextWrap){ nextWrap.style.display='block'; const btn=nextWrap.querySelector('button'); if(btn) btn.textContent=obStep===OB_STEPS.length-1?'Завершить ✓':'Далее →'; }
+  const dotsEl=document.getElementById('ob-dots');
+  if(dotsEl) dotsEl.innerHTML=OB_STEPS.map((_,i)=>`<div class="ob-dot ${i===obStep?'active':''}"></div>`).join('');
+  if(step.page && step.page!==_currentPage) showPage(step.page);
+  const tip=document.getElementById('ob-tooltip');
+  if(tip){ tip.style.opacity='0'; tip.style.transition='none'; }
+  if(!step.highlight){ const hl=document.getElementById('ob-highlight'); if(hl){ hl.style.display='none'; } }
+  setTimeout(()=>{ obHighlight(step.highlight); obPositionTooltip(step.highlight); if(tip){ tip.style.transition='opacity .2s ease'; tip.style.opacity='1'; } }, 350);
+  clearInterval(obWatcher);
+}
+
+function obAdvance() {
+  clearInterval(obWatcher);
+  closeSidebar();
+  if (obStep < OB_STEPS.length-1) { obStep++; obRenderStep(); }
+  else { closeOnboarding(); showPage('savings'); setTimeout(()=>{ editingId=null; openModal('savings'); },300); }
+}
+
+function obBackdropTap() { const step=OB_STEPS[obStep]; if(!step.waitFor) obAdvance(); }
+
+function closeOnboarding() {
+  clearInterval(obWatcher);
+  obActive=false;
+  const overlay=document.getElementById('ob-overlay');
+  const hl=document.getElementById('ob-highlight');
+  if(overlay) overlay.classList.remove('open');
+  if(hl) hl.style.display='none';
+  localStorage.setItem('onboarding_done','1');
+  closeModal(); closeSidebar();
+}
+
+function initOnboarding() {
+  if(localStorage.getItem('onboarding_done')) return;
+  if(obActive) return;
+  obActive=true; obStep=0;
+  const overlay=document.getElementById('ob-overlay');
+  if(overlay) overlay.classList.add('open');
+  obRenderStep();
+}
+
+function forceStartOnboarding() {
+  obActive=false;
+  localStorage.removeItem('onboarding_done');
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  const tip=document.getElementById('ob-tooltip'), hl=document.getElementById('ob-highlight');
+  if(tip){ tip.style.opacity='0'; tip.style.visibility=''; }
+  if(hl){ hl.style.visibility=''; hl.style.display='none'; }
+  obStep=0; showPage('home');
+  setTimeout(()=>{ obActive=true; const overlay=document.getElementById('ob-overlay'); if(overlay) overlay.classList.add('open'); obRenderStep(); }, 350);
+}
+
+function resetOnboarding() { forceStartOnboarding(); }
+
 setTimeout(initOnboarding, 600);
 checkChNotifications();
 </script>
