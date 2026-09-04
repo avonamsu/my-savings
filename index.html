@@ -169,8 +169,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   .savings-card-item { position:relative; overflow:hidden; padding:0; isolation:isolate; }
   .card-item-inner { display:flex; align-items:center; padding:13px 14px; gap:10px; flex:1; min-width:0; transition:transform .25s cubic-bezier(.4,0,.2,1); }
   .swipe-actions { position:absolute; right:0; top:0; bottom:0; display:none; z-index:2; }
-  .swipe-del { background:var(--danger); color:#fff; border:none; padding:0 20px; font-size:16px; cursor:pointer; }
-  .swipe-edit { background:var(--accent); color:var(--bg); border:none; padding:0 20px; font-size:16px; cursor:pointer; }
+  .swipe-del { background:var(--danger); color:#fff; border:none; width:64px; font-size:20px; cursor:pointer; flex-shrink:0; }
+  .swipe-edit { background:var(--accent); color:var(--bg); border:none; width:64px; font-size:20px; cursor:pointer; flex-shrink:0; }
   .group-header { display:flex; justify-content:space-between; align-items:center; padding:8px 4px 4px; }
   .group-title { font-size:11px; font-weight:700; letter-spacing:.07em; color:var(--text-dim); text-transform:uppercase; }
   .group-total { font-size:12px; font-weight:600; color:var(--accent); }
@@ -1339,8 +1339,7 @@ function initSavingsSwipe() {
     item.addEventListener('touchend', e=>{
       if(!swiping) return;
       const dx=e.changedTouches[0].clientX-startX;
-      if(dx<-60){ inner.style.transform='translateX(-140px)'; actions.style.display='flex'; actions.style.width='140px'; }
-      else { inner.style.transform=''; actions.style.display='none'; }
+      const nBtns2=actions.querySelectorAll('button').length;const snapW=nBtns2*64;if(dx<-40){inner.style.transform='translateX(-'+snapW+'px)';actions.style.display='flex';actions.style.width=snapW+'px';}else{inner.style.transform='';actions.style.display='none';}
     },{passive:true});
   });
 }
@@ -1419,7 +1418,7 @@ function initIncomeSwipe() {
     const inner=item.querySelector('.card-item-inner'),actions=item.querySelector('.swipe-actions');
     if(!inner||!actions)return;
     item.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;startY=e.touches[0].clientY;swiping=false;},{passive:true});
-    item.addEventListener('touchmove',e=>{const dx=e.touches[0].clientX-startX,dy=e.touches[0].clientY-startY;if(Math.abs(dy)>Math.abs(dx))return;swiping=true;const x=Math.max(-100,Math.min(0,dx));inner.style.transform='translateX('+x+'px)';if(Math.abs(x)>5){actions.style.display='flex';actions.style.width=Math.abs(x)+'px';}},{passive:true});
+    item.addEventListener('touchmove',e=>{const dx=e.touches[0].clientX-startX,dy=e.touches[0].clientY-startY;if(Math.abs(dy)>Math.abs(dx))return;swiping=true;const x=Math.max(-128,Math.min(0,dx));inner.style.transform='translateX('+x+'px)';if(Math.abs(x)>5){actions.style.display='flex';actions.style.width=Math.abs(x)+'px';}},{passive:true});
     item.addEventListener('touchend',e=>{if(!swiping)return;const dx=e.changedTouches[0].clientX-startX;if(dx<-50){inner.style.transform='translateX(-100px)';actions.style.display='flex';actions.style.width='100px';}else{inner.style.transform='';actions.style.display='none';}},{passive:true});
   });
 }
@@ -1537,6 +1536,78 @@ function initGoalSwipe() {
   });
 }
 
+
+
+// ── SAVINGS FORM HELPERS ──────────────────────────────────
+function formatAmountInput(el) {
+  const raw = el.value.replace(/ /g, '').replace(',', '.');
+  el._rawValue = isNaN(parseFloat(raw)) ? '' : String(parseFloat(raw));
+}
+function getSavingAmountValue() {
+  const el = document.getElementById('s-amount');
+  if (!el) return 0;
+  const raw = ((el._rawValue !== undefined ? el._rawValue : el.value) + '').replace(/ /g,'').replace(',','.');
+  return parseFloat(raw) || 0;
+}
+function setDepositMonths(months) {
+  const startEl = document.getElementById('s-date-start');
+  const endEl = document.getElementById('s-date-end');
+  if (!startEl.value) startEl.value = today();
+  const start = new Date(startEl.value);
+  start.setMonth(start.getMonth() + months);
+  endEl.value = start.toISOString().slice(0, 10);
+  updateDepositPreview(); validateDateRange();
+}
+function validateDateRange() {
+  const start = document.getElementById('s-date-start').value;
+  const end = document.getElementById('s-date-end').value;
+  const errEl = document.getElementById('s-date-err');
+  const endInput = document.getElementById('s-date-end');
+  if (start && end && end <= start) {
+    if(errEl) errEl.style.display = '';
+    if(endInput) endInput.classList.add('invalid');
+  } else {
+    if(errEl) errEl.style.display = 'none';
+    if(endInput) endInput.classList.remove('invalid');
+  }
+}
+function validateSavingsForm() {
+  const nameEl = document.getElementById('s-name');
+  const amountEl = document.getElementById('s-amount');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const amount = getSavingAmountValue();
+  const nameErr = document.getElementById('s-name-err');
+  const amountErr = document.getElementById('s-amount-err');
+  let valid = true;
+  if (!name) { if(nameEl) nameEl.classList.add('invalid'); if(nameErr) nameErr.style.display=''; valid=false; }
+  else { if(nameEl) nameEl.classList.remove('invalid'); if(nameErr) nameErr.style.display='none'; }
+  if (amount <= 0) { if(amountEl) amountEl.classList.add('invalid'); if(amountErr) amountErr.style.display=''; valid=false; }
+  else { if(amountEl) amountEl.classList.remove('invalid'); if(amountErr) amountErr.style.display='none'; }
+  return valid;
+}
+function duplicateSaving(id) {
+  const original = state.savings.find(x => x.id === id);
+  if (!original) return;
+  const copy = Object.assign({}, JSON.parse(JSON.stringify(original)), { id: uid(), name: original.name + ' (копия)' });
+  state.savings.push(copy);
+  save(); renderSavings();
+}
+
+// ── SIDEBAR ACTIVE STATE ──────────────────────────────────
+function updateActiveSidebarItem(page) {
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('sb-active'));
+  document.querySelectorAll('.sidebar-item').forEach(el => {
+    const oc = el.getAttribute('onclick') || '';
+    if (
+      (page==='savings' && oc.includes("navTo('savings')")) ||
+      (page==='income' && oc.includes("navTo('income')")) ||
+      (page==='goals' && oc.includes("navTo('goals')")) ||
+      (page==='challenge' && oc.includes("navTo('challenge')")) ||
+      (page==='achievements' && oc.includes("navTo('achievements')")) ||
+      (page==='inflation' && oc.includes("navTo('inflation')"))
+    ) { el.classList.add('sb-active'); }
+  });
+}
 
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
@@ -1962,11 +2033,13 @@ const ROSSTAT_INFLATION = {
 
 
 function initGoalDrag() {
-  const list = document.getElementById('goals-list');
+  // Only drag within uncovered goals (first group)
+  const allItems = document.querySelectorAll('#goals-list .goal-item');
   let dragEl = null;
 
-  // Desktop drag
-  list.querySelectorAll('.goal-item').forEach(item => {
+  allItems.forEach(item => {
+    item.setAttribute('draggable', 'true');
+
     item.addEventListener('dragstart', e => {
       dragEl = item;
       setTimeout(() => item.classList.add('dragging'), 0);
@@ -1974,39 +2047,39 @@ function initGoalDrag() {
     });
     item.addEventListener('dragend', () => {
       item.classList.remove('dragging');
-      list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
+      allItems.forEach(i => i.classList.remove('drag-over'));
       dragEl = null;
     });
     item.addEventListener('dragover', e => {
       e.preventDefault();
       if (!dragEl || dragEl === item) return;
-      list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
+      allItems.forEach(i => i.classList.remove('drag-over'));
       item.classList.add('drag-over');
     });
     item.addEventListener('drop', e => {
       e.preventDefault();
       if (!dragEl || dragEl === item) return;
-      const ids = [...list.querySelectorAll('.goal-item')].map(i => i.dataset.id);
-      const fromIdx = ids.indexOf(dragEl.dataset.id);
-      const toIdx   = ids.indexOf(item.dataset.id);
+      const fromId = dragEl.dataset.id;
+      const toId = item.dataset.id;
+      const fromIdx = state.goals.findIndex(g => g.id === fromId);
+      const toIdx   = state.goals.findIndex(g => g.id === toId);
+      if (fromIdx < 0 || toIdx < 0) return;
       const moved = state.goals.splice(fromIdx, 1)[0];
       state.goals.splice(toIdx, 0, moved);
       save(); renderGoals();
     });
 
-    // Touch drag — only activate after holding handle for 150ms (long press)
+    // Touch drag
     const handle = item.querySelector('.drag-handle');
-    let holdTimer = null, touchDragEl = null, touchClone = null, touchStartY = 0, isDragging = false;
+    if (!handle) return;
+    let holdTimer = null, touchClone = null, touchStartY = 0, isDragging = false;
 
     handle.addEventListener('touchstart', e => {
-      const startY = e.touches[0].clientY;
-      touchStartY = startY;
+      touchStartY = e.touches[0].clientY;
       holdTimer = setTimeout(() => {
-        // Activate drag only after hold
         isDragging = true;
-        touchDragEl = item;
         touchClone = item.cloneNode(true);
-        touchClone.style.cssText = `position:fixed;left:16px;right:16px;z-index:999;opacity:0.9;pointer-events:none;background:var(--surface2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);`;
+        touchClone.style.cssText = 'position:fixed;left:16px;right:16px;z-index:999;opacity:0.9;pointer-events:none;background:var(--surface2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);';
         touchClone.style.top = item.getBoundingClientRect().top + 'px';
         document.body.appendChild(touchClone);
         item.classList.add('dragging');
@@ -2016,55 +2089,43 @@ function initGoalDrag() {
 
     handle.addEventListener('touchmove', e => {
       if (!isDragging) {
-        // Not dragging yet — cancel hold timer if moved too much
-        const dy = Math.abs(e.touches[0].clientY - touchStartY);
-        if (dy > 8) { clearTimeout(holdTimer); holdTimer = null; }
-        return; // let scroll happen
+        if (Math.abs(e.touches[0].clientY - touchStartY) > 8) { clearTimeout(holdTimer); holdTimer = null; }
+        return;
       }
       e.preventDefault();
       const y = e.touches[0].clientY;
       if (touchClone) {
-        touchClone.style.top = (touchClone.getBoundingClientRect().top + (y - touchStartY)) + 'px';
+        const rect = touchClone.getBoundingClientRect();
+        touchClone.style.top = (rect.top + (y - touchStartY)) + 'px';
       }
       touchStartY = y;
-      list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
-      const elBelow = document.elementFromPoint(e.touches[0].clientX, y);
-      const targetItem = elBelow?.closest('.goal-item');
-      if (targetItem && targetItem !== touchDragEl) targetItem.classList.add('drag-over');
+      allItems.forEach(i => i.classList.remove('drag-over'));
+      allItems.forEach(i => {
+        const r = i.getBoundingClientRect();
+        if (y > r.top && y < r.bottom && i !== item) i.classList.add('drag-over');
+      });
     }, { passive: false });
 
     handle.addEventListener('touchend', e => {
       clearTimeout(holdTimer);
-      holdTimer = null;
-      if (!isDragging || !touchDragEl || !touchClone) {
-        isDragging = false; touchDragEl = null;
-        list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
-        return;
-      }
-      const y = e.changedTouches[0].clientY;
-      const elBelow = document.elementFromPoint(e.changedTouches[0].clientX, y);
-      const targetItem = elBelow?.closest('.goal-item');
-      if (targetItem && targetItem !== touchDragEl) {
-        const ids = [...list.querySelectorAll('.goal-item')].map(i => i.dataset.id);
-        const fromIdx = ids.indexOf(touchDragEl.dataset.id);
-        const toIdx   = ids.indexOf(targetItem.dataset.id);
-        const moved = state.goals.splice(fromIdx, 1)[0];
-        state.goals.splice(toIdx, 0, moved);
-        save(); renderGoals();
-      } else {
-        touchDragEl.classList.remove('dragging');
-        list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
-      }
-      touchClone.remove();
-      touchClone = null; touchDragEl = null; isDragging = false;
-    }, { passive: true });
-
-    handle.addEventListener('touchcancel', () => {
-      clearTimeout(holdTimer);
-      isDragging = false; touchDragEl = null;
-      if (touchClone) { touchClone.remove(); touchClone = null; }
+      if (!isDragging) return;
+      isDragging = false;
+      if (touchClone) { document.body.removeChild(touchClone); touchClone = null; }
       item.classList.remove('dragging');
-      list.querySelectorAll('.goal-item').forEach(i => i.classList.remove('drag-over'));
+      const over = document.querySelector('#goals-list .goal-item.drag-over');
+      if (over && over !== item) {
+        const fromId = item.dataset.id;
+        const toId = over.dataset.id;
+        const fromIdx = state.goals.findIndex(g => g.id === fromId);
+        const toIdx   = state.goals.findIndex(g => g.id === toId);
+        if (fromIdx >= 0 && toIdx >= 0) {
+          const moved = state.goals.splice(fromIdx, 1)[0];
+          state.goals.splice(toIdx, 0, moved);
+          save();
+        }
+      }
+      allItems.forEach(i => i.classList.remove('drag-over'));
+      renderGoals();
     }, { passive: true });
   });
 }
