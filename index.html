@@ -509,27 +509,13 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="chart-title" style="margin-bottom:10px;">📊 РАЗБИВКА ПО ТИПАМ</div>
     <div id="income-breakdown-list"></div>
   </div>
-  <div id="income-forecast" style="display:none;" class="calc-preview">
-    <div id="income-forecast-text"></div>
-  </div>
-  <div style="display:flex;gap:8px;">
-    <input type="text" id="income-search" placeholder="🔍 Поиск..." oninput="renderIncome()"
-      style="flex:1;background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:9px 12px;outline:none;">
-    <select id="income-sort" onchange="renderIncome()"
-      style="background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text-dim);font-size:13px;padding:9px 10px;outline:none;-webkit-appearance:none;cursor:pointer;">
-      <option value="default">По умолчанию</option>
-      <option value="amount">По сумме</option>
-      <option value="type">По типу</option>
-    </select>
-  </div>
+  <input type="text" id="income-search" placeholder="🔍 Поиск..." oninput="renderIncome()"
+    style="background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:9px 12px;outline:none;width:100%;">
   <div class="section-title">Источники дохода</div>
   <div id="income-list">
     <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
   </div>
-  <div style="display:flex;gap:10px;">
-    <button class="add-btn" onclick="editingId=null;switchIncomeTab('linked');openModal('income')" style="flex:1;">＋ Привязать вклад</button>
-    <button class="add-btn" onclick="editingId=null;switchIncomeTab('manual');openModal('income')" style="flex:1;">＋ Вручную</button>
-  </div>
+  <button class="add-btn" onclick="editingId=null;openModal('income')">＋ Добавить источник дохода</button>
   <div class="chart-wrap">
     <div class="chart-header">
       <span class="chart-title">📈 РОСТ ПАССИВНОГО ДОХОДА</span>
@@ -1306,18 +1292,8 @@ function renderIncome() {
     }).join('');
   } else if(breakdownEl) breakdownEl.style.display='none';
 
-  const forecastEl = document.getElementById('income-forecast');
-  const forecastText = document.getElementById('income-forecast-text');
-  if (total > 0 && forecastEl && forecastText) {
-    forecastEl.style.display = '';
-    forecastText.innerHTML = 'За 12 месяцев: <strong>'+fmt(Math.round(totalYearly))+' ₽</strong> · с учётом инфляции: <strong>'+fmt(Math.round(totalYearly*(1-inflPct/100)))+' ₽</strong>';
-  } else if(forecastEl) forecastEl.style.display='none';
-
   const query = (document.getElementById('income-search')?.value||'').toLowerCase();
-  const sortBy = document.getElementById('income-sort')?.value||'default';
-  let items = state.income.filter(x => !query||x.name.toLowerCase().includes(query));
-  if(sortBy==='amount') items=[...items].sort((a,b)=>calcIncomeAmountRub(b)-calcIncomeAmountRub(a));
-  else if(sortBy==='type') items=[...items].sort((a,b)=>a.icon.localeCompare(b.icon));
+  const items = query ? state.income.filter(x=>x.name.toLowerCase().includes(query)) : state.income;
 
   const el = document.getElementById('income-list');
   if (!state.income.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`; return; }
