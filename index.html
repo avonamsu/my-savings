@@ -226,6 +226,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   .goal-item-inner { display:flex; align-items:center; padding:13px 14px; gap:10px; flex:1; min-width:0; transition:transform .25s cubic-bezier(.4,0,.2,1); }
   .goal-swipe-actions { position:absolute; right:0; top:0; bottom:0; display:none; }
   .goal-flash { animation:goal-flash .6s ease; }
+  .sub-badge { display:inline-flex; align-items:center; gap:3px; background:rgba(100,181,246,0.15); border:1px solid rgba(100,181,246,0.3); border-radius:4px; font-size:10px; color:#64B5F6; padding:1px 5px; font-weight:600; vertical-align:middle; }
+  .sub-due-soon { color:var(--warn); font-size:11px; font-weight:600; }
   @keyframes goal-flash { 0%{background:rgba(78,205,196,0.4)} 100%{background:transparent} }
   .goal-progress-bar { height:3px; border-radius:2px; overflow:hidden; background:rgba(255,255,255,0.07); margin-top:4px; }
   .goal-progress-fill { height:100%; border-radius:2px; transition:width .4s ease; }
@@ -924,13 +926,37 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
     </div>
     <div id="fields-goals" style="display:none">
+      <div class="field"><label>ТИП</label>
+        <div style="display:flex;gap:8px;">
+          <button type="button" id="g-type-regular" class="income-type-btn active" onclick="selectGoalType('regular')" style="flex:1;">
+            <span style="font-size:18px;">🎯</span><span>Обычная</span>
+          </button>
+          <button type="button" id="g-type-subscription" class="income-type-btn" onclick="selectGoalType('subscription')" style="flex:1;">
+            <span style="font-size:18px;">🔄</span><span>Подписка</span>
+          </button>
+        </div>
+        <input type="hidden" id="g-type" value="regular">
+      </div>
       <div class="field"><label>НАЗВАНИЕ</label>
         <input type="text" id="g-name" placeholder="Например: Коммунальные услуги">
         <div class="field-hint error" id="g-name-err" style="display:none;">Введи название</div>
       </div>
-      <div class="field"><label>СУММА В МЕСЯЦ (₽)</label>
+      <div class="field"><label id="g-amount-label">СУММА В МЕСЯЦ (₽)</label>
         <input type="number" id="g-amount" placeholder="0" inputmode="decimal">
         <div class="field-hint error" id="g-amount-err" style="display:none;">Введи сумму больше 0</div>
+      </div>
+      <div id="g-subscription-fields" style="display:none;">
+        <div class="field"><label>ПЕРИОД</label>
+          <select id="g-sub-period" onchange="updateGoalAmountLabel()">
+            <option value="1">Каждый месяц</option>
+            <option value="3">Каждый квартал (3 мес)</option>
+            <option value="12">Каждый год</option>
+          </select>
+        </div>
+        <div class="field"><label>ДАТА СЛЕДУЮЩЕГО СПИСАНИЯ</label>
+          <input type="date" id="g-sub-date">
+        </div>
+        <div class="calc-preview" id="g-sub-preview" style="display:none;"></div>
       </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -1526,7 +1552,7 @@ function renderGoals() {
   const query = (document.getElementById('goals-search')?.value||'').toLowerCase();
   let remaining = totalIncome, coveredSum = 0;
   const items = state.goals.map(g => {
-    const cost = Number(g.amount);
+    const cost = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
     const covered = remaining >= cost;
     const partial = !covered && remaining > 0 ? remaining / cost : 0;
     if (covered) { remaining -= cost; coveredSum += cost; }
@@ -1556,7 +1582,7 @@ function renderGoals() {
         <div class="drag-handle">⠿</div>
         <div class="goal-check" style="${g.covered?'background:'+color+';border-color:'+color+';':''}">${g.covered?'✓':''}</div>
         <div class="goal-info">
-          <div class="goal-name">${emoji} ${g.name}</div>
+          <div class="goal-name">${emoji} ${g.name}${g.type==='subscription'?` <span class="sub-badge">🔄 ${g.subPeriod===12?'год':g.subPeriod===3?'квартал':'мес'}</span>`:''}${(()=>{const d=getDaysUntilSub(g);return d!==null&&d<=3?` <span class="sub-due-soon">· через ${d===0?'сегодня':d+' дн.'}</span>`:'';})()}</div>
           ${!g.covered && g.partial > 0 ? `<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:${partialPct}%;background:${color};"></div></div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${partialPct}% покрыто</div>` : ''}
         </div>
         <div class="goal-amount" style="${g.covered?'color:'+color+';':''}">${fmt(g.amount)} ₽</div>
@@ -1604,6 +1630,68 @@ function initGoalSwipe() {
 }
 
 
+
+
+// ── SUBSCRIPTIONS ─────────────────────────────────────────
+function selectGoalType(type) {
+  document.getElementById('g-type').value = type;
+  document.getElementById('g-type-regular').classList.toggle('active', type === 'regular');
+  document.getElementById('g-type-subscription').classList.toggle('active', type === 'subscription');
+  const subFields = document.getElementById('g-subscription-fields');
+  if(subFields) subFields.style.display = type === 'subscription' ? '' : 'none';
+  updateGoalAmountLabel();
+}
+
+function updateGoalAmountLabel() {
+  const type = document.getElementById('g-type')?.value;
+  const period = parseInt(document.getElementById('g-sub-period')?.value) || 1;
+  const label = document.getElementById('g-amount-label');
+  const preview = document.getElementById('g-sub-preview');
+  if (!label) return;
+  if (type !== 'subscription') { label.textContent = 'СУММА В МЕСЯЦ (₽)'; if(preview) preview.style.display='none'; return; }
+  const periodNames = {1:'в месяц', 3:'в квартал', 12:'в год'};
+  label.textContent = 'СУММА ' + (periodNames[period]||'').toUpperCase() + ' (₽)';
+  const amount = parseFloat(document.getElementById('g-amount')?.value) || 0;
+  if (amount > 0 && period > 1 && preview) {
+    const monthly = amount / period;
+    preview.style.display = '';
+    preview.textContent = 'В месяц: ' + fmt(Math.round(monthly)) + ' ₽';
+  } else if(preview) preview.style.display = 'none';
+}
+
+function getGoalMonthlyAmount(g) {
+  if (g.type !== 'subscription') return Number(g.amount);
+  const period = g.subPeriod || 1;
+  return Number(g.amount) / period;
+}
+
+function getDaysUntilSub(g) {
+  if (g.type !== 'subscription' || !g.subDate) return null;
+  const now = new Date();
+  const due = new Date(g.subDate);
+  return Math.round((due - now) / 86400000);
+}
+
+function checkUpcomingSubs() {
+  const block = document.getElementById('home-subs-card');
+  const list  = document.getElementById('home-subs-list');
+  if (!block || !list) return;
+  const upcoming = state.goals.filter(g =>
+    g.type === 'subscription' && g.subDate
+  ).map(g => ({ ...g, daysLeft: getDaysUntilSub(g) }))
+    .filter(g => g.daysLeft !== null && g.daysLeft >= 0 && g.daysLeft <= 7)
+    .sort((a,b) => a.daysLeft - b.daysLeft);
+  if (!upcoming.length) { block.style.display='none'; return; }
+  block.style.display = '';
+  list.innerHTML = upcoming.map(g => {
+    const dayStr = g.daysLeft === 0 ? 'Сегодня' : g.daysLeft === 1 ? 'Завтра' : 'Через '+g.daysLeft+' дн.';
+    return `<div class="dep-item" onclick="showPage('goals')">
+      <div class="dep-icon">🔄</div>
+      <div class="dep-info"><div class="dep-name">${g.name}</div><div class="dep-date ${g.daysLeft<=1?'sub-due-soon':''}">${dayStr}</div></div>
+      <div class="dep-amount">${fmt(g.amount)} ₽</div>
+    </div>`;
+  }).join('');
+}
 
 // ── SAVINGS FORM HELPERS ──────────────────────────────────
 function formatAmountInput(el) {
@@ -1808,6 +1896,7 @@ function openModal(mode) {
     const defE=document.getElementById('gepb-target'); if(defE) defE.classList.add('selected');
     document.querySelectorAll('[id^="gcpb-"]').forEach(b=>b.classList.remove('selected'));
     const defC=document.getElementById('gcpb-4ECDC4'); if(defC) defC.classList.add('selected');
+    selectGoalType('regular');
     setTimeout(()=>{ const el=document.getElementById('g-name'); if(el) el.focus(); }, 200);
   }
   if(mode==='income') setTimeout(()=>{ const el=document.getElementById('i-name'); if(el) el.focus(); }, 200);
@@ -2065,7 +2154,10 @@ function saveItem(){
     if(!name||isNaN(amount)||amount<=0)return;
     const emoji=document.getElementById('g-emoji')?.value||'🎯';
     const color=document.getElementById('g-color')?.value||'#4ECDC4';
-    state.goals.push({id,name,amount,emoji,color});
+    const gType=document.getElementById('g-type')?.value||'regular';
+    const subPeriod=gType==='subscription'?parseInt(document.getElementById('g-sub-period')?.value||1):null;
+    const subDate=gType==='subscription'?document.getElementById('g-sub-date')?.value||null:null;
+    state.goals.push({id,name,amount,emoji,color,type:gType,subPeriod,subDate});
   }
   editingId=null;trackDailyAdd();save();render();closeModal();setTimeout(checkAchievements,300);checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();haptic("success");
 }
