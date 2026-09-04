@@ -591,6 +591,14 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="hero-amount" id="ach-count">0 <span>из 0</span></div>
     <div class="hero-sub" id="ach-sub">Начни копить — и ачивки появятся</div>
   </div>
+  <div class="level-card" id="level-card">
+    <div class="level-icon" id="level-icon">🥚</div>
+    <div class="level-info">
+      <div class="level-name" id="level-name">Новичок</div>
+      <div class="level-sub" id="level-sub">Разблокируй первые ачивки</div>
+      <div class="level-bar-bg"><div class="level-bar-fill" id="level-bar" style="width:0%"></div></div>
+    </div>
+  </div>
   <div id="ach-list" style="display:flex;flex-direction:column;gap:10px;"></div>
 </div>
 
@@ -963,6 +971,18 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <button onclick="obAdvance()" style="width:100%;background:var(--accent);color:var(--bg);border:none;border-radius:8px;font-size:13px;font-weight:700;padding:9px;cursor:pointer;">Далее →</button>
   </div>
   <button class="ob-skip" onclick="closeOnboarding()">Пропустить обучение</button>
+  </div>
+</div>
+
+<!-- ACH DETAIL POPUP -->
+<div class="ach-detail-overlay" id="ach-detail-overlay" onclick="if(event.target===this)closeAchDetail()">
+  <div class="ach-detail-card">
+    <div class="ach-detail-icon" id="ach-detail-icon">🏅</div>
+    <div class="ach-detail-name" id="ach-detail-name"></div>
+    <div class="ach-detail-desc" id="ach-detail-desc"></div>
+    <div class="ach-detail-condition"><strong>Условие: </strong><span id="ach-detail-cond"></span></div>
+    <div style="text-align:center;font-size:14px;font-weight:600;" id="ach-detail-status"></div>
+    <button onclick="closeAchDetail()" style="margin-top:16px;width:100%;background:var(--surface2);border:none;border-radius:var(--radius-sm);color:var(--text-dim);font-size:15px;padding:12px;cursor:pointer;">Закрыть</button>
   </div>
 </div>
 
@@ -2620,6 +2640,64 @@ function stopConfetti(){
 }
 
 
+
+const LEVELS = [
+  {name:'Новичок',  icon:'🥚', min:0,  max:3,  sub:'Разблокируй первые ачивки'},
+  {name:'Копилка',  icon:'🪙', min:3,  max:8,  sub:'Ты на верном пути!'},
+  {name:'Инвестор', icon:'📈', min:8,  max:15, sub:'Деньги работают на тебя'},
+  {name:'Рантье',   icon:'💎', min:15, max:25, sub:'Пассивный доход растёт'},
+  {name:'Магнат',   icon:'👑', min:25, max:999,sub:'Финансовая свобода!'},
+];
+
+function updateLevel(count) {
+  const lvl = LEVELS.find((l,i) => count < l.max || i === LEVELS.length-1) || LEVELS[0];
+  const next = LEVELS[LEVELS.indexOf(lvl)+1];
+  const pct = next ? Math.round((count-lvl.min)/(lvl.max-lvl.min)*100) : 100;
+  const icon = document.getElementById('level-icon');
+  const name = document.getElementById('level-name');
+  const sub  = document.getElementById('level-sub');
+  const bar  = document.getElementById('level-bar');
+  if(icon) icon.textContent = lvl.icon;
+  if(name) name.textContent = lvl.name;
+  if(sub)  sub.textContent  = next ? lvl.sub+' · до «'+next.name+'»: '+(lvl.max-count)+' ачивок' : lvl.sub;
+  if(bar)  bar.style.width  = Math.min(100,pct)+'%';
+}
+
+function showAchDetail(achId) {
+  const a = ACHIEVEMENTS.find(x => x.id === achId);
+  if (!a) return;
+  const unlocked = new Set(state._unlocked||[]);
+  const isUnlocked = unlocked.has(achId);
+  document.getElementById('ach-detail-icon').textContent = a.icon;
+  document.getElementById('ach-detail-name').textContent = a.name;
+  document.getElementById('ach-detail-desc').textContent = a.desc;
+  document.getElementById('ach-detail-cond').textContent = a.desc;
+  let progText = '';
+  if (!isUnlocked && !a.secret) {
+    try {
+      const prog = a.progress(state.savings, state.income, state.goals);
+      if (prog && prog.max > 1) {
+        const cur = Math.min(prog.cur, prog.max);
+        const val = prog.rub ? fmt(cur)+' из '+fmt(prog.max)+' ₽'
+                  : prog.pct ? cur+'%'
+                  : cur+' из '+prog.max;
+        progText = 'Прогресс: '+val;
+      }
+    } catch(e) {}
+  }
+  const st = document.getElementById('ach-detail-status');
+  if(st) st.innerHTML = isUnlocked
+    ? '<span style="color:var(--accent);font-size:20px;">✅ Разблокировано!</span>'
+    : a.secret ? '<span style="color:var(--text-dim);">🔐 Секретная ачивка</span>'
+    : progText ? '<span style="color:var(--text-dim);">'+progText+'</span>'
+    : '<span style="color:var(--text-dim);">🔒 Не разблокировано</span>';
+  document.getElementById('ach-detail-overlay').classList.add('open');
+}
+
+function closeAchDetail() {
+  document.getElementById('ach-detail-overlay').classList.remove('open');
+}
+
 function renderAchievements() {
   if (!state._unlocked) state._unlocked=[];
   const s=state.savings, inc=state.income, g=state.goals;
@@ -2658,7 +2736,7 @@ function renderAchievements() {
       prog.pct ? `${Math.min(prog.cur,prog.max)}%` :
       `${Math.min(prog.cur,prog.max)} из ${prog.max}`) : '';
 
-    return `<div class="ach-card ${isUnlocked?'unlocked':''} ${a.secret&&!isUnlocked?'secret':''}">
+    return `<div class="ach-card ${isUnlocked?'unlocked':''} ${a.secret&&!isUnlocked?'secret':''}" onclick="showAchDetail('${a.id}')">
       <div class="ach-icon">${a.icon}</div>
       <div class="ach-info">
         <div class="ach-name">${a.name}</div>
