@@ -97,10 +97,14 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Inter
 
 /* ── NAV ── */
 nav { display:flex; background:var(--surface); border-top:1px solid rgba(78,205,196,0.1); position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; z-index:100; }
-nav button { flex:1; background:none; border:none; color:var(--text-dim); font-size:10px; font-weight:600; padding:10px 2px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; transition:color .2s; }
-nav button .ni { font-size:19px; }
+nav button { flex:1; background:none; border:none; color:var(--text-dim); font-size:10px; font-weight:600; padding:10px 2px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; }
+nav button .ni { font-size:19px; transition:transform .25s cubic-bezier(.34,1.56,.64,1), font-size .2s; display:block; }
 nav button.active { color:var(--accent); }
+nav button.active .ni { font-size:24px; transform:translateY(-2px); }
+nav button.active::before { content:''; position:absolute; top:6px; width:36px; height:36px; border-radius:50%; background:var(--accent-dim); }
 nav button.active::after { content:''; position:absolute; top:0; left:20%; right:20%; height:2px; background:var(--accent); border-radius:0 0 2px 2px; }
+nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,1); }
+@keyframes nav-bounce { 0%{transform:translateY(0)} 40%{transform:translateY(-8px)} 70%{transform:translateY(-3px)} 100%{transform:translateY(-2px)} }
 
 /* MENU BUTTON */
 .menu-btn { position:fixed; top:0; left:0; z-index:150; width:52px; height:52px; background:none; border:none; color:var(--text-dim); font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
@@ -114,8 +118,12 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 .sidebar-profile { padding:24px 20px 16px; background:linear-gradient(135deg,var(--surface2),#1a2e4a); border-bottom:1px solid rgba(78,205,196,0.1); }
 .sidebar-name { font-size:18px; font-weight:700; margin-bottom:4px; }
 .sidebar-total { font-size:13px; color:var(--accent); font-weight:600; }
-.sidebar-section { padding:12px 20px 4px; font-size:10px; font-weight:700; letter-spacing:.1em; color:var(--text-dim); text-transform:uppercase; }
-.sidebar-item { display:flex; align-items:center; gap:12px; padding:12px 20px; cursor:pointer; transition:background .15s; border:none; background:none; color:var(--text); width:100%; text-align:left; font-size:15px; }
+.sidebar-section { padding:16px 20px 6px; font-size:10px; font-weight:700; letter-spacing:.12em; color:var(--text-dim); text-transform:uppercase; display:flex; align-items:center; gap:8px; }
+  .sidebar-section::before { content:''; flex:1; height:1px; background:rgba(255,255,255,0.06); order:2; }
+  .sidebar-section span { order:1; }
+.sidebar-item { display:flex; align-items:center; gap:12px; padding:12px 20px; cursor:pointer; transition:background .15s; border:none; background:none; color:var(--text); width:100%; text-align:left; font-size:15px; border-left:3px solid transparent; }
+  .sidebar-item.sb-active { background:var(--accent-dim); color:var(--accent); border-left-color:var(--accent); }
+  .sidebar-item.sb-active .si { filter:none; }
 .sidebar-item:active { background:var(--accent-dim); }
 .sidebar-item .si { font-size:20px; width:28px; text-align:center; }
 .sidebar-item.danger { color:var(--danger); }
@@ -341,30 +349,33 @@ nav button.active::after { content:''; position:absolute; top:0; left:20%; right
 <!-- SIDEBAR -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-profile">
-    <div class="sidebar-name" id="sb-name">Мои накопления</div>
-    <div class="sidebar-total" id="sb-total">Загрузка...</div>
+  <div class="sidebar-profile" style="display:flex;align-items:center;gap:14px;">
+    <div id="sb-avatar" style="width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--bg);flex-shrink:0;">🪙</div>
+    <div>
+      <div class="sidebar-name" id="sb-name">Мои накопления</div>
+      <div class="sidebar-total" id="sb-total">Загрузка...</div>
+    </div>
   </div>
 
-  <div class="sidebar-section">💰 Накопления</div>
+  <div class="sidebar-section"><span>💰 Накопления</span></div>
   <button class="sidebar-item" onclick="navTo('savings')"><span class="si">🏦</span>Мои счета</button>
   <button class="sidebar-item" onclick="navTo('savings','chart')"><span class="si">📈</span>Рост накоплений</button>
 
-  <div class="sidebar-section">📊 Доход</div>
+  <div class="sidebar-section"><span>📊 Доход</span></div>
   <button class="sidebar-item" onclick="navTo('income')"><span class="si">💸</span>Источники дохода</button>
 
-  <div class="sidebar-section">🎯 Цели</div>
+  <div class="sidebar-section"><span>🎯 Цели</span></div>
   <button class="sidebar-item" onclick="navTo('goals')"><span class="si">✅</span>Список целей</button>
   <button class="sidebar-item" onclick="navTo('challenge')"><span class="si">🪙</span>Челлендж-копилки</button>
 
-  <div class="sidebar-section">📊 Аналитика</div>
+  <div class="sidebar-section"><span>📊 Аналитика</span></div>
   <button class="sidebar-item" onclick="navTo('inflation')"><span class="si">📉</span>Калькулятор инфляции</button>
 
-  <div class="sidebar-section">🏅 Достижения</div>
+  <div class="sidebar-section"><span>🏅 Достижения</span></div>
   <button class="sidebar-item" onclick="navTo('achievements')"><span class="si">🏅</span>Мои ачивки</button>
 
   <div class="sidebar-divider"></div>
-  <div class="sidebar-section">⚙️ Настройки</div>
+  <div class="sidebar-section"><span>⚙️ Настройки</span></div>
   <button class="sidebar-item" onclick="downloadBackup();closeSidebar()">
     <span class="si">⬇️</span>
     <span>
@@ -1002,6 +1013,11 @@ function renderHome() {
 
   // Sidebar
   document.getElementById('sb-total').textContent = fmt(totalRubVal)+' ₽ накоплено';
+  const avatar = document.getElementById('sb-avatar');
+  if (avatar) {
+    const av = totalRubVal >= 1000000 ? '👑' : totalRubVal >= 500000 ? '💎' : totalRubVal >= 100000 ? '🌱' : '🪙';
+    avatar.textContent = av;
+  }
 
   // Upcoming deposits
   const now = new Date(); now.setHours(0,0,0,0);
@@ -1235,9 +1251,26 @@ function renderGoals() {
 }
 
 // ── SIDEBAR & NAVIGATION ──────────────────────────────────
+function updateActiveSidebarItem(page) {
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('sb-active'));
+  const sidebarItems = document.querySelectorAll('.sidebar-item');
+  sidebarItems.forEach(el => {
+    const oc = el.getAttribute('onclick') || '';
+    if (
+      (page === 'savings' && oc.includes("navTo('savings')")) ||
+      (page === 'income' && oc.includes("navTo('income')")) ||
+      (page === 'goals' && oc.includes("navTo('goals')")) ||
+      (page === 'challenge' && oc.includes("navTo('challenge')")) ||
+      (page === 'achievements' && oc.includes("navTo('achievements')")) ||
+      (page === 'inflation' && oc.includes("navTo('inflation')"))
+    ) { el.classList.add('sb-active'); }
+  });
+}
+
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('sidebar-overlay').classList.add('open');
+  updateActiveSidebarItem(_currentPage);
   updateBackupDateDisplay();
   // Hide onboarding tooltip while sidebar is open
   const tip = document.getElementById('ob-tooltip');
@@ -1312,7 +1345,13 @@ function showPage(name) {
 
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   const navBtn = document.getElementById('nav-'+name);
-  if (navBtn) navBtn.classList.add('active');
+  if (navBtn) {
+    navBtn.classList.add('active');
+    navBtn.classList.remove('nav-bounce');
+    void navBtn.offsetWidth; // reflow to restart animation
+    navBtn.classList.add('nav-bounce');
+    setTimeout(() => navBtn.classList.remove('nav-bounce'), 400);
+  }
   const titleEl = document.getElementById('topbar-title');
   if (titleEl) titleEl.textContent = PAGE_TITLES[name] || 'Мои накопления';
 
@@ -2063,6 +2102,22 @@ function ensureFirstSaveDate(){if(!state._firstSaveDate){state._firstSaveDate=ne
 function trackDailyAdd(){const t=today();if(!state._dailyAdds)state._dailyAdds={};state._dailyAdds[t]=(state._dailyAdds[t]||0)+1;save();}
 function checkMolnia(){const t=today();return state._dailyAdds&&(state._dailyAdds[t]||0)>=3;}
 function checkSova(){return new Date().getHours()>=0&&new Date().getHours()<5;}
+
+
+function renderFreedom() {
+  // Freedom card removed from UI but keeping function to avoid errors
+}
+
+function showAchievementPopup(a) {
+  const popup = document.getElementById('ach-popup');
+  if (!popup) return;
+  document.getElementById('ach-popup-icon').textContent = a.icon;
+  document.getElementById('ach-popup-name').textContent = a.name;
+  document.getElementById('ach-popup-desc').textContent = a.desc;
+  popup.style.display = 'block';
+  startConfetti();
+  setTimeout(() => { popup.style.display='none'; stopConfetti(); }, 4000);
+}
 
 let unlockedSet=new Set();
 function checkAchievements(){
