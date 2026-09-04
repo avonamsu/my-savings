@@ -325,6 +325,13 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .ach-progress-bar { height:3px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; margin-top:3px; }
 .ach-progress-fill { height:100%; background:var(--accent); border-radius:2px; }
 .ach-badge { font-size:16px; flex-shrink:0; }
+  .ach-detail-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:600; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
+  .ach-detail-overlay.open { display:flex; }
+  .ach-detail-card { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; padding:24px 20px 48px; width:100%; max-width:480px; margin:0 auto; border-top:2px solid var(--accent); max-height:85dvh; overflow-y:auto; }
+  .ach-detail-icon { font-size:52px; text-align:center; margin-bottom:10px; }
+  .ach-detail-name { font-size:19px; font-weight:700; text-align:center; margin-bottom:6px; }
+  .ach-detail-desc { font-size:14px; color:var(--text-dim); text-align:center; margin-bottom:14px; line-height:1.5; }
+  .ach-detail-condition { background:var(--surface2); border-radius:var(--radius-sm); padding:12px 14px; font-size:13px; color:var(--text-dim); margin-bottom:14px; }
 
 /* INFLATION */
 .inf-year-row { display:flex; align-items:center; gap:10px; }
@@ -604,17 +611,81 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- INFLATION PAGE -->
 <div class="page" id="page-inflation">
+
+  <!-- Thermometer block -->
   <div class="chart-wrap">
     <div class="chart-header">
       <span class="chart-title">💸 КАК ОБЕСЦЕНЯТСЯ НАКОПЛЕНИЯ</span>
     </div>
-    <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;">
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;">
       <span style="font-size:13px;color:var(--text-dim);">Через</span>
-      <input type="range" id="inf-years" min="1" max="30" value="5" style="flex:1;accent-color:var(--accent);" oninput="updateInflationCalc()">
-      <span id="inf-years-label" style="font-size:15px;font-weight:700;color:var(--accent);min-width:40px;">5 лет</span>
+      <input type="range" id="inf-years" min="1" max="30" value="5"
+        style="flex:1;accent-color:var(--accent);" oninput="updateInflationCalc()">
+      <span id="inf-years-label" style="font-size:15px;font-weight:700;color:var(--accent);min-width:50px;">5 лет</span>
     </div>
-    <div id="inf-result" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <!-- Thermometer -->
+    <div style="display:flex;gap:16px;align-items:flex-end;margin-bottom:16px;">
+      <div style="flex:1;">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-weight:600;letter-spacing:.05em;">СЕЙЧАС</div>
+        <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;" id="inf-now-val">—</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">₽</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding-bottom:4px;">
+        <div id="inf-arrow" style="font-size:22px;">→</div>
+        <div id="inf-loss-pct" style="font-size:12px;font-weight:700;color:var(--danger);">—%</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-weight:600;letter-spacing:.05em;">ЧЕРЕЗ <span id="inf-years-label2">5</span> ЛЕТ</div>
+        <div id="inf-future-box" style="border-radius:var(--radius-sm);padding:12px;text-align:center;transition:background .3s;">
+          <div style="font-size:20px;font-weight:700;" id="inf-future-val">—</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">реальная ценность</div>
+        </div>
+      </div>
+    </div>
+    <!-- Thermometer bar -->
+    <div style="margin-bottom:8px;">
+      <div style="height:12px;background:rgba(255,255,255,0.06);border-radius:6px;overflow:hidden;position:relative;">
+        <div id="inf-thermo-fill" style="height:100%;border-radius:6px;transition:width .6s ease,background .3s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-top:4px;">
+        <span>0%</span><span id="inf-avg-label">ср. инфляция</span><span>100%</span>
+      </div>
+    </div>
+    <div id="inf-result" style="display:flex;flex-direction:column;gap:8px;"></div>
   </div>
+
+  <!-- Salary calculator -->
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span class="chart-title">💼 КАЛЬКУЛЯТОР ЗАРПЛАТЫ</span>
+    </div>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Сколько нужно зарабатывать через N лет чтобы покупательная способность не упала</div>
+    <div class="field"><label>ТЕКУЩАЯ ЗАРПЛАТА (₽)</label>
+      <input type="number" id="inf-salary" placeholder="100 000" inputmode="decimal" oninput="updateInflationCalc()">
+    </div>
+    <div id="inf-salary-result" style="display:none;"></div>
+  </div>
+
+  <!-- Mattress vs deposit comparison -->
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span class="chart-title">🛏 ПОД МАТРАСОМ VS ВКЛАД</span>
+    </div>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Сравни что будет с деньгами если просто хранить или положить под процент</div>
+    <div class="field-row">
+      <div class="field"><label>СУММА (₽)</label>
+        <input type="number" id="inf-compare-amount" placeholder="100 000" inputmode="decimal" oninput="updateInflationCalc()">
+      </div>
+      <div class="field"><label>СТАВКА (%)</label>
+        <input type="number" id="inf-compare-rate" placeholder="18" inputmode="decimal" oninput="updateInflationCalc()">
+      </div>
+    </div>
+    <div id="inf-compare-result" style="display:none;"></div>
+  </div>
+
+  <!-- Goal with inflation -->
   <div class="chart-wrap">
     <div class="chart-header">
       <span class="chart-title">📊 СКОЛЬКО НУЖНО НАКОПИТЬ С УЧЁТОМ ИНФЛЯЦИИ</span>
@@ -623,110 +694,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <input type="number" id="inf-goal" placeholder="1 000 000" inputmode="decimal" oninput="updateInflationCalc()">
     </div>
     <div id="inf-goal-result"></div>
-  </div>
-</div>
-
-<!-- CHALLENGE PAGE -->
-<div class="page" id="page-challenge">
-  <div id="challenge-list-view-page">
-    <div class="tab-switch" id="ch-tabs">
-      <button class="active" id="ch-tab-active" onclick="switchChTab('active')">Активные</button>
-      <button id="ch-tab-archive" onclick="switchChTab('archive')">Архив</button>
-    </div>
-    <div id="ch-active-view">
-      <button class="add-btn" onclick="showNewChallengeFormPage()">＋ Создать новый челлендж</button>
-      <div id="challenges-container-page" style="display:flex;flex-direction:column;gap:12px;margin-top:4px;"></div>
-    </div>
-    <div id="ch-archive-view" style="display:none;">
-      <div id="challenges-archive-page" style="display:flex;flex-direction:column;gap:12px;"></div>
-      <div id="ch-archive-empty" class="empty" style="display:none;"><div class="empty-icon">📦</div><p>Завершённые челленджи появятся здесь</p></div>
-    </div>
-  </div>
-  <div id="challenge-form-view-page" style="display:none;flex-direction:column;gap:14px;">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <button onclick="hideChallengeFormPage()" style="background:none;border:none;color:var(--accent);font-size:22px;cursor:pointer;">←</button>
-      <span style="font-size:16px;font-weight:700;">Новый челлендж</span>
-    </div>
-    <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:14px;">
-      <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="ch-name-p" placeholder="Например: На отпуск в Турции"></div>
-      <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="ch-goal-p" placeholder="100 000" inputmode="decimal" oninput="updateChallengePreviewPage()"></div>
-      <div class="field"><label>СРОК</label>
-        <select id="ch-period-p" onchange="updateChallengePreviewPage()">
-          <option value="30">30 дней</option>
-          <option value="60">60 дней</option>
-          <option value="90" selected>3 месяца</option>
-          <option value="180">6 месяцев</option>
-          <option value="365">1 год</option>
-        </select>
-      </div>
-      <div class="field"><label>РАЗМЕР ЯЧЕЕК</label>
-        <select id="ch-cell-mode-p">
-          <option value="random">Случайные суммы (интереснее)</option>
-          <option value="equal">Равные части</option>
-        </select>
-      </div>
-      <div class="field"><label>ЭМОДЗИ-ИКОНКА</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="ch-emoji-picker-p">
-          <button type="button" onclick="selectEmoji('🎯','p')" class="emoji-pick-btn selected" id="epb-p-target">🎯</button>
-          <button type="button" onclick="selectEmoji('✈️','p')" class="emoji-pick-btn" id="epb-p-plane">✈️</button>
-          <button type="button" onclick="selectEmoji('🏠','p')" class="emoji-pick-btn" id="epb-p-home">🏠</button>
-          <button type="button" onclick="selectEmoji('🚗','p')" class="emoji-pick-btn" id="epb-p-car">🚗</button>
-          <button type="button" onclick="selectEmoji('💍','p')" class="emoji-pick-btn" id="epb-p-ring">💍</button>
-          <button type="button" onclick="selectEmoji('👗','p')" class="emoji-pick-btn" id="epb-p-dress">👗</button>
-          <button type="button" onclick="selectEmoji('📱','p')" class="emoji-pick-btn" id="epb-p-phone">📱</button>
-          <button type="button" onclick="selectEmoji('🎮','p')" class="emoji-pick-btn" id="epb-p-game">🎮</button>
-          <button type="button" onclick="selectEmoji('🌴','p')" class="emoji-pick-btn" id="epb-p-palm">🌴</button>
-          <button type="button" onclick="selectEmoji('🎓','p')" class="emoji-pick-btn" id="epb-p-grad">🎓</button>
-          <button type="button" onclick="selectEmoji('💄','p')" class="emoji-pick-btn" id="epb-p-lipstick">💄</button>
-          <button type="button" onclick="selectEmoji('🐱','p')" class="emoji-pick-btn" id="epb-p-cat">🐱</button>
-        </div>
-        <input type="hidden" id="ch-emoji-p" value="🎯">
-      </div>
-      <div class="field"><label>ЦВЕТ</label>
-        <div style="display:flex;gap:8px;">
-          <button type="button" onclick="selectColor('#4ECDC4','p')" class="color-pick-btn selected" id="cpb-p-4ECDC4" style="background:#4ECDC4;" title="мятный"></button>
-          <button type="button" onclick="selectColor('#FF6B9D','p')" class="color-pick-btn" id="cpb-p-FF6B9D" style="background:#FF6B9D;" title="розовый"></button>
-          <button type="button" onclick="selectColor('#FFB347','p')" class="color-pick-btn" id="cpb-p-FFB347" style="background:#FFB347;" title="оранжевый"></button>
-          <button type="button" onclick="selectColor('#7B68EE','p')" class="color-pick-btn" id="cpb-p-7B68EE" style="background:#7B68EE;" title="фиолетовый"></button>
-          <button type="button" onclick="selectColor('#5BC8AF','p')" class="color-pick-btn" id="cpb-p-5BC8AF" style="background:#5BC8AF;" title="зелёный"></button>
-          <button type="button" onclick="selectColor('#64B5F6','p')" class="color-pick-btn" id="cpb-p-64B5F6" style="background:#64B5F6;" title="синий"></button>
-        </div>
-        <input type="hidden" id="ch-color-p" value="#4ECDC4">
-      </div>
-      <div class="calc-preview" id="ch-preview-p" style="display:none;"></div>
-      <button class="btn-primary" onclick="createChallengeFromPage()">Создать челлендж</button>
-    </div>
-  </div>
-</div>
-
-<!-- EDIT CHALLENGE MODAL -->
-<div class="modal-overlay" id="edit-challenge-modal" onclick="if(event.target===this)closeEditChallenge()">
-  <div class="modal">
-    <div class="modal-title">Изменить челлендж</div>
-    <input type="hidden" id="ech-id">
-    <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="ech-name" placeholder="Название"></div>
-    <div class="field"><label>НОВАЯ ЦЕЛЬ (₽) — ячейки пересчитаются</label><input type="number" id="ech-goal" placeholder="100 000" inputmode="decimal" oninput="updateEditChallengePreview()"></div>
-    <div class="field"><label>СРОК</label>
-      <select id="ech-period">
-        <option value="30">30 дней</option>
-        <option value="60">60 дней</option>
-        <option value="90">3 месяца</option>
-        <option value="180">6 месяцев</option>
-        <option value="365">1 год</option>
-      </select>
-    </div>
-    <div class="field"><label>РАЗМЕР ЯЧЕЕК</label>
-      <select id="ech-cell-mode">
-        <option value="random">Случайные суммы</option>
-        <option value="equal">Равные части</option>
-      </select>
-    </div>
-    <div class="calc-preview" id="ech-preview" style="display:none;"></div>
-    <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">⚠️ Уже отмеченные ячейки сохранятся. Если изменишь сумму — незакрытые ячейки пересчитаются.</div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeEditChallenge()">Отмена</button>
-      <button class="btn-primary" onclick="saveEditChallenge()">Сохранить</button>
-    </div>
   </div>
 </div>
 
@@ -974,17 +941,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
 </div>
 
-<!-- ACH DETAIL POPUP -->
-<div class="ach-detail-overlay" id="ach-detail-overlay" onclick="if(event.target===this)closeAchDetail()">
-  <div class="ach-detail-card">
-    <div class="ach-detail-icon" id="ach-detail-icon">🏅</div>
-    <div class="ach-detail-name" id="ach-detail-name"></div>
-    <div class="ach-detail-desc" id="ach-detail-desc"></div>
-    <div class="ach-detail-condition"><strong>Условие: </strong><span id="ach-detail-cond"></span></div>
-    <div style="text-align:center;font-size:14px;font-weight:600;" id="ach-detail-status"></div>
-    <button onclick="closeAchDetail()" style="margin-top:16px;width:100%;background:var(--surface2);border:none;border-radius:var(--radius-sm);color:var(--text-dim);font-size:15px;padding:12px;cursor:pointer;">Закрыть</button>
-  </div>
-</div>
+
 
 <!-- ACHIEVEMENT POPUP -->
 <div id="ach-popup" style="display:none;position:fixed;inset:0;z-index:400;pointer-events:none;">
@@ -2801,74 +2758,119 @@ function renderInflationPage() {
 function updateInflationCalc() {
   const years = parseInt(document.getElementById('inf-years')?.value) || 5;
   const label = document.getElementById('inf-years-label');
-  if (label) label.textContent = years + ' ' + plural(years,'год','года','лет');
-
-  const currentTotal = totalRub(state.savings);
+  const label2 = document.getElementById('inf-years-label2');
+  if(label) label.textContent = years + ' ' + plural(years,'год','года','лет');
+  if(label2) label2.textContent = years;
 
   const horizonYears = Math.min(years, Object.keys(ROSSTAT_INFLATION).length);
   const avgInf = avgInflation(horizonYears);
   const rate = avgInf / 100;
+  const currentTotal = totalRub(state.savings);
 
-  const realValue = currentTotal / Math.pow(1 + rate, years);
-  const loss = currentTotal - realValue;
-  const lossPct = currentTotal > 0 ? (loss/currentTotal*100) : 0;
+  // Color based on inflation level
+  const infColor = avgInf > 10 ? '#FF6B6B' : avgInf > 7 ? '#FFB347' : '#4ECDC4';
 
+  // Thermometer
+  const realValue = currentTotal > 0 ? currentTotal / Math.pow(1+rate, years) : 0;
+  const lossPct = currentTotal > 0 ? ((currentTotal-realValue)/currentTotal*100) : 0;
+  const fillPct = Math.min(100, lossPct);
+
+  const nowEl = document.getElementById('inf-now-val');
+  const futureEl = document.getElementById('inf-future-val');
+  const futureBox = document.getElementById('inf-future-box');
+  const thermoEl = document.getElementById('inf-thermo-fill');
+  const lossPctEl = document.getElementById('inf-loss-pct');
+  const avgLabel = document.getElementById('inf-avg-label');
+
+  if(nowEl) nowEl.textContent = currentTotal > 0 ? fmt(Math.round(currentTotal)) : '—';
+  if(futureEl) futureEl.textContent = currentTotal > 0 ? fmt(Math.round(realValue)) : '—';
+  if(futureBox) futureBox.style.background = currentTotal > 0
+    ? `rgba(${avgInf>10?'255,107,107':avgInf>7?'255,179,71':'78,205,196'},0.15)` : 'var(--surface2)';
+  if(thermoEl){ thermoEl.style.width=fillPct+'%'; thermoEl.style.background=infColor; }
+  if(lossPctEl){ lossPctEl.textContent=currentTotal>0?'-'+lossPct.toFixed(1)+'%':''; lossPctEl.style.color=infColor; }
+  if(avgLabel) avgLabel.textContent = 'ср. инфляция '+avgInf.toFixed(1)+'%';
+
+  // Result cards
   const resultEl = document.getElementById('inf-result');
-  if (!resultEl) return;
-  resultEl.innerHTML = `
-    <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">Среднегодовая инфляция за ${horizonYears} лет — ${avgInf.toFixed(1)}% (Росстат)</div>` + `
-    <div class="inf-result-row">
-      <div>
-        <div class="inf-result-label">Сейчас</div>
+  if(resultEl) {
+    resultEl.innerHTML = currentTotal > 0 ? `
+      <div style="background:rgba(${avgInf>10?'255,107,107':avgInf>7?'255,179,71':'78,205,196'},0.1);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;">
+        <span style="color:var(--text-dim);">Потеря покупательной способности:</span>
+        <span style="font-weight:700;color:${infColor};float:right;">${lossPct.toFixed(1)}%</span>
       </div>
-      <div class="inf-result-val" style="color:var(--accent)">${fmt(currentTotal)} ₽</div>
-    </div>
-    <div class="inf-result-row">
-      <div>
-        <div class="inf-result-label">Через ${years} ${plural(years,'год','года','лет')} в сегодняшних ценах</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Покупательная способность упадёт</div>
-      </div>
-      <div class="inf-result-val" style="color:var(--danger)">${fmt(realValue)} ₽</div>
-    </div>
-    <div class="inf-result-row">
-      <div>
-        <div class="inf-result-label">Потеря покупательной способности</div>
-      </div>
-      <div class="inf-result-val" style="color:var(--warn)">−${fmt(loss)} ₽ (${lossPct.toFixed(0)}%)</div>
-    </div>
-    <div class="inf-result-row">
-      <div>
-        <div class="inf-result-label">Нужно накопить чтобы не потерять</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Сколько нужно сейчас при той же инфляции</div>
-      </div>
-      <div class="inf-result-val" style="color:var(--accent)">${fmt(currentTotal * Math.pow(1+rate, years))} ₽</div>
-    </div>`;
+      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;">
+        <span style="color:var(--text-dim);">Обесценится на:</span>
+        <span style="font-weight:700;color:var(--danger);float:right;">−${fmt(Math.round(currentTotal-realValue))} ₽</span>
+      </div>` : `<div style="font-size:12px;color:var(--text-dim);">Добавь счета — увидишь как обесценятся твои накопления</div>`;
+  }
 
-  // Goal calculator
-  const goalRaw = parseFloat(document.getElementById('inf-goal')?.value) || 0;
-  const goalEl = document.getElementById('inf-goal-result');
-  if (goalRaw > 0) {
-    const needed = goalRaw * Math.pow(1 + rate, years);
-    const monthly = needed / (years * 12);
-    goalEl.innerHTML = `
-      <div class="inf-result-row">
-        <div><div class="inf-result-label">Нужно накопить с учётом инфляции</div></div>
-        <div class="inf-result-val" style="color:var(--accent)">${fmt(needed)} ₽</div>
-      </div>
-      <div class="inf-result-row">
-        <div><div class="inf-result-label">Примерно в месяц</div></div>
-        <div class="inf-result-val">${fmt(monthly)} ₽</div>
-      </div>
-      <div style="font-size:11px;color:var(--text-dim);padding:8px 4px;">
-        Без учёта процентов по вкладам и инвестициям — реальная сумма взноса будет меньше.
-      </div>`;
-  } else {
-    goalEl.innerHTML = '<div style="font-size:13px;color:var(--text-dim);padding:8px 4px;">Введи цель выше — покажу сколько нужно накопить с учётом инфляции.</div>';
+  // Salary calculator
+  const salary = parseFloat(document.getElementById('inf-salary')?.value) || 0;
+  const salaryResultEl = document.getElementById('inf-salary-result');
+  if(salaryResultEl) {
+    if(salary > 0) {
+      salaryResultEl.style.display = '';
+      const needed = salary * Math.pow(1+rate, years);
+      const diff = needed - salary;
+      salaryResultEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="inf-result-row"><span class="inf-result-label">Сейчас</span><span class="inf-result-val">${fmt(Math.round(salary))} ₽</span></div>
+          <div class="inf-result-row"><span class="inf-result-label">Через ${years} ${plural(years,'год','года','лет')}</span><span class="inf-result-val" style="color:var(--accent);">${fmt(Math.round(needed))} ₽</span></div>
+          <div class="inf-result-row"><span class="inf-result-label">Нужно прибавки</span><span class="inf-result-val" style="color:var(--warn);">+${fmt(Math.round(diff))} ₽</span></div>
+        </div>`;
+    } else salaryResultEl.style.display = 'none';
+  }
+
+  // Mattress vs deposit
+  const compareAmt = parseFloat(document.getElementById('inf-compare-amount')?.value) || 0;
+  const compareRate = parseFloat(document.getElementById('inf-compare-rate')?.value) || 0;
+  const compareResultEl = document.getElementById('inf-compare-result');
+  if(compareResultEl) {
+    if(compareAmt > 0) {
+      compareResultEl.style.display = '';
+      const mattress = compareAmt / Math.pow(1+rate, years); // real value under mattress
+      const deposit = compareAmt * Math.pow(1+compareRate/100, years); // nominal with deposit
+      const depositReal = deposit / Math.pow(1+rate, years); // real value with deposit
+      const win = depositReal - mattress;
+      compareResultEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="inf-result-row">
+            <span class="inf-result-label">🛏 Под матрасом (реально)</span>
+            <span class="inf-result-val" style="color:var(--danger);">${fmt(Math.round(mattress))} ₽</span>
+          </div>
+          <div class="inf-result-row">
+            <span class="inf-result-label">🏦 Вклад ${compareRate}% (номинально)</span>
+            <span class="inf-result-val">${fmt(Math.round(deposit))} ₽</span>
+          </div>
+          <div class="inf-result-row">
+            <span class="inf-result-label">🏦 Вклад (реально)</span>
+            <span class="inf-result-val" style="color:${depositReal>mattress?'var(--accent)':'var(--danger)'};">${fmt(Math.round(depositReal))} ₽</span>
+          </div>
+          <div style="background:${win>0?'rgba(78,205,196,0.1)':'rgba(255,107,107,0.1)'};border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;margin-top:4px;">
+            Вклад ${win>0?'выгоднее на':'проигрывает на'} <strong style="color:${win>0?'var(--accent)':'var(--danger)'};">${fmt(Math.abs(Math.round(win)))} ₽</strong>
+          </div>
+        </div>`;
+    } else compareResultEl.style.display = 'none';
+  }
+
+  // Goal with inflation (existing)
+  const goalInput = document.getElementById('inf-goal');
+  const goalResultEl = document.getElementById('inf-goal-result');
+  if(goalResultEl && goalInput) {
+    const goal = parseFloat(goalInput.value) || 0;
+    if(goal > 0) {
+      const needed = goal * Math.pow(1+rate, years);
+      goalResultEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="inf-result-row"><span class="inf-result-label">Цель в сегодняшних ценах</span><span class="inf-result-val">${fmt(Math.round(goal))} ₽</span></div>
+          <div class="inf-result-row"><span class="inf-result-label">Нужно накопить с учётом инфляции</span><span class="inf-result-val" style="color:var(--accent);">${fmt(Math.round(needed))} ₽</span></div>
+          <div class="inf-result-row"><span class="inf-result-label">Разница</span><span class="inf-result-val" style="color:var(--warn);">+${fmt(Math.round(needed-goal))} ₽</span></div>
+        </div>`;
+    } else goalResultEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">Введи цель — покажу сколько нужно накопить</div>';
   }
 }
 
 
-// ── CHALLENGE SAVINGS ─────────────────────────────────────
 function showNewChallengeForm() {
   document.getElementById('challenge-list-view').style.display = 'none';
   document.getElementById('challenge-form-view').style.display = 'flex';
@@ -3706,5 +3708,17 @@ function resetOnboarding() { forceStartOnboarding(); }
 setTimeout(initOnboarding, 600);
 checkChNotifications();
 </script>
+<!-- ACH DETAIL POPUP -->
+<div class="ach-detail-overlay" id="ach-detail-overlay" onclick="if(event.target===this)closeAchDetail()">
+  <div class="ach-detail-card">
+    <div class="ach-detail-icon" id="ach-detail-icon">🏅</div>
+    <div class="ach-detail-name" id="ach-detail-name"></div>
+    <div class="ach-detail-desc" id="ach-detail-desc"></div>
+    <div class="ach-detail-condition"><strong>Условие: </strong><span id="ach-detail-cond"></span></div>
+    <div style="text-align:center;font-size:14px;font-weight:600;" id="ach-detail-status"></div>
+    <button onclick="closeAchDetail()" style="margin-top:16px;width:100%;background:var(--surface2);border:none;border-radius:var(--radius-sm);color:var(--text-dim);font-size:15px;padding:12px;cursor:pointer;">Закрыть</button>
+  </div>
+</div>
+
 </body>
 </html>
