@@ -2033,13 +2033,13 @@ const ROSSTAT_INFLATION = {
 
 
 function initGoalDrag() {
-  // Only drag within uncovered goals (first group)
   const allItems = document.querySelectorAll('#goals-list .goal-item');
   let dragEl = null;
 
   allItems.forEach(item => {
     item.setAttribute('draggable', 'true');
 
+    // Desktop drag
     item.addEventListener('dragstart', e => {
       dragEl = item;
       setTimeout(() => item.classList.add('dragging'), 0);
@@ -2059,10 +2059,8 @@ function initGoalDrag() {
     item.addEventListener('drop', e => {
       e.preventDefault();
       if (!dragEl || dragEl === item) return;
-      const fromId = dragEl.dataset.id;
-      const toId = item.dataset.id;
-      const fromIdx = state.goals.findIndex(g => g.id === fromId);
-      const toIdx   = state.goals.findIndex(g => g.id === toId);
+      const fromIdx = state.goals.findIndex(g => g.id === dragEl.dataset.id);
+      const toIdx   = state.goals.findIndex(g => g.id === item.dataset.id);
       if (fromIdx < 0 || toIdx < 0) return;
       const moved = state.goals.splice(fromIdx, 1)[0];
       state.goals.splice(toIdx, 0, moved);
@@ -2072,24 +2070,43 @@ function initGoalDrag() {
     // Touch drag
     const handle = item.querySelector('.drag-handle');
     if (!handle) return;
-    let holdTimer = null, touchClone = null, touchStartY = 0, isDragging = false;
+
+    let holdTimer = null;
+    let touchClone = null;
+    let touchStartY = 0;
+    let isDragging = false;
+
+    function cleanupDrag() {
+      isDragging = false;
+      clearTimeout(holdTimer);
+      holdTimer = null;
+      if (touchClone && touchClone.parentNode) {
+        touchClone.parentNode.removeChild(touchClone);
+      }
+      touchClone = null;
+      item.classList.remove('dragging');
+      allItems.forEach(i => i.classList.remove('drag-over'));
+    }
 
     handle.addEventListener('touchstart', e => {
       touchStartY = e.touches[0].clientY;
       holdTimer = setTimeout(() => {
         isDragging = true;
         touchClone = item.cloneNode(true);
-        touchClone.style.cssText = 'position:fixed;left:16px;right:16px;z-index:999;opacity:0.9;pointer-events:none;background:var(--surface2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);';
-        touchClone.style.top = item.getBoundingClientRect().top + 'px';
+        const rect = item.getBoundingClientRect();
+        touchClone.style.cssText = `position:fixed;left:${rect.left}px;width:${rect.width}px;z-index:999;opacity:0.9;pointer-events:none;background:var(--surface2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);top:${rect.top}px;`;
         document.body.appendChild(touchClone);
         item.classList.add('dragging');
         if (navigator.vibrate) navigator.vibrate(30);
-      }, 150);
+      }, 200);
     }, { passive: true });
 
     handle.addEventListener('touchmove', e => {
       if (!isDragging) {
-        if (Math.abs(e.touches[0].clientY - touchStartY) > 8) { clearTimeout(holdTimer); holdTimer = null; }
+        if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
+          clearTimeout(holdTimer);
+          holdTimer = null;
+        }
         return;
       }
       e.preventDefault();
@@ -2101,31 +2118,31 @@ function initGoalDrag() {
       touchStartY = y;
       allItems.forEach(i => i.classList.remove('drag-over'));
       allItems.forEach(i => {
+        if (i === item) return;
         const r = i.getBoundingClientRect();
-        if (y > r.top && y < r.bottom && i !== item) i.classList.add('drag-over');
+        if (y > r.top && y < r.bottom) i.classList.add('drag-over');
       });
     }, { passive: false });
 
     handle.addEventListener('touchend', e => {
-      clearTimeout(holdTimer);
-      if (!isDragging) return;
-      isDragging = false;
-      if (touchClone) { document.body.removeChild(touchClone); touchClone = null; }
-      item.classList.remove('dragging');
+      if (!isDragging) { clearTimeout(holdTimer); holdTimer = null; return; }
       const over = document.querySelector('#goals-list .goal-item.drag-over');
       if (over && over !== item) {
-        const fromId = item.dataset.id;
-        const toId = over.dataset.id;
-        const fromIdx = state.goals.findIndex(g => g.id === fromId);
-        const toIdx   = state.goals.findIndex(g => g.id === toId);
+        const fromIdx = state.goals.findIndex(g => g.id === item.dataset.id);
+        const toIdx   = state.goals.findIndex(g => g.id === over.dataset.id);
         if (fromIdx >= 0 && toIdx >= 0) {
           const moved = state.goals.splice(fromIdx, 1)[0];
           state.goals.splice(toIdx, 0, moved);
           save();
         }
       }
-      allItems.forEach(i => i.classList.remove('drag-over'));
+      cleanupDrag();
       renderGoals();
+    }, { passive: true });
+
+    // Safety: cleanup if touch is cancelled
+    handle.addEventListener('touchcancel', () => {
+      cleanupDrag();
     }, { passive: true });
   });
 }
