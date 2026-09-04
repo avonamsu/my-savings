@@ -4842,6 +4842,36 @@ function createPiggyBank() {
   hideChallengeFormPage();
 }
 
+
+function openPiggyEdit(id) {
+  const pg = (state.piggyBanks||[]).find(p=>p.id===id);
+  if (!pg) return;
+  document.getElementById('pg-edit-id').value = id;
+  document.getElementById('pg-edit-name').value = pg.name;
+  document.getElementById('pg-edit-goal').value = pg.goal;
+  document.getElementById('pg-edit-deadline').value = pg.deadline||'';
+  document.getElementById('pg-edit-modal').classList.add('open');
+}
+
+function closePiggyEdit() {
+  document.getElementById('pg-edit-modal').classList.remove('open');
+}
+
+function savePiggyEdit() {
+  const id = document.getElementById('pg-edit-id').value;
+  const pg = (state.piggyBanks||[]).find(p=>p.id===id);
+  if (!pg) return;
+  const name = document.getElementById('pg-edit-name').value.trim();
+  const goal = parseFloat(document.getElementById('pg-edit-goal').value||0);
+  if (!name || !goal || goal<=0) return;
+  pg.name = name;
+  pg.goal = goal;
+  pg.deadline = document.getElementById('pg-edit-deadline').value||null;
+  save();
+  closePiggyEdit();
+  renderChallengesPage();
+}
+
 function openPiggyDeposit(id) {
   _piggyDepositId = id;
   const pg = (state.piggyBanks||[]).find(p=>p.id===id);
@@ -4903,11 +4933,12 @@ function renderPiggyCard(pg) {
       <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${color};"></div></div>
     </div>
     ${last3.length ? `<div class="pg-history">${last3.map(d=>`<div class="pg-history-item"><span>${d.date}</span><span style="color:var(--accent);">+${fmt(d.amount)} ₽</span></div>`).join('')}</div>` : ''}
-    <div style="margin-top:10px;display:flex;gap:8px;">
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
       ${done
         ? `<span style="color:${color};font-weight:700;font-size:13px;">🎉 Цель достигнута!</span>`
         : `<button class="pg-add-btn" style="background:${color};" onclick="openPiggyDeposit('${pg.id}')">＋ Пополнить</button>`
       }
+      <button onclick="openPiggyEdit('${pg.id}')" style="background:none;border:none;color:var(--accent);opacity:0.7;cursor:pointer;font-size:13px;margin-left:auto;">Изменить</button>
     </div>
   </div>`;
 }
@@ -5070,6 +5101,7 @@ function renderChCard(ch) {
                 `<span style="color:var(--warn);font-size:11px;">⚠ Нужно ускориться</span>`;
 
   return `<div class="ch-card" data-ch="${ch.id}" style="border-color:${color}22;">
+      <div style="margin-bottom:4px;"><span class="pg-type-badge challenge">🎯 Челлендж</span></div>
       <div class="ch-header" onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-left:3px solid ${color};padding-left:12px;">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
           <span style="font-size:22px;">${emoji}</span>
@@ -5645,6 +5677,27 @@ function resetOnboarding() { forceStartOnboarding(); }
 setTimeout(initOnboarding, 600);
 checkChNotifications();
 </script>
+<!-- PIGGY EDIT MODAL -->
+<div class="modal-overlay" id="pg-edit-modal" onclick="if(event.target===this)closePiggyEdit()">
+  <div class="modal">
+    <div class="modal-title">Изменить копилку</div>
+    <input type="hidden" id="pg-edit-id">
+    <div class="field"><label>НАЗВАНИЕ</label>
+      <input type="text" id="pg-edit-name" placeholder="Название">
+    </div>
+    <div class="field"><label>ЦЕЛЬ (₽)</label>
+      <input type="number" id="pg-edit-goal" placeholder="100 000" inputmode="decimal">
+    </div>
+    <div class="field"><label>ДЕДЛАЙН (необязательно)</label>
+      <input type="date" id="pg-edit-deadline">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closePiggyEdit()">Отмена</button>
+      <button class="btn-primary" onclick="savePiggyEdit()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <!-- PIGGY DEPOSIT MODAL -->
 <div class="modal-overlay" id="pg-deposit-modal" onclick="if(event.target===this)closePiggyDeposit()">
   <div class="modal">
