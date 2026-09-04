@@ -591,6 +591,77 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 </div>
 
+<!-- CHALLENGE PAGE -->
+<div class="page" id="page-challenge">
+  <div id="challenge-list-view-page">
+    <div class="tab-switch" id="ch-tabs">
+      <button class="active" id="ch-tab-active" onclick="switchChTab('active')">Активные</button>
+      <button id="ch-tab-archive" onclick="switchChTab('archive')">Архив</button>
+    </div>
+    <div id="ch-active-view">
+      <button class="add-btn" onclick="showNewChallengeFormPage()">＋ Создать новый челлендж</button>
+      <div id="challenges-container-page" style="display:flex;flex-direction:column;gap:12px;margin-top:4px;"></div>
+    </div>
+    <div id="ch-archive-view" style="display:none;">
+      <div id="challenges-archive-page" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <div id="ch-archive-empty" class="empty" style="display:none;"><div class="empty-icon">📦</div><p>Завершённые челленджи появятся здесь</p></div>
+    </div>
+  </div>
+  <div id="challenge-form-view-page" style="display:none;flex-direction:column;gap:14px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="hideChallengeFormPage()" style="background:none;border:none;color:var(--accent);font-size:22px;cursor:pointer;">←</button>
+      <div class="modal-title" style="margin:0;">Новый челлендж</div>
+    </div>
+    <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="ch-name-p" placeholder="Например: На отпуск в Турции"></div>
+    <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="ch-goal-p" placeholder="100 000" inputmode="decimal" oninput="updateChallengePreviewPage()"></div>
+    <div class="field"><label>СРОК</label>
+      <select id="ch-period-p">
+        <option value="30">1 месяц</option>
+        <option value="60">2 месяца</option>
+        <option value="90" selected>3 месяца</option>
+        <option value="180">6 месяцев</option>
+        <option value="365">1 год</option>
+      </select>
+    </div>
+    <div class="field"><label>РАЗМЕР ЯЧЕЕК</label>
+      <select id="ch-cell-mode-p">
+        <option value="random">Случайные суммы (интереснее)</option>
+        <option value="equal">Равные части</option>
+      </select>
+    </div>
+    <div class="field"><label>ЭМОДЗИ-ИКОНКА</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" onclick="selectEmoji('🎯','p')" class="emoji-pick-btn selected" id="epb-p-target">🎯</button>
+        <button type="button" onclick="selectEmoji('✈️','p')" class="emoji-pick-btn" id="epb-p-plane">✈️</button>
+        <button type="button" onclick="selectEmoji('🏠','p')" class="emoji-pick-btn" id="epb-p-home">🏠</button>
+        <button type="button" onclick="selectEmoji('🚗','p')" class="emoji-pick-btn" id="epb-p-car">🚗</button>
+        <button type="button" onclick="selectEmoji('💍','p')" class="emoji-pick-btn" id="epb-p-ring">💍</button>
+        <button type="button" onclick="selectEmoji('👗','p')" class="emoji-pick-btn" id="epb-p-dress">👗</button>
+        <button type="button" onclick="selectEmoji('📱','p')" class="emoji-pick-btn" id="epb-p-phone">📱</button>
+        <button type="button" onclick="selectEmoji('🎮','p')" class="emoji-pick-btn" id="epb-p-game">🎮</button>
+        <button type="button" onclick="selectEmoji('🌴','p')" class="emoji-pick-btn" id="epb-p-palm">🌴</button>
+        <button type="button" onclick="selectEmoji('🎓','p')" class="emoji-pick-btn" id="epb-p-grad">🎓</button>
+        <button type="button" onclick="selectEmoji('💄','p')" class="emoji-pick-btn" id="epb-p-lipstick">💄</button>
+        <button type="button" onclick="selectEmoji('🐱','p')" class="emoji-pick-btn" id="epb-p-cat">🐱</button>
+      </div>
+      <input type="hidden" id="ch-emoji-p" value="🎯">
+    </div>
+    <div class="field"><label>ЦВЕТ</label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" onclick="selectColor('#4ECDC4','p')" class="color-pick-btn selected" id="cpb-p-4ECDC4" style="background:#4ECDC4;"></button>
+        <button type="button" onclick="selectColor('#FF6B9D','p')" class="color-pick-btn" id="cpb-p-FF6B9D" style="background:#FF6B9D;"></button>
+        <button type="button" onclick="selectColor('#FFB347','p')" class="color-pick-btn" id="cpb-p-FFB347" style="background:#FFB347;"></button>
+        <button type="button" onclick="selectColor('#7B68EE','p')" class="color-pick-btn" id="cpb-p-7B68EE" style="background:#7B68EE;"></button>
+        <button type="button" onclick="selectColor('#5BC8AF','p')" class="color-pick-btn" id="cpb-p-5BC8AF" style="background:#5BC8AF;"></button>
+        <button type="button" onclick="selectColor('#64B5F6','p')" class="color-pick-btn" id="cpb-p-64B5F6" style="background:#64B5F6;"></button>
+      </div>
+      <input type="hidden" id="ch-color-p" value="#4ECDC4">
+    </div>
+    <div class="calc-preview" id="ch-preview-p" style="display:none;"></div>
+    <button class="btn-primary" onclick="createChallengeFromPage()">Создать челлендж</button>
+  </div>
+</div>
+
 <!-- ACHIEVEMENTS PAGE -->
 <div class="page" id="page-achievements">
   <div class="hero">
