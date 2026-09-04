@@ -493,13 +493,43 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div class="hero">
     <div class="hero-label">Пассивный доход в месяц</div>
     <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
+    <div class="hero-sub" id="income-hero-sub" style="margin-top:6px;">0 ₽/год</div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <div class="dash-card" style="flex:1;text-align:left;padding:12px 14px;">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ДОХОДНОСТЬ</div>
+      <div id="income-yield" style="font-size:16px;font-weight:700;color:var(--accent);">—</div>
+    </div>
+    <div class="dash-card" style="flex:1;text-align:left;padding:12px 14px;">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">РЕАЛЬНАЯ (−инфл.)</div>
+      <div id="income-real-yield" style="font-size:16px;font-weight:700;">—</div>
+    </div>
+  </div>
+  <div id="income-breakdown" style="display:none;" class="chart-wrap">
+    <div class="chart-title" style="margin-bottom:10px;">📊 РАЗБИВКА ПО ТИПАМ</div>
+    <div id="income-breakdown-list"></div>
+  </div>
+  <div id="income-forecast" style="display:none;" class="calc-preview">
+    <div id="income-forecast-text"></div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <input type="text" id="income-search" placeholder="🔍 Поиск..." oninput="renderIncome()"
+      style="flex:1;background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:9px 12px;outline:none;">
+    <select id="income-sort" onchange="renderIncome()"
+      style="background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text-dim);font-size:13px;padding:9px 10px;outline:none;-webkit-appearance:none;cursor:pointer;">
+      <option value="default">По умолчанию</option>
+      <option value="amount">По сумме</option>
+      <option value="type">По типу</option>
+    </select>
   </div>
   <div class="section-title">Источники дохода</div>
-  <div class="card" id="income-list">
+  <div id="income-list">
     <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
   </div>
-  <button class="add-btn" onclick="editingId=null;openModal('income')">＋ Добавить источник дохода</button>
-
+  <div style="display:flex;gap:10px;">
+    <button class="add-btn" onclick="editingId=null;switchIncomeTab('linked');openModal('income')" style="flex:1;">＋ Привязать вклад</button>
+    <button class="add-btn" onclick="editingId=null;switchIncomeTab('manual');openModal('income')" style="flex:1;">＋ Вручную</button>
+  </div>
   <div class="chart-wrap">
     <div class="chart-header">
       <span class="chart-title">📈 РОСТ ПАССИВНОГО ДОХОДА</span>
@@ -1239,31 +1269,93 @@ function initSavingsSwipe() {
 
 
 function renderIncome() {
-  const total=state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0);
-  document.getElementById('total-income-display').innerHTML=`${fmt(total)} <span>₽</span>`;
-  const el=document.getElementById('income-list');
-  if(!state.income.length){el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`;return;}
-  el.innerHTML=state.income.map(x=>{
+  const total = state.income.reduce((s,x) => s+calcIncomeAmountRub(x), 0);
+  const totalYearly = total * 12;
+  const totalSavings = state.savings.reduce((s,x) => s+(x.excluded?0:getSavingCurrentAmountRub(x)), 0);
+  const inflPct = ROSSTAT_INFLATION[2024] || 9.52;
+
+  document.getElementById('total-income-display').innerHTML = `${fmt(total)} <span>₽</span>`;
+  const subEl = document.getElementById('income-hero-sub');
+  if(subEl) subEl.textContent = fmt(Math.round(totalYearly)) + ' ₽/год';
+
+  const yieldPct = totalSavings > 0 ? (totalYearly / totalSavings * 100) : 0;
+  const realYield = yieldPct - inflPct;
+  const yieldEl = document.getElementById('income-yield');
+  const realEl = document.getElementById('income-real-yield');
+  if(yieldEl) yieldEl.textContent = yieldPct > 0 ? yieldPct.toFixed(1)+'% год.' : '—';
+  if(realEl) { realEl.textContent = yieldPct > 0 ? (realYield>=0?'+':'')+realYield.toFixed(1)+'% год.' : '—'; realEl.style.color = realYield>=0?'var(--accent)':'var(--danger)'; }
+
+  const breakdownEl = document.getElementById('income-breakdown');
+  const breakdownList = document.getElementById('income-breakdown-list');
+  if (state.income.length > 1 && breakdownEl && breakdownList) {
+    const groups = {};
+    state.income.forEach(x => {
+      const key = (x.icon==='🏦'||x.icon==='💰') ? '💰 Вклады' : x.icon==='📊' ? '📊 Дивиденды' : x.icon==='🏠' ? '🏠 Аренда' : x.icon==='💱' ? '💱 Валюта' : x.icon==='💸' ? '💸 Купоны' : '✨ Другое';
+      groups[key] = (groups[key]||0) + calcIncomeAmountRub(x);
+    });
+    breakdownEl.style.display = '';
+    breakdownList.innerHTML = Object.entries(groups).sort(([,a],[,b])=>b-a).map(([name,amt]) => {
+      const pct = total>0 ? Math.round(amt/total*100) : 0;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <span style="font-size:13px;">${name}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:50px;height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--accent);"></div></div>
+          <span style="font-size:13px;font-weight:600;color:var(--accent);min-width:65px;text-align:right;">${fmt(Math.round(amt))} ₽</span>
+        </div>
+      </div>`;
+    }).join('');
+  } else if(breakdownEl) breakdownEl.style.display='none';
+
+  const forecastEl = document.getElementById('income-forecast');
+  const forecastText = document.getElementById('income-forecast-text');
+  if (total > 0 && forecastEl && forecastText) {
+    forecastEl.style.display = '';
+    forecastText.innerHTML = 'За 12 месяцев: <strong>'+fmt(Math.round(totalYearly))+' ₽</strong> · с учётом инфляции: <strong>'+fmt(Math.round(totalYearly*(1-inflPct/100)))+' ₽</strong>';
+  } else if(forecastEl) forecastEl.style.display='none';
+
+  const query = (document.getElementById('income-search')?.value||'').toLowerCase();
+  const sortBy = document.getElementById('income-sort')?.value||'default';
+  let items = state.income.filter(x => !query||x.name.toLowerCase().includes(query));
+  if(sortBy==='amount') items=[...items].sort((a,b)=>calcIncomeAmountRub(b)-calcIncomeAmountRub(a));
+  else if(sortBy==='type') items=[...items].sort((a,b)=>a.icon.localeCompare(b.icon));
+
+  const el = document.getElementById('income-list');
+  if (!state.income.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`; return; }
+  if (!items.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`; return; }
+
+  const COLORS = {'💰':'#4ECDC4','📊':'#64B5F6','🏠':'#FFB347','💸':'#7B68EE','💱':'#5BC8AF','✨':'#FF6B9D','🏦':'#4ECDC4'};
+  el.innerHTML = `<div class="group-block">${items.map(x=>{
     const amt=calcIncomeAmountRub(x);
     const linked=x.savingRef?state.savings.find(s=>s.id===x.savingRef):null;
+    const color=COLORS[x.icon]||'#4ECDC4';
     let sub='в месяц';
-    if(linked){
-      const cur=linked.currency||'RUB';
-      if(x.calcMode==='fx'){const buyR=Number(x.fxBuyRate)||Number(x._fetchedBuyRate)||0;const curR=rates[cur]||0;sub=`покупка: ${buyR?buyR.toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽':'загрузка...'} · сейчас: ${curR?curR.toLocaleString('ru-RU',{maximumFractionDigits:2}):'?'} ₽`;}
-      else if(linked.isDeposit&&linked.rate) sub=`авто · ${linked.name}`;
-      else if(x.calcMode==='percent') sub=`${x.rate}% годовых · ${linked.name}`;
-      else sub=linked.name;
-    }
-    return `<div class="card-item">
-      <div class="card-icon">${x.icon}</div>
-      <div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">${sub}</div></div>
-      ${linked?`<span class="badge badge-link">🔗</span>`:''}
-      <div class="card-amount income">${x.calcMode==='fx'?(amt>=0?'+':''):'+'}${fmt(amt)} ₽${x.calcMode==='fx'?'<span class="sub-amount">курсовая разница</span>':''}</div>
-      <button class="edit-btn" onclick="openEdit('income','${x.id}')">✏️</button>
-      <button class="delete-btn" onclick="deleteItem('income','${x.id}')">✕</button>
+    if(linked){const cur=linked.currency||'RUB';if(x.calcMode==='fx'){const buyR=Number(x.fxBuyRate)||Number(x._fetchedBuyRate)||0;const curR=rates[cur]||0;sub='покупка: '+(buyR?buyR.toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽':'загрузка...')+' · сейчас: '+(curR?curR.toLocaleString('ru-RU',{maximumFractionDigits:2}):'?')+' ₽';}else if(linked.isDeposit&&linked.rate)sub='авто · '+linked.name;else if(x.calcMode==='percent')sub=x.rate+'% годовых · '+linked.name;else sub=linked.name;}
+    return `<div class="card-item savings-card-item" data-id="${x.id}" style="border-left:3px solid ${color};">
+      <div class="card-item-inner">
+        <div class="card-icon" style="background:${color}22;">${x.icon}</div>
+        <div class="card-info"><div class="card-name">${x.name}${linked?' <span class="badge badge-link">🔗</span>':''}</div><div class="card-sub">${sub}</div></div>
+        <div class="card-amount" style="color:${color};">+${fmt(Math.round(amt))} ₽</div>
+      </div>
+      <div class="swipe-actions" style="display:none;">
+        <button class="swipe-edit" onclick="openEdit('income','${x.id}')">✏️</button>
+        <button class="swipe-del" onclick="deleteItem('income','${x.id}')">🗑</button>
+      </div>
     </div>`;
-  }).join('');
+  }).join('')}</div>`;
+  initIncomeSwipe();
 }
+
+function initIncomeSwipe() {
+  document.querySelectorAll('#income-list .savings-card-item').forEach(item=>{
+    let startX=0,startY=0,swiping=false;
+    const inner=item.querySelector('.card-item-inner'),actions=item.querySelector('.swipe-actions');
+    if(!inner||!actions)return;
+    item.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;startY=e.touches[0].clientY;swiping=false;},{passive:true});
+    item.addEventListener('touchmove',e=>{const dx=e.touches[0].clientX-startX,dy=e.touches[0].clientY-startY;if(Math.abs(dy)>Math.abs(dx))return;swiping=true;const x=Math.max(-100,Math.min(0,dx));inner.style.transform='translateX('+x+'px)';if(Math.abs(x)>5){actions.style.display='flex';actions.style.width=Math.abs(x)+'px';}},{passive:true});
+    item.addEventListener('touchend',e=>{if(!swiping)return;const dx=e.changedTouches[0].clientX-startX;if(dx<-50){inner.style.transform='translateX(-100px)';actions.style.display='flex';actions.style.width='100px';}else{inner.style.transform='';actions.style.display='none';}},{passive:true});
+  });
+}
+
 
 function renderGoals() {
   const totalIncome=state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0);
