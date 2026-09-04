@@ -4919,7 +4919,6 @@ function renderPiggyCard(pg) {
   const emoji = pg.emoji||'🐷';
   const daysLeft = pg.deadline ? Math.max(0,Math.round((new Date(pg.deadline)-new Date())/86400000)) : null;
   const done = pct >= 100;
-  const last3 = (pg.deposits||[]).slice(-3).reverse();
   return `<div class="pg-card" style="border-left:3px solid ${color};">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
@@ -4932,7 +4931,6 @@ function renderPiggyCard(pg) {
     <div style="margin:10px 0 6px;">
       <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${color};"></div></div>
     </div>
-    ${last3.length ? `<div class="pg-history">${last3.map(d=>`<div class="pg-history-item"><span>${d.date}</span><span style="color:var(--accent);">+${fmt(d.amount)} ₽</span></div>`).join('')}</div>` : ''}
     <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
       ${done
         ? `<span style="color:${color};font-weight:700;font-size:13px;">🎉 Цель достигнута!</span>`
@@ -5101,11 +5099,11 @@ function renderChCard(ch) {
                 `<span style="color:var(--warn);font-size:11px;">⚠ Нужно ускориться</span>`;
 
   return `<div class="ch-card" data-ch="${ch.id}" style="border-color:${color}22;">
-      <div style="margin-bottom:4px;"><span class="pg-type-badge challenge">🎯 Челлендж</span></div>
       <div class="ch-header" onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-left:3px solid ${color};padding-left:12px;">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
           <span style="font-size:22px;">${emoji}</span>
           <div style="min-width:0;">
+            <div style="margin-bottom:2px;"><span class="pg-type-badge challenge">🎯 Челлендж</span></div>
             <div class="ch-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.name}</div>
             <div class="ch-meta">${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽ · ${pct}%${streak>1?' · 🔥'+streak+' дн.':''}</div>
           </div>
