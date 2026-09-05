@@ -4878,6 +4878,16 @@ function savePiggyEdit() {
   renderChallengesPage();
 }
 
+let _piggyOp = 'add';
+
+function setPiggyOp(op) {
+  _piggyOp = op;
+  document.getElementById('pg-op-add').classList.toggle('active', op==='add');
+  document.getElementById('pg-op-sub').classList.toggle('active', op==='sub');
+  const btn = document.getElementById('pg-deposit-btn');
+  if(btn) btn.textContent = op==='add' ? 'Пополнить' : 'Вычесть';
+}
+
 function openPiggyDeposit(id) {
   _piggyDepositId = id;
   const pg = (state.piggyBanks||[]).find(p=>p.id===id);
@@ -4886,6 +4896,7 @@ function openPiggyDeposit(id) {
   document.getElementById('pg-deposit-name').textContent = pg.name+' · '+fmt(pg.saved||0)+' из '+fmt(pg.goal)+' ₽';
   document.getElementById('pg-deposit-amount').value = '';
   document.getElementById('pg-deposit-date').value = today();
+  setPiggyOp('add');
   document.getElementById('pg-deposit-modal').classList.add('open');
   setTimeout(()=>document.getElementById('pg-deposit-amount').focus(), 200);
 }
@@ -4903,8 +4914,9 @@ function savePiggyDeposit() {
   const date = document.getElementById('pg-deposit-date').value||today();
   if (!amount||amount<=0) return;
   pg.deposits = pg.deposits||[];
-  pg.deposits.push({amount, date, id:uid()});
-  pg.saved = pg.deposits.reduce((s,d)=>s+d.amount,0);
+  const signed = _piggyOp === 'sub' ? -amount : amount;
+  pg.deposits.push({amount:signed, date, id:uid()});
+  pg.saved = Math.max(0, pg.deposits.reduce((s,d)=>s+d.amount,0));
   if (pg.saved >= pg.goal) haptic('heavy');
   else haptic('success');
   save();
@@ -5705,9 +5717,17 @@ checkChNotifications();
 <!-- PIGGY DEPOSIT MODAL -->
 <div class="modal-overlay" id="pg-deposit-modal" onclick="if(event.target===this)closePiggyDeposit()">
   <div class="modal">
-    <div class="modal-title">Пополнить копилку</div>
+    <div class="modal-title" id="pg-deposit-title">Изменить сумму</div>
     <div style="text-align:center;font-size:32px;margin-bottom:4px;" id="pg-deposit-icon">🐷</div>
-    <div style="text-align:center;font-size:14px;color:var(--text-dim);margin-bottom:16px;" id="pg-deposit-name"></div>
+    <div style="text-align:center;font-size:14px;color:var(--text-dim);margin-bottom:14px;" id="pg-deposit-name"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button id="pg-op-add" onclick="setPiggyOp('add')" class="income-type-btn active" style="flex:1;">
+        <span style="font-size:18px;">＋</span><span>Пополнить</span>
+      </button>
+      <button id="pg-op-sub" onclick="setPiggyOp('sub')" class="income-type-btn" style="flex:1;">
+        <span style="font-size:18px;">－</span><span>Вычесть</span>
+      </button>
+    </div>
     <div class="field"><label>СУММА (₽)</label>
       <input type="number" id="pg-deposit-amount" placeholder="0" inputmode="decimal">
     </div>
@@ -5716,7 +5736,7 @@ checkChNotifications();
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closePiggyDeposit()">Отмена</button>
-      <button class="btn-primary" onclick="savePiggyDeposit()">Пополнить</button>
+      <button class="btn-primary" id="pg-deposit-btn" onclick="savePiggyDeposit()">Пополнить</button>
     </div>
   </div>
 </div>
