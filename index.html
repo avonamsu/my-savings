@@ -5780,6 +5780,28 @@ function savePiggyDeposit() {
   renderChallengesPage();
 }
 
+
+function completePiggyBank(id) {
+  if (!confirm('Завершить копилку досрочно? Она переедет в архив.')) return;
+  const pg = (state.piggyBanks||[]).find(p=>p.id===id);
+  if (!pg) return;
+  pg.saved = pg.goal;
+  pg.deposits = pg.deposits||[];
+  pg.deposits.push({amount: pg.goal - (pg.deposits.reduce((s,d)=>s+d.amount,0)), date: today(), id: uid(), note:'досрочное завершение'});
+  haptic('success');
+  save(); renderChallengesPage();
+}
+
+function completeChallenge(id) {
+  if (!confirm('Завершить челлендж досрочно? Все ячейки будут закрыты.')) return;
+  const ch = (state.challenges||[]).find(c=>c.id===id);
+  if (!ch) return;
+  ch.cells = ch.cells.map(c => ({...c, done: true}));
+  haptic('success');
+  startConfetti(); setTimeout(stopConfetti, 3000);
+  save(); renderChallengesPage();
+}
+
 function deletePiggyBank(id) {
   if (!confirm('Удалить копилку?')) return;
   state.piggyBanks = (state.piggyBanks||[]).filter(p=>p.id!==id);
@@ -5831,7 +5853,8 @@ function renderPiggyCard(pg) {
             <button class="pg-add-btn" style="background:var(--surface2);color:var(--text-dim);border:1px solid rgba(255,255,255,0.1);width:44px;font-size:20px;padding:8px 0;" onclick="openPiggyDeposit('${pg.id}','sub')">－</button>
            </div>`
       }
-      <button onclick="openPiggyEdit('${pg.id}')" style="background:none;border:none;color:var(--accent);opacity:0.7;cursor:pointer;font-size:13px;margin-left:auto;">Изменить</button>
+      <button onclick="completePiggyBank('${pg.id}')" title="Завершить досрочно" style="background:none;border:1px solid rgba(78,205,196,0.3);border-radius:6px;color:var(--accent);font-size:13px;padding:3px 8px;cursor:pointer;margin-left:auto;">✓</button>
+      <button onclick="openPiggyEdit('${pg.id}')" style="background:none;border:none;color:var(--accent);opacity:0.7;cursor:pointer;font-size:13px;">Изменить</button>
       <button onclick="deletePiggyBank('${pg.id}')" style="background:none;border:none;color:var(--danger);opacity:.5;cursor:pointer;font-size:13px;">Удалить</button>
     </div>` : ''}
   </div>`;
@@ -5959,9 +5982,12 @@ function renderChallengesPage() {
     ...archivedChallenges.map(ch=>({type:'challenge',data:ch}))
   ];
 
-  if (el) el.innerHTML = activeAll.length
-    ? activeAll.map(item=>item.type==='piggy'?renderPiggyCard(item.data):renderChCard(item.data)).join('')
-    : '<div class="empty"><div class="empty-icon">🪙</div><p>Нет активных копилок</p></div>';
+  if (el) {
+    el.innerHTML = activeAll.length
+      ? activeAll.map(item=>item.type==='piggy'?renderPiggyCard(item.data):renderChCard(item.data)).join('')
+      : '<div class="empty"><div class="empty-icon">🪙</div><p>Нет активных копилок</p></div>';
+    setTimeout(initSavingsDrag, 50);
+  }
 
   if (archiveEl) {
     if (archivedAll.length) {
@@ -5999,7 +6025,9 @@ function renderChCard(ch) {
 
   return `<div class="ch-card" data-ch="${ch.id}" style="border-left:3px solid ${color};padding:16px;">
       <div style="padding:0 0 6px;"><span class="pg-type-badge challenge">🎯 Челлендж</span></div>
-      <div onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="drag-handle" style="color:var(--text-dim);font-size:16px;cursor:grab;padding:0 4px 0 0;flex-shrink:0;">⠿</span>
+        <div onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;flex:1;">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
           <span style="font-size:22px;">${emoji}</span>
           <div style="min-width:0;">
@@ -6008,7 +6036,7 @@ function renderChCard(ch) {
           </div>
         </div>
         <span style="color:${color};font-size:18px;padding-left:8px;flex-shrink:0;">${collapsed?'▸':'▾'}</span>
-      </div>
+      </div></div>
       ${!collapsed ? `
       <div class="ch-progress-wrap" style="margin-top:10px;">
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:6px;">
@@ -6022,6 +6050,7 @@ function renderChCard(ch) {
       <div class="ch-footer">
         ${pct>=100?`<span style="color:${color};font-weight:700;">🎉 Цель достигнута!</span>`:`<button class="ch-random-btn" onclick="highlightRandomCell('${ch.id}')">🎲 Случайная</button>`}
         <div style="display:flex;gap:12px;">
+          <button onclick="completeChallenge('${ch.id}')" title="Завершить досрочно" style="background:none;border:1px solid rgba(78,205,196,0.3);border-radius:6px;color:var(--accent);font-size:13px;padding:3px 8px;cursor:pointer;">✓</button>
           <button class="ch-delete" onclick="editChallenge('${ch.id}')" style="color:${color};opacity:0.8;">Изменить</button>
           <button class="ch-delete" onclick="deleteChallenge('${ch.id}')">Удалить</button>
         </div>
