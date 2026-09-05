@@ -1,8 +1,12 @@
 <!DOCTYPE html>
-<!-- Build: 2026-09-05 14:32:13 -->
+<!-- Updated: 14:52:05 | Build: 2026-09-05 14:32:13 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="version" content="20260905145145">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -2419,6 +2423,60 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="calc-preview" id="ch-preview-p" style="display:none;"></div>
     <button class="btn-primary" onclick="createChallengeFromPage()">Создать челлендж</button>
     </div><!-- end pg-challenge-fields -->
+  </div>
+</div>
+
+<!-- EDIT CHALLENGE MODAL -->
+<div class="modal-overlay" id="edit-challenge-modal" onclick="if(event.target===this)closeEditChallenge()">
+  <div class="modal">
+    <div class="modal-title">Изменить челлендж</div>
+    <input type="hidden" id="ech-id">
+    <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="ech-name" placeholder="Название"></div>
+    <div class="field"><label>НОВАЯ ЦЕЛЬ (₽) — ячейки пересчитаются</label><input type="number" id="ech-goal" placeholder="100 000" inputmode="decimal" oninput="updateEditChallengePreview()"></div>
+    <div class="field"><label>СРОК</label>
+      <select id="ech-period">
+        <option value="30">1 месяц</option>
+        <option value="60">2 месяца</option>
+        <option value="90">3 месяца</option>
+        <option value="180">6 месяцев</option>
+        <option value="365">1 год</option>
+      </select>
+    </div>
+    <div class="field"><label>РАЗМЕР ЯЧЕЕК</label>
+      <select id="ech-cell-mode">
+        <option value="random">Случайные суммы</option>
+        <option value="equal">Равные части</option>
+      </select>
+    </div>
+    <div class="field"><label>ЭМОДЗИ</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" onclick="selectEmoji('🎯','ech')" class="emoji-pick-btn" id="epb-ech-target">🎯</button>
+        <button type="button" onclick="selectEmoji('✈️','ech')" class="emoji-pick-btn" id="epb-ech-plane">✈️</button>
+        <button type="button" onclick="selectEmoji('🏠','ech')" class="emoji-pick-btn" id="epb-ech-home">🏠</button>
+        <button type="button" onclick="selectEmoji('🚗','ech')" class="emoji-pick-btn" id="epb-ech-car">🚗</button>
+        <button type="button" onclick="selectEmoji('💍','ech')" class="emoji-pick-btn" id="epb-ech-ring">💍</button>
+        <button type="button" onclick="selectEmoji('🎮','ech')" class="emoji-pick-btn" id="epb-ech-game">🎮</button>
+        <button type="button" onclick="selectEmoji('🌴','ech')" class="emoji-pick-btn" id="epb-ech-palm">🌴</button>
+        <button type="button" onclick="selectEmoji('🎓','ech')" class="emoji-pick-btn" id="epb-ech-grad">🎓</button>
+      </div>
+      <input type="hidden" id="ech-emoji" value="🎯">
+    </div>
+    <div class="field"><label>ЦВЕТ</label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" onclick="selectColor('#4ECDC4','ech')" class="color-pick-btn" id="cpb-ech-4ECDC4" style="background:#4ECDC4;"></button>
+        <button type="button" onclick="selectColor('#FF6B9D','ech')" class="color-pick-btn" id="cpb-ech-FF6B9D" style="background:#FF6B9D;"></button>
+        <button type="button" onclick="selectColor('#FFB347','ech')" class="color-pick-btn" id="cpb-ech-FFB347" style="background:#FFB347;"></button>
+        <button type="button" onclick="selectColor('#7B68EE','ech')" class="color-pick-btn" id="cpb-ech-7B68EE" style="background:#7B68EE;"></button>
+        <button type="button" onclick="selectColor('#5BC8AF','ech')" class="color-pick-btn" id="cpb-ech-5BC8AF" style="background:#5BC8AF;"></button>
+      </div>
+      <input type="hidden" id="ech-color" value="#4ECDC4">
+    </div>
+    <div class="calc-preview" id="ech-preview" style="display:none;"></div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">⚠️ Уже отмеченные ячейки сохранятся. Если изменишь сумму — незакрытые ячейки пересчитаются.</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeEditChallenge()">Отмена</button>
+      <button class="btn-primary" onclick="saveEditChallenge()">Сохранить</button>
+    </div>
   </div>
 </div>
 
@@ -4871,6 +4929,8 @@ function openPiggyEdit(id) {
   document.getElementById('pg-edit-name').value = pg.name;
   document.getElementById('pg-edit-goal').value = pg.goal;
   document.getElementById('pg-edit-deadline').value = pg.deadline||'';
+  selectEmoji(pg.emoji||'🐷', 'pge');
+  selectColor(pg.color||'#4ECDC4', 'pge');
   document.getElementById('pg-edit-modal').classList.add('open');
 }
 
@@ -4888,6 +4948,8 @@ function savePiggyEdit() {
   pg.name = name;
   pg.goal = goal;
   pg.deadline = document.getElementById('pg-edit-deadline').value||null;
+  pg.emoji = document.getElementById('pg-edit-emoji')?.value||pg.emoji||'🐷';
+  pg.color = document.getElementById('pg-edit-color')?.value||pg.color||'#4ECDC4';
   save();
   closePiggyEdit();
   renderChallengesPage();
@@ -5143,7 +5205,7 @@ function renderChCard(ch) {
       onTrack ? `<span style="color:var(--accent);font-size:11px;">✓ Успеваешь</span>` :
                 `<span style="color:var(--warn);font-size:11px;">⚠ Нужно ускориться</span>`;
 
-  return `<div class="ch-card" data-ch="${ch.id}" style="border-color:${color}22;border-left:3px solid ${color};padding:12px 14px;">
+  return `<div class="ch-card" data-ch="${ch.id}" style="border-color:${color}22;border-left:3px solid ${color};padding:16px;">
       <div style="padding:0 0 6px;"><span class="pg-type-badge challenge">🎯 Челлендж</span></div>
       <div class="ch-header" onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
@@ -5176,22 +5238,20 @@ function renderChCard(ch) {
 }
 
 function selectEmoji(e, suffix) {
-  // For piggy bank suffix 'pg', update pg-emoji field
-  const fieldId = suffix === 'pg' ? 'pg-emoji' : 'ch-emoji-'+suffix;
+  const fieldId = suffix==='pg' ? 'pg-emoji' : suffix==='pge' ? 'pg-edit-emoji' : suffix==='ech' ? 'ech-emoji' : 'ch-emoji-'+suffix;
   const el = document.getElementById(fieldId);
   if(el) el.value = e;
   document.querySelectorAll('[id^="epb-'+suffix+'-"]').forEach(b => b.classList.remove('selected'));
   const emap = {
     '🎯':'target','✈️':'plane','🏠':'home','🚗':'car','💍':'ring',
     '👗':'dress','📱':'phone','🎮':'game','🌴':'palm','🎓':'grad',
-    '💄':'lipstick','🐱':'cat',
-    '🐷':'pig','💻':'laptop'
+    '💄':'lipstick','🐱':'cat','🐷':'pig','💻':'laptop'
   };
   const btn = document.getElementById('epb-'+suffix+'-'+(emap[e]||e));
   if (btn) btn.classList.add('selected');
 }
 function selectColor(c, suffix) {
-  const fieldId = suffix === 'pg' ? 'pg-color' : 'ch-color-'+suffix;
+  const fieldId = suffix==='pg' ? 'pg-color' : suffix==='pge' ? 'pg-edit-color' : suffix==='ech' ? 'ech-color' : 'ch-color-'+suffix;
   const el = document.getElementById(fieldId);
   if(el) el.value = c;
   document.querySelectorAll('[id^="cpb-'+suffix+'-"]').forEach(b => b.classList.remove('selected'));
@@ -5256,6 +5316,8 @@ function editChallenge(id) {
   document.getElementById('ech-period').value = ch.days || 90;
   document.getElementById('ech-cell-mode').value = ch.mode || 'random';
   document.getElementById('ech-preview').style.display = 'none';
+  selectEmoji(ch.emoji||'🎯', 'ech');
+  selectColor(ch.color||'#4ECDC4', 'ech');
   document.getElementById('edit-challenge-modal').classList.add('open');
 }
 
@@ -5291,6 +5353,8 @@ function saveEditChallenge() {
   ch.name = name;
   ch.days = days;
   ch.mode = mode;
+  ch.emoji = document.getElementById('ech-emoji')?.value||ch.emoji||'🎯';
+  ch.color = document.getElementById('ech-color')?.value||ch.color||'#4ECDC4';
 
   if (newGoal > 0) {
     ch.goal = newGoal;
@@ -5743,6 +5807,29 @@ checkChNotifications();
     </div>
     <div class="field"><label>ДЕДЛАЙН (необязательно)</label>
       <input type="date" id="pg-edit-deadline">
+    </div>
+    <div class="field"><label>ЭМОДЗИ</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" onclick="selectEmoji('🐷','pge')" class="emoji-pick-btn" id="epb-pge-pig">🐷</button>
+        <button type="button" onclick="selectEmoji('✈️','pge')" class="emoji-pick-btn" id="epb-pge-plane">✈️</button>
+        <button type="button" onclick="selectEmoji('🏠','pge')" class="emoji-pick-btn" id="epb-pge-home">🏠</button>
+        <button type="button" onclick="selectEmoji('🚗','pge')" class="emoji-pick-btn" id="epb-pge-car">🚗</button>
+        <button type="button" onclick="selectEmoji('💍','pge')" class="emoji-pick-btn" id="epb-pge-ring">💍</button>
+        <button type="button" onclick="selectEmoji('🎓','pge')" class="emoji-pick-btn" id="epb-pge-grad">🎓</button>
+        <button type="button" onclick="selectEmoji('💻','pge')" class="emoji-pick-btn" id="epb-pge-laptop">💻</button>
+        <button type="button" onclick="selectEmoji('🌴','pge')" class="emoji-pick-btn" id="epb-pge-palm">🌴</button>
+      </div>
+      <input type="hidden" id="pg-edit-emoji" value="🐷">
+    </div>
+    <div class="field"><label>ЦВЕТ</label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" onclick="selectColor('#4ECDC4','pge')" class="color-pick-btn" id="cpb-pge-4ECDC4" style="background:#4ECDC4;"></button>
+        <button type="button" onclick="selectColor('#FF6B9D','pge')" class="color-pick-btn" id="cpb-pge-FF6B9D" style="background:#FF6B9D;"></button>
+        <button type="button" onclick="selectColor('#FFB347','pge')" class="color-pick-btn" id="cpb-pge-FFB347" style="background:#FFB347;"></button>
+        <button type="button" onclick="selectColor('#7B68EE','pge')" class="color-pick-btn" id="cpb-pge-7B68EE" style="background:#7B68EE;"></button>
+        <button type="button" onclick="selectColor('#64B5F6','pge')" class="color-pick-btn" id="cpb-pge-64B5F6" style="background:#64B5F6;"></button>
+      </div>
+      <input type="hidden" id="pg-edit-color" value="#4ECDC4">
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closePiggyEdit()">Отмена</button>
