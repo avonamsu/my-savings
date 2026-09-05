@@ -5821,7 +5821,7 @@ function renderPiggyCard(pg) {
   const planCalc = getPiggyPlanCalc(pg);
   const done = pct >= 100;
   const collapsed = window._chCollapsed[pg.id] !== false;
-  return `<div class="pg-card" style="border-left:3px solid ${color};">
+  return `<div class="pg-card" data-id="${pg.id}" style="border-left:3px solid ${color};">
     <div style="padding:0 0 6px;"><span class="pg-type-badge piggy">🐷 Копилка</span></div>
     <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="togglePiggy('${pg.id}')">
       <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
@@ -6023,7 +6023,7 @@ function renderChCard(ch) {
       onTrack ? `<span style="color:var(--accent);font-size:11px;">✓ Успеваешь</span>` :
                 `<span style="color:var(--warn);font-size:11px;">⚠ Нужно ускориться</span>`;
 
-  return `<div class="ch-card" data-ch="${ch.id}" style="border-left:3px solid ${color};padding:16px;">
+  return `<div class="ch-card" data-id="${ch.id}" data-ch="${ch.id}" style="border-left:3px solid ${color};padding:16px;">
       <div style="padding:0 0 6px;"><span class="pg-type-badge challenge">🎯 Челлендж</span></div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="drag-handle" style="color:var(--text-dim);font-size:16px;cursor:grab;padding:0 4px 0 0;flex-shrink:0;">⠿</span>
