@@ -5143,9 +5143,9 @@ function renderChCard(ch) {
       onTrack ? `<span style="color:var(--accent);font-size:11px;">✓ Успеваешь</span>` :
                 `<span style="color:var(--warn);font-size:11px;">⚠ Нужно ускориться</span>`;
 
-  return `<div class="ch-card" data-ch="${ch.id}" style="border-color:${color}22;">
+  return `<div class="ch-card" data-ch="${ch.id}" style="border-color:${color}22;border-left:3px solid ${color};">
       <div style="padding:12px 14px 0;"><span class="pg-type-badge challenge">🎯 Челлендж</span></div>
-      <div class="ch-header" onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-left:3px solid ${color};padding-left:12px;margin-top:6px;">
+      <div class="ch-header" onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding-left:12px;margin-top:6px;">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
           <span style="font-size:22px;">${emoji}</span>
           <div style="min-width:0;">
