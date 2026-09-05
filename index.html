@@ -5927,6 +5927,25 @@ function toggleChallenge(id) {
 
 function renderChallenges() {} // legacy stub
 
+
+// ── PIGGY & CHALLENGE DRAG ────────────────────────────────
+function initSavingsDrag() {
+  const container = document.getElementById('challenges-container-page');
+  if (!container) return;
+  const items = Array.from(container.querySelectorAll('.pg-card, .ch-card'));
+  if (items.length < 2) return;
+  items.forEach(item => {
+    const handle = item.querySelector('.drag-handle');
+    if (!handle) return;
+    let clone=null, startY=0, dragging=false, timer=null;
+    function cleanup(){dragging=false;clearTimeout(timer);timer=null;if(clone&&clone.parentNode)clone.parentNode.removeChild(clone);clone=null;item.style.opacity='';container.querySelectorAll('.pg-card,.ch-card').forEach(el=>el.classList.remove('drag-over'));}
+    handle.addEventListener('touchstart',e=>{startY=e.touches[0].clientY;timer=setTimeout(()=>{dragging=true;const r=item.getBoundingClientRect();clone=item.cloneNode(true);clone.style.cssText='position:fixed;left:'+r.left+'px;width:'+r.width+'px;top:'+r.top+'px;z-index:999;opacity:.9;pointer-events:none;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);';document.body.appendChild(clone);item.style.opacity='.3';if(navigator.vibrate)navigator.vibrate(30);},250);},{passive:true});
+    handle.addEventListener('touchmove',e=>{if(!dragging){if(Math.abs(e.touches[0].clientY-startY)>10){clearTimeout(timer);timer=null;}return;}e.preventDefault();const y=e.touches[0].clientY;if(clone){const r=clone.getBoundingClientRect();clone.style.top=(r.top+(y-startY))+'px';}startY=y;container.querySelectorAll('.pg-card,.ch-card').forEach(el=>{el.classList.remove('drag-over');if(el===item)return;const r=el.getBoundingClientRect();if(y>r.top&&y<r.bottom)el.classList.add('drag-over');});},{passive:false});
+    handle.addEventListener('touchend',e=>{if(!dragging){clearTimeout(timer);timer=null;return;}const over=container.querySelector('.pg-card.drag-over,.ch-card.drag-over');if(over&&over!==item){const fromId=item.dataset.id,toId=over.dataset.id,arr=item.classList.contains('pg-card')?state.piggyBanks:state.challenges;if(arr){const fi=arr.findIndex(x=>x.id===fromId),ti=arr.findIndex(x=>x.id===toId);if(fi>=0&&ti>=0){const m=arr.splice(fi,1)[0];arr.splice(ti,0,m);save();}}}cleanup();renderChallengesPage();},{passive:true});
+    handle.addEventListener('touchcancel',cleanup,{passive:true});
+  });
+}
+
 function renderChallengesPage() {
   if (!window._chCollapsed) window._chCollapsed = {};
   if (!state.challenges) state.challenges = [];
