@@ -637,7 +637,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -751,7 +790,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -865,7 +943,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -979,7 +1096,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -1093,7 +1249,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -1207,7 +1402,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -1321,7 +1555,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -1435,7 +1708,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -1549,7 +1861,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -1663,7 +2014,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -1777,7 +2167,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -1891,7 +2320,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -2005,7 +2473,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -2119,7 +2626,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -2233,7 +2779,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -2347,7 +2932,46 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
       <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
-      <div class="field"><label>ДЕДЛАЙН (необязательно)</label><input type="date" id="pg-deadline"></div>
+      <div class="toggle-row">
+        <span class="toggle-label">План</span>
+        <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pg-plan-fields" style="display:none;">
+        <div class="field"><label>ДАТА НАЧАЛА</label>
+          <input type="date" id="pg-date-start" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="field"><label>ЧАСТОТА</label>
+          <select id="pg-frequency" onchange="updatePiggyPlanPreview('pg')">
+            <option value="day">Каждый день</option>
+            <option value="week">Каждую неделю</option>
+            <option value="month" selected>Каждый месяц</option>
+          </select>
+        </div>
+        <!-- Mode selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pg-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg')" style="flex:1;">
+            <span style="font-size:16px;">📅</span><span>По дате</span>
+          </button>
+          <button type="button" id="pg-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg')" style="flex:1;">
+            <span style="font-size:16px;">💰</span><span>По сумме</span>
+          </button>
+        </div>
+        <!-- By date mode -->
+        <div id="pg-by-date" class="field">
+          <label>ДАТА ОКОНЧАНИЯ</label>
+          <input type="date" id="pg-deadline" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <!-- By amount mode -->
+        <div id="pg-by-amount" style="display:none;" class="field">
+          <label>ОТКЛАДЫВАТЬ (₽)</label>
+          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+        </div>
+        <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-label">🔔 Напоминание</span>
+          <label class="toggle"><input type="checkbox" id="pg-reminder"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" onclick="selectEmoji('🐷','pg')" class="emoji-pick-btn selected" id="epb-pg-pig">🐷</button>
@@ -4889,6 +5513,113 @@ function deleteChallenge(id) {
 // ── PIGGY BANK ────────────────────────────────────────────
 let _piggyDepositId = null;
 
+
+
+
+function selectPiggyPlanMode(mode, prefix) {
+  const p = prefix;
+  const dateBtn = document.getElementById(p+'-mode-date');
+  const amtBtn  = document.getElementById(p+'-mode-amount');
+  const byDate  = document.getElementById(p+'-by-date');
+  const byAmt   = document.getElementById(p+'-by-amount');
+  if(dateBtn) dateBtn.classList.toggle('active', mode==='date');
+  if(amtBtn)  amtBtn.classList.toggle('active',  mode==='amount');
+  if(byDate)  byDate.style.display  = mode==='date'   ? '' : 'none';
+  if(byAmt)   byAmt.style.display   = mode==='amount' ? '' : 'none';
+  updatePiggyPlanPreview(prefix);
+}
+
+function updatePiggyPlanPreview(prefix) {
+  const p = prefix;
+  const startEl   = document.getElementById(p === 'pg' ? 'pg-date-start' : 'pg-edit-date-start');
+  const endEl     = document.getElementById(p === 'pg' ? 'pg-deadline' : 'pg-edit-deadline');
+  const freqEl    = document.getElementById(p === 'pg' ? 'pg-frequency' : 'pg-edit-frequency');
+  const goalEl    = document.getElementById(p === 'pg' ? 'pg-goal' : 'pg-edit-goal');
+  const perEl     = document.getElementById(p === 'pg' ? 'pg-per-period' : 'pg-edit-per-period');
+  const previewEl = document.getElementById(p === 'pg' ? 'pg-plan-preview' : 'pg-edit-plan-preview');
+  const modeDate  = document.getElementById(p === 'pg' ? 'pg-mode-date' : 'pg-edit-mode-date');
+  if (!previewEl) return;
+
+  const start = startEl?.value;
+  const freq  = freqEl?.value || 'month';
+  const goal  = parseFloat(goalEl?.value || 0);
+  const mode  = modeDate?.classList.contains('active') ? 'date' : 'amount';
+
+  if (!start || !goal) { previewEl.style.display='none'; return; }
+
+  const freqDays = freq === 'day' ? 1 : freq === 'week' ? 7 : 30.4375;
+  const freqLabel = freq === 'day' ? 'в день' : freq === 'week' ? 'в неделю' : 'в месяц';
+
+  if (mode === 'date') {
+    const end = endEl?.value;
+    if (!end || end <= start) { previewEl.style.display='none'; return; }
+    const days = Math.round((new Date(end) - new Date(start)) / 86400000);
+    const periods = Math.max(1, Math.ceil(days / freqDays));
+    const perPeriod = Math.ceil(goal / periods);
+    previewEl.style.display = '';
+    previewEl.innerHTML = `Откладывай <strong>${fmt(perPeriod)} ₽ ${freqLabel}</strong> — успеешь за ${days} дн.`;
+  } else {
+    const perPeriod = parseFloat(perEl?.value || 0);
+    if (!perPeriod || perPeriod <= 0) { previewEl.style.display='none'; return; }
+    const periods = Math.ceil(goal / perPeriod);
+    const totalDays = Math.round(periods * freqDays);
+    const endDate = new Date(new Date(start).getTime() + totalDays * 86400000);
+    const endStr = endDate.toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'});
+    // Auto-set deadline field
+    if(endEl) endEl.value = endDate.toISOString().slice(0,10);
+    previewEl.style.display = '';
+    previewEl.innerHTML = `Накопишь к <strong>${endStr}</strong> — ${periods} ${freq==='day'?'дней':freq==='week'?'нед.':'мес.'}`;
+  }
+}
+
+
+function getPiggyPlanCalc(pg) {
+  if (!pg.deadline || !pg.dateStart) return null;
+  const days = Math.round((new Date(pg.deadline) - new Date(pg.dateStart)) / 86400000);
+  if (days <= 0) return null;
+  const remaining = Math.max(0, pg.goal - (pg.saved||0));
+  const daysLeft = Math.max(0, Math.round((new Date(pg.deadline) - new Date()) / 86400000));
+  const freq = pg.frequency || 'month';
+  let perPeriod, periodLabel;
+  if (freq === 'day') { perPeriod = remaining / Math.max(1,daysLeft); periodLabel = 'в день'; }
+  else if (freq === 'week') { perPeriod = remaining / Math.max(1,Math.ceil(daysLeft/7)); periodLabel = 'в неделю'; }
+  else { perPeriod = remaining / Math.max(1,Math.ceil(daysLeft/30.4375)); periodLabel = 'в месяц'; }
+  // Check if on track based on deposits
+  const elapsed = Math.max(0, Math.round((new Date() - new Date(pg.dateStart)) / 86400000));
+  const expectedSaved = elapsed / days * pg.goal;
+  const onTrack = (pg.saved||0) >= expectedSaved * 0.9;
+  return { perPeriod, periodLabel, daysLeft, onTrack, remaining };
+}
+
+function checkPiggyReminders() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  (state.piggyBanks||[]).forEach(pg => {
+    if (!pg.reminder || !pg.deadline) return;
+    if ((pg.saved||0) >= pg.goal) return;
+    const notifKey = 'pg_notif_' + pg.id + '_' + today();
+    if (localStorage.getItem(notifKey)) return;
+    const calc = getPiggyPlanCalc(pg);
+    if (!calc) return;
+    new Notification('🐷 ' + pg.name, {
+      body: 'Пора отложить ' + fmt(Math.ceil(calc.perPeriod)) + ' ₽ ' + calc.periodLabel
+    });
+    localStorage.setItem(notifKey, '1');
+  });
+}
+
+function togglePiggyPlan(prefix) {
+  const checkId = prefix === 'pg' ? 'pg-plan-check' : 'pg-edit-plan-check';
+  const fieldsId = prefix === 'pg' ? 'pg-plan-fields' : 'pg-edit-plan-fields';
+  const checked = document.getElementById(checkId)?.checked;
+  const fields = document.getElementById(fieldsId);
+  if(fields) fields.style.display = checked ? '' : 'none';
+  // Set default dates if enabling
+  if(checked) {
+    const startEl = document.getElementById(prefix === 'pg' ? 'pg-date-start' : 'pg-edit-date-start');
+    if(startEl && !startEl.value) startEl.value = today();
+  }
+}
+
 function selectPiggyType(type) {
   document.getElementById('pg-type-piggy').classList.toggle('active', type==='piggy');
   document.getElementById('pg-type-challenge').classList.toggle('active', type==='challenge');
@@ -4899,13 +5630,19 @@ function selectPiggyType(type) {
 function createPiggyBank() {
   const name = (document.getElementById('pg-name')?.value||'').trim();
   const goal = parseFloat(document.getElementById('pg-goal')?.value||0);
-  const deadline = document.getElementById('pg-deadline')?.value||null;
+  const hasPlan = document.getElementById('pg-plan-check')?.checked;
+  const deadline = hasPlan ? (document.getElementById('pg-deadline')?.value||null) : null;
+  const dateStart = hasPlan ? (document.getElementById('pg-date-start')?.value||null) : null;
+  const frequency = hasPlan ? (document.getElementById('pg-frequency')?.value||'month') : null;
+  const planMode = hasPlan ? (document.getElementById('pg-mode-date')?.classList.contains('active') ? 'date' : 'amount') : null;
+  const perPeriod = hasPlan && planMode==='amount' ? parseFloat(document.getElementById('pg-per-period')?.value||0)||null : null;
+  const reminder = hasPlan ? !!(document.getElementById('pg-reminder')?.checked) : false;
   const emoji = document.getElementById('pg-emoji')?.value||'🐷';
   const color = document.getElementById('pg-color')?.value||'#4ECDC4';
   if (!name || !goal || goal<=0) return;
   if (!state.piggyBanks) state.piggyBanks = [];
   state.piggyBanks.push({
-    id: uid(), name, goal, deadline, emoji, color,
+    id: uid(), name, goal, deadline, dateStart, frequency, planMode, perPeriod, reminder, emoji, color,
     saved: 0, deposits: [], createdAt: today()
   });
   save();
@@ -4928,7 +5665,27 @@ function openPiggyEdit(id) {
   document.getElementById('pg-edit-id').value = id;
   document.getElementById('pg-edit-name').value = pg.name;
   document.getElementById('pg-edit-goal').value = pg.goal;
+  const hasPlan = !!(pg.deadline || pg.dateStart);
+  const planCheck = document.getElementById('pg-edit-plan-check');
+  if(planCheck) planCheck.checked = hasPlan;
+  const planFields = document.getElementById('pg-edit-plan-fields');
+  if(planFields) planFields.style.display = hasPlan ? '' : 'none';
+  const dsEl = document.getElementById('pg-edit-date-start');
+  if(dsEl) dsEl.value = pg.dateStart||'';
   document.getElementById('pg-edit-deadline').value = pg.deadline||'';
+  const freqEl = document.getElementById('pg-edit-frequency');
+  if(freqEl) freqEl.value = pg.frequency||'month';
+  const remEl = document.getElementById('pg-edit-reminder');
+  if(remEl) remEl.checked = !!pg.reminder;
+  if(hasPlan) {
+    const mode = pg.planMode||'date';
+    selectPiggyPlanMode(mode, 'pg-edit');
+    if(mode==='amount') {
+      const ppEl = document.getElementById('pg-edit-per-period');
+      if(ppEl) ppEl.value = pg.perPeriod||'';
+    }
+    updatePiggyPlanPreview('pg-edit');
+  }
   selectEmoji(pg.emoji||'🐷', 'pge');
   selectColor(pg.color||'#4ECDC4', 'pge');
   document.getElementById('pg-edit-modal').classList.add('open');
@@ -4947,7 +5704,14 @@ function savePiggyEdit() {
   if (!name || !goal || goal<=0) return;
   pg.name = name;
   pg.goal = goal;
-  pg.deadline = document.getElementById('pg-edit-deadline').value||null;
+  const editHasPlan = document.getElementById('pg-edit-plan-check')?.checked;
+  pg.deadline = editHasPlan ? (document.getElementById('pg-edit-deadline').value||null) : null;
+  pg.dateStart = editHasPlan ? (document.getElementById('pg-edit-date-start')?.value||null) : null;
+  pg.frequency = editHasPlan ? (document.getElementById('pg-edit-frequency')?.value||'month') : null;
+  const editPlanMode = editHasPlan ? (document.getElementById('pg-edit-mode-date')?.classList.contains('active') ? 'date' : 'amount') : null;
+  pg.planMode = editPlanMode;
+  pg.perPeriod = editHasPlan && editPlanMode==='amount' ? parseFloat(document.getElementById('pg-edit-per-period')?.value||0)||null : null;
+  pg.reminder = editHasPlan ? !!(document.getElementById('pg-edit-reminder')?.checked) : false;
   pg.emoji = document.getElementById('pg-edit-emoji')?.value||pg.emoji||'🐷';
   pg.color = document.getElementById('pg-edit-color')?.value||pg.color||'#4ECDC4';
   save();
@@ -5014,6 +5778,10 @@ function renderPiggyCard(pg) {
   const color = pg.color||'#4ECDC4';
   const emoji = pg.emoji||'🐷';
   const daysLeft = pg.deadline ? Math.max(0,Math.round((new Date(pg.deadline)-new Date())/86400000)) : null;
+  const daysTotal = (pg.dateStart && pg.deadline) ? Math.round((new Date(pg.deadline)-new Date(pg.dateStart))/86400000) : null;
+  const daysPassed = (pg.dateStart && pg.deadline) ? Math.max(0,Math.round((new Date()-new Date(pg.dateStart))/86400000)) : null;
+  const planPct = daysTotal ? Math.min(100,Math.round(daysPassed/daysTotal*100)) : null;
+  const planCalc = getPiggyPlanCalc(pg);
   const done = pct >= 100;
   const collapsed = window._chCollapsed[pg.id] !== false;
   return `<div class="pg-card" style="border-left:3px solid ${color};">
@@ -5033,6 +5801,7 @@ function renderPiggyCard(pg) {
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:6px;">
         <span>${fmt(saved)} ₽ отложено</span>
         <span>${daysLeft!==null?daysLeft+' дн. осталось':''}</span>
+        ${planCalc ? `<span style="color:${planCalc.onTrack?'var(--accent)':'var(--danger)'};">${planCalc.onTrack?'✓ Успеваешь':'⚠ Нужно ускориться'}</span>` : ''}
       </div>
       <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${color};"></div></div>
     </div>
@@ -5064,6 +5833,11 @@ function showNewChallengeFormPage() {
   document.getElementById('challenge-list-view-page').style.display = 'none';
   document.getElementById('challenge-form-view-page').style.display = 'flex';
   selectPiggyType('piggy');
+  // Reset plan checkbox
+  const planCheck = document.getElementById('pg-plan-check');
+  if(planCheck) planCheck.checked = false;
+  const planFields = document.getElementById('pg-plan-fields');
+  if(planFields) planFields.style.display = 'none';
   updateChallengePreviewPage();
 }
 
@@ -5793,6 +6567,7 @@ function resetOnboarding() { forceStartOnboarding(); }
 
 setTimeout(initOnboarding, 600);
 checkChNotifications();
+checkPiggyReminders();
 </script>
 <!-- PIGGY EDIT MODAL -->
 <div class="modal-overlay" id="pg-edit-modal" onclick="if(event.target===this)closePiggyEdit()">
@@ -5805,8 +6580,42 @@ checkChNotifications();
     <div class="field"><label>ЦЕЛЬ (₽)</label>
       <input type="number" id="pg-edit-goal" placeholder="100 000" inputmode="decimal">
     </div>
-    <div class="field"><label>ДЕДЛАЙН (необязательно)</label>
-      <input type="date" id="pg-edit-deadline">
+    <div class="toggle-row">
+      <span class="toggle-label">План</span>
+      <label class="toggle"><input type="checkbox" id="pg-edit-plan-check" onchange="togglePiggyPlan('pg-edit')"><span class="toggle-slider"></span></label>
+    </div>
+    <div id="pg-edit-plan-fields" style="display:none;">
+      <div class="field"><label>ДАТА НАЧАЛА</label>
+        <input type="date" id="pg-edit-date-start" oninput="updatePiggyPlanPreview('pg-edit')">
+      </div>
+      <div class="field"><label>ЧАСТОТА</label>
+        <select id="pg-edit-frequency" onchange="updatePiggyPlanPreview('pg-edit')">
+          <option value="day">Каждый день</option>
+          <option value="week">Каждую неделю</option>
+          <option value="month" selected>Каждый месяц</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button type="button" id="pg-edit-mode-date" class="income-type-btn active" onclick="selectPiggyPlanMode('date','pg-edit')" style="flex:1;">
+          <span style="font-size:16px;">📅</span><span>По дате</span>
+        </button>
+        <button type="button" id="pg-edit-mode-amount" class="income-type-btn" onclick="selectPiggyPlanMode('amount','pg-edit')" style="flex:1;">
+          <span style="font-size:16px;">💰</span><span>По сумме</span>
+        </button>
+      </div>
+      <div id="pg-edit-by-date" class="field">
+        <label>ДАТА ОКОНЧАНИЯ</label>
+        <input type="date" id="pg-edit-deadline" oninput="updatePiggyPlanPreview('pg-edit')">
+      </div>
+      <div id="pg-edit-by-amount" style="display:none;" class="field">
+        <label>ОТКЛАДЫВАТЬ (₽)</label>
+        <input type="number" id="pg-edit-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg-edit')">
+      </div>
+      <div class="calc-preview" id="pg-edit-plan-preview" style="display:none;"></div>
+      <div class="toggle-row" style="margin-top:8px;">
+        <span class="toggle-label">🔔 Напоминание</span>
+        <label class="toggle"><input type="checkbox" id="pg-edit-reminder"><span class="toggle-slider"></span></label>
+      </div>
     </div>
     <div class="field"><label>ЭМОДЗИ</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
