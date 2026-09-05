@@ -4947,36 +4947,45 @@ function deletePiggyBank(id) {
 }
 
 function renderPiggyCard(pg) {
+  if (!window._chCollapsed) window._chCollapsed = {};
   const saved = pg.saved||0;
   const pct = Math.min(100, Math.round(saved/pg.goal*100));
   const color = pg.color||'#4ECDC4';
   const emoji = pg.emoji||'🐷';
   const daysLeft = pg.deadline ? Math.max(0,Math.round((new Date(pg.deadline)-new Date())/86400000)) : null;
   const done = pct >= 100;
+  const collapsed = window._chCollapsed[pg.id] !== false;
   return `<div class="pg-card" style="border-left:3px solid ${color};">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-      <div>
-        <div style="margin-bottom:4px;"><span class="pg-type-badge piggy">🐷 Копилка</span></div>
-        <div style="font-size:16px;font-weight:700;">${emoji} ${pg.name}</div>
-        <div style="font-size:13px;color:var(--text-dim);margin-top:2px;">${fmt(saved)} ₽ из ${fmt(pg.goal)} ₽ · ${pct}%${daysLeft!==null?' · '+daysLeft+' дн.':''}</div>
+    <div style="padding:0 0 6px;"><span class="pg-type-badge piggy">🐷 Копилка</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="togglePiggy('${pg.id}')">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+        <span style="font-size:22px;">${emoji}</span>
+        <div style="min-width:0;">
+          <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${pg.name}</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">${fmt(saved)} ₽ из ${fmt(pg.goal)} ₽ · ${pct}%</div>
+        </div>
       </div>
-      <button onclick="deletePiggyBank('${pg.id}')" style="background:none;border:none;color:var(--danger);opacity:.5;cursor:pointer;font-size:13px;">Удалить</button>
+      <span style="color:${color};font-size:18px;padding-left:8px;flex-shrink:0;">${collapsed?'▸':'▾'}</span>
     </div>
+    ${!collapsed ? `
     <div style="margin:10px 0 6px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:6px;">
+        <span>${fmt(saved)} ₽ отложено</span>
+        <span>${daysLeft!==null?daysLeft+' дн. осталось':''}</span>
+      </div>
       <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${color};"></div></div>
     </div>
-    <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
       ${done
         ? `<span style="color:${color};font-weight:700;font-size:13px;">🎉 Цель достигнута!</span>`
         : `<button class="pg-add-btn" style="background:${color};" onclick="openPiggyDeposit('${pg.id}')">＋ Пополнить</button>`
       }
       <button onclick="openPiggyEdit('${pg.id}')" style="background:none;border:none;color:var(--accent);opacity:0.7;cursor:pointer;font-size:13px;margin-left:auto;">Изменить</button>
-    </div>
+      <button onclick="deletePiggyBank('${pg.id}')" style="background:none;border:none;color:var(--danger);opacity:.5;cursor:pointer;font-size:13px;">Удалить</button>
+    </div>` : ''}
   </div>`;
 }
 
-// ── CHALLENGE PAGE FUNCTIONS ──────────────────────────────
-let _chTab = 'active';
 
 function switchChTab(tab) {
   _chTab = tab;
