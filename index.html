@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Build: 2026-09-05 14:32:13 -->
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -3819,14 +3820,22 @@ function deleteItem(list,id){
 function resetAllData(){
   if(confirm('Удалить все данные приложения? Это нельзя отменить.')){
     // Clear localStorage
-    ['fin_v3','fin_state_v2','fin_state','last_backup_date','last_backup_datetime','last_backup_state_hash'].forEach(k=>localStorage.removeItem(k));
+    localStorage.clear();
     // Clear IndexedDB
-    openIDB().then(db => {
+    const clearIDB = openIDB().then(db => {
       const tx = db.transaction('state', 'readwrite');
       tx.objectStore('state').clear();
-      tx.oncomplete = () => location.reload();
-      tx.onerror = () => location.reload();
-    }).catch(() => location.reload());
+      return new Promise(res => { tx.oncomplete = res; tx.onerror = res; });
+    }).catch(()=>{});
+    // Clear all caches (Service Worker)
+    const clearCache = ('caches' in window)
+      ? caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      : Promise.resolve();
+    // Unregister Service Workers
+    const clearSW = ('serviceWorker' in navigator)
+      ? navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister())))
+      : Promise.resolve();
+    Promise.all([clearIDB, clearCache, clearSW]).then(() => location.reload());
   }
 }
 
