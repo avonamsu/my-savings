@@ -4903,7 +4903,7 @@ function setPiggyOp(op) {
   if(btn) btn.textContent = op==='add' ? 'Пополнить' : 'Вычесть';
 }
 
-function openPiggyDeposit(id) {
+function openPiggyDeposit(id, op) {
   _piggyDepositId = id;
   const pg = (state.piggyBanks||[]).find(p=>p.id===id);
   if (!pg) return;
@@ -4911,7 +4911,7 @@ function openPiggyDeposit(id) {
   document.getElementById('pg-deposit-name').textContent = pg.name+' · '+fmt(pg.saved||0)+' из '+fmt(pg.goal)+' ₽';
   document.getElementById('pg-deposit-amount').value = '';
   document.getElementById('pg-deposit-date').value = today();
-  setPiggyOp('add');
+  setPiggyOp(op||'add');
   document.getElementById('pg-deposit-modal').classList.add('open');
   setTimeout(()=>document.getElementById('pg-deposit-amount').focus(), 200);
 }
@@ -4977,7 +4977,10 @@ function renderPiggyCard(pg) {
     <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
       ${done
         ? `<span style="color:${color};font-weight:700;font-size:13px;">🎉 Цель достигнута!</span>`
-        : `<button class="pg-add-btn" style="background:${color};" onclick="openPiggyDeposit('${pg.id}')">＋ Пополнить</button>`
+        : `<div style="display:flex;gap:8px;">
+            <button class="pg-add-btn" style="background:${color};" onclick="openPiggyDeposit('${pg.id}','add')">＋ Пополнить</button>
+            <button class="pg-add-btn" style="background:var(--surface2);color:var(--text-dim);border:1px solid rgba(255,255,255,0.1);" onclick="openPiggyDeposit('${pg.id}','sub')">－ Вычесть</button>
+           </div>`
       }
       <button onclick="openPiggyEdit('${pg.id}')" style="background:none;border:none;color:var(--accent);opacity:0.7;cursor:pointer;font-size:13px;margin-left:auto;">Изменить</button>
       <button onclick="deletePiggyBank('${pg.id}')" style="background:none;border:none;color:var(--danger);opacity:.5;cursor:pointer;font-size:13px;">Удалить</button>
