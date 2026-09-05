@@ -4843,6 +4843,12 @@ function createPiggyBank() {
 }
 
 
+function togglePiggy(id) {
+  if (!window._chCollapsed) window._chCollapsed = {};
+  window._chCollapsed[id] = !window._chCollapsed[id];
+  renderChallengesPage();
+}
+
 function openPiggyEdit(id) {
   const pg = (state.piggyBanks||[]).find(p=>p.id===id);
   if (!pg) return;
