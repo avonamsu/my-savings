@@ -4978,8 +4978,8 @@ function renderPiggyCard(pg) {
       ${done
         ? `<span style="color:${color};font-weight:700;font-size:13px;">🎉 Цель достигнута!</span>`
         : `<div style="display:flex;gap:8px;">
-            <button class="pg-add-btn" style="background:${color};" onclick="openPiggyDeposit('${pg.id}','add')">＋ Пополнить</button>
-            <button class="pg-add-btn" style="background:var(--surface2);color:var(--text-dim);border:1px solid rgba(255,255,255,0.1);" onclick="openPiggyDeposit('${pg.id}','sub')">－ Вычесть</button>
+            <button class="pg-add-btn" style="background:${color};width:44px;font-size:20px;padding:8px 0;" onclick="openPiggyDeposit('${pg.id}','add')">＋</button>
+            <button class="pg-add-btn" style="background:var(--surface2);color:var(--text-dim);border:1px solid rgba(255,255,255,0.1);width:44px;font-size:20px;padding:8px 0;" onclick="openPiggyDeposit('${pg.id}','sub')">－</button>
            </div>`
       }
       <button onclick="openPiggyEdit('${pg.id}')" style="background:none;border:none;color:var(--accent);opacity:0.7;cursor:pointer;font-size:13px;margin-left:auto;">Изменить</button>
