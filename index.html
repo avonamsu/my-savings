@@ -5575,21 +5575,32 @@ function updatePiggyPlanPreview(prefix) {
 
 function getPiggyPlanCalc(pg) {
   if (!pg.deadline || !pg.dateStart) return null;
-  const days = Math.round((new Date(pg.deadline) - new Date(pg.dateStart)) / 86400000);
-  if (days <= 0) return null;
-  const remaining = Math.max(0, pg.goal - (pg.saved||0));
-  const daysLeft = Math.max(0, Math.round((new Date(pg.deadline) - new Date()) / 86400000));
+  const now = new Date();
+  const start = new Date(pg.dateStart);
+  const end = new Date(pg.deadline);
+  const totalDays = Math.round((end - start) / 86400000);
+  if (totalDays <= 0) return null;
+
+  const daysLeft = Math.max(0, Math.round((end - now) / 86400000));
+  const saved = pg.saved || 0;
+  const remaining = Math.max(0, pg.goal - saved);
   const freq = pg.frequency || 'month';
-  let perPeriod, periodLabel;
-  if (freq === 'day') { perPeriod = remaining / Math.max(1,daysLeft); periodLabel = 'в день'; }
-  else if (freq === 'week') { perPeriod = remaining / Math.max(1,Math.ceil(daysLeft/7)); periodLabel = 'в неделю'; }
-  else { perPeriod = remaining / Math.max(1,Math.ceil(daysLeft/30.4375)); periodLabel = 'в месяц'; }
-  // Check if on track based on deposits
-  const elapsed = Math.max(0, Math.round((new Date() - new Date(pg.dateStart)) / 86400000));
-  const expectedSaved = elapsed / days * pg.goal;
-  const onTrack = (pg.saved||0) >= expectedSaved * 0.9;
-  return { perPeriod, periodLabel, daysLeft, onTrack, remaining };
+  const freqDays = freq === 'day' ? 1 : freq === 'week' ? 7 : 30.4375;
+  const freqLabel = freq === 'day' ? 'в день' : freq === 'week' ? 'в неделю' : 'в месяц';
+
+  // Recalculate based on remaining amount and remaining time
+  const periodsLeft = Math.max(1, Math.ceil(daysLeft / freqDays));
+  const perPeriod = remaining > 0 ? Math.ceil(remaining / periodsLeft) : 0;
+
+  // On-track check: expected saved by now
+  const elapsed = Math.max(0, Math.round((now - start) / 86400000));
+  const expectedSaved = Math.min(pg.goal, (elapsed / totalDays) * pg.goal);
+  const onTrack = saved >= expectedSaved * 0.9;
+  const ahead = saved > expectedSaved * 1.1;
+
+  return { perPeriod, freqLabel, daysLeft, onTrack, ahead, remaining, periodsLeft };
 }
+
 
 function checkPiggyReminders() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -5801,7 +5812,7 @@ function renderPiggyCard(pg) {
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:6px;">
         <span>${fmt(saved)} ₽ отложено</span>
         <span>${daysLeft!==null?daysLeft+' дн. осталось':''}</span>
-        ${planCalc ? `<span style="color:${planCalc.onTrack?'var(--accent)':'var(--danger)'};">${planCalc.onTrack?'✓ Успеваешь':'⚠ Нужно ускориться'}</span>` : ''}
+        ${planCalc ? `<span style="color:${planCalc.onTrack?'var(--accent)':'var(--danger)'};">${planCalc.ahead?'🚀 Опережаешь':planCalc.onTrack?'✓ Успеваешь':'⚠ Нужно ускориться'}</span>` : ''}
       </div>
       <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${color};"></div></div>
     </div>
