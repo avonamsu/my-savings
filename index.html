@@ -3340,16 +3340,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
 </div>
 
-<!-- ACHIEVEMENT POPUP -->
-<div id="ach-popup" style="display:none;position:fixed;inset:0;z-index:400;pointer-events:none;">
-  <canvas id="confetti-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
-  <div id="ach-popup-card" style="position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:340px;text-align:center;pointer-events:all;box-shadow:0 0 40px rgba(78,205,196,0.3);">
-    <div id="ach-popup-icon" style="font-size:48px;margin-bottom:8px;"></div>
-    <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:4px;">АЧИВКА РАЗБЛОКИРОВАНА</div>
-    <div id="ach-popup-name" style="font-size:18px;font-weight:700;margin-bottom:6px;"></div>
-    <div id="ach-popup-desc" style="font-size:13px;color:var(--text-dim);"></div>
-  </div>
-</div>
+
 
 <script>
 
@@ -5292,7 +5283,7 @@ function updateChallengePreviewPage() {
   const days = parseInt(document.getElementById('ch-period-p').value) || 90;
   const preview = document.getElementById('ch-preview-p');
   if (!goal) { preview.style.display='none'; return; }
-  const cells = Math.min(days, 60);
+  const cells = days;
   preview.style.display = '';
   preview.innerHTML = `Ячеек: <strong>${cells}</strong> · Среднее: <strong>${fmt(Math.round(goal/cells))} ₽</strong>`;
 }
@@ -5463,8 +5454,8 @@ function renderChCard(ch) {
         </div>
         <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${color},${color}99);"></div></div>
       </div>
-      <div class="ch-grid" data-ch="${ch.id}">${ch.cells.map((c,i)=>`<div class="ch-cell ${c.done?'done':''}" onclick="toggleCell('${ch.id}',${i})" style="${c.done?`background:${color};border-color:${color};`:''}">
-        ${fmt(c.amt)}</div>`).join('')}</div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;"><div class="ch-grid" data-ch="${ch.id}">${ch.cells.map((c,i)=>`<div class="ch-cell ${c.done?'done':''}" onclick="toggleCell('${ch.id}',${i})" style="${c.done?`background:${color};border-color:${color};`:''}">
+        ${fmt(c.amt)}</div>`).join('')}</div></div>
       <div class="ch-footer">
         ${pct>=100?`<span style="color:${color};font-weight:700;">🎉 Цель достигнута!</span>`:`<button class="ch-random-btn" onclick="highlightRandomCell('${ch.id}')">🎲 Случайная</button>`}
         <div style="display:flex;gap:12px;">
@@ -6139,17 +6130,7 @@ checkPiggyReminders();
   </div>
 </div>
 
-<!-- ACH DETAIL POPUP -->
-<div class="ach-detail-overlay" id="ach-detail-overlay" onclick="if(event.target===this)closeAchDetail()">
-  <div class="ach-detail-card">
-    <div class="ach-detail-icon" id="ach-detail-icon">🏅</div>
-    <div class="ach-detail-name" id="ach-detail-name"></div>
-    <div class="ach-detail-desc" id="ach-detail-desc"></div>
-    <div class="ach-detail-condition"><strong>Условие: </strong><span id="ach-detail-cond"></span></div>
-    <div style="text-align:center;font-size:14px;font-weight:600;" id="ach-detail-status"></div>
-    <button onclick="closeAchDetail()" style="margin-top:16px;width:100%;background:var(--surface2);border:none;border-radius:var(--radius-sm);color:var(--text-dim);font-size:15px;padding:12px;cursor:pointer;">Закрыть</button>
-  </div>
-</div>
+
 
 </body>
 </html>
