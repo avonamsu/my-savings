@@ -2791,9 +2791,8 @@ const OLD_KEYS = ['fin_state', 'fin_state_v2'];
 let _idbSaveTimer = null;
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  // Debounce IDB save to avoid too many writes
   clearTimeout(_idbSaveTimer);
-  _idbSaveTimer = setTimeout(saveToIDB, 2000);
+  _idbSaveTimer = setTimeout(saveToIDB, 1000);
 }
 function load() {
   const allKeys = [STORAGE_KEY, ...OLD_KEYS];
