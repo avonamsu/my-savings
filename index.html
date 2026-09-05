@@ -3818,8 +3818,15 @@ function deleteItem(list,id){
 
 function resetAllData(){
   if(confirm('Удалить все данные приложения? Это нельзя отменить.')){
-    ['fin_v3','fin_state_v2','fin_state'].forEach(k=>localStorage.removeItem(k));
-    location.reload();
+    // Clear localStorage
+    ['fin_v3','fin_state_v2','fin_state','last_backup_date','last_backup_datetime','last_backup_state_hash'].forEach(k=>localStorage.removeItem(k));
+    // Clear IndexedDB
+    openIDB().then(db => {
+      const tx = db.transaction('state', 'readwrite');
+      tx.objectStore('state').clear();
+      tx.oncomplete = () => location.reload();
+      tx.onerror = () => location.reload();
+    }).catch(() => location.reload());
   }
 }
 
