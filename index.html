@@ -5997,14 +5997,14 @@ function renderChCard(ch) {
       onTrack ? `<span style="color:var(--accent);font-size:11px;">✓ Успеваешь</span>` :
                 `<span style="color:var(--warn);font-size:11px;">⚠ Нужно ускориться</span>`;
 
-  return `<div class="ch-card" data-ch="${ch.id}" style="border-color:${color}22;border-left:3px solid ${color};padding:16px;">
+  return `<div class="ch-card" data-ch="${ch.id}" style="border-left:3px solid ${color};padding:16px;">
       <div style="padding:0 0 6px;"><span class="pg-type-badge challenge">🎯 Челлендж</span></div>
-      <div class="ch-header" onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+      <div onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
           <span style="font-size:22px;">${emoji}</span>
           <div style="min-width:0;">
-            <div class="ch-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.name}</div>
-            <div class="ch-meta">${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽ · ${pct}%${streak>1?' · 🔥'+streak+' дн.':''}</div>
+            <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.name}</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽ · ${pct}%${streak>1?' · 🔥'+streak+' дн.':''}</div>
           </div>
         </div>
         <span style="color:${color};font-size:18px;padding-left:8px;flex-shrink:0;">${collapsed?'▸':'▾'}</span>
