@@ -5149,16 +5149,26 @@ function renderChCard(ch) {
 }
 
 function selectEmoji(e, suffix) {
-  document.getElementById('ch-emoji-'+suffix).value = e;
+  // For piggy bank suffix 'pg', update pg-emoji field
+  const fieldId = suffix === 'pg' ? 'pg-emoji' : 'ch-emoji-'+suffix;
+  const el = document.getElementById(fieldId);
+  if(el) el.value = e;
   document.querySelectorAll('[id^="epb-'+suffix+'-"]').forEach(b => b.classList.remove('selected'));
-  const emap = {'🎯':'target','✈️':'plane','🏠':'home','🚗':'car','💍':'ring','👗':'dress','📱':'phone','🎮':'game','🌴':'palm','🎓':'grad','💄':'lipstick','🐱':'cat'};
+  const emap = {
+    '🎯':'target','✈️':'plane','🏠':'home','🚗':'car','💍':'ring',
+    '👗':'dress','📱':'phone','🎮':'game','🌴':'palm','🎓':'grad',
+    '💄':'lipstick','🐱':'cat',
+    '🐷':'pig','💻':'laptop'
+  };
   const btn = document.getElementById('epb-'+suffix+'-'+(emap[e]||e));
   if (btn) btn.classList.add('selected');
 }
 function selectColor(c, suffix) {
-  document.getElementById('ch-color-'+suffix).value = c;
-  document.querySelectorAll(`[id^="cpb-${suffix}-"]`).forEach(b => b.classList.remove('selected'));
-  const btn = document.getElementById(`cpb-${suffix}-${c.replace('#','')}`);
+  const fieldId = suffix === 'pg' ? 'pg-color' : 'ch-color-'+suffix;
+  const el = document.getElementById(fieldId);
+  if(el) el.value = c;
+  document.querySelectorAll('[id^="cpb-'+suffix+'-"]').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById('cpb-'+suffix+'-'+c.replace('#',''));
   if (btn) btn.classList.add('selected');
 }
 function highlightRandomCell(id) {
