@@ -5628,6 +5628,7 @@ function togglePiggyPlan(prefix) {
   if(checked) {
     const startEl = document.getElementById(prefix === 'pg' ? 'pg-date-start' : 'pg-edit-date-start');
     if(startEl && !startEl.value) startEl.value = today();
+    updatePiggyPlanPreview(prefix);
   }
 }
 
@@ -5642,8 +5643,11 @@ function createPiggyBank() {
   const name = (document.getElementById('pg-name')?.value||'').trim();
   const goal = parseFloat(document.getElementById('pg-goal')?.value||0);
   const hasPlan = document.getElementById('pg-plan-check')?.checked;
-  const deadline = hasPlan ? (document.getElementById('pg-deadline')?.value||null) : null;
-  const dateStart = hasPlan ? (document.getElementById('pg-date-start')?.value||null) : null;
+  // If amount mode, deadline was auto-calculated into the field
+  const deadlineRaw = document.getElementById('pg-deadline')?.value||null;
+  const deadline = hasPlan ? deadlineRaw : null;
+  const dateStartRaw = document.getElementById('pg-date-start')?.value||today();
+  const dateStart = hasPlan ? dateStartRaw : null;
   const frequency = hasPlan ? (document.getElementById('pg-frequency')?.value||'month') : null;
   const planMode = hasPlan ? (document.getElementById('pg-mode-date')?.classList.contains('active') ? 'date' : 'amount') : null;
   const perPeriod = hasPlan && planMode==='amount' ? parseFloat(document.getElementById('pg-per-period')?.value||0)||null : null;
@@ -5717,7 +5721,7 @@ function savePiggyEdit() {
   pg.goal = goal;
   const editHasPlan = document.getElementById('pg-edit-plan-check')?.checked;
   pg.deadline = editHasPlan ? (document.getElementById('pg-edit-deadline').value||null) : null;
-  pg.dateStart = editHasPlan ? (document.getElementById('pg-edit-date-start')?.value||null) : null;
+  pg.dateStart = editHasPlan ? (document.getElementById('pg-edit-date-start')?.value||today()) : null;
   pg.frequency = editHasPlan ? (document.getElementById('pg-edit-frequency')?.value||'month') : null;
   const editPlanMode = editHasPlan ? (document.getElementById('pg-edit-mode-date')?.classList.contains('active') ? 'date' : 'amount') : null;
   pg.planMode = editPlanMode;
@@ -5816,6 +5820,9 @@ function renderPiggyCard(pg) {
       </div>
       <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${color};"></div></div>
     </div>
+    ${planCalc && planCalc.remaining > 0 ? `<div style="font-size:12px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:8px;">
+      Откладывай <strong style="color:${color};">${fmt(planCalc.perPeriod)} ₽</strong> ${planCalc.freqLabel}${planCalc.ahead?' · <span style="color:var(--accent);">опережаешь 🚀</span>':''}
+    </div>` : ''}
     <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
       ${done
         ? `<span style="color:${color};font-weight:700;font-size:13px;">🎉 Цель достигнута!</span>`
