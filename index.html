@@ -675,13 +675,18 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="ch-name-p" placeholder="Например: На отпуск в Турции"></div>
     <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="ch-goal-p" placeholder="100 000" inputmode="decimal" oninput="updateChallengePreviewPage()"></div>
     <div class="field"><label>СРОК</label>
-      <select id="ch-period-p" onchange="updateChallengePreviewPage()">
+      <select id="ch-period-p" onchange="onChPeriodChange()">
         <option value="30">1 месяц</option>
         <option value="60">2 месяца</option>
         <option value="90" selected>3 месяца</option>
         <option value="180">6 месяцев</option>
         <option value="365">1 год</option>
+        <option value="custom">Своя дата →</option>
       </select>
+    </div>
+    <div class="field" id="ch-custom-date-wrap" style="display:none;">
+      <label>ДАТА ОКОНЧАНИЯ</label>
+      <input type="date" id="ch-custom-date" oninput="updateChallengePreviewPage()">
     </div>
     <div class="field"><label>РАЗМЕР ЯЧЕЕК</label>
       <select id="ch-cell-mode-p" onchange="updateChallengePreviewPage()">
@@ -720,6 +725,69 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="calc-preview" id="ch-preview-p" style="display:none;"></div>
     <button class="btn-primary" onclick="createChallengeFromPage()">Создать челлендж</button>
     </div><!-- end pg-challenge-fields -->
+  </div>
+</div>
+
+<!-- EDIT CHALLENGE MODAL -->
+<div class="modal-overlay" id="edit-challenge-modal" onclick="if(event.target===this)closeEditChallenge()">
+  <div class="modal">
+    <div class="modal-title">Изменить челлендж</div>
+    <input type="hidden" id="ech-id">
+    <div class="field"><label>НАЗВАНИЕ</label>
+      <input type="text" id="ech-name" placeholder="Название">
+    </div>
+    <div class="field"><label>НОВАЯ ЦЕЛЬ (₽)</label>
+      <input type="number" id="ech-goal" placeholder="100 000" inputmode="decimal" oninput="updateEditChallengePreview()">
+    </div>
+    <div class="field"><label>СРОК</label>
+      <select id="ech-period" onchange="onEchPeriodChange()">
+        <option value="30">1 месяц</option>
+        <option value="60">2 месяца</option>
+        <option value="90">3 месяца</option>
+        <option value="180">6 месяцев</option>
+        <option value="365">1 год</option>
+        <option value="custom">Своя дата</option>
+      </select>
+    </div>
+    <div class="field" id="ech-custom-date-wrap" style="display:none;">
+      <label>ДАТА ОКОНЧАНИЯ</label>
+      <input type="date" id="ech-custom-date" oninput="updateEditChallengePreview()">
+    </div>
+    <div class="field"><label>РАЗМЕР ЯЧЕЕК</label>
+      <select id="ech-cell-mode">
+        <option value="random">Случайные суммы</option>
+        <option value="equal">Равные части</option>
+      </select>
+    </div>
+    <div class="field"><label>ЭМОДЗИ</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" onclick="selectEmoji('🎯','ech')" class="emoji-pick-btn" id="epb-ech-target">🎯</button>
+        <button type="button" onclick="selectEmoji('✈️','ech')" class="emoji-pick-btn" id="epb-ech-plane">✈️</button>
+        <button type="button" onclick="selectEmoji('🏠','ech')" class="emoji-pick-btn" id="epb-ech-home">🏠</button>
+        <button type="button" onclick="selectEmoji('🚗','ech')" class="emoji-pick-btn" id="epb-ech-car">🚗</button>
+        <button type="button" onclick="selectEmoji('💍','ech')" class="emoji-pick-btn" id="epb-ech-ring">💍</button>
+        <button type="button" onclick="selectEmoji('🎮','ech')" class="emoji-pick-btn" id="epb-ech-game">🎮</button>
+        <button type="button" onclick="selectEmoji('🌴','ech')" class="emoji-pick-btn" id="epb-ech-palm">🌴</button>
+        <button type="button" onclick="selectEmoji('🎓','ech')" class="emoji-pick-btn" id="epb-ech-grad">🎓</button>
+      </div>
+      <input type="hidden" id="ech-emoji" value="🎯">
+    </div>
+    <div class="field"><label>ЦВЕТ</label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" onclick="selectColor('#4ECDC4','ech')" class="color-pick-btn" id="cpb-ech-4ECDC4" style="background:#4ECDC4;"></button>
+        <button type="button" onclick="selectColor('#FF6B9D','ech')" class="color-pick-btn" id="cpb-ech-FF6B9D" style="background:#FF6B9D;"></button>
+        <button type="button" onclick="selectColor('#FFB347','ech')" class="color-pick-btn" id="cpb-ech-FFB347" style="background:#FFB347;"></button>
+        <button type="button" onclick="selectColor('#7B68EE','ech')" class="color-pick-btn" id="cpb-ech-7B68EE" style="background:#7B68EE;"></button>
+        <button type="button" onclick="selectColor('#5BC8AF','ech')" class="color-pick-btn" id="cpb-ech-5BC8AF" style="background:#5BC8AF;"></button>
+      </div>
+      <input type="hidden" id="ech-color" value="#4ECDC4">
+    </div>
+    <div class="calc-preview" id="ech-preview" style="display:none;"></div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">⚠️ Уже отмеченные ячейки сохранятся. Если изменишь сумму — незакрытые ячейки пересчитаются.</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeEditChallenge()">Отмена</button>
+      <button class="btn-primary" onclick="saveEditChallenge()">Сохранить</button>
+    </div>
   </div>
 </div>
 
@@ -2929,9 +2997,37 @@ function hideChallengeFormPage() {
   renderChallengesPage();
 }
 
+
+function onChPeriodChange() {
+  const val = document.getElementById('ch-period-p')?.value;
+  const wrap = document.getElementById('ch-custom-date-wrap');
+  if(wrap) wrap.style.display = val === 'custom' ? '' : 'none';
+  updateChallengePreviewPage();
+}
+
+function onEchPeriodChange() {
+  const val = document.getElementById('ech-period')?.value;
+  const wrap = document.getElementById('ech-custom-date-wrap');
+  if(wrap) wrap.style.display = val === 'custom' ? '' : 'none';
+  updateEditChallengePreview();
+}
+
+function getChDays(prefix) {
+  const isEdit = prefix === 'ech';
+  const periodEl = document.getElementById(isEdit ? 'ech-period' : 'ch-period-p');
+  const val = periodEl?.value;
+  if (val === 'custom') {
+    const dateEl = document.getElementById(isEdit ? 'ech-custom-date' : 'ch-custom-date');
+    const date = dateEl?.value;
+    if (!date) return 90;
+    return Math.max(1, Math.round((new Date(date) - new Date()) / 86400000));
+  }
+  return parseInt(val) || 90;
+}
+
 function updateChallengePreviewPage() {
   const goal = parseFloat(document.getElementById('ch-goal-p').value) || 0;
-  const days = parseInt(document.getElementById('ch-period-p').value) || 90;
+  const days = getChDays('ch');
   const preview = document.getElementById('ch-preview-p');
   if (!goal) { preview.style.display='none'; return; }
   const cells = days;
@@ -2990,17 +3086,27 @@ function initSavingsDrag() {
 
 function generateCells(goal, days, mode) {
   const count = days;
-  if (mode === 'equal') return Array(count).fill(Math.round(goal / count));
-  const base = Math.round(goal / count);
-  let cells = [], rem = goal;
-  for (let i = 0; i < count - 1; i++) {
-    const min = Math.max(50, Math.round(base * 0.2));
-    const max = Math.round(base * 1.8);
-    const v = Math.round((min + Math.random() * (max - min)) / 50) * 50;
-    cells.push(v); rem -= v;
-    if (rem <= 0) { cells.push(50); rem = 0; break; }
+  if (mode === 'equal') {
+    const base = Math.round(goal / count);
+    const cells = Array(count).fill(base);
+    cells[count-1] += goal - base * count;
+    return cells;
   }
-  cells.push(Math.max(50, rem));
+  const base = goal / count;
+  const cells = [];
+  let rem = goal;
+  for (let i = 0; i < count; i++) {
+    if (i === count - 1) { cells.push(Math.max(50, Math.round(rem/50)*50)); break; }
+    const remaining_count = count - i;
+    const avg = rem / remaining_count;
+    const min = Math.max(50, Math.round(avg * 0.3));
+    const max = Math.round(avg * 1.7);
+    const range = Math.max(0, max - min);
+    const v = Math.round((min + Math.random() * range) / 50) * 50;
+    cells.push(v);
+    rem -= v;
+    if (rem <= 50) { cells.push(Math.max(50, rem)); break; }
+  }
   return cells;
 }
 
@@ -3232,7 +3338,9 @@ function editChallenge(id) {
   document.getElementById('ech-id').value = id;
   document.getElementById('ech-name').value = ch.name;
   document.getElementById('ech-goal').value = ch.goal || ch.cells.reduce((s,c)=>s+c.amt,0);
-  document.getElementById('ech-period').value = ch.days || 90;
+  const chDays = ch.days || 90;
+  const stdPeriods = [30,60,90,180,365];
+  if(stdPeriods.includes(chDays)){document.getElementById('ech-period').value=chDays;}else{document.getElementById('ech-period').value='custom';const cd=document.getElementById('ech-custom-date');if(cd){const d=new Date();d.setDate(d.getDate()+chDays);cd.value=d.toISOString().slice(0,10);}const w=document.getElementById('ech-custom-date-wrap');if(w)w.style.display='';}
   document.getElementById('ech-cell-mode').value = ch.mode || 'random';
   document.getElementById('ech-preview').style.display = 'none';
   selectEmoji(ch.emoji||'🎯', 'ech');
