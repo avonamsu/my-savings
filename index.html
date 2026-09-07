@@ -820,17 +820,18 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <div class="field-hint error" id="s-amount-err" style="display:none">Введи сумму больше 0</div>
         </div>
         <div class="field" style="flex:1"><label>ВАЛЮТА</label>
-          <select id="s-currency" onchange="updateDepositPreview()">
-            <option value="RUB">₽ RUB</option>
-            <option value="USD">$ USD</option>
-            <option value="EUR">€ EUR</option>
-            <option value="CNY">¥ CNY</option>
-            <option value="GBP">£ GBP</option>
-            <option value="CHF">₣ CHF</option>
-            <option value="AED">د AED</option>
-            <option value="TRY">₺ TRY</option>
-            <option value="KZT">₸ KZT</option>
-          </select>
+          <select id="s-currency" onchange="updateDepositPreview();updateCurrencyIcon()">
+          <option value="RUB">🇷🇺 RUB</option>
+          <option value="USD">🇺🇸 USD</option>
+          <option value="EUR">🇪🇺 EUR</option>
+          <option value="CNY">🇨🇳 CNY</option>
+          <option value="JPY">🇯🇵 JPY</option>
+          <option value="GBP">🇬🇧 GBP</option>
+          <option value="CHF">🇨🇭 CHF</option>
+          <option value="AED">🇦🇪 AED</option>
+          <option value="TRY">🇹🇷 TRY</option>
+          <option value="KZT">🇰🇿 KZT</option>
+        </select>
         </div>
       </div>
       <div class="calc-preview" id="currency-preview" style="display:none;"></div>
@@ -1085,7 +1086,8 @@ let modalMode = null, incomeTab = 'linked', editingId = null;
 // ── CURRENCY ──────────────────────────────────────────────
 let rates = { RUB:1 };
 let ratesUpdated = null;
-const CURRENCY_SYMBOLS = { RUB:'₽', USD:'$', EUR:'€', CNY:'¥', GBP:'£', CHF:'₣', AED:'د', TRY:'₺', KZT:'₸' };
+const CURRENCY_FLAGS = {RUB:'🇷🇺',USD:'🇺🇸',EUR:'🇪🇺',CNY:'🇨🇳',JPY:'🇯🇵',GBP:'🇬🇧',CHF:'🇨🇭',AED:'🇦🇪',TRY:'🇹🇷',KZT:'🇰🇿'};
+const CURRENCY_SYMBOLS = { RUB:'₽', USD:'$', EUR:'€', CNY:'¥', JPY:'¥', GBP:'£', CHF:'₣', AED:'د', TRY:'₺', KZT:'₸' };
 function currSym(code) { return CURRENCY_SYMBOLS[code] || code; }
 function toRub(amount, currency) { return amount * (rates[currency]||1); }
 
@@ -1120,7 +1122,7 @@ async function fetchRates() {
     const res = await fetch('https://www.cbr-xml-daily.ru/daily_json.js');
     const data = await res.json();
     const v = data.Valute;
-    ['USD','EUR','CNY','GBP','CHF','AED','TRY','KZT'].forEach(code => {
+    ['USD','EUR','CNY','JPY','GBP','CHF','AED','TRY','KZT'].forEach(code => {
       if (v[code]) rates[code] = v[code].Value / v[code].Nominal;
     });
     ratesUpdated = new Date();
@@ -1134,7 +1136,7 @@ async function fetchRates() {
     const res = await fetch('https://open.er-api.com/v6/latest/RUB');
     const data = await res.json();
     if (data.result === 'success') {
-      ['USD','EUR','CNY','GBP','CHF','AED','TRY','KZT'].forEach(code => {
+      ['USD','EUR','CNY','JPY','GBP','CHF','AED','TRY','KZT'].forEach(code => {
         if (data.rates[code]) rates[code] = 1 / data.rates[code];
       });
       ratesUpdated = new Date();
@@ -2048,6 +2050,13 @@ function onSavingTypeChange() {
   document.getElementById('deposit-fields').style.display=isDeposit?'':'none';
   if(isDeposit) document.getElementById('s-currency').value='RUB';
   updateDepositPreview();
+}
+
+function updateCurrencyIcon() {
+  const cur = document.getElementById('s-currency')?.value || 'RUB';
+  const flags = {RUB:'🇷🇺',USD:'🇺🇸',EUR:'🇪🇺',CNY:'🇨🇳',JPY:'🇯🇵',GBP:'🇬🇧',CHF:'🇨🇭',AED:'🇦🇪',TRY:'🇹🇷',KZT:'🇰🇿'};
+  const iconEl = document.getElementById('s-currency-icon');
+  if (iconEl) iconEl.textContent = flags[cur] || '💵';
 }
 
 function updateDepositPreview() {
