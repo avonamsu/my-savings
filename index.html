@@ -2123,7 +2123,9 @@ function openEdit(list,id) {
     const sel=document.getElementById('s-icon');
     for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===x.icon){sel.selectedIndex=i;break;}}
     onSavingTypeChange();
-    if(x.isDeposit){document.getElementById('s-rate').value=x.rate||'';document.getElementById('s-date-start').value=x.dateStart||'';document.getElementById('s-date-end').value=x.dateEnd||'';document.getElementById('s-compound').checked=!!x.compound;updateDepositPreview();const si=document.getElementById('s-included');if(si)si.checked=(x.included!==false&&!x.excluded);}
+    const amtEl=document.getElementById('s-amount');if(amtEl){amtEl.value=x.amount;amtEl._rawValue=x.amount;}
+    const siEl=document.getElementById('s-included');if(siEl)siEl.checked=(x.included!==false&&!x.excluded);
+    if(x.isDeposit){document.getElementById('s-rate').value=x.rate||'';document.getElementById('s-date-start').value=x.dateStart||'';document.getElementById('s-date-end').value=x.dateEnd||'';document.getElementById('s-compound').checked=!!x.compound;updateDepositPreview();}
   } else if(list==='income'){
     const x=state.income.find(i=>i.id===id);if(!x)return;
     openModal('income');
