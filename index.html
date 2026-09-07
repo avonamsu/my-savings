@@ -863,6 +863,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <label class="toggle"><input type="checkbox" id="s-compound" onchange="updateDepositPreview()"><span class="toggle-slider"></span></label>
         </div>
         <div class="calc-preview" id="deposit-preview" style="display:none;"></div>
+        <div class="toggle-row">
+          <span class="toggle-label">Учитывать в накоплениях</span>
+          <label class="toggle"><input type="checkbox" id="s-included" checked><span class="toggle-slider"></span></label>
+        </div>
       </div>
     </div>
     <div id="fields-income" style="display:none">
@@ -1085,6 +1089,22 @@ const CURRENCY_SYMBOLS = { RUB:'₽', USD:'$', EUR:'€', CNY:'¥', GBP:'£', CH
 function currSym(code) { return CURRENCY_SYMBOLS[code] || code; }
 function toRub(amount, currency) { return amount * (rates[currency]||1); }
 
+// ── UTILITIES ─────────────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+function today() { return new Date().toISOString().slice(0,10); }
+function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
+function totalRub(savings) {
+  return (savings||[]).filter(s=>s.included!==false).reduce((sum,s)=>sum+getSavingCurrentAmountRub(s),0);
+}
+function avgInflation(years) {
+  if(!years||years<=0) return 9.52;
+  const vals = Object.values(ROSSTAT_INFLATION||{}).slice(-years);
+  if(!vals.length) return 9.52;
+  return vals.reduce((s,v)=>s+v,0)/vals.length;
+}
+
+
+
 async function fetchRates() {
   function updateRateBar(source) {
     const pairs = ['USD','EUR','CNY'].map(c =>
@@ -1177,10 +1197,10 @@ function load() {
   });
 }
 
-const fmt  = n => Number(n).toLocaleString('ru-RU', {maximumFractionDigits:0});
+
 const fmt2 = n => Number(n).toLocaleString('ru-RU', {maximumFractionDigits:2});
-const uid  = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
-const today = () => new Date().toISOString().slice(0,10);
+
+
 
 // ── DEPOSIT MATH ──────────────────────────────────────────
 function calcDeposit(s) {
@@ -2103,7 +2123,7 @@ function openEdit(list,id) {
     const sel=document.getElementById('s-icon');
     for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===x.icon){sel.selectedIndex=i;break;}}
     onSavingTypeChange();
-    if(x.isDeposit){document.getElementById('s-rate').value=x.rate||'';document.getElementById('s-date-start').value=x.dateStart||'';document.getElementById('s-date-end').value=x.dateEnd||'';document.getElementById('s-compound').checked=!!x.compound;updateDepositPreview();}
+    if(x.isDeposit){document.getElementById('s-rate').value=x.rate||'';document.getElementById('s-date-start').value=x.dateStart||'';document.getElementById('s-date-end').value=x.dateEnd||'';document.getElementById('s-compound').checked=!!x.compound;updateDepositPreview();const si=document.getElementById('s-included');if(si)si.checked=x.included!==false;}
   } else if(list==='income'){
     const x=state.income.find(i=>i.id===id);if(!x)return;
     openModal('income');
@@ -2145,7 +2165,8 @@ function saveItem(){
     const sel=document.getElementById('s-icon');
     const icon=sel.value,isDeposit=sel.options[sel.selectedIndex].dataset.deposit==='1';
     const currency=document.getElementById('s-currency').value;
-    const item={id,name,icon,amount,isDeposit,currency};
+    const included=document.getElementById('s-included')?.checked!==false;
+    const item={id,name,icon,amount,isDeposit,currency,included};
     if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
     state.savings.push(item);
   } else if(modalMode==='income'){
