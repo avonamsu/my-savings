@@ -1415,7 +1415,7 @@ function renderSavingCard(x, grandTotal) {
       if(Number(x.rate)<curInfl) inflWarn=`<div style="font-size:11px;color:var(--warn);margin-top:3px;">⚠️ Ставка ниже инфляции ${curInfl}%</div>`;
     }
   }
-  if(cur!=='RUB') badges+=` <span class="badge badge-cur">${currSym(cur)}</span>`;
+  if(cur!=='RUB') badges+=` <span class="badge badge-cur">${(CURRENCY_FLAGS[cur]||"")} ${cur}</span>`;
   const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
   const subAmt = cur!=='RUB'?`≈ ${fmt(rubAmt)} ₽`:'';
 
