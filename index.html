@@ -1728,7 +1728,9 @@ function formatAmountInput(el) {
 function getSavingAmountValue() {
   const el = document.getElementById('s-amount');
   if (!el) return 0;
-  const raw = ((el._rawValue !== undefined ? el._rawValue : el.value) + '').replace(/ /g,'').replace(',','.');
+  // Try _rawValue first, then el.value - strip spaces and formatting
+  const src = el._rawValue !== undefined && el._rawValue !== '' ? el._rawValue : el.value;
+  const raw = (src + '').replace(/\s/g,'').replace(',','.').replace(/[^\d.]/g,'');
   return parseFloat(raw) || 0;
 }
 function setDepositMonths(months) {
@@ -1811,6 +1813,95 @@ function updateLevel(count) {
   if(sub)  sub.textContent  = next ? lvl.sub+' · до «'+next.name+'»: '+(lvl.max-count)+' ачивок' : (lvl.sub||'');
   if(bar)  bar.style.width  = Math.min(100,pct)+'%';
 }
+
+function trackDailyAdd() { /* stub - achievements removed */ }
+
+// ── RESTORED MISSING FUNCTIONS ────────────────────────────
+
+function startConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  canvas.style.display = '';
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const pieces = Array.from({length: 120}, () => ({
+    x: Math.random()*canvas.width, y: Math.random()*canvas.height-canvas.height,
+    r: 4+Math.random()*6, d: 2+Math.random()*3,
+    color: ['#4ECDC4','#FF6B9D','#FFB347','#7B68EE','#5BC8AF','#64B5F6'][Math.floor(Math.random()*6)],
+    tilt: Math.random()*10-5, tiltAngle: 0
+  }));
+  let frame;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p => {
+      ctx.beginPath(); ctx.lineWidth = p.r;
+      ctx.strokeStyle = p.color;
+      ctx.moveTo(p.x+p.tilt+p.r/4, p.y);
+      ctx.lineTo(p.x+p.tilt, p.y+p.tilt+p.r/4);
+      ctx.stroke();
+      p.tiltAngle += 0.1; p.y += (Math.cos(p.d)+3+p.r/2)/2;
+      p.tilt = Math.sin(p.tiltAngle) * 15;
+      if (p.y > canvas.height) { p.x = Math.random()*canvas.width; p.y = -10; }
+    });
+    frame = requestAnimationFrame(draw);
+  }
+  draw();
+  window._confettiFrame = frame;
+}
+
+function stopConfetti() {
+  if (window._confettiFrame) cancelAnimationFrame(window._confettiFrame);
+  const canvas = document.getElementById('confetti-canvas');
+  if (canvas) canvas.style.display = 'none';
+}
+
+function switchIncomeTab(tab) {
+  const linked = document.getElementById('income-tab-linked');
+  const manual = document.getElementById('income-tab-manual');
+  const btnLinked = document.getElementById('income-btn-linked');
+  const btnManual = document.getElementById('income-btn-manual');
+  if (!linked || !manual) return;
+  if (tab === 'linked') {
+    linked.style.display = ''; manual.style.display = 'none';
+    if(btnLinked) btnLinked.classList.add('active');
+    if(btnManual) btnManual.classList.remove('active');
+  } else {
+    linked.style.display = 'none'; manual.style.display = '';
+    if(btnLinked) btnLinked.classList.remove('active');
+    if(btnManual) btnManual.classList.add('active');
+  }
+}
+
+function deleteChallenge(id) {
+  if (!confirm('Удалить челлендж?')) return;
+  state.challenges = (state.challenges||[]).filter(c => c.id !== id);
+  haptic('medium');
+  save();
+  renderChallengesPage();
+}
+
+function fetchCurrentInflation() {
+  // Stub - inflation page removed, uses ROSSTAT_INFLATION data
+  return 9.52;
+}
+
+function updateIncomePreview() {
+  // Updates income form preview - called from income form inputs
+  const savingRef = document.getElementById('i-saving-ref')?.value;
+  const rate = parseFloat(document.getElementById('i-rate')?.value) || 0;
+  const amount = parseFloat((document.getElementById('i-amount')?.value||'').replace(/\s/g,'')) || 0;
+  const preview = document.getElementById('income-preview');
+  if (!preview) return;
+  if (amount > 0) {
+    preview.style.display = '';
+    preview.textContent = 'Доход в год: ' + fmt(Math.round(amount * 12)) + ' ₽';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+
 
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
@@ -2123,7 +2214,7 @@ function openEdit(list,id) {
     const sel=document.getElementById('s-icon');
     for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===x.icon){sel.selectedIndex=i;break;}}
     onSavingTypeChange();
-    const amtEl=document.getElementById('s-amount');if(amtEl){amtEl.value=x.amount;amtEl._rawValue=x.amount;}
+    const amtEl=document.getElementById('s-amount');if(amtEl){amtEl.value=x.amount;amtEl._rawValue=String(x.amount);formatAmountInput(amtEl);}
     const siEl=document.getElementById('s-included');if(siEl)siEl.checked=(x.included!==false&&!x.excluded);
     if(x.isDeposit){document.getElementById('s-rate').value=x.rate||'';document.getElementById('s-date-start').value=x.dateStart||'';document.getElementById('s-date-end').value=x.dateEnd||'';document.getElementById('s-compound').checked=!!x.compound;updateDepositPreview();}
   } else if(list==='income'){
