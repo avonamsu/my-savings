@@ -3167,6 +3167,7 @@ function createChallengeFromPage() {
   const color = document.getElementById('ch-color-p').value || '#4ECDC4';
   if (!name || !goal || goal <= 0 || !days || days <= 0) return;
   const cells = generateCells(goal, days, mode);
+
   if (!state.challenges) state.challenges = [];
   state.challenges.push({
     id:uid(), name, goal, days, mode, emoji, color,
@@ -3279,6 +3280,11 @@ function renderChallengesPage() {
     if (!ch.createdAt) ch.createdAt = today();
     if (!ch.days) ch.days = 90;
     if (!ch.name) ch.name = 'Челлендж';
+    // Regenerate cells if missing or empty but goal exists
+    if ((!ch.cells || ch.cells.length === 0) && ch.goal > 0 && ch.days > 0) {
+      const newCells = generateCells(ch.goal, ch.days, ch.mode||'random');
+      ch.cells = newCells.map(amt=>({amt, done:false}));
+    }
   });
 
   const el = document.getElementById('challenges-container-page');
