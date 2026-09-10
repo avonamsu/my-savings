@@ -3165,7 +3165,7 @@ function createChallengeFromPage() {
   const mode = document.getElementById('ch-cell-mode-p').value;
   const emoji = document.getElementById('ch-emoji-p').value || '🎯';
   const color = document.getElementById('ch-color-p').value || '#4ECDC4';
-  if (!name || !goal || goal <= 0) return;
+  if (!name || !goal || goal <= 0 || !days || days <= 0) return;
   const cells = generateCells(goal, days, mode);
   if (!state.challenges) state.challenges = [];
   state.challenges.push({
@@ -3286,11 +3286,13 @@ function renderChallengesPage() {
   const archiveEmpty = document.getElementById('ch-archive-empty');
 
   const activeChallenges = state.challenges.filter(ch => {
+    if (!ch.cells || ch.cells.length === 0) return true; // new empty challenge → active
     const done = ch.cells.filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
     const total = ch.cells.reduce((s,c)=>s+c.amt,0);
     return done < total;
   });
   const archivedChallenges = state.challenges.filter(ch => {
+    if (!ch.cells || ch.cells.length === 0) return false;
     const done = ch.cells.filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
     const total = ch.cells.reduce((s,c)=>s+c.amt,0);
     return done >= total;
