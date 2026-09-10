@@ -3161,7 +3161,7 @@ function updateChallengePreviewPage() {
 function createChallengeFromPage() {
   const name = document.getElementById('ch-name-p').value.trim();
   const goal = parseFloat(document.getElementById('ch-goal-p').value);
-  const days = parseInt(document.getElementById('ch-period-p').value);
+  const days = getChDays('ch');
   const mode = document.getElementById('ch-cell-mode-p').value;
   const emoji = document.getElementById('ch-emoji-p').value || '🎯';
   const color = document.getElementById('ch-color-p').value || '#4ECDC4';
