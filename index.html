@@ -3974,31 +3974,34 @@ function resetOnboarding() { forceStartOnboarding(); }
 
 // ── PULL TO REFRESH ───────────────────────────────────────
 (function() {
-  let startY = 0, pulling = false, threshold = 70;
+  let startY = 0, pulling = false, threshold = 65;
   const indicator = document.getElementById('ptr-indicator');
   const spin = document.getElementById('ptr-spin');
   const text = document.getElementById('ptr-text');
 
+  function getActivePage() {
+    return document.querySelector('.page[style*="display: flex"], .page[style*="display:flex"]')
+        || document.querySelector('.page.active');
+  }
+
   document.addEventListener('touchstart', e => {
-    const page = document.querySelector('.page.active, .page[style*="flex"]');
-    if (page && page.scrollTop === 0) {
+    const page = getActivePage();
+    if (!page) return;
+    if (page.scrollTop <= 0) {
       startY = e.touches[0].clientY;
       pulling = true;
     }
   }, { passive: true });
 
   document.addEventListener('touchmove', e => {
-    if (!pulling) return;
+    if (!pulling || !indicator) return;
     const dy = e.touches[0].clientY - startY;
-    if (dy > 0 && dy < threshold * 1.5) {
-      const pct = Math.min(dy / threshold, 1);
-      if (indicator) {
-        indicator.style.height = (pct * 44) + 'px';
-        indicator.classList.toggle('pulling', dy > 20);
-        if (spin) spin.textContent = pct >= 1 ? '↻' : '↓';
-        if (text) text.textContent = pct >= 1 ? 'Отпусти для обновления' : 'Потяни чтобы обновить';
-      }
-    }
+    if (dy <= 0) { pulling = false; return; }
+    const pct = Math.min(dy / threshold, 1);
+    indicator.style.height = Math.min(dy * 0.5, 44) + 'px';
+    indicator.classList.toggle('pulling', dy > 15);
+    if (spin) spin.textContent = pct >= 1 ? '↻' : '↓';
+    if (text) text.textContent = pct >= 1 ? 'Отпусти для обновления' : 'Потяни чтобы обновить';
   }, { passive: true });
 
   document.addEventListener('touchend', e => {
@@ -4010,16 +4013,23 @@ function resetOnboarding() { forceStartOnboarding(); }
       if (spin) spin.textContent = '↻';
       if (text) text.textContent = 'Обновление...';
       if (navigator.vibrate) navigator.vibrate(20);
-      // Refresh data
       fetchRates();
-      setTimeout(() => { render(); }, 300);
+      setTimeout(() => { render(); }, 200);
       setTimeout(() => {
         if (indicator) { indicator.style.height = '0'; indicator.classList.remove('pulling','refreshing'); }
-      }, 1200);
+        if (spin) spin.textContent = '↓';
+        if (text) text.textContent = 'Потяни чтобы обновить';
+      }, 1000);
     } else {
       if (indicator) { indicator.style.height = '0'; indicator.classList.remove('pulling'); }
     }
     startY = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => {
+    pulling = false;
+    startY = 0;
+    if (indicator) { indicator.style.height = '0'; indicator.classList.remove('pulling','refreshing'); }
   }, { passive: true });
 })();
 
