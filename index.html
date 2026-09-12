@@ -1953,6 +1953,7 @@ function showPage(name) {
   if (!newPage) return;
 
   // Prep new page off-screen
+  newPage.scrollTop = 0;
   newPage.style.display = 'flex';
   newPage.style.opacity = '0';
   newPage.style.transform = goRight ? 'translateX(30px)' : 'translateX(-30px)';
