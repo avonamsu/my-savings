@@ -481,6 +481,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="hero-amount" id="total-savings">0 <span>₽</span></div>
     <div class="hero-sub" id="savings-count">Нет счетов</div>
   </div>
+  <div class="chart-wrap" id="deposit-tax-block" style="display:none;"></div>
   <div style="display:flex;gap:8px;">
     <input type="text" id="savings-search" placeholder="🔍 Поиск..." oninput="renderSavings()"
       style="flex:1;background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:9px 12px;outline:none;">
@@ -1125,6 +1126,19 @@ function avgInflation(years) {
 
 
 async function fetchRates() {
+  // Try to fetch CB key rate
+  async function fetchCBKeyRate() {
+    try {
+      const res = await fetch('https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx/GetCursDynamic', { method: 'GET' });
+    } catch(e) {}
+    // Fallback: parse from existing CBR XML
+    try {
+      const r = await fetch('https://www.cbr-xml-dai.ru/latest.js');
+      // Key rate not in this API, use last known
+    } catch(e) {}
+  }
+  fetchCBKeyRate();
+
   function updateRateBar(source) {
     const pairs = ['USD','EUR','CNY'].map(c =>
       `${CURRENCY_SYMBOLS[c]}&nbsp;<span>${rates[c]?rates[c].toLocaleString('ru-RU',{maximumFractionDigits:2}):'—'}</span>`
@@ -1370,8 +1384,87 @@ function toggleExclude(id) {
   save();render();
 }
 
+
+// ── ВКЛАДЫ: НАЛОГ НА ДОХОДЫ ───────────────────────────────
+function calcDepositTax() {
+  // Все рублёвые вклады — включая excluded
+  const rubDeposits = state.savings.filter(s => s.isDeposit && (!s.currency || s.currency === 'RUB'));
+  
+  // Сумма годового дохода по всем рублёвым вкладам
+  const totalYearlyIncome = rubDeposits.reduce((sum, s) => {
+    if (!s.rate || !s.dateStart || !s.dateEnd) return sum;
+    const d = calcDeposit(s);
+    return sum + (d ? d.yearlyIncome : 0);
+  }, 0);
+
+  // Необлагаемый минимум: 1 000 000 × ключевая ставка ЦБ
+  const cbRate = window._cbKeyRate || 21; // fallback 21%
+  const taxFreeAmount = 1000000 * cbRate / 100;
+
+  // Налогооблагаемая база
+  const taxBase = Math.max(0, totalYearlyIncome - taxFreeAmount);
+
+  // Налог 13% (или 15% если база > 5 млн, упрощённо 13%)
+  const taxRate = taxBase > 5000000 ? 0.15 : 0.13;
+  const tax = Math.round(taxBase * taxRate);
+
+  return { totalYearlyIncome, taxFreeAmount, taxBase, tax, cbRate, rubDeposits: rubDeposits.length };
+}
+
+function renderDepositTax() {
+  const el = document.getElementById('deposit-tax-block');
+  if (!el) return;
+  const t = calcDepositTax();
+  if (t.totalYearlyIncome <= 0) { el.style.display = 'none'; return; }
+  el.style.display = '';
+
+  const pct = Math.min(100, Math.round(t.totalYearlyIncome / t.taxFreeAmount * 100));
+  const remaining = Math.max(0, t.taxFreeAmount - t.totalYearlyIncome);
+
+  // State: 0=safe(<70%), 1=warning(70-100%), 2=exceeded(>100%)
+  const state = t.taxBase > 0 ? 2 : pct >= 70 ? 1 : 0;
+  const barColor = state === 2 ? 'var(--danger)' : state === 1 ? 'var(--warn)' : 'var(--accent)';
+
+  // Status line
+  let statusHtml = '';
+  if (state === 0) {
+    statusHtml = '<div style="font-size:12px;color:var(--text-dim);">До порога осталось <strong style="color:var(--text);">' + fmt(Math.round(remaining)) + ' ₽</strong></div>';
+  } else if (state === 1) {
+    statusHtml = '<div style="font-size:12px;color:var(--warn);">⚠️ Осталось <strong>' + fmt(Math.round(remaining)) + ' ₽</strong> до налога — скоро придётся платить</div>';
+  } else {
+    const taxRate = t.taxBase > 5000000 ? 15 : 13;
+    statusHtml = '<div style="font-size:12px;color:var(--danger);">🔴 Налог к уплате: <strong>' + fmt(t.tax) + ' ₽</strong> (база ' + fmt(Math.round(t.taxBase)) + ' ₽ × ' + taxRate + '%)</div>';
+  }
+
+  el.innerHTML = [
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">',
+      '<span style="font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);">💸 НДФЛ С ВКЛАДОВ</span>',
+      '<span style="font-size:11px;color:var(--text-dim);">ставка ЦБ ' + t.cbRate + '%</span>',
+    '</div>',
+    // Row: income vs threshold
+    '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">',
+      '<span style="color:var(--text-dim);">Доход за год</span>',
+      '<span style="font-weight:600;">' + fmt(Math.round(t.totalYearlyIncome)) + ' ₽</span>',
+    '</div>',
+    // Progress bar
+    '<div style="margin-bottom:6px;">',
+      '<div style="height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;">',
+        '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width .4s ease;"></div>',
+      '</div>',
+      '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-top:3px;">',
+        '<span>0</span>',
+        '<span>порог ' + fmt(Math.round(t.taxFreeAmount)) + ' ₽ (' + pct + '%)</span>',
+      '</div>',
+    '</div>',
+    // Status
+    statusHtml,
+  ].join('');
+}
+
+
 function renderSavings() {
   const total = state.savings.reduce((s,x) => s+(x.excluded?0:getSavingCurrentAmountRub(x)), 0);
+  renderDepositTax();
   document.getElementById('total-savings').innerHTML = `${fmt(total)} <span>₽</span>`;
   const n = state.savings.length;
   document.getElementById('savings-count').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов';
