@@ -1504,6 +1504,7 @@ function calcDepositTax() {
   const tax = Math.round(taxBase * (taxBase > 5000000 ? 0.15 : 0.13));
 
   // Add manually fixed income for current year
+  if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
   const fixedIncome = getFixedIncomeForYear(currentYear);
   totalYearlyIncome += fixedIncome;
   const taxBase2 = Math.max(0, totalYearlyIncome - taxFreeAmount);
@@ -1610,6 +1611,7 @@ function renderSavingCard(x, grandTotal) {
   const pctOfTotal = grandTotal>0 ? Math.round(rubAmt/grandTotal*100) : 0;
   let badges='', sub='', inflWarn='', depositBar='';
 
+  let showFixBtn = false;
   if (x.isDeposit&&x.rate&&x.dateStart&&x.dateEnd) {
     const d = calcDeposit(x);
     const daysLeft = d.daysTotal-d.daysPassed;
@@ -1620,6 +1622,8 @@ function renderSavingCard(x, grandTotal) {
       badges+=`<span class="badge badge-cap">${x.rate}%</span>`;
       if(x.compound) badges+=` <span class="badge badge-cap">капит.</span>`;
       sub=`${fmt(yearlyIncome)} ₽/год · ${daysLeft} дн. осталось`;
+      showFixBtn = daysLeft <= 14 && daysLeft >= 0;
+      if (showFixBtn) sub += ' · <span style="color:#FFB347;font-size:11px;">💸 зафиксируй доход</span>';
       const pctDone=Math.round(d.daysPassed/d.daysTotal*100);
       depositBar=`<div style="margin-top:4px;height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pctDone}%;background:var(--accent);border-radius:2px;"></div></div>`;
       const curInfl=ROSSTAT_INFLATION[2024]||9.52;
@@ -3919,6 +3923,9 @@ function restoreBackup(event){
       // Clean service fields before restoring
       delete restored._appVersion; delete restored._exportedAt;
       state = restored;
+      if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
+      if (!state.piggyBanks) state.piggyBanks = [];
+      if (!state.challenges) state.challenges = [];
       save(); saveToIDB(); render(); drawChart(); checkNotifBanner();
       alert('✅ Данные восстановлены!');
     } catch(e){ alert('Не удалось прочитать файл.'); }
