@@ -1394,7 +1394,9 @@ function calcDepositTax() {
   const totalYearlyIncome = rubDeposits.reduce((sum, s) => {
     if (!s.rate || !s.dateStart || !s.dateEnd) return sum;
     const d = calcDeposit(s);
-    return sum + (d ? d.yearlyIncome : 0);
+    if (!d) return sum;
+    // yearlyIncome = monthlyIncome * 12
+    return sum + (d.monthlyIncome || 0) * 12;
   }, 0);
 
   // Необлагаемый минимум: 1 000 000 × ключевая ставка ЦБ
