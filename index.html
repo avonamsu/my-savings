@@ -736,6 +736,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <button type="button" onclick="selectEmoji('💄','p')" class="emoji-pick-btn" id="epb-p-lipstick">💄</button>
         <button type="button" onclick="selectEmoji('🐱','p')" class="emoji-pick-btn" id="epb-p-cat">🐱</button>
       </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+        <span style="font-size:12px;color:var(--text-dim);">Свой:</span>
+        <input type="text" id="ch-emoji-p-custom" placeholder="✨" maxlength="2" oninput="onCustomEmojiInput('p')" style="width:48px;text-align:center;font-size:20px;padding:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;">
+      </div>
       <input type="hidden" id="ch-emoji-p" value="🎯">
     </div>
     <div class="field"><label>ЦВЕТ</label>
@@ -796,6 +800,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <button type="button" onclick="selectEmoji('🎮','ech')" class="emoji-pick-btn" id="epb-ech-game">🎮</button>
         <button type="button" onclick="selectEmoji('🌴','ech')" class="emoji-pick-btn" id="epb-ech-palm">🌴</button>
         <button type="button" onclick="selectEmoji('🎓','ech')" class="emoji-pick-btn" id="epb-ech-grad">🎓</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+        <span style="font-size:12px;color:var(--text-dim);">Свой:</span>
+        <input type="text" id="ech-emoji-custom" placeholder="✨" maxlength="2" oninput="onCustomEmojiInput('ech')" style="width:48px;text-align:center;font-size:20px;padding:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;">
       </div>
       <input type="hidden" id="ech-emoji" value="🎯">
     </div>
@@ -3650,6 +3658,22 @@ function selectEmoji(e, suffix) {
   };
   const btn = document.getElementById('epb-'+suffix+'-'+(emap[e]||e));
   if (btn) btn.classList.add('selected');
+  // очищаем поле своего эмодзи
+  const customFieldId = suffix==='ech' ? 'ech-emoji-custom' : (suffix==='p' ? 'ch-emoji-p-custom' : null);
+  if (customFieldId) { const cf = document.getElementById(customFieldId); if(cf) cf.value=''; }
+}
+function onCustomEmojiInput(suffix) {
+  const customFieldId = suffix==='ech' ? 'ech-emoji-custom' : 'ch-emoji-p-custom';
+  const fieldId = suffix==='ech' ? 'ech-emoji' : 'ch-emoji-'+suffix;
+  const cf = document.getElementById(customFieldId);
+  if (!cf || !cf.value.trim()) return;
+  // берём первый символ (может быть эмодзи из нескольких code units)
+  const chars = [...cf.value.trim()];
+  const emoji = chars[0];
+  const el = document.getElementById(fieldId);
+  if(el) el.value = emoji;
+  // снимаем выделение с кнопок
+  document.querySelectorAll('[id^="epb-'+suffix+'-"]').forEach(b => b.classList.remove('selected'));
 }
 function selectColor(c, suffix) {
   const fieldId = suffix==='pg' ? 'pg-color' : suffix==='pge' ? 'pg-edit-color' : suffix==='ech' ? 'ech-color' : 'ch-color-'+suffix;
@@ -3719,7 +3743,11 @@ function editChallenge(id) {
   if(stdPeriods.includes(chDays)){document.getElementById('ech-period').value=chDays;}else{document.getElementById('ech-period').value='custom';const cd=document.getElementById('ech-custom-date');if(cd){const d=new Date();d.setDate(d.getDate()+chDays);cd.value=d.toISOString().slice(0,10);}const w=document.getElementById('ech-custom-date-wrap');if(w)w.style.display='';}
   document.getElementById('ech-cell-mode').value = ch.mode || 'random';
   document.getElementById('ech-preview').style.display = 'none';
-  selectEmoji(ch.emoji||'🎯', 'ech');
+  const stdEmojis = ['🎯','✈️','🏠','🚗','💍','🎮','🌴','🎓'];
+  const chEmoji = ch.emoji||'🎯';
+  selectEmoji(chEmoji, 'ech');
+  const echCustom = document.getElementById('ech-emoji-custom');
+  if (echCustom) echCustom.value = stdEmojis.includes(chEmoji) ? '' : chEmoji;
   selectColor(ch.color||'#4ECDC4', 'ech');
   document.getElementById('edit-challenge-modal').classList.add('open');
 }
