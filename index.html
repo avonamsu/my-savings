@@ -2446,13 +2446,21 @@ function openEdit(list,id) {
   } else if(list==='income'){
     const x=state.income.find(i=>i.id===id);if(!x)return;
     openModal('income');
+    // Определяем тип дохода по сохранённым данным
+    const ICON_TYPE = {'💰':'deposit','📊':'dividend','🏠':'rent','💸':'coupon','💱':'fx','✨':'other'};
+    let inferredType = x.type || ICON_TYPE[x.icon] || 'other';
+    if (x.calcMode==='fx') inferredType = 'fx';
+    if (!x.savingRef && (inferredType==='deposit'||inferredType==='dividend'||inferredType==='coupon'||inferredType==='fx')) inferredType='other';
+    selectIncomeType(inferredType);
     if(x.savingRef){
       switchIncomeTab('linked');
-      document.getElementById('i-saving-ref').value=x.savingRef;
+      const refSel=document.getElementById('i-saving-ref');
+      if(refSel){refSel.value=x.savingRef;}
       if(x.calcMode==='percent'){document.getElementById('i-calc-mode').value='percent';document.getElementById('i-percent').value=x.rate||'';}
       else if(x.calcMode==='fixed'){document.getElementById('i-calc-mode').value='fixed';document.getElementById('i-fixed-amount').value=x.amount||'';}
       else if(x.calcMode==='fx'){document.getElementById('i-calc-mode').value='fx';document.getElementById('i-fx-rate').value=x.fxBuyRate||'';document.getElementById('i-fx-date').value=x.fxDate||'';}
-      updateIncomePreview();
+      onIncomeCalcModeChange();
+      onIncomeSavingChange();
     } else {
       switchIncomeTab('manual');
       document.getElementById('i-name').value=x.name;
