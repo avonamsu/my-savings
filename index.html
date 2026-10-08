@@ -1618,12 +1618,15 @@ function renderSavingCard(x, grandTotal) {
     const yearlyIncome = Math.round(Number(x.amount)*Number(x.rate)/100);
     if (d.expired) {
       badges+=`<span class="badge badge-exp">Истёк</span>`;
+      showFixBtn = true;
+      sub += ' · <span style="color:#4CAF50;font-size:11px;">💸 зафиксируй доход</span>';
     } else {
       badges+=`<span class="badge badge-cap">${x.rate}%</span>`;
       if(x.compound) badges+=` <span class="badge badge-cap">капит.</span>`;
       sub=`${fmt(yearlyIncome)} ₽/год · ${daysLeft} дн. осталось`;
-      showFixBtn = daysLeft <= 14 && daysLeft >= 0;
-      if (showFixBtn) sub += ' · <span style="color:#FFB347;font-size:11px;">💸 зафиксируй доход</span>';
+      showFixBtn = daysLeft <= 14;
+      if (daysLeft > 0 && daysLeft <= 14) sub += ` · <span style="color:#FFB347;font-size:11px;">⏳ закрывается через ${daysLeft} дн.</span>`;
+      else if (daysLeft <= 0) sub += ' · <span style="color:#4CAF50;font-size:11px;">💸 зафиксируй доход</span>';
       const pctDone=Math.round(d.daysPassed/d.daysTotal*100);
       depositBar=`<div style="margin-top:4px;height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pctDone}%;background:var(--accent);border-radius:2px;"></div></div>`;
       const curInfl=ROSSTAT_INFLATION[2024]||9.52;
