@@ -4237,10 +4237,11 @@ function resetOnboarding() { forceStartOnboarding(); }
 })();
 
 
-  // Разрегистрируем старые Service Workers которые могут конфликтовать
+  // Регистрируем SW-киллер который убивает старые SW и кэши
   if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
     navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(r => r.unregister());
+      regs.forEach(r => { if (!r.active?.scriptURL?.includes('sw.js')) r.unregister(); });
     }).catch(() => {});
   }
 
