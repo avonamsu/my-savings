@@ -215,8 +215,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .edit-btn { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding:4px 0 4px 4px; opacity:.4; flex-shrink:0; }
 .excl-btn { background:none; border:none; cursor:pointer; font-size:17px; padding:4px 6px 4px 0; flex-shrink:0; opacity:0.5; line-height:1; }
 .add-btn { display:none; }
-.fab { position:fixed; bottom:72px; right:16px; width:52px; height:52px; border-radius:50%; background:var(--accent); color:var(--bg); border:none; font-size:26px; font-weight:400; cursor:pointer; box-shadow:0 4px 16px rgba(78,205,196,0.4); z-index:500; display:flex; align-items:center; justify-content:center; transition:transform .15s, box-shadow .15s; line-height:1; }
-.fab:active { transform:scale(0.92); box-shadow:0 2px 8px rgba(78,205,196,0.3); }
+.fab { position:fixed; bottom:72px; right:16px; height:44px; padding:0 20px; border-radius:22px; background:var(--accent); color:var(--bg); border:none; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 4px 16px rgba(78,205,196,0.35); z-index:500; display:flex; align-items:center; justify-content:center; gap:6px; letter-spacing:.01em; transition:transform .15s, box-shadow .15s; white-space:nowrap; }
+.fab:active { transform:scale(0.95); box-shadow:0 2px 8px rgba(78,205,196,0.25); }
 .fab[hidden] { display:none; }
 
 .reset-btn { background:none; border:none; color:var(--danger); font-size:13px; opacity:0.4; cursor:pointer; padding:8px; width:100%; text-align:center; }
@@ -425,7 +425,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 
 <!-- FAB -->
-<button class="fab" id="fab" onclick="fabAction()" hidden>＋</button>
+<button class="fab" id="fab" onclick="fabAction()" hidden>＋ <span id="fab-label">Добавить</span></button>
 
 <!-- PULL TO REFRESH -->
 <div class="ptr-indicator" id="ptr-indicator">
@@ -2353,8 +2353,14 @@ function showPage(name) {
 function updateFab(page) {
   const fab = document.getElementById('fab');
   if (!fab) return;
-  const pages = {savings:true, income:true, goals:true, challenge:true};
-  if (pages[page]) { fab.removeAttribute('hidden'); } else { fab.setAttribute('hidden',''); }
+  const labels = {savings:'Счёт', income:'Доход', goals:'Цель', challenge:'Копилку'};
+  const label = document.getElementById('fab-label');
+  if (labels[page]) {
+    fab.removeAttribute('hidden');
+    if (label) label.textContent = labels[page];
+  } else {
+    fab.setAttribute('hidden','');
+  }
 }
 
 function fabAction() {
