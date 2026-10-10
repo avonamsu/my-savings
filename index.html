@@ -253,7 +253,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
    100%{background:transparent} }
   .goal-progress-bar { height:3px; border-radius:2px; overflow:hidden; background:rgba(255,255,255,0.07); margin-top:4px; }
   .goal-progress-fill { height:100%; border-radius:2px; transition:width .4s ease; }
-  .goals-group-label { font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--text-dim); text-transform:uppercase; padding:4px 0; }
+  .goals-group-label { font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--text-dim); text-transform:uppercase; padding:4px 0; display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; }
+  .goals-group-label .gl-arrow { font-size:11px; transition:transform .2s; display:inline-block; }
 
 /* PROGRESS */
 .progress-wrap { background:var(--surface); border-radius:var(--radius); padding:16px; border:1px solid rgba(255,255,255,0.05); }
@@ -1745,6 +1746,19 @@ function toggleSavingsGroup(key) {
   }
 }
 
+function toggleGoalsGroup(key) {
+  const collapsed = JSON.parse(localStorage.getItem('goals_groups_collapsed')||'{}');
+  collapsed[key] = !collapsed[key];
+  localStorage.setItem('goals_groups_collapsed', JSON.stringify(collapsed));
+  const block = document.getElementById('gg-'+key);
+  const header = block?.previousElementSibling;
+  if (block) block.style.display = collapsed[key] ? 'none' : '';
+  if (header) {
+    const arrow = header.querySelector('.gl-arrow');
+    if (arrow) arrow.style.transform = `rotate(${collapsed[key]?'-90':'0'}deg)`;
+  }
+}
+
 function renderSavingCard(x, grandTotal) {
   const cur = x.currency||'RUB';
   const localAmt = getSavingCurrentAmountLocal(x);
@@ -2009,14 +2023,17 @@ function renderGoals() {
     </div>`;
   }
 
+  const gc = JSON.parse(localStorage.getItem('goals_groups_collapsed')||'{}');
   let html = '';
   if (uncoveredItems.length) {
-    if (coveredItems.length) html += `<div class="goals-group-label">Не покрыты</div>`;
-    html += `<div class="card" id="goals-list-inner">${uncoveredItems.map(renderGoalItem).join('')}</div>`;
+    const isCol = !!gc['uncovered'];
+    if (coveredItems.length) html += `<div class="goals-group-label" onclick="toggleGoalsGroup('uncovered')"><span>🎯 Не покрыты</span><span class="gl-arrow" style="transform:rotate(${isCol?'-90':'0'}deg)">▾</span></div>`;
+    html += `<div id="gg-uncovered" style="${isCol?'display:none;':''}"><div class="card" id="goals-list-inner">${uncoveredItems.map(renderGoalItem).join('')}</div></div>`;
   }
   if (coveredItems.length) {
-    html += `<div class="goals-group-label" style="margin-top:${uncoveredItems.length?'8px':'0'};">✓ Покрыты доходом</div>`;
-    html += `<div class="card">${coveredItems.map(renderGoalItem).join('')}</div>`;
+    const isCol2 = !!gc['covered'];
+    html += `<div class="goals-group-label" style="margin-top:${uncoveredItems.length?'8px':'0'};" onclick="toggleGoalsGroup('covered')"><span>✅ Покрыты доходом</span><span class="gl-arrow" style="transform:rotate(${isCol2?'-90':'0'}deg)">▾</span></div>`;
+    html += `<div id="gg-covered" style="${isCol2?'display:none;':''}"><div class="card">${coveredItems.map(renderGoalItem).join('')}</div></div>`;
   }
   el.innerHTML = html;
 
