@@ -1521,17 +1521,10 @@ function renderHome() {
     goalsEl.innerHTML=`<div class="card">${show.map(g=>{
       const cost=Number(g.amount);
       const pct = g.covered ? 100 : Math.min(99, Math.round(totalInc/cost*100));
-      return `<div class="goal-item ${g.covered?'covered':''}" style="flex-direction:column;align-items:stretch;gap:4px;padding:8px 14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="goal-check" style="width:18px;height:18px;font-size:10px;">${g.covered?'✓':''}</div>
-            <div class="goal-name" style="font-size:13px;">${g.name}</div>
-          </div>
-          <div class="goal-amount" style="font-size:12px;">${fmt(g.amount)} ₽</div>
-        </div>
-        <div style="height:2px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;margin-left:26px;">
-          <div style="height:100%;width:${pct}%;background:${g.covered?'rgba(78,205,196,0.45)':'rgba(78,205,196,0.2)'};border-radius:2px;transition:width .4s;"></div>
-        </div>
+      return `<div class="goal-item ${g.covered?'covered':''}" style="padding:8px 14px;">
+        <div class="goal-check" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">${g.covered?'✓':''}</div>
+        <div class="goal-name" style="font-size:13px;flex:1;">${g.name}</div>
+        <div class="goal-amount" style="font-size:12px;">${fmt(g.amount)} ₽</div>
       </div>`;
     }).join('')}
       ${remaining>0?`<div style="padding:8px 0 2px;text-align:center;font-size:12px;color:var(--text-dim);">+${remaining} ещё · <span style="color:var(--accent);cursor:pointer" onclick="showPage('goals')">посмотреть все</span></div>`:''}
