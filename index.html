@@ -2700,9 +2700,11 @@ function renderIncome() {
     const arrow = document.getElementById('income-breakdown-arrow');
     if (listEl) listEl.style.display = isCollapsed ? 'none' : '';
     if (arrow) arrow.style.transform = isCollapsed ? 'rotate(-90deg)' : '';
-    breakdownList.innerHTML = Object.entries(groups).sort(([,a],[,b])=>b-a).map(([name,amt]) => {
+    const sortedGroups = Object.entries(groups).sort(([,a],[,b])=>b-a);
+    breakdownList.innerHTML = sortedGroups.map(([name,amt], i) => {
       const pct = total>0 ? Math.round(amt/total*100) : 0;
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      const isLast = i === sortedGroups.length - 1;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;${isLast?'':'border-bottom:1px solid rgba(255,255,255,0.05);'}">
         <span style="font-size:13px;">${name}</span>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="width:50px;height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--accent);"></div></div>
@@ -4168,7 +4170,8 @@ function createPiggyBank() {
 
 function togglePiggy(id) {
   if (!window._chCollapsed) window._chCollapsed = {};
-  window._chCollapsed[id] = !window._chCollapsed[id];
+  const currentlyCollapsed = window._chCollapsed[id] !== false;
+  window._chCollapsed[id] = !currentlyCollapsed;
   renderChallengesPage();
 }
 
@@ -4202,10 +4205,12 @@ function openPiggyEdit(id) {
   selectEmoji(pg.emoji||'🐷', 'pge');
   selectColor(pg.color||'#4ECDC4', 'pge');
   document.getElementById('pg-edit-modal').classList.add('open');
+  document.getElementById('fab')?.setAttribute('hidden','');
 }
 
 function closePiggyEdit() {
   document.getElementById('pg-edit-modal').classList.remove('open');
+  updateFab(_currentPage);
 }
 
 function savePiggyEdit() {
@@ -4320,16 +4325,19 @@ function renderPiggyCard(pg) {
   const planCalc = getPiggyPlanCalc(pg);
   const done = pct >= 100;
   const collapsed = window._chCollapsed[pg.id] !== false;
-  return `<div class="pg-card" data-id="${pg.id}" style="border-left:3px solid ${color};">
-    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="togglePiggy('${pg.id}')">
-      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
-        <span style="font-size:22px;">${emoji}</span>
-        <div style="min-width:0;">
-          <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${pg.name}</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:1px;"><span style="color:rgba(78,205,196,0.6);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;">🐷 КОПИЛКА</span>${fmt(saved)} ₽ из ${fmt(pg.goal)} ₽ · ${pct}%</div>
+  return `<div class="pg-card" data-id="${pg.id}" style="border-left:3px solid ${color};padding:16px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="drag-handle" style="color:var(--text-dim);font-size:16px;cursor:grab;padding:0 4px 0 0;flex-shrink:0;">⠿</span>
+      <div onclick="togglePiggy('${pg.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+          <span style="font-size:22px;">${emoji}</span>
+          <div style="min-width:0;">
+            <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${pg.name}</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:1px;"><span style="color:rgba(78,205,196,0.6);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;">🐷 КОПИЛКА</span>${fmt(saved)} ₽ из ${fmt(pg.goal)} ₽ · ${pct}%</div>
+          </div>
         </div>
+        <span style="color:${color};font-size:18px;padding-left:8px;flex-shrink:0;">${collapsed?'▸':'▾'}</span>
       </div>
-      <span style="color:${color};font-size:18px;padding-left:8px;flex-shrink:0;">${collapsed?'▸':'▾'}</span>
     </div>
     ${!collapsed ? `
     <div style="margin:10px 0 6px;">
@@ -4369,6 +4377,7 @@ function switchChTab(tab) {
 function showNewChallengeFormPage() {
   document.getElementById('challenge-list-view-page').style.display = 'none';
   document.getElementById('challenge-form-view-page').style.display = 'flex';
+  document.getElementById('fab')?.setAttribute('hidden','');
   selectPiggyType('piggy');
   // Reset plan checkbox
   const planCheck = document.getElementById('pg-plan-check');
@@ -4382,6 +4391,7 @@ function hideChallengeFormPage() {
   document.getElementById('challenge-form-view-page').style.display = 'none';
   document.getElementById('challenge-list-view-page').style.display = '';
   renderChallengesPage();
+  updateFab(_currentPage);
 }
 
 
@@ -4446,7 +4456,8 @@ function createChallengeFromPage() {
 
 function toggleChallenge(id) {
   if (!window._chCollapsed) window._chCollapsed = {};
-  window._chCollapsed[id] = !window._chCollapsed[id];
+  const currentlyCollapsed = window._chCollapsed[id] !== false;
+  window._chCollapsed[id] = !currentlyCollapsed;
   renderChallengesPage();
 }
 
