@@ -1684,15 +1684,16 @@ function renderSavings() {
   if (!n) { el.innerHTML=`<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`; return; }
   if (!items.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`; return; }
 
+  const sortAlpha = arr => [...arr].sort((a,b) => a.name.localeCompare(b.name, 'ru'));
   const groups = sortBy === 'type' ? {
-    '🏦 Вклады':            items.filter(x => x.isDeposit),
-    '💳 Накопительные счета': items.filter(x => x.isSavingsAccount),
-    '📈 Инвестиции':       items.filter(x => !x.isDeposit && !x.isSavingsAccount && x.icon==='📈'),
-    '💵 Наличные':         items.filter(x => x.icon==='💵'),
-    '🏠 Недвижимость':     items.filter(x => x.icon==='🏠'),
-    '₿ Крипто':            items.filter(x => x.icon==='₿'),
-    '💼 Другое':           items.filter(x => !x.isDeposit && !x.isSavingsAccount && !['📈','💵','🏠','₿'].includes(x.icon)),
-  } : { 'Все счета': items };
+    '🏦 Вклады':            sortAlpha(items.filter(x => x.isDeposit)),
+    '💳 Накопительные счета': sortAlpha(items.filter(x => x.isSavingsAccount)),
+    '📈 Инвестиции':       sortAlpha(items.filter(x => !x.isDeposit && !x.isSavingsAccount && x.icon==='📈')),
+    '💵 Наличные':         sortAlpha(items.filter(x => x.icon==='💵')),
+    '🏠 Недвижимость':     sortAlpha(items.filter(x => x.icon==='🏠')),
+    '₿ Крипто':            sortAlpha(items.filter(x => x.icon==='₿')),
+    '💼 Другое':           sortAlpha(items.filter(x => !x.isDeposit && !x.isSavingsAccount && !['📈','💵','🏠','₿'].includes(x.icon))),
+  } : { 'Все счета': sortAlpha(items) };
 
   const collapsed = JSON.parse(localStorage.getItem('savings_groups_collapsed')||'{}');
   el.innerHTML = Object.entries(groups).filter(([,g])=>g.length>0).map(([groupName, group]) => {
