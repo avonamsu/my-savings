@@ -850,6 +850,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div class="section-title">💾 Резервная копия файлом</div>
   <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:8px;">
     <div style="font-size:13px;color:var(--text-dim);">Скачай JSON-файл с данными и сохрани в надёжном месте. Для переноса на другое устройство — загрузи этот файл.</div>
+    <div style="font-size:12px;color:var(--warn);background:rgba(255,179,71,0.08);border-radius:8px;padding:8px 10px;">⚠️ Данные хранятся в браузере этого устройства. Если очистить кэш или данные сайта — они исчезнут. Рекомендуем подключить Google Drive или регулярно скачивать копию.</div>
     <div style="font-size:12px;color:var(--text-dim);" id="backup-file-lastdate"></div>
     <button class="btn-primary" style="width:100%" onclick="downloadBackup()">⬇️ Скачать резервную копию</button>
     <button class="btn-cancel" style="width:100%;margin-top:0" onclick="document.getElementById('restore-input-backup').click()">⬆️ Восстановить из файла</button>
