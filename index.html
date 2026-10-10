@@ -1238,6 +1238,7 @@ function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   clearTimeout(_idbSaveTimer);
   _idbSaveTimer = setTimeout(saveToIDB, 1000);
+  if (typeof gdriveScheduleAutoSave === 'function') gdriveScheduleAutoSave();
 }
 function load() {
   const allKeys = [STORAGE_KEY, ...OLD_KEYS];
@@ -4081,8 +4082,8 @@ async function gdriveFindFile() {
   return gdriveFileId;
 }
 
-async function gdriveSave() {
-  if (!gdriveToken) { alert('Сначала войдите через Google'); return; }
+async function gdriveSave(silent = false) {
+  if (!gdriveToken) { if (!silent) alert('Сначала войдите через Google'); return; }
   try {
     const content = JSON.stringify({ ...state, _appVersion: APP_VERSION, _savedAt: new Date().toISOString() }, null, 2);
     const blob = new Blob([content], { type: 'application/json' });
@@ -4116,20 +4117,20 @@ async function gdriveSave() {
       const now = new Date();
       const dt = now.toLocaleDateString('ru-RU') + ' в ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
       localStorage.setItem('gdrive_last_save', dt);
+      localStorage.setItem('gdrive_last_save_ts', now.getTime().toString());
       gdriveUpdateLastSave();
-      haptic('success');
-      // Show brief toast
-      showToast('☁️ Сохранено в Google Drive');
+      if (!silent) { haptic('success'); showToast('☁️ Сохранено в Google Drive'); }
+      else showToast('☁️ Автосохранение в Drive');
     } else {
       throw new Error('HTTP ' + resp.status);
     }
   } catch(e) {
-    alert('Ошибка сохранения: ' + e.message);
+    if (!silent) alert('Ошибка сохранения: ' + e.message);
   }
 }
 
-async function gdriveLoad() {
-  if (!gdriveToken) { alert('Сначала войдите через Google'); return; }
+async function gdriveLoad(silent = false) {
+  if (!gdriveToken) { if (!silent) alert('Сначала войдите через Google'); return; }
   try {
     const fileId = await gdriveFindFile();
     if (!fileId) { alert('Файл не найден в Google Drive. Сначала сохраните данные.'); return; }
@@ -4138,12 +4139,14 @@ async function gdriveLoad() {
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
-    if (!data.savings || !data.income || !data.goals) { alert('Файл повреждён или неверного формата'); return; }
+    if (!data.savings || !data.income || !data.goals) { if (!silent) alert('Файл повреждён или неверного формата'); return; }
 
-    const savedAt = data._savedAt ? new Date(data._savedAt).toLocaleString('ru-RU') : 'неизвестно';
-    const totalAmt = Math.round(data.savings.reduce((s, x) => s + (x.excluded ? 0 : Number(x.amount || 0)), 0));
-    const msg = `📋 Данные из Google Drive:\n\n💰 Счетов: ${data.savings.length}\n📈 Доходов: ${data.income.length}\n🎯 Целей: ${data.goals.length}\n💵 Примерная сумма: ${fmt(totalAmt)} ₽\n📅 Сохранено: ${savedAt}\n\nТекущие данные будут заменены. Продолжить?`;
-    if (!confirm(msg)) return;
+    if (!silent) {
+      const savedAt = data._savedAt ? new Date(data._savedAt).toLocaleString('ru-RU') : 'неизвестно';
+      const totalAmt = Math.round(data.savings.reduce((s, x) => s + (x.excluded ? 0 : Number(x.amount || 0)), 0));
+      const msg = `📋 Данные из Google Drive:\n\n💰 Счетов: ${data.savings.length}\n📈 Доходов: ${data.income.length}\n🎯 Целей: ${data.goals.length}\n💵 Примерная сумма: ${fmt(totalAmt)} ₽\n📅 Сохранено: ${savedAt}\n\nТекущие данные будут заменены. Продолжить?`;
+      if (!confirm(msg)) return;
+    }
 
     delete data._appVersion; delete data._savedAt;
     state = data;
@@ -4181,6 +4184,35 @@ async function gdriveLoadSilent() {
   } catch(e) {}
 }
 
+let _gdriveAutoSaveTimer = null;
+function gdriveScheduleAutoSave() {
+  if (!gdriveToken) return;
+  clearTimeout(_gdriveAutoSaveTimer);
+  _gdriveAutoSaveTimer = setTimeout(() => {
+    gdriveSave(true); // silent=true, без уведомления
+  }, 30000); // 30 секунд после последнего изменения
+}
+
+async function gdriveCheckNewerVersion() {
+  if (!gdriveToken) return;
+  try {
+    const fileId = await gdriveFindFile();
+    if (!fileId) return;
+    const resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?fields=modifiedTime', {
+      headers: { Authorization: 'Bearer ' + gdriveToken }
+    });
+    if (!resp.ok) return;
+    const meta = await resp.json();
+    const driveTime = new Date(meta.modifiedTime).getTime();
+    const localSave = localStorage.getItem('gdrive_last_save_ts');
+    if (localSave && driveTime <= Number(localSave)) return;
+    // Drive новее — предлагаем загрузить
+    if (confirm('☁️ В Google Drive есть более новая версия данных. Загрузить?')) {
+      await gdriveLoad(true); // silent=true
+    }
+  } catch(e) {}
+}
+
 function gdriveInit() {
   // Восстанавливаем токен из localStorage (живёт ~1 час, потом нужно переавторизоваться)
   const savedToken = localStorage.getItem('gdrive_token');
@@ -4188,6 +4220,8 @@ function gdriveInit() {
     gdriveToken = savedToken;
     gdriveFileId = localStorage.getItem('gdrive_file_id');
     gdriveUpdateUI(true);
+    // Проверяем не появилась ли более новая версия в Drive (синхронизация между устройствами)
+    setTimeout(gdriveCheckNewerVersion, 2000);
   } else {
     gdriveUpdateUI(false);
   }
