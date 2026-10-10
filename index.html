@@ -147,7 +147,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .sidebar-divider { height:1px; background:rgba(255,255,255,0.06); margin:8px 0; }
 
 /* PAGES */
-.page { display:none; flex-direction:column; flex:1; min-height:0; padding:60px 16px calc(140px + env(safe-area-inset-bottom, 0px)); gap:16px; opacity:0; transform:translateX(20px); transition:opacity .22s ease, transform .22s ease; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.page { display:none; flex-direction:column; flex:1; min-height:0; padding:60px 16px calc(140px + env(safe-area-inset-bottom, 0px)); gap:16px; opacity:0; transform:translateX(20px); transition:opacity .22s ease, transform .22s ease; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
 .ptr-indicator { position:fixed; top:52px; left:0; right:0; max-width:480px; margin:0 auto; z-index:600; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:0; opacity:0; transition:opacity .15s ease; }
 .ptr-bar { width:100%; height:2px; background:rgba(255,255,255,0.08); position:relative; overflow:hidden; }
 .ptr-bar-fill { position:absolute; top:0; left:0; height:100%; width:40%; background:var(--accent); border-radius:2px; transition:width .15s ease; }
@@ -549,16 +549,16 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="chart-title" style="margin-bottom:10px;">📊 РАЗБИВКА ПО ТИПАМ</div>
     <div id="income-breakdown-list"></div>
   </div>
-  <div id="income-search-bar" style="display:none;">
+  <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+    <span id="income-section-title">Источники дохода</span>
+    <button onclick="togglePageSearch('income')" id="income-search-btn" style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 9px;display:flex;align-items:center;gap:4px;">🔍 <span>Поиск</span></button>
+  </div>
+  <div id="income-search-bar" style="display:none;margin-top:-8px;">
     <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(78,205,196,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
       <input type="text" id="income-search" placeholder="Поиск дохода..." oninput="renderIncome()" autocomplete="off"
-        style="flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none;padding:8px 0;">
+        style="flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none;padding:8px 0;width:100%;">
       <button onclick="clearPageSearch('income')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;">✕</button>
     </div>
-  </div>
-  <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
-    <span>Источники дохода</span>
-    <button onclick="togglePageSearch('income')" id="income-search-btn" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px;" title="Поиск">🔍</button>
   </div>
   <div id="income-list">
     <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
@@ -1765,13 +1765,14 @@ function toggleSavingsGroup(key) {
 
 function togglePageSearch(page) {
   const bar = document.getElementById(page+'-search-bar');
-  const btn = document.getElementById(page+'-search-btn');
   if (!bar) return;
-  const opening = bar.style.display === 'none' || bar.style.display === '';
-  // for savings bar has display:none initially; for income same
   const isHidden = bar.style.display === 'none';
   bar.style.display = isHidden ? 'block' : 'none';
-  if (btn) btn.style.display = isHidden ? 'none' : '';
+  // savings: hide/show the icon button
+  if (page === 'savings') {
+    const btn = document.getElementById('savings-search-btn');
+    if (btn) btn.style.display = isHidden ? 'none' : '';
+  }
   if (isHidden) {
     const inp = document.getElementById(page+'-search');
     if (inp) { inp.value = ''; setTimeout(()=>inp.focus(), 50); }
@@ -1787,9 +1788,11 @@ function clearPageSearch(page) {
   if (inp) inp.value = '';
   const bar = document.getElementById(page+'-search-bar');
   if (bar) bar.style.display = 'none';
-  const btn = document.getElementById(page+'-search-btn');
-  if (btn) btn.style.display = '';
-  if (page === 'savings') renderSavings();
+  if (page === 'savings') {
+    const btn = document.getElementById('savings-search-btn');
+    if (btn) btn.style.display = '';
+    renderSavings();
+  }
   if (page === 'income') renderIncome();
 }
 window._savingsSort = 'type';
