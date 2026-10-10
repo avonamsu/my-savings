@@ -156,7 +156,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 /* PAGES */
 .page { display:none; flex-direction:column; flex:1; min-height:0; padding:60px 16px calc(140px + env(safe-area-inset-bottom, 0px)); gap:16px; opacity:0; transform:translateX(20px); transition:opacity .22s ease, transform .22s ease; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-.ptr-indicator { position:fixed; top:12px; left:50%; transform:translateX(-50%) translateY(-60px); z-index:600; background:var(--surface2); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:transform .15s ease, opacity .15s ease; opacity:0; box-shadow:0 2px 8px rgba(0,0,0,0.4); pointer-events:none; }
+.ptr-indicator { position:fixed; top:12px; left:50%; transform:translateX(-50%) translateY(-60px); z-index:600; background:var(--surface2); border-radius:50%; width:32px; height:32px; min-width:32px; min-height:32px; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:transform .15s ease, opacity .15s ease; opacity:0; box-shadow:0 2px 8px rgba(0,0,0,0.4); pointer-events:none; }
 .ptr-indicator.ptr-ready { background:var(--accent); }
 .ptr-spinner { font-size:16px; line-height:1; transition:transform .2s; }
 @keyframes ptr-spin { to { transform:rotate(360deg); } }
