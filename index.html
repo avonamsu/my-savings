@@ -2063,20 +2063,17 @@ function renderPiggyWidget(piggyId) {
       return;
     }
 
-    // Show first N undone cells + summary
+    // Show only undone cells on home widget
     const color = ch.color||'#4ECDC4';
     const pct = totalGoal ? Math.round(totalDone/totalGoal*100) : 0;
     const doneCnt = validCells.filter(c=>c.done).length;
-    // show up to 20 cells in grid (first undone + recent done)
-    const showCells = validCells.slice(0, 24);
-    const cellsHtml = showCells.map((c,i)=>{
+    const undoneCells = validCells.filter(c=>!c.done);
+    const showCells = undoneCells.slice(0, 24);
+    const cellsHtml = showCells.map((c)=>{
       const globalIdx = cells.indexOf(c);
-      const bg = c.done ? color : 'var(--surface2)';
-      const textColor = c.done ? 'rgba(0,0,0,0.6)' : 'var(--text-dim)';
-      const opacity = c.done ? '0.5' : '1';
-      return `<button class="home-piggy-cell ${c.done?'done':'undone'}" style="background:${bg};color:${textColor};opacity:${opacity};" onclick="homeToggleChCell('${ch.id}',${globalIdx})">${fmt(c.amt)}</button>`;
+      return `<button class="home-piggy-cell undone" onclick="homeToggleChCell('${ch.id}',${globalIdx})">${fmt(c.amt)}</button>`;
     }).join('');
-    const remaining = validCells.length - showCells.length;
+    const remaining = undoneCells.length - showCells.length;
 
     el.innerHTML = `<div class="home-piggy-widget">
       <div class="home-piggy-header">
@@ -2102,6 +2099,10 @@ function homeToggleChCell(chId, cellIdx) {
   ch.cells[cellIdx].done = !ch.cells[cellIdx].done;
   save();
   renderHomeWidgets();
+  // Синхронизируем вкладку копилок если она открыта
+  if (document.getElementById('page-challenge')?.classList.contains('active')) {
+    renderChallengesPage();
+  }
 }
 
 // ── Goals widget ──────────────────────────────────────────
