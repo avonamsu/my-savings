@@ -5485,18 +5485,29 @@ function showToast(msg) {
 // ── INIT ──────────────────────────────────────────────────
 load();
 if (!state.challenges) state.challenges = [];
-render();
-// Восстанавливаем последнюю открытую вкладку
+
+// Определяем стартовую страницу ДО первого рендера, чтобы не было мигания
 try {
   const ptrPage = sessionStorage.getItem('ptr_return_page');
   const lastPage = ptrPage || localStorage.getItem('last_page');
   if (ptrPage) sessionStorage.removeItem('ptr_return_page');
-  if (lastPage && lastPage !== 'home' && PAGES.includes(lastPage)) {
-    showPage(lastPage);
-  } else {
-    updateFab('home');
+  if (lastPage && PAGES.includes(lastPage) && lastPage !== 'home') {
+    // Переключаем DOM напрямую без анимации, до render()
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    const targetPage = document.getElementById('page-' + lastPage);
+    const targetNav = document.getElementById('nav-' + lastPage);
+    if (targetPage) targetPage.classList.add('active');
+    if (targetNav) targetNav.classList.add('active');
+    _currentPage = lastPage;
   }
 } catch(e) {}
+
+render();
+updateFab(_currentPage);
+if (_currentPage === 'challenge') renderChallengesPage();
+const titleEl = document.getElementById('topbar-title');
+if (titleEl) titleEl.textContent = PAGE_TITLES[_currentPage] || 'Мои накопления';
 fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); });
 
 initNotifications();
