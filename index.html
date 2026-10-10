@@ -2278,6 +2278,7 @@ function showPage(name) {
   if(name==='savings') setTimeout(drawChart, 50);
   if(name==='income') setTimeout(drawIncomeChart, 50);
   if(name==='challenge') renderChallengesPage();
+  if(name==='backup') gdriveUpdateUI(!!gdriveToken);
 }
 
 // ── MODAL ─────────────────────────────────────────────────
@@ -4080,6 +4081,7 @@ function gdriveSignOut() {
 }
 
 function gdriveUpdateUI(signedIn) {
+  console.log('[GDrive] gdriveUpdateUI called:', signedIn, '| token:', gdriveToken ? 'exists' : 'null', '| caller:', new Error().stack.split('\n')[2]?.trim());
   // Sidebar status
   const sidebarStatus = document.getElementById('gdrive-sidebar-status');
   if (sidebarStatus) sidebarStatus.textContent = signedIn ? '☁️ Drive подключён' : '';
@@ -4200,20 +4202,27 @@ async function gdriveSave(silent = false) {
 
 function gdriveReauthAndRetry(silent = false) {
   if (typeof google === 'undefined') return;
+  // При тихом автосохранении не показываем попап — просто уведомляем
+  // что нужно войти снова и обновляем UI
+  if (silent) {
+    gdriveUpdateUI(false);
+    showToast('☁️ Сессия Google Drive истекла — войдите снова в настройках резервного копирования');
+    return;
+  }
   const client = google.accounts.oauth2.initTokenClient({
     client_id: GDRIVE_CLIENT_ID,
     scope: GDRIVE_SCOPE,
     callback: (resp) => {
       if (resp.error || !resp.access_token) {
         gdriveUpdateUI(false);
-        if (!silent) alert('Сессия истекла. Войдите снова.');
+        alert('Сессия истекла. Войдите снова.');
         return;
       }
       gdriveToken = resp.access_token;
       localStorage.setItem('gdrive_token', gdriveToken);
       localStorage.setItem('gdrive_token_ts', Date.now());
       gdriveUpdateUI(true);
-      gdriveSave(silent); // повторяем сохранение
+      gdriveSave(false); // повторяем сохранение
     }
   });
   client.requestAccessToken({ prompt: '' });
