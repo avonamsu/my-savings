@@ -4059,6 +4059,8 @@ function gdriveSignIn() {
       if (resp.error) { alert('Ошибка входа: ' + resp.error); return; }
       gdriveToken = resp.access_token;
       localStorage.setItem('gdrive_token', gdriveToken);
+      localStorage.setItem('gdrive_token_ts', Date.now());
+      if (resp.email) localStorage.setItem('gdrive_user_email', resp.email);
       gdriveUpdateUI(true);
       // Попытка загрузить данные после входа
       gdriveLoadSilent();
@@ -4275,15 +4277,52 @@ async function gdriveCheckNewerVersion() {
   } catch(e) {}
 }
 
+function gdriveSilentRefresh() {
+  // Тихое обновление токена без показа окна авторизации
+  try {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: GDRIVE_CLIENT_ID,
+      scope: GDRIVE_SCOPE,
+      prompt: '',
+      callback: (resp) => {
+        if (resp.error || !resp.access_token) {
+          // Не удалось обновить — выходим из аккаунта
+          gdriveToken = null;
+          localStorage.removeItem('gdrive_token');
+          localStorage.removeItem('gdrive_token_ts');
+          gdriveUpdateUI(false);
+          return;
+        }
+        gdriveToken = resp.access_token;
+        localStorage.setItem('gdrive_token', gdriveToken);
+        localStorage.setItem('gdrive_token_ts', Date.now());
+        gdriveUpdateUI(true);
+        setTimeout(gdriveCheckNewerVersion, 1000);
+      }
+    });
+    client.requestAccessToken({ prompt: '' });
+  } catch(e) {
+    // GIS ещё не загружен — попробуем позже
+    setTimeout(gdriveSilentRefresh, 2000);
+  }
+}
+
 function gdriveInit() {
-  // Восстанавливаем токен из localStorage (живёт ~1 час, потом нужно переавторизоваться)
   const savedToken = localStorage.getItem('gdrive_token');
+  const tokenTs = parseInt(localStorage.getItem('gdrive_token_ts') || '0');
+  const ageMin = (Date.now() - tokenTs) / 60000;
+
   if (savedToken) {
     gdriveToken = savedToken;
     gdriveFileId = localStorage.getItem('gdrive_file_id');
     gdriveUpdateUI(true);
-    // Проверяем не появилась ли более новая версия в Drive (синхронизация между устройствами)
-    setTimeout(gdriveCheckNewerVersion, 2000);
+
+    if (ageMin > 50) {
+      // Токен скоро протухнет или уже протух — тихо обновляем
+      setTimeout(gdriveSilentRefresh, 1500);
+    } else {
+      setTimeout(gdriveCheckNewerVersion, 2000);
+    }
   } else {
     gdriveUpdateUI(false);
   }
