@@ -4309,6 +4309,7 @@ function savePiggyDeposit() {
     if (confirm(`💳 ${action.charAt(0).toUpperCase()+action.slice(1)}?`)) {
       linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) + signed);
       if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
+      // для вклада dateStart не трогаем — пополняемый вклад считает % от новой суммы с исходной даты
     }
   }
 
@@ -4420,11 +4421,9 @@ function fillLinkedSavingSelect(containerId, currentVal) {
   const chips = [];
   // "No link" chip
   chips.push({ id: '', label: '✕ Без привязки', sub: '' });
-  const hasDeposits = (state.savings || []).some(s => s.isDeposit);
   (state.savings || []).forEach(s => {
-    if (s.isDeposit) return; // вклады не поддерживаются — фиксированная база
     const icon = s.emoji || s.icon || '💰';
-    const sub = s.isSavingsAccount ? 'накоп. счёт' : '';
+    const sub = s.isSavingsAccount ? 'накоп. счёт' : s.isDeposit ? 'вклад' : '';
     chips.push({ id: s.id, label: icon + ' ' + s.name, sub });
   });
 
@@ -4433,7 +4432,7 @@ function fillLinkedSavingSelect(containerId, currentVal) {
     return `<button type="button" class="linked-chip ${active}" onclick="selectLinkedChip('${containerId}','${c.id}',this)">
       <span class="lc-name">${c.label}</span>${c.sub ? `<span class="lc-sub">${c.sub}</span>` : ''}
     </button>`;
-  }).join('') + (hasDeposits ? `<div class="field-hint info" style="width:100%;margin-top:4px;">⚠️ Вклады не показаны — у них фиксированная начальная сумма, пополнение через копилку некорректно изменит расчёт процентов.</div>` : '');
+  }).join('');
 }
 
 function selectLinkedChip(containerId, val, el) {
@@ -4611,6 +4610,7 @@ function toggleCell(challengeId, cellIdx) {
       if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на ${fmt(cellAmount)} ₽?`)) {
         linkedSaving.amount = (parseFloat(linkedSaving.amount)||0) + cellAmount;
         if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
+        // для вклада dateStart не трогаем — пополняемый вклад считает % от новой суммы с исходной даты
       }
     } else {
       // Cell just unchecked — subtract from account
