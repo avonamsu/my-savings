@@ -565,33 +565,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <div class="page" id="page-goals">
   <div class="progress-wrap">
     <div class="progress-header">
-      <div class="progress-label">Покрыто целей</div>
+      <div class="progress-label" id="goals-label">0 из 0 целей покрыты</div>
       <div class="progress-pct" id="goals-pct">0%</div>
     </div>
     <div class="progress-bar-bg"><div class="progress-bar-fill" id="goals-bar" style="width:0%"></div></div>
-    <div class="progress-amounts">
-      <span id="goals-covered-amount">0 ₽ покрыто</span>
-      <span id="goals-total-amount">из 0 ₽</span>
-    </div>
+    <div style="font-size:12px;color:var(--text-dim);margin-top:6px;" id="goals-income-hint"></div>
   </div>
-  <div style="display:flex;gap:10px;">
-    <div class="income-summary" style="flex:1;">
-      <div class="income-summary-icon">💸</div>
-      <div class="income-summary-info">
-        <div class="income-summary-label">Доход в месяц</div>
-        <div class="income-summary-val" id="goals-income-ref">0 ₽</div>
-      </div>
-    </div>
-    <div class="income-summary" style="flex:1;" id="goals-free-income-card">
-      <div class="income-summary-icon">🆓</div>
-      <div class="income-summary-info">
-        <div class="income-summary-label">Свободный доход</div>
-        <div class="income-summary-val" id="goals-free-income" style="color:var(--accent);">0 ₽</div>
-      </div>
-    </div>
-  </div>
-  <input type="text" id="goals-search" placeholder="🔍 Поиск по целям..." oninput="renderGoals()"
-    style="background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:9px 12px;outline:none;width:100%;">
   <div id="goals-list"></div>
   <button class="add-btn" onclick="editingId=null;openModal('goals')">＋ Добавить цель</button>
 
@@ -1709,6 +1688,14 @@ function showCtxMenu(e, items) {
   _ctxCleanup = () => { overlay.remove(); menu.remove(); _ctxCleanup = null; };
 }
 function closeCtxMenu() { if (_ctxCleanup) _ctxCleanup(); }
+function showGoalMenu(e, id) {
+  const items = [
+    {icon:'✏️', label:'Редактировать', fn:()=>openEdit('goals',id)},
+    {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('goals',id)}
+  ];
+  showCtxMenu(e, items);
+}
+
 function showChallengeMenu(e, id, canComplete) {
   const items = [
     {icon:'✅', label:'Проставить все ячейки', fn:()=>completeChallenge(id)},
@@ -1819,16 +1806,15 @@ function renderGoals() {
 
   if (!state.goals.length) {
     el.innerHTML = `<div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>`;
+    document.getElementById('goals-label').textContent = '0 из 0 целей покрыты';
     document.getElementById('goals-pct').textContent = '0%';
     document.getElementById('goals-bar').style.width = '0%';
-    document.getElementById('goals-covered-amount').textContent = '0 ₽ покрыто';
-    document.getElementById('goals-total-amount').textContent = 'из 0 ₽';
-    document.getElementById('goals-free-income').textContent = fmt(Math.round(totalIncome)) + ' ₽';
+    const hintEl0 = document.getElementById('goals-income-hint');
+    if (hintEl0) hintEl0.innerHTML = `💸 Доход: <b style="color:var(--text);">${fmt(Math.round(totalIncome))} ₽</b> · Свободно: <b style="color:var(--accent);">${fmt(Math.round(totalIncome))} ₽</b>`;
     renderChallenges();
     return;
   }
 
-  const query = (document.getElementById('goals-search')?.value||'').toLowerCase();
   let remaining = totalIncome, coveredSum = 0;
   const items = state.goals.map(g => {
     const cost = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
@@ -1839,18 +1825,21 @@ function renderGoals() {
     return { ...g, covered, partial };
   });
 
-  const freeIncome = Math.max(0, totalIncome - coveredSum);
-  document.getElementById('goals-free-income').textContent = fmt(Math.round(freeIncome)) + ' ₽';
-
-  const filtered = query ? items.filter(g => g.name.toLowerCase().includes(query)) : items;
-  const coveredItems = filtered.filter(g => g.covered);
-  const uncoveredItems = filtered.filter(g => !g.covered);
+  const coveredItems = items.filter(g => g.covered);
+  const uncoveredItems = items.filter(g => !g.covered);
 
   const pct = totalGoals ? Math.min(100, Math.round(coveredSum/totalGoals*100)) : 0;
+  const totalCount = state.goals.length;
+  const coveredCount = coveredItems.length;
+  const labelEl = document.getElementById('goals-label');
+  if (labelEl) labelEl.textContent = `${coveredCount} из ${totalCount} ${plural(totalCount,'цели','целей','целей')} покрыт${coveredCount===1?'а':'ы'}`;
   document.getElementById('goals-pct').textContent = pct + '%';
   document.getElementById('goals-bar').style.width = pct + '%';
-  document.getElementById('goals-covered-amount').textContent = fmt(coveredSum) + ' ₽ покрыто';
-  document.getElementById('goals-total-amount').textContent = 'из ' + fmt(totalGoals) + ' ₽';
+  const hintEl = document.getElementById('goals-income-hint');
+  if (hintEl) {
+    const freeIncome = Math.max(0, totalIncome - coveredSum);
+    hintEl.innerHTML = `💸 Доход: <b style="color:var(--text);">${fmt(Math.round(totalIncome))} ₽</b> · Свободно: <b style="color:var(--accent);">${fmt(Math.round(freeIncome))} ₽</b>`;
+  }
 
   function renderGoalItem(g) {
     const color = g.color || '#4ECDC4';
@@ -1862,11 +1851,11 @@ function renderGoals() {
         <div class="goal-check" style="${g.covered?'background:'+color+';border-color:'+color+';':''}">${g.covered?'✓':''}</div>
         <div class="goal-info">
           <div class="goal-name">${emoji} ${g.name}${g.type==='subscription'?` <span class="sub-badge">🔄 ${g.subPeriod===12?'год':g.subPeriod===3?'квартал':'мес'}</span>`:''}${(()=>{const d=getDaysUntilSub(g);return d!==null&&d<=3?` <span class="sub-due-soon">· через ${d===0?'сегодня':d+' дн.'}</span>`:'';})()}</div>
-          ${!g.covered && g.partial > 0 ? `<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:${partialPct}%;background:${color};"></div></div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${partialPct}% покрыто</div>` : ''}
+          ${!g.covered && g.partial > 0 ? `<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:${partialPct}%;background:${color};"></div></div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${partialPct}% · не хватает <span style="color:#FFB347;">${fmt(Math.round(Number(g.amount)*(1-g.partial)))} ₽/мес</span></div>` : ''}
+          ${!g.covered && !g.partial ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">не хватает <span style="color:#FFB347;">${fmt(Number(g.amount))} ₽/мес</span></div>` : ''}
         </div>
         <div class="goal-amount" style="${g.covered?'color:'+color+';':''}">${fmt(g.amount)} ₽</div>
-        <button class="edit-btn" onclick="openEdit('goals','${g.id}')">✏️</button>
-        <button class="delete-btn" onclick="deleteItem('goals','${g.id}')">✕</button>
+        <button class="card-menu-btn" onclick="showGoalMenu(event,'${g.id}')">⋯</button>
       </div>
     </div>`;
   }
