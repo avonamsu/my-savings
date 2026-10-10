@@ -1694,16 +1694,37 @@ function renderSavings() {
     '💼 Другое':           items.filter(x => !x.isDeposit && !x.isSavingsAccount && !['📈','💵','🏠','₿'].includes(x.icon)),
   } : { 'Все счета': items };
 
+  const collapsed = JSON.parse(localStorage.getItem('savings_groups_collapsed')||'{}');
   el.innerHTML = Object.entries(groups).filter(([,g])=>g.length>0).map(([groupName, group]) => {
     const groupTotal = group.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
-    return `<div class="group-header">
+    const key = groupName.replace(/\s+/g,'_');
+    const isCollapsed = !!collapsed[key];
+    return `<div class="group-header" onclick="toggleSavingsGroup('${key}')" style="cursor:pointer;user-select:none;">
         <span class="group-title">${groupName}</span>
-        <span class="group-total">${fmt(groupTotal)} ₽</span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          <span class="group-total">${fmt(groupTotal)} ₽</span>
+          <span style="font-size:11px;color:var(--text-dim);transition:transform .2s;display:inline-block;transform:rotate(${isCollapsed?'-90':'0'}deg);">▾</span>
+        </span>
       </div>
-      <div class="group-block">${group.map(x=>renderSavingCard(x,total)).join('')}</div>`;
+      <div class="group-block" id="grp-${key}" style="${isCollapsed?'display:none;':''}">
+        ${group.map(x=>renderSavingCard(x,total)).join('')}
+      </div>`;
   }).join('');
 
   initSavingsSwipe();
+}
+
+function toggleSavingsGroup(key) {
+  const collapsed = JSON.parse(localStorage.getItem('savings_groups_collapsed')||'{}');
+  collapsed[key] = !collapsed[key];
+  localStorage.setItem('savings_groups_collapsed', JSON.stringify(collapsed));
+  const block = document.getElementById('grp-'+key);
+  const header = block?.previousElementSibling;
+  if (block) block.style.display = collapsed[key] ? 'none' : '';
+  if (header) {
+    const arrow = header.querySelector('span[style*="rotate"]');
+    if (arrow) arrow.style.transform = `rotate(${collapsed[key]?'-90':'0'}deg)`;
+  }
 }
 
 function renderSavingCard(x, grandTotal) {
