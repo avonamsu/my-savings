@@ -174,6 +174,59 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   .dash-stat-label { font-size:11px; color:var(--text-dim); letter-spacing:.04em; text-transform:uppercase; }
   .dash-divider { display:none; }
   .quick-actions { display:flex; gap:10px; }
+
+/* WIDGET SYSTEM */
+.widget-section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:-4px; margin-top:4px; }
+.widget-section-label { font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--text-dim); text-transform:uppercase; }
+.widget-section-link { font-size:12px; color:var(--accent); cursor:pointer; }
+
+/* настроить button */
+.home-configure-btn { display:flex; align-items:center; gap:5px; background:none; border:1px solid rgba(255,255,255,0.1); border-radius:20px; color:var(--text-dim); font-size:11px; padding:4px 10px; cursor:pointer; transition:all .2s; }
+.home-configure-btn:active { background:var(--surface2); color:var(--text); }
+
+/* Widget settings panel */
+.widget-settings-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:300; align-items:flex-end; justify-content:center; }
+.widget-settings-overlay.open { display:flex; }
+.widget-settings-panel { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; width:100%; max-width:480px; padding:20px 20px 36px; border-top:2px solid rgba(78,205,196,0.3); }
+.widget-settings-title { font-size:16px; font-weight:700; margin-bottom:4px; }
+.widget-settings-sub { font-size:12px; color:var(--text-dim); margin-bottom:18px; }
+.widget-toggle-item { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+.widget-toggle-item:last-child { border-bottom:none; }
+.widget-toggle-left { display:flex; align-items:center; gap:10px; }
+.widget-toggle-icon { font-size:20px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:var(--surface2); border-radius:8px; flex-shrink:0; }
+.widget-toggle-name { font-size:14px; font-weight:600; }
+.widget-toggle-desc { font-size:11px; color:var(--text-dim); margin-top:1px; }
+/* toggle switch */
+.wt-switch { position:relative; width:44px; height:26px; flex-shrink:0; }
+.wt-switch input { opacity:0; width:0; height:0; }
+.wt-slider { position:absolute; inset:0; border-radius:13px; background:var(--surface2); border:1px solid rgba(255,255,255,0.1); cursor:pointer; transition:.2s; }
+.wt-slider:before { content:''; position:absolute; width:18px; height:18px; border-radius:50%; background:var(--text-dim); left:3px; top:3px; transition:.2s; }
+.wt-switch input:checked + .wt-slider { background:var(--accent); border-color:var(--accent); }
+.wt-switch input:checked + .wt-slider:before { transform:translateX(18px); background:#fff; }
+
+/* Piggy picker inside settings */
+.piggy-picker-wrap { margin-top:8px; padding:10px 12px; background:var(--surface2); border-radius:8px; display:none; }
+.piggy-picker-wrap.visible { display:block; }
+.piggy-picker-select { width:100%; background:var(--bg); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:var(--text); font-size:13px; padding:7px 10px; }
+
+/* Growth chart widget */
+.home-chart-widget { background:var(--surface); border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.05); padding:14px; }
+.home-chart-tabs { display:flex; gap:6px; margin-bottom:12px; }
+.home-chart-tab { background:var(--surface2); border:none; border-radius:6px; color:var(--text-dim); font-size:11px; font-weight:600; padding:4px 10px; cursor:pointer; transition:all .15s; }
+.home-chart-tab.active { background:var(--accent); color:var(--bg); }
+.home-chart-svg { width:100%; display:block; }
+
+/* Next deposit widget */
+.home-next-deposit { background:var(--surface); border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.05); padding:14px 16px; cursor:pointer; }
+
+/* Piggy widget */
+.home-piggy-widget { background:var(--surface); border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.05); overflow:hidden; }
+.home-piggy-header { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; }
+.home-piggy-cells { display:grid; grid-template-columns:repeat(auto-fill,minmax(44px,1fr)); gap:6px; padding:0 14px 14px; }
+.home-piggy-cell { aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; border:none; cursor:pointer; transition:all .15s; }
+.home-piggy-cell.done { opacity:0.5; }
+.home-piggy-cell.undone { background:var(--surface2); color:var(--text-dim); }
+.home-piggy-cell.undone:active { filter:brightness(1.3); }
   .quick-btn { flex:1; background:var(--surface); border:1px solid rgba(78,205,196,0.25); border-radius:var(--radius-sm); color:var(--accent); font-size:13px; font-weight:600; padding:11px 8px; cursor:pointer; text-align:center; transition:all .15s; }
   .quick-btn:active { background:var(--accent-dim); }
 
@@ -464,12 +517,58 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div style="font-size:11px;color:rgba(255,107,107,0.6);margin-top:6px;">Перейти к счетам →</div>
   </div>
 
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:-4px;margin-top:4px;">
-    <span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);text-transform:uppercase;">Цели</span>
-    <span onclick="showPage('goals')" style="font-size:12px;color:var(--accent);cursor:pointer;">все →</span>
+  <!-- Widget: График роста -->
+  <div id="home-widget-chart" style="display:none;">
+    <div class="widget-section-header">
+      <span class="widget-section-label">Рост накоплений</span>
+      <button class="home-configure-btn" style="border:none;padding:0;font-size:12px;color:var(--accent);" onclick="openWidgetSettings()">настроить ⚙</button>
+    </div>
+    <div class="home-chart-widget">
+      <div class="home-chart-tabs">
+        <button class="home-chart-tab active" id="chart-tab-savings" onclick="switchHomeChart('savings')">Накопления</button>
+        <button class="home-chart-tab" id="chart-tab-income" onclick="switchHomeChart('income')">Доход</button>
+      </div>
+      <svg class="home-chart-svg" id="home-chart-svg" height="90" viewBox="0 0 300 90" preserveAspectRatio="none"></svg>
+      <div id="home-chart-empty" style="display:none;text-align:center;font-size:12px;color:var(--text-dim);padding:20px 0;">Данных пока нет</div>
+    </div>
   </div>
-  <div id="home-goals-preview">
-    <div class="empty"><div class="empty-icon">🎯</div><p>Добавь цели чтобы видеть прогресс</p></div>
+
+  <!-- Widget: Ближайший вклад -->
+  <div id="home-widget-deposit" style="display:none;">
+    <div class="widget-section-header">
+      <span class="widget-section-label">Ближайший вклад</span>
+    </div>
+    <div id="home-next-deposit-content"></div>
+  </div>
+
+  <!-- Widget: Копилка / Челлендж -->
+  <div id="home-widget-piggy" style="display:none;">
+    <div class="widget-section-header">
+      <span class="widget-section-label" id="home-piggy-widget-label">Копилка</span>
+      <span onclick="openWidgetSettings()" style="font-size:12px;color:var(--text-dim);cursor:pointer;">сменить →</span>
+    </div>
+    <div id="home-piggy-widget-content"></div>
+  </div>
+
+  <!-- Widget: Цели -->
+  <div id="home-widget-goals" style="display:none;">
+    <div class="widget-section-header">
+      <span class="widget-section-label">Цели</span>
+      <span onclick="showPage('goals')" style="font-size:12px;color:var(--accent);cursor:pointer;">все →</span>
+    </div>
+    <div id="home-goals-preview">
+      <div class="empty"><div class="empty-icon">🎯</div><p>Добавь цели чтобы видеть прогресс</p></div>
+    </div>
+  </div>
+
+  <!-- кнопка настроить (если нет активных виджетов) -->
+  <div id="home-configure-hint" style="text-align:center;padding:4px 0 2px;">
+    <button class="home-configure-btn" style="margin:0 auto;" onclick="openWidgetSettings()">⚙ Настроить главную</button>
+  </div>
+
+  <!-- если хоть один виджет включён — кнопка внизу -->
+  <div id="home-configure-bottom" style="display:none;text-align:right;padding:2px 0;">
+    <button class="home-configure-btn" onclick="openWidgetSettings()">⚙ Настроить</button>
   </div>
 
   <div id="gdrive-session-banner" style="display:none;background:rgba(255,179,71,0.09);border:1px solid rgba(255,179,71,0.3);border-radius:var(--radius-sm);padding:11px 14px;">
@@ -491,6 +590,85 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <div id="notif-banner" style="display:none;background:rgba(255,179,71,0.12);border:1px solid rgba(255,179,71,0.3);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--warn);cursor:pointer;" onclick="initNotifications()">
     🔔 Разреши уведомления — напомним когда вклад закроется
+  </div>
+</div>
+
+<!-- WIDGET SETTINGS PANEL -->
+<div class="widget-settings-overlay" id="widget-settings-overlay" onclick="if(event.target===this)closeWidgetSettings()">
+  <div class="widget-settings-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="widget-settings-title">Настроить главную</div>
+      <button onclick="closeWidgetSettings()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;line-height:1;padding:0 2px;">✕</button>
+    </div>
+    <div class="widget-settings-sub">Выбери что показывать на главном экране</div>
+
+    <!-- График роста -->
+    <div class="widget-toggle-item">
+      <div class="widget-toggle-left">
+        <div class="widget-toggle-icon">📈</div>
+        <div>
+          <div class="widget-toggle-name">График роста</div>
+          <div class="widget-toggle-desc">Накопления и доход по месяцам</div>
+        </div>
+      </div>
+      <label class="wt-switch">
+        <input type="checkbox" id="wt-chart" onchange="saveWidgetSettings()">
+        <span class="wt-slider"></span>
+      </label>
+    </div>
+
+    <!-- Ближайший вклад -->
+    <div class="widget-toggle-item">
+      <div class="widget-toggle-left">
+        <div class="widget-toggle-icon">🏦</div>
+        <div>
+          <div class="widget-toggle-name">Ближайший вклад</div>
+          <div class="widget-toggle-desc">Следующий вклад к закрытию</div>
+        </div>
+      </div>
+      <label class="wt-switch">
+        <input type="checkbox" id="wt-deposit" onchange="saveWidgetSettings()">
+        <span class="wt-slider"></span>
+      </label>
+    </div>
+
+    <!-- Копилка/Челлендж -->
+    <div class="widget-toggle-item" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="widget-toggle-left">
+          <div class="widget-toggle-icon">🐷</div>
+          <div>
+            <div class="widget-toggle-name">Копилка / Челлендж</div>
+            <div class="widget-toggle-desc">Быстрый доступ к одной копилке</div>
+          </div>
+        </div>
+        <label class="wt-switch">
+          <input type="checkbox" id="wt-piggy" onchange="onWidgetPiggyToggle()">
+          <span class="wt-slider"></span>
+        </label>
+      </div>
+      <div class="piggy-picker-wrap" id="piggy-picker-wrap">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Выбери копилку или челлендж:</div>
+        <select class="piggy-picker-select" id="piggy-picker-select" onchange="saveWidgetSettings()">
+          <option value="">— Выбрать —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Цели -->
+    <div class="widget-toggle-item">
+      <div class="widget-toggle-left">
+        <div class="widget-toggle-icon">🎯</div>
+        <div>
+          <div class="widget-toggle-name">Цели</div>
+          <div class="widget-toggle-desc">Список целей и покрытие доходом</div>
+        </div>
+      </div>
+      <label class="wt-switch">
+        <input type="checkbox" id="wt-goals" onchange="saveWidgetSettings()">
+        <span class="wt-slider"></span>
+      </label>
+    </div>
   </div>
 </div>
 
@@ -1524,8 +1702,366 @@ function renderHome() {
   // deposits block removed — alert handles urgent ones
   updateGdriveSessionBanner();
 
-  // Goals preview
+  // Render optional widgets
+  renderHomeWidgets();
+}
+
+// ══════════════════════════════════════════════════════════
+// WIDGET SYSTEM
+// ══════════════════════════════════════════════════════════
+
+function getWidgetSettings() {
+  try {
+    const raw = localStorage.getItem('home_widgets');
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return { chart: false, deposit: false, piggy: false, piggyId: null, goals: false };
+}
+
+function saveWidgetSettings() {
+  const s = {
+    chart: document.getElementById('wt-chart')?.checked || false,
+    deposit: document.getElementById('wt-deposit')?.checked || false,
+    piggy: document.getElementById('wt-piggy')?.checked || false,
+    piggyId: document.getElementById('piggy-picker-select')?.value || null,
+    goals: document.getElementById('wt-goals')?.checked || false,
+  };
+  localStorage.setItem('home_widgets', JSON.stringify(s));
+  renderHomeWidgets();
+}
+
+function onWidgetPiggyToggle() {
+  const checked = document.getElementById('wt-piggy')?.checked;
+  const wrap = document.getElementById('piggy-picker-wrap');
+  if (wrap) wrap.classList.toggle('visible', !!checked);
+  if (checked) populatePiggyPicker();
+  saveWidgetSettings();
+}
+
+function populatePiggyPicker() {
+  const sel = document.getElementById('piggy-picker-select');
+  if (!sel) return;
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">— Выбрать —</option>';
+  const piggies = (state.piggyBanks||[]).map(p=>({id:p.id,name:p.name,type:'piggy',archived:(p.saved||0)>=p.goal}));
+  const challenges = (state.challenges||[]).map(c=>({id:c.id,name:c.name,type:'challenge',archived:false}));
+  [...piggies,...challenges].forEach(item=>{
+    const opt = document.createElement('option');
+    opt.value = item.type+':'+item.id;
+    opt.textContent = (item.type==='piggy'?'🐷 ':'🎯 ') + item.name + (item.archived?' (архив)':'');
+    sel.appendChild(opt);
+  });
+  if (currentVal) sel.value = currentVal;
+}
+
+function openWidgetSettings() {
+  const s = getWidgetSettings();
+  const overlay = document.getElementById('widget-settings-overlay');
+  if (!overlay) return;
+
+  // set toggle states
+  const wChart = document.getElementById('wt-chart');
+  const wDeposit = document.getElementById('wt-deposit');
+  const wPiggy = document.getElementById('wt-piggy');
+  const wGoals = document.getElementById('wt-goals');
+  if (wChart) wChart.checked = !!s.chart;
+  if (wDeposit) wDeposit.checked = !!s.deposit;
+  if (wPiggy) wPiggy.checked = !!s.piggy;
+  if (wGoals) wGoals.checked = !!s.goals;
+
+  // piggy picker
+  const wrap = document.getElementById('piggy-picker-wrap');
+  if (wrap) wrap.classList.toggle('visible', !!s.piggy);
+  if (s.piggy) {
+    populatePiggyPicker();
+    const sel = document.getElementById('piggy-picker-select');
+    if (sel && s.piggyId) sel.value = s.piggyId;
+  }
+
+  overlay.classList.add('open');
+}
+
+function closeWidgetSettings() {
+  const overlay = document.getElementById('widget-settings-overlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+// ── Chart widget ──────────────────────────────────────────
+let _homeChartMode = 'savings';
+function switchHomeChart(mode) {
+  _homeChartMode = mode;
+  document.getElementById('chart-tab-savings')?.classList.toggle('active', mode==='savings');
+  document.getElementById('chart-tab-income')?.classList.toggle('active', mode==='income');
+  renderHomeChartWidget();
+}
+
+function renderHomeChartWidget() {
+  const svg = document.getElementById('home-chart-svg');
+  const empty = document.getElementById('home-chart-empty');
+  if (!svg) return;
+
+  let points = [];
+
+  if (_homeChartMode === 'savings') {
+    // Use state._history (set by recordSnapshot): {ym: total}
+    const hist = Object.assign({}, state._history || {});
+    // Also ensure current month is included
+    const ym = new Date().toISOString().slice(0,7);
+    const currentTotal = Math.round(state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0));
+    if (currentTotal > 0) hist[ym] = currentTotal;
+    const allEntries = Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
+    if (allEntries.length >= 2) {
+      points = allEntries.map(([m, val]) => {
+        const d = new Date(m+'-01');
+        const label = d.toLocaleDateString('ru-RU',{month:'short'});
+        return { label, val: Number(val) };
+      });
+    } else {
+      const now = new Date();
+      points = [
+        { label: '', val: 0 },
+        { label: now.toLocaleDateString('ru-RU',{month:'short'}), val: currentTotal }
+      ];
+    }
+  } else {
+    // Income history from state._incomeHistory: {ym: total}
+    const hist = Object.assign({}, state._incomeHistory || {});
+    const ym = new Date().toISOString().slice(0,7);
+    const currentInc = Math.round(state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0));
+    if (currentInc > 0) hist[ym] = currentInc;
+    const entries = Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
+    if (entries.length >= 2) {
+      points = entries.map(([m, val]) => {
+        const d = new Date(m+'-01');
+        const label = d.toLocaleDateString('ru-RU',{month:'short'});
+        return { label, val: Number(val) };
+      });
+    } else {
+      const now = new Date();
+      points = [
+        { label: '', val: 0 },
+        { label: now.toLocaleDateString('ru-RU',{month:'short'}), val: currentInc }
+      ];
+    }
+  }
+
+  // filter out zero-only data
+  const hasData = points.some(p => p.val > 0);
+  if (!hasData) {
+    svg.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  svg.style.display = 'block';
+  if (empty) empty.style.display = 'none';
+
+  const W = 300, H = 90, pad = { l:8, r:8, t:10, b:24 };
+  const iW = W - pad.l - pad.r, iH = H - pad.t - pad.b;
+  const vals = points.map(p=>p.val);
+  const maxV = Math.max(...vals) || 1;
+  const minV = 0;
+  const range = maxV - minV || 1;
+
+  const n = points.length;
+  const xs = points.map((_,i) => pad.l + (n===1?iW/2:i/(n-1)*iW));
+  const ys = points.map(p => pad.t + iH - ((p.val-minV)/range*iH));
+
+  const path = xs.map((x,i)=>i===0?`M${x},${ys[i]}`:`L${x},${ys[i]}`).join(' ');
+  const areaPath = `${path} L${xs[n-1]},${pad.t+iH} L${xs[0]},${pad.t+iH} Z`;
+
+  // color
+  const color = _homeChartMode==='savings' ? '#4ECDC4' : '#3DD68C';
+  const gid = 'hcg_' + _homeChartMode;
+
+  // x-axis labels (max 5)
+  const step = Math.max(1, Math.floor(n/5));
+  const labels = points.map((p,i)=>{
+    if (i===0 || i===n-1 || i%step===0) return `<text x="${xs[i]}" y="${H-4}" text-anchor="middle" font-size="9" fill="rgba(122,155,181,0.7)">${p.label}</text>`;
+    return '';
+  }).join('');
+
+  svg.innerHTML = `<defs>
+    <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path d="${areaPath}" fill="url(#${gid})" />
+  <path d="${path}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  ${labels}`;
+}
+
+// ── Next deposit widget ────────────────────────────────────
+function renderNextDepositWidget() {
+  const el = document.getElementById('home-next-deposit-content');
+  if (!el) return;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const deps = state.savings.filter(s=>s.isDeposit&&s.dateEnd)
+    .map(s=>{const end=new Date(s.dateEnd);end.setHours(0,0,0,0);return{...s,daysLeft:Math.round((end-now)/86400000)};})
+    .filter(s=>s.daysLeft>=0)
+    .sort((a,b)=>a.daysLeft-b.daysLeft);
+
+  if (!deps.length) {
+    el.innerHTML = `<div class="home-next-deposit" onclick="showPage('savings')" style="color:var(--text-dim);font-size:13px;">Нет активных вкладов →</div>`;
+    return;
+  }
+  const d = deps[0];
+  const isUrgent = d.daysLeft <= 3;
+  const color = isUrgent ? 'var(--danger)' : d.daysLeft<=14 ? 'var(--warn)' : 'var(--accent)';
+  const label = d.daysLeft===0 ? '⚠️ Сегодня закрывается' : `${d.daysLeft} дн. до закрытия`;
+  const amt = getSavingCurrentAmountRub(d);
+  el.innerHTML = `<div class="home-next-deposit" onclick="showPage('savings')">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:14px;font-weight:700;">${d.name}</div>
+        <div style="font-size:12px;color:${color};margin-top:3px;">${label}</div>
+        ${d.rate ? `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${d.rate}% · ${new Date(d.dateEnd).toLocaleDateString('ru-RU',{day:'numeric',month:'short'})}</div>` : ''}
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:16px;font-weight:700;color:var(--text);">${fmt(amt)} ₽</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">перейти →</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Piggy/Challenge widget ─────────────────────────────────
+function renderPiggyWidget(piggyId) {
+  const el = document.getElementById('home-piggy-widget-content');
+  const label = document.getElementById('home-piggy-widget-label');
+  if (!el) return;
+
+  if (!piggyId) {
+    el.innerHTML = `<div class="home-piggy-widget" style="padding:14px;color:var(--text-dim);font-size:13px;">
+      <button onclick="openWidgetSettings()" style="background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;padding:9px 18px;cursor:pointer;width:100%;">Выбрать копилку</button>
+    </div>`;
+    return;
+  }
+
+  const [type, id] = piggyId.split(':');
+
+  if (type === 'piggy') {
+    const pg = (state.piggyBanks||[]).find(p=>p.id===id);
+    if (!pg) {
+      el.innerHTML = `<div class="home-piggy-widget" style="padding:14px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">🎉</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Копилка завершена!</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Выбери другую для отслеживания</div>
+        <button onclick="openWidgetSettings()" style="background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;padding:8px 18px;cursor:pointer;">Выбрать другую</button>
+      </div>`;
+      if (label) label.textContent = 'Копилка';
+      return;
+    }
+    // Check if archived
+    const isArchived = (pg.saved||0) >= pg.goal;
+    if (isArchived) {
+      el.innerHTML = `<div class="home-piggy-widget" style="padding:14px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">🎉</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Копилка завершена!</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">${pg.emoji||'🐷'} ${pg.name}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">${fmt(pg.saved)} ₽ накоплено</div>
+        <button onclick="openWidgetSettings()" style="background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;padding:8px 18px;cursor:pointer;">Выбрать другую</button>
+      </div>`;
+      if (label) label.textContent = 'Копилка';
+      return;
+    }
+    if (label) label.textContent = `${pg.emoji||'🐷'} ${pg.name}`;
+    const saved = pg.saved||0;
+    const pct = Math.min(100,Math.round(saved/pg.goal*100));
+    const color = pg.color||'#4ECDC4';
+    el.innerHTML = `<div class="home-piggy-widget">
+      <div class="home-piggy-header">
+        <div>
+          <div style="font-size:15px;font-weight:700;">${fmt(saved)} <span style="font-size:12px;color:var(--text-dim);">из ${fmt(pg.goal)} ₽</span></div>
+          <div style="font-size:12px;color:${color};margin-top:2px;">${pct}% накоплено</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="openPiggyDeposit('${pg.id}','add')" style="background:${color};border:none;border-radius:8px;color:var(--bg);font-size:20px;font-weight:700;width:44px;height:44px;cursor:pointer;">＋</button>
+          <button onclick="openPiggyDeposit('${pg.id}','sub')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-dim);font-size:20px;width:44px;height:44px;cursor:pointer;">－</button>
+        </div>
+      </div>
+      <div style="padding:0 14px 14px;">
+        <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;transition:width .3s;"></div>
+        </div>
+      </div>
+    </div>`;
+  } else if (type === 'challenge') {
+    const ch = (state.challenges||[]).find(c=>c.id===id);
+    if (!ch) {
+      el.innerHTML = `<div class="home-piggy-widget" style="padding:14px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">🎉</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Копилка завершена!</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Выбери другую для отслеживания</div>
+        <button onclick="openWidgetSettings()" style="background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;padding:8px 18px;cursor:pointer;">Выбрать другую</button>
+      </div>`;
+      if (label) label.textContent = 'Челлендж';
+      return;
+    }
+    if (label) label.textContent = `${ch.emoji||'🎯'} ${ch.name}`;
+    const cells = ch.cells||[];
+    const validCells = cells.filter(c=>c.amt>0);
+    const totalDone = validCells.filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
+    const totalGoal = validCells.reduce((s,c)=>s+c.amt,0);
+    const isCompleted = totalGoal > 0 && totalDone >= totalGoal;
+
+    if (isCompleted) {
+      el.innerHTML = `<div class="home-piggy-widget" style="padding:14px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">🎉</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Копилка завершена!</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">${fmt(totalDone)} ₽ собрано</div>
+        <button onclick="openWidgetSettings()" style="background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;padding:8px 18px;cursor:pointer;">Выбрать другую</button>
+      </div>`;
+      return;
+    }
+
+    // Show first N undone cells + summary
+    const color = ch.color||'#4ECDC4';
+    const pct = totalGoal ? Math.round(totalDone/totalGoal*100) : 0;
+    const doneCnt = validCells.filter(c=>c.done).length;
+    // show up to 20 cells in grid (first undone + recent done)
+    const showCells = validCells.slice(0, 24);
+    const cellsHtml = showCells.map((c,i)=>{
+      const globalIdx = cells.indexOf(c);
+      const bg = c.done ? color : 'var(--surface2)';
+      const textColor = c.done ? 'rgba(0,0,0,0.6)' : 'var(--text-dim)';
+      const opacity = c.done ? '0.5' : '1';
+      return `<button class="home-piggy-cell ${c.done?'done':'undone'}" style="background:${bg};color:${textColor};opacity:${opacity};" onclick="homeToggleChCell('${ch.id}',${globalIdx})">${fmt(c.amt)}</button>`;
+    }).join('');
+    const remaining = validCells.length - showCells.length;
+
+    el.innerHTML = `<div class="home-piggy-widget">
+      <div class="home-piggy-header">
+        <div>
+          <div style="font-size:15px;font-weight:700;">${fmt(totalDone)} <span style="font-size:12px;color:var(--text-dim);">из ${fmt(totalGoal)} ₽</span></div>
+          <div style="font-size:12px;color:${color};margin-top:2px;">${doneCnt} из ${validCells.length} ячеек · ${pct}%</div>
+        </div>
+        <div onclick="showPage('challenge')" style="font-size:12px;color:var(--text-dim);cursor:pointer;">все →</div>
+      </div>
+      <div style="padding:0 14px 6px;">
+        <div style="height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-bottom:10px;">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;"></div>
+        </div>
+      </div>
+      <div class="home-piggy-cells">${cellsHtml}</div>
+      ${remaining>0?`<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:0 14px 12px;">+${remaining} ещё — <span style="color:var(--accent);cursor:pointer" onclick="showPage('challenge')">открыть →</span></div>`:''}
+    </div>`;
+  }
+}
+
+function homeToggleChCell(chId, cellIdx) {
+  const ch = (state.challenges||[]).find(c=>c.id===chId);
+  if (!ch||!ch.cells||!ch.cells[cellIdx]) return;
+  ch.cells[cellIdx].done = !ch.cells[cellIdx].done;
+  save();
+  renderHomeWidgets();
+}
+
+// ── Goals widget ──────────────────────────────────────────
+function renderGoalsWidget() {
   const goalsEl = document.getElementById('home-goals-preview');
+  if (!goalsEl) return;
+  const totalInc = state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0);
   if (!state.goals.length) {
     goalsEl.innerHTML='<div class="empty"><div class="empty-icon">🎯</div><p>Добавь цели чтобы видеть прогресс</p></div>';
   } else {
@@ -1536,8 +2072,6 @@ function renderHome() {
     const show = [...covered.slice(-2), ...uncovered.slice(0,1)];
     const remaining = items.length - show.length;
     goalsEl.innerHTML=`<div class="card">${show.map(g=>{
-      const cost=Number(g.amount);
-      const pct = g.covered ? 100 : Math.min(99, Math.round(totalInc/cost*100));
       return `<div class="goal-item ${g.covered?'covered':''}" style="padding:8px 14px;">
         <div class="goal-check" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">${g.covered?'✓':''}</div>
         <div class="goal-name" style="font-size:13px;flex:1;">${g.name}</div>
@@ -1547,9 +2081,41 @@ function renderHome() {
       ${remaining>0?`<div style="padding:8px 0 2px;text-align:center;font-size:12px;color:var(--text-dim);">+${remaining} ещё · <span style="color:var(--accent);cursor:pointer" onclick="showPage('goals')">посмотреть все</span></div>`:''}
     </div>`;
   }
-
-
 }
+
+// ── Render all enabled widgets ─────────────────────────────
+function renderHomeWidgets() {
+  const s = getWidgetSettings();
+  const anyOn = s.chart || s.deposit || s.piggy || s.goals;
+
+  // chart
+  const wChart = document.getElementById('home-widget-chart');
+  if (wChart) wChart.style.display = s.chart ? '' : 'none';
+  if (s.chart) renderHomeChartWidget();
+
+  // deposit
+  const wDep = document.getElementById('home-widget-deposit');
+  if (wDep) wDep.style.display = s.deposit ? '' : 'none';
+  if (s.deposit) renderNextDepositWidget();
+
+  // piggy
+  const wPiggy = document.getElementById('home-widget-piggy');
+  if (wPiggy) wPiggy.style.display = s.piggy ? '' : 'none';
+  if (s.piggy) renderPiggyWidget(s.piggyId);
+
+  // goals
+  const wGoals = document.getElementById('home-widget-goals');
+  if (wGoals) wGoals.style.display = s.goals ? '' : 'none';
+  if (s.goals) renderGoalsWidget();
+
+  // hint / bottom configure button
+  const hint = document.getElementById('home-configure-hint');
+  const bottom = document.getElementById('home-configure-bottom');
+  if (hint) hint.style.display = anyOn ? 'none' : 'block';
+  if (bottom) bottom.style.display = anyOn ? 'block' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════
 
 function toggleExclude(id) {
   const s=state.savings.find(x=>x.id===id);
