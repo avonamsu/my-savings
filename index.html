@@ -477,9 +477,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="empty"><div class="empty-icon">🎯</div><p>Добавь цели чтобы видеть прогресс</p></div>
   </div>
 
-  <div id="backup-banner" style="display:none;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text);cursor:pointer;" onclick="downloadBackupFromBanner()">
+  <div id="backup-banner" style="display:none;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text);cursor:pointer;" onclick="showPage('backup');document.getElementById('backup-banner').style.display='none'">
     <div style="font-weight:600;margin-bottom:2px;">💾 Пора создать резервную копию</div>
-    <div style="font-size:12px;color:var(--text-dim);">Данные менялись, но копия не создавалась 7+ дней.</div>
+    <div style="font-size:12px;color:var(--text-dim);">Данные менялись, но копия не создавалась 7+ дней. Нажми чтобы настроить →</div>
   </div>
   <div id="notif-banner" style="display:none;background:rgba(255,179,71,0.12);border:1px solid rgba(255,179,71,0.3);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--warn);cursor:pointer;" onclick="initNotifications()">
     🔔 Разреши уведомления — напомним когда вклад закроется
@@ -3945,6 +3945,7 @@ function checkBackupReminder(){
   const banner = document.getElementById('backup-banner');
   if (!banner) return;
   if (!state.savings.length && !state.income.length && !state.goals.length){ banner.style.display='none'; return; }
+  if (gdriveToken){ banner.style.display='none'; return; } // Drive подключён — напоминание не нужно
   const lastHash = localStorage.getItem('last_backup_state_hash');
   if (lastHash === stateHash()){ banner.style.display='none'; return; }
   const lastBackup = localStorage.getItem('last_backup_date');
