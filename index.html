@@ -4187,7 +4187,6 @@ async function gdriveSave(silent = false) {
       localStorage.setItem('gdrive_last_save_ts', now.getTime().toString());
       gdriveUpdateLastSave();
       if (!silent) { haptic('success'); showToast('☁️ Сохранено в Google Drive'); }
-      else showToast('☁️ Автосохранение в Drive');
     } else if (resp.status === 401) {
       // Токен протух — переавторизуемся и повторяем
       gdriveToken = null;
