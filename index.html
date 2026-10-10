@@ -16,6 +16,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 :root {
@@ -412,6 +413,20 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div class="sidebar-section"><span>🎯 Цели</span></div>
   <button class="sidebar-item" onclick="navTo('goals')"><span class="si">✅</span>Список целей</button>
   <button class="sidebar-item" onclick="navTo('challenge')"><span class="si">🪙</span>Челлендж-копилки</button>
+
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section"><span>☁️ Google Drive</span></div>
+  <div id="gdrive-signed-out">
+    <button class="sidebar-item" onclick="gdriveSignIn()"><span class="si">🔑</span>Войти через Google</button>
+  </div>
+  <div id="gdrive-signed-in" style="display:none">
+    <button class="sidebar-item" onclick="gdriveSave();closeSidebar()">
+      <span class="si">⬆️</span>
+      <span>Сохранить в Drive<span id="gdrive-last-save" style="display:block;font-size:11px;color:var(--text-dim);margin-top:1px;"></span></span>
+    </button>
+    <button class="sidebar-item" onclick="gdriveLoad();closeSidebar()"><span class="si">⬇️</span>Загрузить из Drive</button>
+    <button class="sidebar-item" onclick="gdriveSignOut();closeSidebar()"><span class="si">🚪</span><span id="gdrive-user-label">Выйти</span></button>
+  </div>
 
   <div class="sidebar-divider"></div>
   <div class="sidebar-section"><span>⚙️ Настройки</span></div>
@@ -4001,6 +4016,197 @@ function exportCSV(){
 }
 
 
+// ── GOOGLE DRIVE SYNC ─────────────────────────────────────
+const GDRIVE_CLIENT_ID = '62575774781-433fogt8r9t86b7b1djkpdoj88640pvr.apps.googleusercontent.com';
+const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const GDRIVE_FILE_NAME = 'my-savings-data.json';
+let gdriveToken = null;
+let gdriveFileId = null;
+
+function gdriveSignIn() {
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GDRIVE_CLIENT_ID,
+    scope: GDRIVE_SCOPE,
+    callback: (resp) => {
+      if (resp.error) { alert('Ошибка входа: ' + resp.error); return; }
+      gdriveToken = resp.access_token;
+      localStorage.setItem('gdrive_token', gdriveToken);
+      gdriveUpdateUI(true);
+      // Попытка загрузить данные после входа
+      gdriveLoadSilent();
+    }
+  });
+  client.requestAccessToken();
+}
+
+function gdriveSignOut() {
+  if (gdriveToken) google.accounts.oauth2.revoke(gdriveToken);
+  gdriveToken = null;
+  gdriveFileId = null;
+  localStorage.removeItem('gdrive_token');
+  localStorage.removeItem('gdrive_file_id');
+  localStorage.removeItem('gdrive_user_email');
+  gdriveUpdateUI(false);
+}
+
+function gdriveUpdateUI(signedIn) {
+  document.getElementById('gdrive-signed-out').style.display = signedIn ? 'none' : '';
+  document.getElementById('gdrive-signed-in').style.display = signedIn ? '' : 'none';
+  const email = localStorage.getItem('gdrive_user_email');
+  const label = document.getElementById('gdrive-user-label');
+  if (label) label.textContent = email ? `Выйти (${email})` : 'Выйти';
+  gdriveUpdateLastSave();
+}
+
+function gdriveUpdateLastSave() {
+  const el = document.getElementById('gdrive-last-save');
+  if (!el) return;
+  const dt = localStorage.getItem('gdrive_last_save');
+  el.textContent = dt ? 'Последнее: ' + dt : '';
+}
+
+async function gdriveFindFile() {
+  if (gdriveFileId) return gdriveFileId;
+  const cached = localStorage.getItem('gdrive_file_id');
+  if (cached) { gdriveFileId = cached; return gdriveFileId; }
+  const resp = await fetch(
+    'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%22' + GDRIVE_FILE_NAME + '%22&fields=files(id)',
+    { headers: { Authorization: 'Bearer ' + gdriveToken } }
+  );
+  const data = await resp.json();
+  if (data.files && data.files.length > 0) {
+    gdriveFileId = data.files[0].id;
+    localStorage.setItem('gdrive_file_id', gdriveFileId);
+  }
+  return gdriveFileId;
+}
+
+async function gdriveSave() {
+  if (!gdriveToken) { alert('Сначала войдите через Google'); return; }
+  try {
+    const content = JSON.stringify({ ...state, _appVersion: APP_VERSION, _savedAt: new Date().toISOString() }, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+    const fileId = await gdriveFindFile();
+
+    let resp;
+    if (fileId) {
+      // Update existing
+      resp = await fetch('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + gdriveToken, 'Content-Type': 'application/json' },
+        body: blob
+      });
+    } else {
+      // Create new in appDataFolder
+      const meta = { name: GDRIVE_FILE_NAME, parents: ['appDataFolder'] };
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+      form.append('file', blob);
+      resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + gdriveToken },
+        body: form
+      });
+      const created = await resp.json();
+      gdriveFileId = created.id;
+      localStorage.setItem('gdrive_file_id', gdriveFileId);
+    }
+
+    if (resp.ok) {
+      const now = new Date();
+      const dt = now.toLocaleDateString('ru-RU') + ' в ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      localStorage.setItem('gdrive_last_save', dt);
+      gdriveUpdateLastSave();
+      haptic('success');
+      // Show brief toast
+      showToast('☁️ Сохранено в Google Drive');
+    } else {
+      throw new Error('HTTP ' + resp.status);
+    }
+  } catch(e) {
+    alert('Ошибка сохранения: ' + e.message);
+  }
+}
+
+async function gdriveLoad() {
+  if (!gdriveToken) { alert('Сначала войдите через Google'); return; }
+  try {
+    const fileId = await gdriveFindFile();
+    if (!fileId) { alert('Файл не найден в Google Drive. Сначала сохраните данные.'); return; }
+    const resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
+      headers: { Authorization: 'Bearer ' + gdriveToken }
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.savings || !data.income || !data.goals) { alert('Файл повреждён или неверного формата'); return; }
+
+    const savedAt = data._savedAt ? new Date(data._savedAt).toLocaleString('ru-RU') : 'неизвестно';
+    const totalAmt = Math.round(data.savings.reduce((s, x) => s + (x.excluded ? 0 : Number(x.amount || 0)), 0));
+    const msg = `📋 Данные из Google Drive:\n\n💰 Счетов: ${data.savings.length}\n📈 Доходов: ${data.income.length}\n🎯 Целей: ${data.goals.length}\n💵 Примерная сумма: ${fmt(totalAmt)} ₽\n📅 Сохранено: ${savedAt}\n\nТекущие данные будут заменены. Продолжить?`;
+    if (!confirm(msg)) return;
+
+    delete data._appVersion; delete data._savedAt;
+    state = data;
+    if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
+    if (!state.piggyBanks) state.piggyBanks = [];
+    if (!state.challenges) state.challenges = [];
+    save(); saveToIDB(); render(); drawChart(); checkNotifBanner();
+    haptic('success');
+    showToast('☁️ Данные загружены из Google Drive');
+  } catch(e) {
+    alert('Ошибка загрузки: ' + e.message);
+  }
+}
+
+async function gdriveLoadSilent() {
+  // Загружает без диалога, только если есть файл и данные пустые
+  if (!gdriveToken) return;
+  if (state.savings.length > 0 || state.income.length > 0 || state.goals.length > 0) return;
+  try {
+    const fileId = await gdriveFindFile();
+    if (!fileId) return;
+    const resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
+      headers: { Authorization: 'Bearer ' + gdriveToken }
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data.savings || !data.income || !data.goals) return;
+    delete data._appVersion; delete data._savedAt;
+    state = data;
+    if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
+    if (!state.piggyBanks) state.piggyBanks = [];
+    if (!state.challenges) state.challenges = [];
+    save(); saveToIDB(); render(); drawChart();
+    showToast('☁️ Данные загружены из Google Drive');
+  } catch(e) {}
+}
+
+function gdriveInit() {
+  // Восстанавливаем токен из localStorage (живёт ~1 час, потом нужно переавторизоваться)
+  const savedToken = localStorage.getItem('gdrive_token');
+  if (savedToken) {
+    gdriveToken = savedToken;
+    gdriveFileId = localStorage.getItem('gdrive_file_id');
+    gdriveUpdateUI(true);
+  } else {
+    gdriveUpdateUI(false);
+  }
+}
+
+function showToast(msg) {
+  let t = document.getElementById('gdrive-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'gdrive-toast';
+    t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--surface2);color:var(--text);padding:10px 18px;border-radius:20px;font-size:13px;z-index:9999;pointer-events:none;transition:opacity 0.3s;box-shadow:0 4px 16px rgba(0,0,0,0.3);';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
 // ── INIT ──────────────────────────────────────────────────
 load();
 if (!state.challenges) state.challenges = [];
@@ -4011,6 +4217,7 @@ initNotifications();
 checkNotifBanner();
 checkBackupReminder();
 updateBackupDateDisplay();
+gdriveInit();
 
 // ── ONBOARDING ────────────────────────────────────────────
 const OB_STEPS = [
