@@ -1885,7 +1885,7 @@ function renderGoals() {
         <div class="drag-handle">⠿</div>
         <div class="goal-check" style="${g.covered?'background:'+color+';border-color:'+color+';':''}">${g.covered?'✓':''}</div>
         <div class="goal-info">
-          <div class="goal-name">${emoji} ${g.name}${g.type==='subscription'?` <span class="sub-badge">🔄 ${g.subPeriod===12?'год':g.subPeriod===3?'квартал':'мес'}</span>`:''}${(()=>{const d=getDaysUntilSub(g);return d!==null&&d<=3?` <span class="sub-due-soon">· через ${d===0?'сегодня':d+' дн.'}</span>`:'';})()}</div>
+          <div class="goal-name">${emoji} ${g.name}</div>${g.type==='subscription'?(()=>{const d=getDaysUntilSub(g);const soon=d!==null&&d<=3?` <span class="sub-due-soon">· через ${d===0?'сегодня':d+' дн.'}</span>`:'';return `<div style="font-size:10px;color:var(--text-dim);margin-top:1px;"><span class="sub-badge">🔄 ${g.subPeriod===12?'год':g.subPeriod===3?'квартал':'мес'}</span>${soon}</div>`;})():''}
           ${!g.covered && g.partial > 0 ? `<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:${partialPct}%;background:${color};"></div></div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${partialPct}% · не хватает <span style="color:#FFB347;">${fmt(Math.round(Number(g.amount)*(1-g.partial)))} ₽/мес</span></div>` : ''}
           ${!g.covered && !g.partial ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">не хватает <span style="color:#FFB347;">${fmt(Number(g.amount))} ₽/мес</span></div>` : ''}
         </div>
