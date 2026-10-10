@@ -1967,7 +1967,7 @@ function renderNextDepositWidget() {
   const color = isUrgent ? 'var(--danger)' : d.daysLeft<=14 ? 'var(--warn)' : 'var(--accent)';
   const label = d.daysLeft===0 ? '⚠️ Сегодня закрывается' : `${d.daysLeft} дн. до закрытия`;
   const amt = getSavingCurrentAmountRub(d);
-  el.innerHTML = `<div class="home-next-deposit" onclick="showPage('savings')">
+  el.innerHTML = `<div class="home-next-deposit" onclick="navigateToItem('savings','${d.id}')">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:14px;font-weight:700;">${d.name}</div>
@@ -2097,7 +2097,7 @@ function renderPiggyWidget(piggyId) {
         </div>
       </div>
       <div class="home-piggy-cells">${cellsHtml}</div>
-      ${remaining>0?`<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:0 14px 12px;">+${remaining} ещё — <span style="color:var(--accent);cursor:pointer" onclick="showPage('challenge')">открыть →</span></div>`:''}
+      ${remaining>0?`<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:0 14px 12px;">+${remaining} ещё — <span style="color:var(--accent);cursor:pointer" onclick="navigateToItem('challenge','${ch.id}')">открыть →</span></div>`:''}
     </div>`;
   }
 }
@@ -3154,6 +3154,21 @@ function showPage(name) {
   if(name==='challenge') renderChallengesPage();
   if(name==='backup') gdriveUpdateUI(!!gdriveToken);
   updateFab(name);
+}
+
+function navigateToItem(page, dataId) {
+  showPage(page);
+  // Ждём рендера страницы, затем скроллим и подсвечиваем
+  setTimeout(() => {
+    const pageEl = document.getElementById('page-' + page);
+    if (!pageEl) return;
+    const el = pageEl.querySelector(`[data-id="${dataId}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.style.transition = 'box-shadow .2s';
+    el.style.boxShadow = '0 0 0 2px var(--accent)';
+    setTimeout(() => { el.style.boxShadow = ''; }, 1800);
+  }, 320);
 }
 
 function updateFab(page) {
