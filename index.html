@@ -294,14 +294,11 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .goal-item:last-child { border-bottom:none; border-radius:0 0 var(--radius) var(--radius); }
 .goal-item:first-child { border-radius:var(--radius) var(--radius) 0 0; }
 .goal-item:only-child { border-radius:var(--radius); }
-.goal-item.covered { background:var(--done-bg); }
 .goal-check { width:22px; height:22px; border-radius:50%; border:2px solid var(--text-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; }
 .goal-item.covered .goal-check { background:var(--done); border-color:var(--done); color:var(--bg); }
 .goal-info { flex:1; min-width:0; }
 .goal-name { font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.goal-item.covered .goal-name { color:var(--accent); }
 .goal-amount { font-size:13px; font-weight:600; flex-shrink:0; }
-.goal-item.covered .goal-amount { color:var(--accent); }
 .drag-handle { color:var(--text-dim); opacity:0.4; font-size:17px; cursor:grab; flex-shrink:0; padding:4px 4px 4px 0; user-select:none; touch-action:none; }
 .goal-item.dragging { opacity:0.4; background:var(--surface2); }
 .goal-item.drag-over { border-top:2px solid var(--accent); }
@@ -2138,8 +2135,8 @@ function renderGoalsWidget() {
     const remaining = items.length - show.length;
     goalsEl.innerHTML=`<div class="card">${show.map((g,i)=>{
       const isLast = i === show.length - 1 && remaining === 0;
-      return `<div class="goal-item ${g.covered?'covered':''}" style="padding:8px 14px;${isLast?'border-bottom:none;':''}">
-        <div class="goal-check" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">${g.covered?'✓':''}</div>
+      return `<div class="goal-item" style="padding:8px 14px;${isLast?'border-bottom:none;':''}">
+        <div class="goal-check" style="width:18px;height:18px;font-size:10px;flex-shrink:0;${g.covered?'background:var(--done);border-color:var(--done);color:var(--bg);':''}">${g.covered?'✓':''}</div>
         <div class="goal-name" style="font-size:13px;flex:1;">${g.name}</div>
         <div class="goal-amount" style="font-size:12px;">${fmt(g.amount)} ₽</div>
       </div>`;
@@ -2767,7 +2764,7 @@ function renderGoals() {
           ${!g.covered && g.partial > 0 ? `<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:${partialPct}%;background:${color};"></div></div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${partialPct}% · не хватает <span style="color:#FFB347;">${fmt(Math.round(Number(g.amount)*(1-g.partial)))} ₽/мес</span></div>` : ''}
           ${!g.covered && !g.partial ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">не хватает <span style="color:#FFB347;">${fmt(Number(g.amount))} ₽/мес</span></div>` : ''}
         </div>
-        <div class="goal-amount" style="${g.covered?'color:'+color+';':''}">${fmt(g.amount)} ₽</div>
+        <div class="goal-amount">${fmt(g.amount)} ₽</div>
         <button class="card-menu-btn" onclick="showGoalMenu(event,'${g.id}')">⋯</button>
       </div>
     </div>`;
