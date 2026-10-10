@@ -1505,21 +1505,7 @@ function renderHome() {
     return {...s, daysLeft:Math.round((end-now)/86400000)};
   }).filter(s=>s.daysLeft<=30).sort((a,b)=>a.daysLeft-b.daysLeft);
 
-  const depCard = document.getElementById('home-deposits-card');
-  const depList = document.getElementById('home-deposits-list');
-  if (upcoming.length) {
-    depCard.style.display='flex';
-    depList.innerHTML = upcoming.slice(0,3).map(s=>`
-      <div class="card-item">
-        <div class="card-icon">${s.icon}</div>
-        <div class="card-info"><div class="card-name">${s.name}</div>
-          <div class="card-sub">${s.daysLeft<=0?'Истёк!':s.daysLeft===0?'Сегодня!':'Через '+s.daysLeft+' дн.'}</div>
-        </div>
-        <div class="card-amount" style="color:${s.daysLeft<=0?'var(--danger)':s.daysLeft<=3?'var(--warn)':'var(--text)'}">
-          ${fmt(getSavingCurrentAmountRub(s))} ₽
-        </div>
-      </div>`).join('');
-  } else depCard.style.display='none';
+  // deposits block removed — alert handles urgent ones
 
   // Goals preview
   const goalsEl = document.getElementById('home-goals-preview');
