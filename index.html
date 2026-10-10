@@ -4430,7 +4430,7 @@ function fillLinkedSavingSelect(containerId, currentVal) {
   }).join('');
 
   // Show deposit warning if preselected value is a deposit
-  const existingWarn = container.parentElement?.querySelector('.linked-deposit-warn');
+  const existingWarn = container.nextElementSibling?.classList.contains('linked-deposit-warn') ? container.nextElementSibling : container.parentElement?.querySelector('.linked-deposit-warn');
   if (existingWarn) existingWarn.remove();
   if (currentVal) {
     const preselected = (state.savings||[]).find(s=>s.id===currentVal);
@@ -4439,7 +4439,7 @@ function fillLinkedSavingSelect(containerId, currentVal) {
       warn.className = 'field-hint info linked-deposit-warn';
       warn.style.marginTop = '6px';
       warn.textContent = '⚠️ Это вклад — расчёт процентов будет приблизительным: сумма обновится, но проценты пересчитаются с даты открытия вклада, а не с даты пополнения.';
-      container.parentElement.appendChild(warn);
+      container.insertAdjacentElement('afterend', warn);
     }
   }
 }
@@ -4453,7 +4453,7 @@ function selectLinkedChip(containerId, val, el) {
   haptic('light');
 
   // Show deposit warning if selected saving is a deposit
-  const existing = container.parentElement.querySelector('.linked-deposit-warn');
+  const existing = container.nextElementSibling?.classList.contains('linked-deposit-warn') ? container.nextElementSibling : container.parentElement?.querySelector('.linked-deposit-warn');
   if (existing) existing.remove();
   if (val) {
     const saving = (state.savings||[]).find(s=>s.id===val);
@@ -4462,7 +4462,7 @@ function selectLinkedChip(containerId, val, el) {
       warn.className = 'field-hint info linked-deposit-warn';
       warn.style.marginTop = '6px';
       warn.textContent = '⚠️ Это вклад — расчёт процентов будет приблизительным: сумма обновится, но проценты пересчитаются с даты открытия вклада, а не с даты пополнения.';
-      container.parentElement.appendChild(warn);
+      container.insertAdjacentElement('afterend', warn);
     }
   }
 }
