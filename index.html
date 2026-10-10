@@ -483,27 +483,27 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- SAVINGS PAGE -->
 <div class="page" id="page-savings">
-  <div class="hero" style="position:relative;">
+  <div class="hero">
     <div class="hero-label">Всего накоплено (с процентами)</div>
     <div class="hero-amount" id="total-savings">0 <span>₽</span></div>
     <div class="hero-sub" id="savings-count">Нет счетов</div>
-    <div style="position:absolute;top:0;right:0;display:flex;gap:6px;align-items:center;">
-      <button onclick="togglePageSearch('savings')" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:34px;height:34px;color:var(--text-dim);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Поиск">🔍</button>
-      <div style="position:relative;">
-        <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:34px;height:34px;color:var(--text-dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Сортировка">⋮</button>
-        <div id="savings-sort-menu" style="display:none;position:absolute;right:0;top:40px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;z-index:200;min-width:150px;box-shadow:0 4px 20px rgba(0,0,0,0.4);overflow:hidden;">
-          <div onclick="setSavingsSort('type')" id="ssort-type" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--accent);">✓ По типу</div>
-          <div onclick="setSavingsSort('amount')" id="ssort-amount" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--text-dim);">По сумме ↓</div>
-          <div onclick="setSavingsSort('added')" id="ssort-added" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--text-dim);">По дате</div>
-        </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;min-height:32px;">
+    <div id="savings-search-bar" style="display:none;flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(78,205,196,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
+        <input type="text" id="savings-search" placeholder="Поиск счёта..." oninput="renderSavings()" autocomplete="off"
+          style="flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none;padding:8px 0;">
+        <button onclick="clearPageSearch('savings')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;">✕</button>
       </div>
     </div>
-  </div>
-  <div id="savings-search-bar" style="display:none;overflow:hidden;">
-    <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid rgba(78,205,196,0.3);border-radius:var(--radius-sm);padding:4px 4px 4px 12px;">
-      <input type="text" id="savings-search" placeholder="Поиск счёта..." oninput="renderSavings()"
-        style="flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none;padding:6px 0;">
-      <button onclick="clearPageSearch('savings')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;">✕</button>
+    <button onclick="togglePageSearch('savings')" id="savings-search-btn" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;" title="Поиск">🔍</button>
+    <div style="position:relative;flex-shrink:0;">
+      <button onclick="document.getElementById('savings-sort-menu').style.display=document.getElementById('savings-sort-menu').style.display==='block'?'none':'block'" style="background:none;border:none;color:var(--text-dim);font-size:13px;cursor:pointer;padding:4px 6px;display:flex;align-items:center;gap:3px;" title="Сортировка"><span id="savings-sort-label">По типу</span> ▾</button>
+      <div id="savings-sort-menu" style="display:none;position:absolute;right:0;top:32px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;z-index:200;min-width:140px;box-shadow:0 4px 20px rgba(0,0,0,0.4);overflow:hidden;">
+        <div onclick="setSavingsSort('type')" id="ssort-type" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--accent);">✓ По типу</div>
+        <div onclick="setSavingsSort('amount')" id="ssort-amount" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--text-dim);">По сумме ↓</div>
+        <div onclick="setSavingsSort('added')" id="ssort-added" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--text-dim);">По дате</div>
+      </div>
     </div>
   </div>
   <div class="chart-wrap" id="deposit-tax-block" style="display:none;"></div>
@@ -547,16 +547,16 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="chart-title" style="margin-bottom:10px;">📊 РАЗБИВКА ПО ТИПАМ</div>
     <div id="income-breakdown-list"></div>
   </div>
-  <div id="income-search-bar" style="display:none;overflow:hidden;">
-    <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid rgba(78,205,196,0.3);border-radius:var(--radius-sm);padding:4px 4px 4px 12px;">
-      <input type="text" id="income-search" placeholder="Поиск дохода..." oninput="renderIncome()"
-        style="flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none;padding:6px 0;">
-      <button onclick="clearPageSearch('income')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;">✕</button>
+  <div id="income-search-bar" style="display:none;">
+    <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(78,205,196,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
+      <input type="text" id="income-search" placeholder="Поиск дохода..." oninput="renderIncome()" autocomplete="off"
+        style="flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none;padding:8px 0;">
+      <button onclick="clearPageSearch('income')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;">✕</button>
     </div>
   </div>
   <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
     <span>Источники дохода</span>
-    <button onclick="togglePageSearch('income')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px;" title="Поиск">🔍</button>
+    <button onclick="togglePageSearch('income')" id="income-search-btn" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px;" title="Поиск">🔍</button>
   </div>
   <div id="income-list">
     <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
@@ -1763,14 +1763,16 @@ function toggleSavingsGroup(key) {
 
 function togglePageSearch(page) {
   const bar = document.getElementById(page+'-search-bar');
+  const btn = document.getElementById(page+'-search-btn');
   if (!bar) return;
+  const opening = bar.style.display === 'none' || bar.style.display === '';
+  // for savings bar has display:none initially; for income same
   const isHidden = bar.style.display === 'none';
-  bar.style.display = isHidden ? '' : 'none';
+  bar.style.display = isHidden ? 'flex' : 'none';
+  if (btn) btn.style.display = isHidden ? 'none' : '';
   if (isHidden) {
     const inp = document.getElementById(page+'-search');
-    if (inp) { inp.value = ''; inp.focus(); }
-    if (page === 'savings') renderSavings();
-    if (page === 'income') renderIncome();
+    if (inp) { inp.value = ''; setTimeout(()=>inp.focus(), 50); }
   } else {
     const inp = document.getElementById(page+'-search');
     if (inp) inp.value = '';
@@ -1783,6 +1785,8 @@ function clearPageSearch(page) {
   if (inp) inp.value = '';
   const bar = document.getElementById(page+'-search-bar');
   if (bar) bar.style.display = 'none';
+  const btn = document.getElementById(page+'-search-btn');
+  if (btn) btn.style.display = '';
   if (page === 'savings') renderSavings();
   if (page === 'income') renderIncome();
 }
