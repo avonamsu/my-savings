@@ -1743,11 +1743,16 @@ function populatePiggyPicker() {
   const currentVal = sel.value;
   sel.innerHTML = '<option value="">— Выбрать —</option>';
   const piggies = (state.piggyBanks||[]).map(p=>({id:p.id,name:p.name,type:'piggy',archived:(p.saved||0)>=p.goal}));
-  const challenges = (state.challenges||[]).map(c=>({id:c.id,name:c.name,type:'challenge',archived:false}));
-  [...piggies,...challenges].forEach(item=>{
+  const challenges = (state.challenges||[]).filter(c=>{
+    if (!c.cells||!c.cells.length) return true;
+    const valid = c.cells.filter(x=>x.amt>0);
+    return !valid.length || valid.filter(x=>x.done).reduce((s,x)=>s+x.amt,0) < valid.reduce((s,x)=>s+x.amt,0);
+  }).map(c=>({id:c.id,name:c.name,type:'challenge',archived:false}));
+  const active = [...piggies.filter(p=>!p.archived), ...challenges];
+  active.forEach(item=>{
     const opt = document.createElement('option');
     opt.value = item.type+':'+item.id;
-    opt.textContent = (item.type==='piggy'?'🐷 ':'🎯 ') + item.name + (item.archived?' (архив)':'');
+    opt.textContent = (item.type==='piggy'?'🐷 ':'🎯 ') + item.name;
     sel.appendChild(opt);
   });
   if (currentVal) sel.value = currentVal;
