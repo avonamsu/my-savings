@@ -214,8 +214,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .delete-btn { background:none; border:none; color:var(--danger); font-size:17px; cursor:pointer; padding:4px 0 4px 6px; opacity:.5; flex-shrink:0; }
 .edit-btn { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding:4px 0 4px 4px; opacity:.4; flex-shrink:0; }
 .excl-btn { background:none; border:none; cursor:pointer; font-size:17px; padding:4px 6px 4px 0; flex-shrink:0; opacity:0.5; line-height:1; }
-.add-btn { background:none; border:2px dashed rgba(78,205,196,0.3); border-radius:var(--radius-sm); color:var(--accent); font-size:14px; font-weight:600; padding:13px; cursor:pointer; width:100%; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
-.add-btn:active { background:var(--accent-dim); }
+.add-btn { display:none; }
+.fab { position:fixed; bottom:72px; right:16px; width:52px; height:52px; border-radius:50%; background:var(--accent); color:var(--bg); border:none; font-size:26px; font-weight:400; cursor:pointer; box-shadow:0 4px 16px rgba(78,205,196,0.4); z-index:500; display:flex; align-items:center; justify-content:center; transition:transform .15s, box-shadow .15s; line-height:1; }
+.fab:active { transform:scale(0.92); box-shadow:0 2px 8px rgba(78,205,196,0.3); }
+.fab[hidden] { display:none; }
 
 .reset-btn { background:none; border:none; color:var(--danger); font-size:13px; opacity:0.4; cursor:pointer; padding:8px; width:100%; text-align:center; }
 
@@ -421,6 +423,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <button class="sidebar-item danger" onclick="resetAllData()"><span class="si">🗑️</span>Очистить все данные</button>
 </div>
 
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="fabAction()" hidden>＋</button>
 
 <!-- PULL TO REFRESH -->
 <div class="ptr-indicator" id="ptr-indicator">
@@ -2342,6 +2347,21 @@ function showPage(name) {
   if(name==='income') setTimeout(drawIncomeChart, 50);
   if(name==='challenge') renderChallengesPage();
   if(name==='backup') gdriveUpdateUI(!!gdriveToken);
+  updateFab(name);
+}
+
+function updateFab(page) {
+  const fab = document.getElementById('fab');
+  if (!fab) return;
+  const pages = {savings:true, income:true, goals:true, challenge:true};
+  if (pages[page]) { fab.removeAttribute('hidden'); } else { fab.setAttribute('hidden',''); }
+}
+
+function fabAction() {
+  if (_currentPage==='savings') { editingId=null; openModal('savings'); }
+  else if (_currentPage==='income') { editingId=null; openModal('income'); }
+  else if (_currentPage==='goals') { editingId=null; openModal('goals'); }
+  else if (_currentPage==='challenge') { showNewChallengeFormPage(); }
 }
 
 // ── MODAL ─────────────────────────────────────────────────
@@ -4542,6 +4562,8 @@ try {
   if (returnPage && returnPage !== 'home' && PAGES.includes(returnPage)) {
     sessionStorage.removeItem('ptr_return_page');
     showPage(returnPage);
+  } else {
+    updateFab('home');
   }
 } catch(e) {}
 fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); });
