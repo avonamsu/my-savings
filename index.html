@@ -518,8 +518,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
   <!-- urgent alert for expired/expiring deposits -->
   <div id="home-urgent-alert" style="display:none;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.35);border-radius:var(--radius-sm);padding:11px 14px;position:relative;">
-    <div id="home-urgent-text" onclick="showPage('savings')" style="cursor:pointer;padding-right:24px;"></div>
-    <div style="font-size:11px;color:rgba(255,107,107,0.6);margin-top:6px;" onclick="showPage('savings')" style="cursor:pointer;">Перейти к счетам →</div>
+    <div id="home-urgent-text" style="padding-right:24px;"></div>
+    <div id="home-urgent-link" style="font-size:11px;color:rgba(255,107,107,0.6);margin-top:6px;cursor:pointer;" onclick="showPage('savings')">Перейти к счетам →</div>
     <button onclick="dismissUrgentAlert()" style="position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,107,107,0.5);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;">✕</button>
   </div>
 
@@ -1616,7 +1616,7 @@ function renderHome() {
         const isExpired = s.daysLeft <= 0;
         const label = isExpired ? '⚠️ Истёк' : `🔔 Через ${s.daysLeft} дн.`;
         const color = isExpired ? 'var(--danger)' : 'var(--warn)';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;cursor:pointer;" onclick="navigateToItem('savings','${s.id}')">
           <span style="font-size:13px;font-weight:600;color:${color};">${label} — ${s.name}</span>
           <span style="font-size:13px;color:${color};font-weight:600;">${fmt(getSavingCurrentAmountRub(s))} ₽</span>
         </div>`;
@@ -1624,6 +1624,14 @@ function renderHome() {
       alertText.innerHTML = rows;
       alertEl.dataset.alertKey = alertKey;
       alertEl.style.display = 'block';
+      const linkEl = document.getElementById('home-urgent-link');
+      if (linkEl) {
+        if (urgentDeps.length === 1) {
+          linkEl.onclick = () => navigateToItem('savings', urgentDeps[0].id);
+        } else {
+          linkEl.onclick = () => showPage('savings');
+        }
+      }
     }
   } else if (alertEl) alertEl.style.display = 'none';
 
