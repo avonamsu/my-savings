@@ -607,13 +607,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     </div>
     <div class="widget-settings-sub">Включай виджеты и меняй порядок стрелками</div>
     <div id="widget-settings-list"></div>
-    <!-- piggy picker (вне списка, показывается под нужным виджетом) -->
-    <div class="piggy-picker-wrap" id="piggy-picker-wrap" style="margin-top:0;">
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Выбери копилку или челлендж:</div>
-      <select class="piggy-picker-select" id="piggy-picker-select" onchange="saveWidgetSettings()">
-        <option value="">— Выбрать —</option>
-      </select>
-    </div>
   </div>
 </div>
 
@@ -1711,8 +1704,28 @@ function renderSettingsList(s) {
     const def = WIDGET_DEFS[key];
     const checked = !!s[key];
     const isPiggy = key === 'piggy';
-    return `<div class="widget-toggle-item" style="${isPiggy?'flex-direction:column;align-items:stretch;':''}">
-      <div style="display:flex;align-items:center;justify-content:space-between;${isPiggy?'width:100%;':''}">
+    const showPicker = isPiggy && checked;
+    // Build piggy picker options inline for piggy widget
+    let pickerHtml = '';
+    if (isPiggy) {
+      const piggies = (state.piggyBanks||[]).map(p=>({id:p.id,name:p.name,type:'piggy',emoji:p.emoji||'🐷',archived:(p.saved||0)>=p.goal}));
+      const challenges = (state.challenges||[]).filter(c=>{
+        if (!c.cells||!c.cells.length) return true;
+        const valid = c.cells.filter(x=>x.amt>0);
+        return !valid.length || valid.filter(x=>x.done).reduce((a,x)=>a+x.amt,0) < valid.reduce((a,x)=>a+x.amt,0);
+      }).map(c=>({id:c.id,name:c.name,type:'challenge',emoji:c.emoji||'🎯',archived:false}));
+      const active = [...piggies.filter(p=>!p.archived), ...challenges];
+      const opts = active.map(item=>`<option value="${item.type}:${item.id}" ${s.piggyId===item.type+':'+item.id?'selected':''}>${item.emoji} ${item.name}</option>`).join('');
+      pickerHtml = `<div class="piggy-picker-wrap${showPicker?' visible':''}" id="piggy-picker-wrap" style="margin-top:8px;">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Выбери копилку или челлендж:</div>
+        <select class="piggy-picker-select" id="piggy-picker-select" onchange="saveWidgetSettings()">
+          <option value="">— Выбрать —</option>
+          ${opts}
+        </select>
+      </div>`;
+    }
+    return `<div class="widget-toggle-item" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
         <div class="widget-toggle-left">
           <div class="widget-toggle-icon">${def.icon}</div>
           <div>
@@ -1731,25 +1744,16 @@ function renderSettingsList(s) {
           </label>
         </div>
       </div>
+      ${pickerHtml}
     </div>`;
   }).join('');
-
-  // piggy picker visibility
-  const wrap = document.getElementById('piggy-picker-wrap');
-  if (wrap) wrap.classList.toggle('visible', !!s.piggy);
-  if (s.piggy) {
-    populatePiggyPicker();
-    const sel = document.getElementById('piggy-picker-select');
-    if (sel && s.piggyId) sel.value = s.piggyId;
-  }
 }
 
 function onWidgetPiggyToggle() {
-  const checked = document.getElementById('wt-piggy')?.checked;
-  const wrap = document.getElementById('piggy-picker-wrap');
-  if (wrap) wrap.classList.toggle('visible', !!checked);
-  if (checked) populatePiggyPicker();
   saveWidgetSettings();
+  // Re-render settings list so picker appears/disappears in place with the widget row
+  const s = getWidgetSettings();
+  renderSettingsList(s);
 }
 
 function populatePiggyPicker() {
