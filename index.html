@@ -3155,12 +3155,24 @@ function showPage(name) {
 
 function navigateToItem(page, dataId) {
   showPage(page);
-  // Ждём рендера страницы, затем скроллим и подсвечиваем
+  // Ждём рендера страницы, затем раскрываем группу (если нужно), скроллим и подсвечиваем
   setTimeout(() => {
     const pageEl = document.getElementById('page-' + page);
     if (!pageEl) return;
     const el = pageEl.querySelector(`[data-id="${dataId}"]`);
     if (!el) return;
+    // Если элемент внутри свёрнутой группы — раскрываем её
+    const groupBlock = el.closest('.group-block');
+    if (groupBlock && groupBlock.style.display === 'none') {
+      const key = groupBlock.id.replace('grp-', '');
+      toggleSavingsGroup(key);
+    }
+    // Если элемент внутри свёрнутой группы целей — раскрываем
+    const goalsGroup = el.closest('[id^="gg-"]');
+    if (goalsGroup && goalsGroup.style.display === 'none') {
+      const key = goalsGroup.id.replace('gg-', '');
+      toggleGoalsGroup(key);
+    }
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.style.transition = 'box-shadow .2s';
     el.style.boxShadow = '0 0 0 2px var(--accent)';
