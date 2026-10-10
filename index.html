@@ -45,15 +45,7 @@
 
 /* ONBOARDING */
 
-  .ptr-indicator { position:fixed; top:52px; left:0; right:0; max-width:480px; margin:0 auto;
-    display:flex; align-items:center; justify-content:center; height:0; overflow:hidden;
-    background:var(--surface2); z-index:90; transition:height .2s ease; font-size:13px;
-    color:var(--accent); gap:8px; }
-  .ptr-indicator.pulling { height:44px; }
-  .ptr-indicator.refreshing { height:44px; }
-  .ptr-spin { display:inline-block; font-size:18px; }
-  .ptr-indicator.refreshing .ptr-spin { animation:spin .8s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes ptr-bar { 0%{left:-40%} 100%{left:110%} }
   .ob-overlay { display:none; position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; z-index:490; pointer-events:none; }
 .ob-overlay.open { display:block; pointer-events:auto; }
 
@@ -156,11 +148,11 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 /* PAGES */
 .page { display:none; flex-direction:column; flex:1; min-height:0; padding:60px 16px calc(140px + env(safe-area-inset-bottom, 0px)); gap:16px; opacity:0; transform:translateX(20px); transition:opacity .22s ease, transform .22s ease; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-.ptr-indicator { position:fixed; top:12px; left:50%; transform:translateX(-50%) translateY(-60px); z-index:600; background:var(--surface2); border-radius:50%; width:32px; height:32px; min-width:32px; min-height:32px; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:transform .15s ease, opacity .15s ease; opacity:0; box-shadow:0 2px 8px rgba(0,0,0,0.4); pointer-events:none; }
-.ptr-indicator.ptr-ready { background:var(--accent); }
-.ptr-spinner { font-size:16px; line-height:1; transition:transform .2s; }
-@keyframes ptr-spin { to { transform:rotate(360deg); } }
-.ptr-indicator.ptr-loading .ptr-spinner { animation:ptr-spin .6s linear infinite; }
+.ptr-indicator { position:fixed; top:52px; left:0; right:0; max-width:480px; margin:0 auto; z-index:600; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:0; opacity:0; transition:opacity .15s ease; }
+.ptr-bar { width:100%; height:2px; background:rgba(255,255,255,0.08); position:relative; overflow:hidden; }
+.ptr-bar-fill { position:absolute; top:0; left:0; height:100%; width:40%; background:var(--accent); border-radius:2px; transition:width .15s ease; }
+.ptr-indicator.ptr-loading .ptr-bar-fill { animation:ptr-bar .8s linear infinite; width:40%; }
+.ptr-label { font-size:11px; color:var(--accent); padding:4px 0; letter-spacing:.02em; }
 .page.active { opacity:1; transform:translateX(0); }
 .page.slide-left { transform:translateX(-20px); }
 .page.active { display:flex; }
@@ -431,8 +423,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- PULL TO REFRESH -->
 <div class="ptr-indicator" id="ptr-indicator">
-  <span class="ptr-spin" id="ptr-spin">↓</span>
-  <span id="ptr-text">Потяни чтобы обновить</span>
+  <div class="ptr-bar"><div class="ptr-bar-fill" id="ptr-bar-fill"></div></div>
+  <div class="ptr-label" id="ptr-label">Обновление…</div>
 </div>
 
 <!-- HOME PAGE -->
@@ -4406,21 +4398,17 @@ function gdriveInit() {
     const dy = e.touches[0].clientY - startY;
     if (dy <= 0) { pulling = false; return; }
     const progress = Math.min(dy, THRESHOLD * 1.5);
-    const el = ind();
-    if (!el) return;
-    const translateY = Math.min(progress * 0.5, 44);
-    const rotation = Math.round(progress / THRESHOLD * 180);
-    el.style.transform = `translateX(-50%) translateY(${translateY - 60}px)`;
+    const el = ind(); if (!el) return;
+    const fill = document.getElementById('ptr-bar-fill');
+    const label = document.getElementById('ptr-label');
     el.style.opacity = Math.min(progress / THRESHOLD, 1);
-    el.querySelector('.ptr-spinner').style.transform = `rotate(${rotation}deg)`;
+    if (fill) fill.style.width = Math.min(progress / THRESHOLD * 100, 100) + '%';
     if (progress >= THRESHOLD) {
-      el.classList.add('ptr-ready');
-      el.querySelector('.ptr-spinner').textContent = '↻';
       triggered = true;
+      if (label) label.textContent = 'Отпусти для обновления';
     } else {
-      el.classList.remove('ptr-ready');
-      el.querySelector('.ptr-spinner').textContent = '↓';
       triggered = false;
+      if (label) label.textContent = 'Потяни для обновления';
     }
   }, { passive: true });
 
@@ -4429,10 +4417,10 @@ function gdriveInit() {
     pulling = false;
     const el = ind();
     if (triggered) {
-      if (el) { el.classList.add('ptr-loading'); el.querySelector('.ptr-spinner').textContent = '↻'; }
+      if (el) { el.classList.add('ptr-loading'); const l = document.getElementById('ptr-label'); if(l) l.textContent = 'Обновление…'; }
       setTimeout(() => ptrRefresh(el), 300);
     } else {
-      if (el) { el.style.transform = 'translateX(-50%) translateY(-60px)'; el.style.opacity = '0'; el.classList.remove('ptr-ready'); }
+      if (el) { el.style.opacity = '0'; el.classList.remove('ptr-loading'); }
     }
   });
 })();
