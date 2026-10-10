@@ -5136,7 +5136,8 @@ function dismissGdriveSessionBanner() {
 function gdriveUpdateUI(signedIn) {
   console.log('[GDrive] gdriveUpdateUI called:', signedIn, '| token:', gdriveToken ? 'exists' : 'null', '| caller:', new Error().stack.split('\n')[2]?.trim());
   // При входе сбрасываем dismissed, чтобы баннер не мешал после re-login
-  if (signedIn) localStorage.removeItem('gdrive_session_banner_dismissed');
+  if (signedIn) { localStorage.removeItem('gdrive_session_banner_dismissed'); gdriveScheduleTokenRefresh(); }
+  else if (_gdriveRefreshInterval) { clearInterval(_gdriveRefreshInterval); _gdriveRefreshInterval = null; }
   updateGdriveSessionBanner();
   // Sidebar status
   const sidebarStatus = document.getElementById('gdrive-sidebar-status');
@@ -5376,6 +5377,16 @@ async function gdriveCheckNewerVersion() {
       localStorage.setItem('gdrive_last_save_ts', String(driveTime));
     }
   } catch(e) {}
+}
+
+let _gdriveRefreshInterval = null;
+
+function gdriveScheduleTokenRefresh() {
+  if (_gdriveRefreshInterval) clearInterval(_gdriveRefreshInterval);
+  // Обновляем токен каждые 50 минут (токен живёт 1 час)
+  _gdriveRefreshInterval = setInterval(() => {
+    if (gdriveToken) gdriveSilentRefresh();
+  }, 50 * 60 * 1000);
 }
 
 function gdriveSilentRefresh() {
