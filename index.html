@@ -454,7 +454,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div style="display:flex;gap:10px;">
     <div class="dash-stat" onclick="showPage('income')" style="cursor:pointer;padding:14px 16px;">
       <div class="dash-stat-label">Доход / мес</div>
-      <div class="dash-stat-val" id="dash-income" style="font-size:20px;margin-top:4px;">0 ₽</div>
+      <div class="dash-stat-val" id="dash-income" style="font-size:20px;margin-top:4px;color:#3DD68C;">0 ₽</div>
     </div>
     <div class="dash-stat" onclick="showPage('goals')" style="cursor:pointer;padding:14px 16px;">
       <div class="dash-stat-label">Целей покрыто</div>
@@ -1478,7 +1478,6 @@ function renderHome() {
   const n = state.savings.length;
   document.getElementById('home-sub').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов — добавь первый';
   document.getElementById('dash-income').textContent = fmt(totalInc)+' ₽';
-  document.getElementById('dash-income').style.color = '#4ECDC4';
 
   const goalsPctEl = document.getElementById('dash-goals-pct');
   goalsPctEl.textContent = goalsPct+'%';
