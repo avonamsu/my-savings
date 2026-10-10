@@ -590,8 +590,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
     </div>
   </div>
-  <input type="text" id="goals-search" placeholder="🔍 Поиск по целям..." oninput="renderGoals()"
-    style="background:var(--surface);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:9px 12px;outline:none;width:100%;">
   <div id="goals-list"></div>
   <button class="add-btn" onclick="editingId=null;openModal('goals')">＋ Добавить цель</button>
 
@@ -1709,6 +1707,14 @@ function showCtxMenu(e, items) {
   _ctxCleanup = () => { overlay.remove(); menu.remove(); _ctxCleanup = null; };
 }
 function closeCtxMenu() { if (_ctxCleanup) _ctxCleanup(); }
+function showGoalMenu(e, id) {
+  const items = [
+    {icon:'✏️', label:'Редактировать', fn:()=>openEdit('goals',id)},
+    {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('goals',id)}
+  ];
+  showCtxMenu(e, items);
+}
+
 function showChallengeMenu(e, id, canComplete) {
   const items = [
     {icon:'✅', label:'Проставить все ячейки', fn:()=>completeChallenge(id)},
@@ -1828,7 +1834,6 @@ function renderGoals() {
     return;
   }
 
-  const query = (document.getElementById('goals-search')?.value||'').toLowerCase();
   let remaining = totalIncome, coveredSum = 0;
   const items = state.goals.map(g => {
     const cost = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
@@ -1842,9 +1847,8 @@ function renderGoals() {
   const freeIncome = Math.max(0, totalIncome - coveredSum);
   document.getElementById('goals-free-income').textContent = fmt(Math.round(freeIncome)) + ' ₽';
 
-  const filtered = query ? items.filter(g => g.name.toLowerCase().includes(query)) : items;
-  const coveredItems = filtered.filter(g => g.covered);
-  const uncoveredItems = filtered.filter(g => !g.covered);
+  const coveredItems = items.filter(g => g.covered);
+  const uncoveredItems = items.filter(g => !g.covered);
 
   const pct = totalGoals ? Math.min(100, Math.round(coveredSum/totalGoals*100)) : 0;
   document.getElementById('goals-pct').textContent = pct + '%';
@@ -1865,8 +1869,7 @@ function renderGoals() {
           ${!g.covered && g.partial > 0 ? `<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:${partialPct}%;background:${color};"></div></div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${partialPct}% покрыто</div>` : ''}
         </div>
         <div class="goal-amount" style="${g.covered?'color:'+color+';':''}">${fmt(g.amount)} ₽</div>
-        <button class="edit-btn" onclick="openEdit('goals','${g.id}')">✏️</button>
-        <button class="delete-btn" onclick="deleteItem('goals','${g.id}')">✕</button>
+        <button class="card-menu-btn" onclick="showGoalMenu(event,'${g.id}')">⋯</button>
       </div>
     </div>`;
   }
