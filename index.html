@@ -876,6 +876,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <label>ТИП</label>
         <select id="s-icon" onchange="onSavingTypeChange()">
           <option value="🏦" data-deposit="1">🏦 Банковский вклад (₽)</option>
+          <option value="💳" data-savings-account="1">💳 Накопительный счёт (₽)</option>
           <option value="📈">📈 Инвестиции / брокер</option>
           <option value="💵">💵 Наличные</option>
           <option value="🏠">🏠 Недвижимость</option>
@@ -906,6 +907,22 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
       </div>
       <div class="calc-preview" id="currency-preview" style="display:none;"></div>
+      <div id="savings-account-fields" style="display:none">
+        <div class="field">
+          <label>ПРОЦЕНТ ГОДОВЫХ (%)</label>
+          <input type="number" id="sa-rate" placeholder="18" inputmode="decimal" oninput="updateSavingsAccountPreview()">
+          <div class="field-hint info">Средняя ставка по накопительным счетам ~16–20%</div>
+        </div>
+        <div class="field">
+          <label>ДАТА ОТКРЫТИЯ</label>
+          <input type="date" id="sa-date-start" onchange="updateSavingsAccountPreview()">
+        </div>
+        <div class="calc-preview" id="sa-preview" style="display:none;"></div>
+        <div class="toggle-row">
+          <span class="toggle-label">Учитывать в накоплениях</span>
+          <label class="toggle"><input type="checkbox" id="sa-included" checked><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div id="deposit-fields" style="display:none">
         <div class="field">
           <label>ПРОЦЕНТ ГОДОВЫХ (%)</label>
@@ -1290,6 +1307,34 @@ const fmt2 = n => Number(n).toLocaleString('ru-RU', {maximumFractionDigits:2});
 
 
 // ── DEPOSIT MATH ──────────────────────────────────────────
+function calcSavingsAccount(s) {
+  const principal = Number(s.amount);
+  const rate = Number(s.rate) / 100;
+  const start = new Date(s.dateStart);
+  const now = new Date();
+  const daysPassed = Math.max(0, Math.round((now - start) / 86400000));
+  // ежедневная капитализация
+  const currentAmount = principal * Math.pow(1 + rate / 365, daysPassed);
+  const earnedInterest = currentAmount - principal;
+  const dailyIncome = principal * rate / 365;
+  return { currentAmount, earnedInterest, dailyIncome, daysPassed };
+}
+
+function updateSavingsAccountPreview() {
+  const amount = getSavingAmountValue() || 0;
+  const rate = parseFloat(document.getElementById('sa-rate').value) || 0;
+  const dateStart = document.getElementById('sa-date-start').value;
+  const preview = document.getElementById('sa-preview');
+  if (!preview) return;
+  if (!amount || !rate || !dateStart) { preview.style.display = 'none'; return; }
+  const d = calcSavingsAccount({ amount, rate, dateStart });
+  preview.style.display = '';
+  preview.innerHTML = `
+    <div style="display:flex;justify-content:space-between;"><span>Сейчас на счёте</span><span style="color:var(--accent);font-weight:600;">${fmt(d.currentAmount)} ₽</span></div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px;"><span>Начислено % за ${d.daysPassed} дн.</span><span>+${fmt(d.earnedInterest)} ₽</span></div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px;"><span>В день</span><span>+${fmt(d.dailyIncome)} ₽</span></div>`;
+}
+
 function calcDeposit(s) {
   const principal=Number(s.amount), rate=Number(s.rate)/100;
   const start=new Date(s.dateStart), end=new Date(s.dateEnd), now=new Date();
@@ -1306,6 +1351,7 @@ function calcDeposit(s) {
 }
 function getSavingCurrentAmountLocal(s) {
   if (s.isDeposit&&s.rate&&s.dateStart&&s.dateEnd) return calcDeposit(s).currentAmount;
+  if (s.isSavingsAccount&&s.rate&&s.dateStart) return calcSavingsAccount(s).currentAmount;
   return Number(s.amount);
 }
 function getSavingCurrentAmountRub(s) { return toRub(getSavingCurrentAmountLocal(s), s.currency||'RUB'); }
@@ -1616,12 +1662,13 @@ function renderSavings() {
   if (!items.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`; return; }
 
   const groups = sortBy === 'type' ? {
-    '🏦 Вклады':       items.filter(x => x.isDeposit),
-    '📈 Инвестиции':   items.filter(x => !x.isDeposit && x.icon==='📈'),
-    '💵 Наличные':     items.filter(x => x.icon==='💵'),
-    '🏠 Недвижимость': items.filter(x => x.icon==='🏠'),
-    '₿ Крипто':        items.filter(x => x.icon==='₿'),
-    '💼 Другое':       items.filter(x => !x.isDeposit && !['📈','💵','🏠','₿'].includes(x.icon)),
+    '🏦 Вклады':            items.filter(x => x.isDeposit),
+    '💳 Накопительные':    items.filter(x => x.isSavingsAccount),
+    '📈 Инвестиции':       items.filter(x => !x.isDeposit && !x.isSavingsAccount && x.icon==='📈'),
+    '💵 Наличные':         items.filter(x => x.icon==='💵'),
+    '🏠 Недвижимость':     items.filter(x => x.icon==='🏠'),
+    '₿ Крипто':            items.filter(x => x.icon==='₿'),
+    '💼 Другое':           items.filter(x => !x.isDeposit && !x.isSavingsAccount && !['📈','💵','🏠','₿'].includes(x.icon)),
   } : { 'Все счета': items };
 
   el.innerHTML = Object.entries(groups).filter(([,g])=>g.length>0).map(([groupName, group]) => {
@@ -1668,6 +1715,11 @@ function renderSavingCard(x, grandTotal) {
       const curInfl=ROSSTAT_INFLATION[2024]||9.52;
       if(Number(x.rate)<curInfl) inflWarn=`<div style="font-size:11px;color:var(--warn);margin-top:3px;">⚠️ Ставка ниже инфляции ${curInfl}%</div>`;
     }
+  }
+  if (x.isSavingsAccount && x.rate && x.dateStart) {
+    const sa = calcSavingsAccount(x);
+    badges += `<span class="badge badge-cap">${x.rate}% · накоп.</span>`;
+    sub = `+${fmt(Math.round(sa.earnedInterest))} ₽ за ${sa.daysPassed} дн. · ${fmt(Math.round(sa.dailyIncome))} ₽/день`;
   }
   if(cur!=='RUB') badges+=` <span class="badge badge-cur">${(CURRENCY_FLAGS[cur]||"")} ${cur}</span>`;
   const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
@@ -2319,10 +2371,14 @@ function openModal(mode) {
 
 function onSavingTypeChange() {
   const sel=document.getElementById('s-icon');
-  const isDeposit=sel.options[sel.selectedIndex].dataset.deposit==='1';
+  const opt=sel.options[sel.selectedIndex];
+  const isDeposit=opt.dataset.deposit==='1';
+  const isSavingsAccount=opt.dataset.savingsAccount==='1';
   document.getElementById('deposit-fields').style.display=isDeposit?'':'none';
-  if(isDeposit) document.getElementById('s-currency').value='RUB';
+  document.getElementById('savings-account-fields').style.display=isSavingsAccount?'':'none';
+  if(isDeposit||isSavingsAccount) document.getElementById('s-currency').value='RUB';
   updateDepositPreview();
+  if(isSavingsAccount) updateSavingsAccountPreview();
 }
 
 function updateCurrencyIcon() {
@@ -2499,6 +2555,7 @@ function openEdit(list,id) {
     const amtEl=document.getElementById('s-amount');if(amtEl){amtEl.value=x.amount;amtEl._rawValue=String(x.amount);formatAmountInput(amtEl);}
     const siEl=document.getElementById('s-included');if(siEl)siEl.checked=(x.included!==false&&!x.excluded);
     if(x.isDeposit){document.getElementById('s-rate').value=x.rate||'';document.getElementById('s-date-start').value=x.dateStart||'';document.getElementById('s-date-end').value=x.dateEnd||'';document.getElementById('s-compound').checked=!!x.compound;updateDepositPreview();}
+    if(x.isSavingsAccount){document.getElementById('sa-rate').value=x.rate||'';document.getElementById('sa-date-start').value=x.dateStart||'';const saInc=document.getElementById('sa-included');if(saInc)saInc.checked=(x.included!==false&&!x.excluded);updateSavingsAccountPreview();}
   } else if(list==='income'){
     const x=state.income.find(i=>i.id===id);if(!x)return;
     openModal('income');
@@ -2550,11 +2607,13 @@ function saveItem(){
     const amount=getSavingAmountValue();
     if(!name||!amount||amount<=0)return;
     const sel=document.getElementById('s-icon');
-    const icon=sel.value,isDeposit=sel.options[sel.selectedIndex].dataset.deposit==='1';
+    const opt=sel.options[sel.selectedIndex];
+    const icon=sel.value,isDeposit=opt.dataset.deposit==='1',isSavingsAccount=opt.dataset.savingsAccount==='1';
     const currency=document.getElementById('s-currency').value;
-    const included=document.getElementById('s-included')?.checked!==false;
-    const item={id,name,icon,amount,isDeposit,currency,included,excluded:!included};
+    const included=(isSavingsAccount?document.getElementById('sa-included'):document.getElementById('s-included'))?.checked!==false;
+    const item={id,name,icon,amount,isDeposit,isSavingsAccount,currency,included,excluded:!included};
     if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
+    if(isSavingsAccount){item.rate=parseFloat(document.getElementById('sa-rate').value)||0;item.dateStart=document.getElementById('sa-date-start').value;}
     if(_savingIdx>=0) state.savings.splice(_savingIdx,0,item); else state.savings.push(item);
   } else if(modalMode==='income'){
     if (!validateIncomeForm()) return;
