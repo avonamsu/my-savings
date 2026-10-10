@@ -3679,7 +3679,7 @@ function renderChCard(ch) {
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;"><div class="ch-grid" data-ch="${ch.id}">${ch.cells.map((c,i)=>`<div class="ch-cell ${c.done?'done':''}" onclick="toggleCell('${ch.id}',${i})" style="${c.done?`background:${color};border-color:${color};`:''}">
         ${fmt(c.amt)}</div>`).join('')}</div></div>
       <div class="ch-footer">
-        ${pct>=100?`<span style="color:${color};font-weight:700;">🎉 Цель достигнута!</span>`:`<button class="ch-random-btn" onclick="highlightRandomCell('${ch.id}')">🎲 Случайная</button>`}
+        ${pct>=100?`<span style="color:${color};font-weight:700;">🎉 Цель достигнута!</span>`:`<button class="ch-random-btn" onclick="highlightRandomCell('${ch.id}')">🎲 Случайная сумма</button>`}
         <button class="card-menu-btn" onclick="showChallengeMenu(event,'${ch.id}',${pct<100})">⋯</button>
       </div>` : ''}
     </div>`;
