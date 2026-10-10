@@ -156,6 +156,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 /* PAGES */
 .page { display:none; flex-direction:column; flex:1; min-height:0; padding:60px 16px calc(140px + env(safe-area-inset-bottom, 0px)); gap:16px; opacity:0; transform:translateX(20px); transition:opacity .22s ease, transform .22s ease; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.ptr-indicator { position:fixed; top:0; left:50%; transform:translateX(-50%) translateY(-60px); z-index:300; background:var(--surface2); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; transition:transform .2s ease, opacity .2s ease; opacity:0; box-shadow:0 2px 8px rgba(0,0,0,0.3); }
+.ptr-indicator.ptr-visible { opacity:1; }
+.ptr-indicator.ptr-ready { background:var(--accent); }
+.ptr-spinner { font-size:20px; transition:transform .2s; }
+@keyframes ptr-spin { to { transform:rotate(360deg); } }
+.ptr-indicator.ptr-loading .ptr-spinner { animation:ptr-spin .6s linear infinite; }
 .page.active { opacity:1; transform:translateX(0); }
 .page.slide-left { transform:translateX(-20px); }
 .page.active { display:flex; }
@@ -388,6 +394,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- MENU BUTTON -->
 <div style="position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;height:52px;z-index:99;background:var(--bg);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;padding:0 16px;">
+  <div class="ptr-indicator" id="ptr-indicator"><span class="ptr-spinner">↓</span></div>
   <button class="menu-btn" onclick="openSidebar()">☰</button>
   <span id="topbar-title" style="position:absolute;left:50%;transform:translateX(-50%);font-size:15px;font-weight:700;color:var(--text);">Мои накопления</span>
 </div>
@@ -4288,6 +4295,63 @@ function gdriveInit() {
     if (hint) { hint.style.display = ''; hint.querySelector('span').textContent = pendingEmail; }
   }
 }
+
+// ── PULL TO REFRESH ───────────────────────────────────────
+(function() {
+  const THRESHOLD = 70; // px тяга для срабатывания
+  let startY = 0, pulling = false, triggered = false;
+  const ind = () => document.getElementById('ptr-indicator');
+
+  function getActivePage() {
+    return document.querySelector('.page.active') || document.querySelector('.page[style*="display: flex"]');
+  }
+
+  document.addEventListener('touchstart', e => {
+    const page = getActivePage();
+    if (!page) return;
+    if (page.scrollTop > 0) return; // не в самом верху — не начинаем
+    startY = e.touches[0].clientY;
+    pulling = true;
+    triggered = false;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const page = getActivePage();
+    if (!page || page.scrollTop > 0) { pulling = false; return; }
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 0) { pulling = false; return; }
+    const progress = Math.min(dy, THRESHOLD * 1.5);
+    const el = ind();
+    if (!el) return;
+    const translateY = Math.min(progress * 0.6, 56);
+    const rotation = Math.round(progress / THRESHOLD * 180);
+    el.style.transform = `translateX(-50%) translateY(${translateY - 60}px)`;
+    el.style.opacity = Math.min(progress / THRESHOLD, 1);
+    el.querySelector('.ptr-spinner').style.transform = `rotate(${rotation}deg)`;
+    if (progress >= THRESHOLD) {
+      el.classList.add('ptr-ready');
+      el.querySelector('.ptr-spinner').textContent = '↻';
+      triggered = true;
+    } else {
+      el.classList.remove('ptr-ready');
+      el.querySelector('.ptr-spinner').textContent = '↓';
+      triggered = false;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false;
+    const el = ind();
+    if (triggered) {
+      if (el) { el.classList.add('ptr-loading'); el.querySelector('.ptr-spinner').textContent = '↻'; }
+      setTimeout(() => location.reload(), 300);
+    } else {
+      if (el) { el.style.transform = 'translateX(-50%) translateY(-60px)'; el.style.opacity = '0'; el.classList.remove('ptr-ready'); }
+    }
+  });
+})();
 
 function showToast(msg) {
   let t = document.getElementById('gdrive-toast');
