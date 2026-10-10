@@ -4344,9 +4344,22 @@ function gdriveSilentRefresh() {
 }
 
 function gdriveInit() {
-  const savedToken = localStorage.getItem('gdrive_token');
-  const tokenTs = parseInt(localStorage.getItem('gdrive_token_ts') || '0');
-  const ageMin = (Date.now() - tokenTs) / 60000;
+  let savedToken = localStorage.getItem('gdrive_token');
+  // Восстанавливаем из sessionStorage если localStorage потерял токен (iOS PWA баг)
+  if (!savedToken) {
+    try {
+      const backup = sessionStorage.getItem('gdrive_token_backup');
+      if (backup) {
+        savedToken = backup;
+        localStorage.setItem('gdrive_token', backup);
+        console.log('[GDrive] Токен восстановлен из sessionStorage');
+      }
+    } catch(e) {}
+  }
+  // Сохраняем актуальный токен в sessionStorage при каждой загрузке
+  if (savedToken) {
+    try { sessionStorage.setItem('gdrive_token_backup', savedToken); } catch(e) {}
+  }
 
   if (savedToken) {
     gdriveToken = savedToken;
@@ -4660,24 +4673,15 @@ function forceStartOnboarding() {
 
 function resetOnboarding() { forceStartOnboarding(); }
 
-async function ptrRefresh(indicatorEl) {
-  // Обновляем курсы валют и перерисовываем без location.reload()
-  // (reload сбрасывает OAuth токен в iOS PWA)
-  try {
-    await fetchRates();
-    loadFxBuyRates();
-    recordSnapshot();
-    drawChart();
-    recordIncomeSnapshot();
-    drawIncomeChart();
-    render();
-  } catch(e) {}
-  if (indicatorEl) {
-    indicatorEl.style.transform = 'translateX(-50%) translateY(-60px)';
-    indicatorEl.style.opacity = '0';
-    indicatorEl.classList.remove('ptr-ready', 'ptr-loading');
+function ptrRefresh(indicatorEl) {
+  // Перед reload сохраняем токен в sessionStorage как резерв
+  // (на случай если localStorage не переживёт reload в iOS PWA)
+  const tok = localStorage.getItem('gdrive_token');
+  if (tok) {
+    try { sessionStorage.setItem('gdrive_token_backup', tok); } catch(e) {}
   }
-  showToast('Данные обновлены');
+  if (indicatorEl) { indicatorEl.classList.add('ptr-loading'); indicatorEl.querySelector('.ptr-spinner').textContent = '↻'; }
+  setTimeout(() => location.reload(), 300);
 }
 
 // ── PULL TO REFRESH ───────────────────────────────────────
