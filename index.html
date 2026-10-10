@@ -4420,9 +4420,11 @@ function fillLinkedSavingSelect(containerId, currentVal) {
   const chips = [];
   // "No link" chip
   chips.push({ id: '', label: '✕ Без привязки', sub: '' });
+  const hasDeposits = (state.savings || []).some(s => s.isDeposit);
   (state.savings || []).forEach(s => {
+    if (s.isDeposit) return; // вклады не поддерживаются — фиксированная база
     const icon = s.emoji || s.icon || '💰';
-    const sub = s.isSavingsAccount ? 'накоп. счёт' : s.isDeposit ? 'вклад' : '';
+    const sub = s.isSavingsAccount ? 'накоп. счёт' : '';
     chips.push({ id: s.id, label: icon + ' ' + s.name, sub });
   });
 
@@ -4431,7 +4433,7 @@ function fillLinkedSavingSelect(containerId, currentVal) {
     return `<button type="button" class="linked-chip ${active}" onclick="selectLinkedChip('${containerId}','${c.id}',this)">
       <span class="lc-name">${c.label}</span>${c.sub ? `<span class="lc-sub">${c.sub}</span>` : ''}
     </button>`;
-  }).join('');
+  }).join('') + (hasDeposits ? `<div class="field-hint info" style="width:100%;margin-top:4px;">⚠️ Вклады не показаны — у них фиксированная начальная сумма, пополнение через копилку некорректно изменит расчёт процентов.</div>` : '');
 }
 
 function selectLinkedChip(containerId, val, el) {
