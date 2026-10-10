@@ -565,7 +565,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <div class="page" id="page-goals">
   <div class="progress-wrap">
     <div class="progress-header">
-      <div class="progress-label">Покрыто целей</div>
+      <div class="progress-label" id="goals-label">0 из 0 целей покрыты</div>
       <div class="progress-pct" id="goals-pct">0%</div>
     </div>
     <div class="progress-bar-bg"><div class="progress-bar-fill" id="goals-bar" style="width:0%"></div></div>
@@ -1825,6 +1825,7 @@ function renderGoals() {
 
   if (!state.goals.length) {
     el.innerHTML = `<div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>`;
+    document.getElementById('goals-label').textContent = '0 из 0 целей покрыты';
     document.getElementById('goals-pct').textContent = '0%';
     document.getElementById('goals-bar').style.width = '0%';
     document.getElementById('goals-covered-amount').textContent = '0 ₽ покрыто';
@@ -1851,6 +1852,10 @@ function renderGoals() {
   const uncoveredItems = items.filter(g => !g.covered);
 
   const pct = totalGoals ? Math.min(100, Math.round(coveredSum/totalGoals*100)) : 0;
+  const totalCount = state.goals.length;
+  const coveredCount = coveredItems.length;
+  const labelEl = document.getElementById('goals-label');
+  if (labelEl) labelEl.textContent = `${coveredCount} из ${totalCount} ${plural(totalCount,'цели','целей','целей')} покрыт${coveredCount===1?'а':'ы'}`;
   document.getElementById('goals-pct').textContent = pct + '%';
   document.getElementById('goals-bar').style.width = pct + '%';
   document.getElementById('goals-covered-amount').textContent = fmt(coveredSum) + ' ₽ покрыто';
