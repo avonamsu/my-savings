@@ -1572,6 +1572,9 @@ function calcDepositTax() {
   const rubDeposits = state.savings.filter(s =>
     s.isDeposit && (!s.currency || s.currency === 'RUB') && s.rate && s.dateStart && s.dateEnd
   );
+  const rubSavingsAccounts = state.savings.filter(s =>
+    s.isSavingsAccount && (!s.currency || s.currency === 'RUB') && s.rate && s.dateStart
+  );
 
   let totalYearlyIncome = 0;
 
@@ -1581,12 +1584,10 @@ function calcDepositTax() {
     const rate = (s.rate || 0) / 100;
     const amount = s.amount || 0;
 
-    // Months of deposit that fall within current year
-    // Go month by month from start to end
     let cur = new Date(Math.max(start.getTime(), yearStart.getTime()));
     const depEnd = new Date(Math.min(end.getTime(), yearEnd.getTime()));
 
-    if (cur > depEnd) return; // deposit entirely outside current year
+    if (cur > depEnd) return;
 
     let monthsInYear = 0;
     while (cur <= depEnd) {
@@ -1594,9 +1595,20 @@ function calcDepositTax() {
       cur.setMonth(cur.getMonth() + 1);
     }
 
-    // Monthly income = amount * rate / 12
     const monthlyIncome = amount * rate / 12;
     totalYearlyIncome += monthlyIncome * monthsInYear;
+  });
+
+  // Накопительные счета: считаем дни в текущем году × ставка/365
+  rubSavingsAccounts.forEach(s => {
+    const start = new Date(s.dateStart);
+    const rate = (s.rate || 0) / 100;
+    const amount = s.amount || 0;
+    const periodStart = new Date(Math.max(start.getTime(), yearStart.getTime()));
+    const periodEnd = new Date(Math.min(new Date().getTime(), yearEnd.getTime()));
+    if (periodStart > periodEnd) return;
+    const daysInYear = Math.round((periodEnd - periodStart) / 86400000);
+    totalYearlyIncome += amount * rate * daysInYear / 365;
   });
 
   const cbRate = window._cbKeyRate || 21;
@@ -1641,7 +1653,7 @@ function renderDepositTax() {
 
   el.innerHTML = [
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">',
-      '<span style="font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);">💸 НДФЛ С ВКЛАДОВ</span>',
+      '<span style="font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);">💸 НДФЛ С ВКЛАДОВ И НАКОПИТЕЛЬНЫХ СЧЕТОВ</span>',
       '<span style="font-size:11px;color:var(--text-dim);">ставка ЦБ ' + t.cbRate + '%</span>',
     '</div>',
     // Row: income vs threshold
