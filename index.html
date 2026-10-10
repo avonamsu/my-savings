@@ -207,6 +207,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* Piggy picker inside settings */
 .piggy-picker-wrap { margin-top:8px; padding:10px 12px; background:var(--surface2); border-radius:8px; display:none; }
 .piggy-picker-wrap.visible { display:block; }
+
+/* order buttons */
+.wt-order-btns { display:flex; flex-direction:column; gap:2px; margin-left:6px; }
+.wt-order-btn { background:var(--surface2); border:none; border-radius:4px; color:var(--text-dim); font-size:13px; width:24px; height:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; }
+.wt-order-btn:active { background:var(--accent); color:var(--bg); }
+.wt-order-btn:disabled { opacity:0.2; cursor:default; }
 .piggy-picker-select { width:100%; background:var(--bg); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:var(--text); font-size:13px; padding:7px 10px; }
 
 /* Growth chart widget */
@@ -599,74 +605,14 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <div class="widget-settings-title">Настроить главную</div>
       <button onclick="closeWidgetSettings()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;line-height:1;padding:0 2px;">✕</button>
     </div>
-    <div class="widget-settings-sub">Выбери что показывать на главном экране</div>
-
-    <!-- График роста -->
-    <div class="widget-toggle-item">
-      <div class="widget-toggle-left">
-        <div class="widget-toggle-icon">📈</div>
-        <div>
-          <div class="widget-toggle-name">График роста</div>
-          <div class="widget-toggle-desc">Накопления и доход по месяцам</div>
-        </div>
-      </div>
-      <label class="wt-switch">
-        <input type="checkbox" id="wt-chart" onchange="saveWidgetSettings()">
-        <span class="wt-slider"></span>
-      </label>
-    </div>
-
-    <!-- Ближайший вклад -->
-    <div class="widget-toggle-item">
-      <div class="widget-toggle-left">
-        <div class="widget-toggle-icon">🏦</div>
-        <div>
-          <div class="widget-toggle-name">Ближайший вклад</div>
-          <div class="widget-toggle-desc">Следующий вклад к закрытию</div>
-        </div>
-      </div>
-      <label class="wt-switch">
-        <input type="checkbox" id="wt-deposit" onchange="saveWidgetSettings()">
-        <span class="wt-slider"></span>
-      </label>
-    </div>
-
-    <!-- Копилка/Челлендж -->
-    <div class="widget-toggle-item" style="flex-direction:column;align-items:stretch;">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div class="widget-toggle-left">
-          <div class="widget-toggle-icon">🐷</div>
-          <div>
-            <div class="widget-toggle-name">Копилка / Челлендж</div>
-            <div class="widget-toggle-desc">Быстрый доступ к одной копилке</div>
-          </div>
-        </div>
-        <label class="wt-switch">
-          <input type="checkbox" id="wt-piggy" onchange="onWidgetPiggyToggle()">
-          <span class="wt-slider"></span>
-        </label>
-      </div>
-      <div class="piggy-picker-wrap" id="piggy-picker-wrap">
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Выбери копилку или челлендж:</div>
-        <select class="piggy-picker-select" id="piggy-picker-select" onchange="saveWidgetSettings()">
-          <option value="">— Выбрать —</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Цели -->
-    <div class="widget-toggle-item">
-      <div class="widget-toggle-left">
-        <div class="widget-toggle-icon">🎯</div>
-        <div>
-          <div class="widget-toggle-name">Цели</div>
-          <div class="widget-toggle-desc">Список целей и покрытие доходом</div>
-        </div>
-      </div>
-      <label class="wt-switch">
-        <input type="checkbox" id="wt-goals" onchange="saveWidgetSettings()">
-        <span class="wt-slider"></span>
-      </label>
+    <div class="widget-settings-sub">Включай виджеты и меняй порядок стрелками</div>
+    <div id="widget-settings-list"></div>
+    <!-- piggy picker (вне списка, показывается под нужным виджетом) -->
+    <div class="piggy-picker-wrap" id="piggy-picker-wrap" style="margin-top:0;">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Выбери копилку или челлендж:</div>
+      <select class="piggy-picker-select" id="piggy-picker-select" onchange="saveWidgetSettings()">
+        <option value="">— Выбрать —</option>
+      </select>
     </div>
   </div>
 </div>
@@ -1709,24 +1655,93 @@ function renderHome() {
 // WIDGET SYSTEM
 // ══════════════════════════════════════════════════════════
 
+const WIDGET_DEFS = {
+  chart:   { icon:'📈', name:'График роста',        desc:'Накопления и доход по месяцам' },
+  deposit: { icon:'🏦', name:'Ближайший вклад',     desc:'Следующий вклад к закрытию' },
+  piggy:   { icon:'🐷', name:'Копилка / Челлендж',  desc:'Быстрый доступ к одной копилке' },
+  goals:   { icon:'🎯', name:'Цели',                desc:'Список целей и покрытие доходом' },
+};
+const DEFAULT_ORDER = ['chart','deposit','piggy','goals'];
+
 function getWidgetSettings() {
   try {
     const raw = localStorage.getItem('home_widgets');
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (!s.order) s.order = DEFAULT_ORDER.slice();
+      return s;
+    }
   } catch(e) {}
-  return { chart: false, deposit: false, piggy: false, piggyId: null, goals: false };
+  return { chart:false, deposit:false, piggy:false, piggyId:null, goals:false, order:DEFAULT_ORDER.slice() };
 }
 
 function saveWidgetSettings() {
-  const s = {
-    chart: document.getElementById('wt-chart')?.checked || false,
-    deposit: document.getElementById('wt-deposit')?.checked || false,
-    piggy: document.getElementById('wt-piggy')?.checked || false,
-    piggyId: document.getElementById('piggy-picker-select')?.value || null,
-    goals: document.getElementById('wt-goals')?.checked || false,
-  };
+  const s = getWidgetSettings();
+  // read toggles from rendered list
+  DEFAULT_ORDER.forEach(key => {
+    const el = document.getElementById('wt-'+key);
+    if (el) s[key] = el.checked;
+  });
+  s.piggyId = document.getElementById('piggy-picker-select')?.value || null;
   localStorage.setItem('home_widgets', JSON.stringify(s));
   renderHomeWidgets();
+}
+
+function moveWidget(key, dir) {
+  const s = getWidgetSettings();
+  const order = s.order;
+  const i = order.indexOf(key);
+  if (i < 0) return;
+  const j = i + dir;
+  if (j < 0 || j >= order.length) return;
+  [order[i], order[j]] = [order[j], order[i]];
+  s.order = order;
+  localStorage.setItem('home_widgets', JSON.stringify(s));
+  renderSettingsList(s);
+  renderHomeWidgets();
+}
+
+function renderSettingsList(s) {
+  const container = document.getElementById('widget-settings-list');
+  if (!container) return;
+  const order = s.order || DEFAULT_ORDER.slice();
+  const n = order.length;
+
+  container.innerHTML = order.map((key, i) => {
+    const def = WIDGET_DEFS[key];
+    const checked = !!s[key];
+    const isPiggy = key === 'piggy';
+    return `<div class="widget-toggle-item" style="${isPiggy?'flex-direction:column;align-items:stretch;':''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;${isPiggy?'width:100%;':''}">
+        <div class="widget-toggle-left">
+          <div class="widget-toggle-icon">${def.icon}</div>
+          <div>
+            <div class="widget-toggle-name">${def.name}</div>
+            <div class="widget-toggle-desc">${def.desc}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <div class="wt-order-btns">
+            <button class="wt-order-btn" onclick="moveWidget('${key}',-1)" ${i===0?'disabled':''}>▲</button>
+            <button class="wt-order-btn" onclick="moveWidget('${key}',1)" ${i===n-1?'disabled':''}>▼</button>
+          </div>
+          <label class="wt-switch">
+            <input type="checkbox" id="wt-${key}" ${checked?'checked':''} onchange="${isPiggy?'onWidgetPiggyToggle()':'saveWidgetSettings()'}">
+            <span class="wt-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // piggy picker visibility
+  const wrap = document.getElementById('piggy-picker-wrap');
+  if (wrap) wrap.classList.toggle('visible', !!s.piggy);
+  if (s.piggy) {
+    populatePiggyPicker();
+    const sel = document.getElementById('piggy-picker-select');
+    if (sel && s.piggyId) sel.value = s.piggyId;
+  }
 }
 
 function onWidgetPiggyToggle() {
@@ -1762,26 +1777,7 @@ function openWidgetSettings() {
   const s = getWidgetSettings();
   const overlay = document.getElementById('widget-settings-overlay');
   if (!overlay) return;
-
-  // set toggle states
-  const wChart = document.getElementById('wt-chart');
-  const wDeposit = document.getElementById('wt-deposit');
-  const wPiggy = document.getElementById('wt-piggy');
-  const wGoals = document.getElementById('wt-goals');
-  if (wChart) wChart.checked = !!s.chart;
-  if (wDeposit) wDeposit.checked = !!s.deposit;
-  if (wPiggy) wPiggy.checked = !!s.piggy;
-  if (wGoals) wGoals.checked = !!s.goals;
-
-  // piggy picker
-  const wrap = document.getElementById('piggy-picker-wrap');
-  if (wrap) wrap.classList.toggle('visible', !!s.piggy);
-  if (s.piggy) {
-    populatePiggyPicker();
-    const sel = document.getElementById('piggy-picker-select');
-    if (sel && s.piggyId) sel.value = s.piggyId;
-  }
-
+  renderSettingsList(s);
   overlay.classList.add('open');
 }
 
@@ -2134,27 +2130,31 @@ function renderGoalsWidget() {
 // ── Render all enabled widgets ─────────────────────────────
 function renderHomeWidgets() {
   const s = getWidgetSettings();
-  const anyOn = s.chart || s.deposit || s.piggy || s.goals;
+  const order = s.order || DEFAULT_ORDER.slice();
+  const anyOn = order.some(k => s[k]);
 
-  // chart
-  const wChart = document.getElementById('home-widget-chart');
-  if (wChart) wChart.style.display = s.chart ? '' : 'none';
-  if (s.chart) renderHomeChartWidget();
+  // reorder DOM elements according to saved order
+  const widgetContainer = document.getElementById('home-widget-chart')?.parentElement;
+  if (widgetContainer) {
+    order.forEach(key => {
+      const el = document.getElementById('home-widget-'+key);
+      if (el) widgetContainer.appendChild(el); // moves to end in order
+    });
+    // move configure buttons to end
+    const hint = document.getElementById('home-configure-hint');
+    const bottom = document.getElementById('home-configure-bottom');
+    if (hint) widgetContainer.appendChild(hint);
+    if (bottom) widgetContainer.appendChild(bottom);
+  }
 
-  // deposit
-  const wDep = document.getElementById('home-widget-deposit');
-  if (wDep) wDep.style.display = s.deposit ? '' : 'none';
-  if (s.deposit) renderNextDepositWidget();
-
-  // piggy
-  const wPiggy = document.getElementById('home-widget-piggy');
-  if (wPiggy) wPiggy.style.display = s.piggy ? '' : 'none';
-  if (s.piggy) renderPiggyWidget(s.piggyId);
-
-  // goals
-  const wGoals = document.getElementById('home-widget-goals');
-  if (wGoals) wGoals.style.display = s.goals ? '' : 'none';
-  if (s.goals) renderGoalsWidget();
+  // show/hide and render each
+  const renderers = { chart: renderHomeChartWidget, deposit: renderNextDepositWidget, piggy: ()=>renderPiggyWidget(s.piggyId), goals: renderGoalsWidget };
+  order.forEach(key => {
+    const el = document.getElementById('home-widget-'+key);
+    const on = !!s[key];
+    if (el) el.style.display = on ? '' : 'none';
+    if (on && renderers[key]) renderers[key]();
+  });
 
   // hint / bottom configure button
   const hint = document.getElementById('home-configure-hint');
