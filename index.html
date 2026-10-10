@@ -445,12 +445,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     </div>
   </div>
 
-  <!-- urgent alert for expired/expiring deposits -->
-  <div id="home-urgent-alert" style="display:none;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.35);border-radius:var(--radius-sm);padding:11px 14px;cursor:pointer;" onclick="showPage('savings')">
-    <div id="home-urgent-text"></div>
-    <div style="font-size:11px;color:rgba(255,107,107,0.6);margin-top:6px;">Перейти к счетам →</div>
-  </div>
-
   <div style="display:flex;gap:10px;">
     <div class="dash-stat" onclick="showPage('income')" style="cursor:pointer;padding:14px 16px;">
       <div class="dash-stat-label">Доход / мес</div>
@@ -463,6 +457,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
 
   <div id="home-deposits-card" style="display:none;"></div>
+
+  <!-- urgent alert for expired/expiring deposits -->
+  <div id="home-urgent-alert" style="display:none;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.35);border-radius:var(--radius-sm);padding:11px 14px;cursor:pointer;" onclick="showPage('savings')">
+    <div id="home-urgent-text"></div>
+    <div style="font-size:11px;color:rgba(255,107,107,0.6);margin-top:6px;">Перейти к счетам →</div>
+  </div>
 
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:-4px;margin-top:4px;">
     <span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);text-transform:uppercase;">Цели</span>
