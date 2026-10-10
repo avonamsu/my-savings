@@ -156,10 +156,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 /* PAGES */
 .page { display:none; flex-direction:column; flex:1; min-height:0; padding:60px 16px calc(140px + env(safe-area-inset-bottom, 0px)); gap:16px; opacity:0; transform:translateX(20px); transition:opacity .22s ease, transform .22s ease; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-.ptr-indicator { position:fixed; top:0; left:50%; transform:translateX(-50%) translateY(-60px); z-index:300; background:var(--surface2); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; transition:transform .2s ease, opacity .2s ease; opacity:0; box-shadow:0 2px 8px rgba(0,0,0,0.3); }
-.ptr-indicator.ptr-visible { opacity:1; }
+.ptr-indicator { position:fixed; top:12px; left:50%; transform:translateX(-50%) translateY(-60px); z-index:600; background:var(--surface2); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:transform .15s ease, opacity .15s ease; opacity:0; box-shadow:0 2px 8px rgba(0,0,0,0.4); pointer-events:none; }
 .ptr-indicator.ptr-ready { background:var(--accent); }
-.ptr-spinner { font-size:20px; transition:transform .2s; }
+.ptr-spinner { font-size:16px; line-height:1; transition:transform .2s; }
 @keyframes ptr-spin { to { transform:rotate(360deg); } }
 .ptr-indicator.ptr-loading .ptr-spinner { animation:ptr-spin .6s linear infinite; }
 .page.active { opacity:1; transform:translateX(0); }
@@ -4324,7 +4323,7 @@ function gdriveInit() {
     const progress = Math.min(dy, THRESHOLD * 1.5);
     const el = ind();
     if (!el) return;
-    const translateY = Math.min(progress * 0.6, 56);
+    const translateY = Math.min(progress * 0.5, 44);
     const rotation = Math.round(progress / THRESHOLD * 180);
     el.style.transform = `translateX(-50%) translateY(${translateY - 60}px)`;
     el.style.opacity = Math.min(progress / THRESHOLD, 1);
