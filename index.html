@@ -228,7 +228,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 /* GOALS */
 .goal-item { display:flex; align-items:center; padding:13px 14px; gap:10px; border-bottom:1px solid rgba(255,255,255,0.04); transition:background .2s; }
-.goal-item:last-child { border-bottom:none; }
+.goal-item:last-child { border-bottom:none; border-radius:0 0 var(--radius) var(--radius); }
+.goal-item:first-child { border-radius:var(--radius) var(--radius) 0 0; }
+.goal-item:only-child { border-radius:var(--radius); }
 .goal-item.covered { background:var(--done-bg); }
 .goal-check { width:22px; height:22px; border-radius:50%; border:2px solid var(--text-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; }
 .goal-item.covered .goal-check { background:var(--done); border-color:var(--done); color:var(--bg); }
