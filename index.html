@@ -4302,6 +4302,7 @@ function savePiggyDeposit() {
     const action = signed > 0 ? `пополнить счёт «${linkedSaving.name}» на ${fmt(amount)} ₽` : `вычесть ${fmt(amount)} ₽ из счёта «${linkedSaving.name}»`;
     if (confirm(`💳 ${action.charAt(0).toUpperCase()+action.slice(1)}?`)) {
       linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) + signed);
+      if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
     }
   }
 
@@ -4578,11 +4579,13 @@ function toggleCell(challengeId, cellIdx) {
       // Cell just checked — add to account
       if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на ${fmt(cellAmount)} ₽?`)) {
         linkedSaving.amount = (parseFloat(linkedSaving.amount)||0) + cellAmount;
+        if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
       }
     } else {
       // Cell just unchecked — subtract from account
       if (confirm(`💳 Вычесть ${fmt(cellAmount)} ₽ из счёта «${linkedSaving.name}»?`)) {
         linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) - cellAmount);
+        if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
       }
     }
   }
