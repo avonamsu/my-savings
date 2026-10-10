@@ -4077,6 +4077,7 @@ function gdriveSignOut() {
   localStorage.removeItem('gdrive_token');
   localStorage.removeItem('gdrive_file_id');
   localStorage.removeItem('gdrive_user_email');
+  try { sessionStorage.removeItem('gdrive_token_backup'); } catch(e) {}
   gdriveUpdateUI(false);
 }
 
