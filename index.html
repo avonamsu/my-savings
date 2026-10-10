@@ -1825,9 +1825,6 @@ function renderGoals() {
     return { ...g, covered, partial };
   });
 
-  const freeIncome = Math.max(0, totalIncome - coveredSum);
-  document.getElementById('goals-free-income').textContent = fmt(Math.round(freeIncome)) + ' ₽';
-
   const coveredItems = items.filter(g => g.covered);
   const uncoveredItems = items.filter(g => !g.covered);
 
