@@ -4351,9 +4351,7 @@ function renderPiggyCard(pg) {
             <button class="pg-add-btn" style="background:var(--surface2);color:var(--text-dim);border:1px solid rgba(255,255,255,0.1);width:44px;font-size:20px;padding:8px 0;" onclick="openPiggyDeposit('${pg.id}','sub')">－</button>
            </div>`
       }
-      <button onclick="completePiggyBank('${pg.id}')" title="Завершить досрочно" style="background:none;border:1px solid rgba(78,205,196,0.3);border-radius:6px;color:var(--accent);font-size:13px;padding:3px 8px;cursor:pointer;margin-left:auto;">✓</button>
-      <button onclick="openPiggyEdit('${pg.id}')" style="background:none;border:none;color:var(--accent);opacity:0.7;cursor:pointer;font-size:13px;">Изменить</button>
-      <button onclick="deletePiggyBank('${pg.id}')" style="background:none;border:none;color:var(--danger);opacity:.5;cursor:pointer;font-size:13px;">Удалить</button>
+      <button class="card-menu-btn" style="margin-left:auto;" onclick="showCtxMenu(event,[{icon:'✏️',label:'Изменить',fn:()=>openPiggyEdit('${pg.id}')},{icon:'✅',label:'Завершить досрочно',fn:()=>completePiggyBank('${pg.id}')},{icon:'🗑',label:'Удалить',danger:true,fn:()=>deletePiggyBank('${pg.id}')}])">⋯</button>
     </div>` : ''}
   </div>`;
 }
