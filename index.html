@@ -5177,6 +5177,8 @@ async function gdriveLoad(silent = false) {
     if (!state.piggyBanks) state.piggyBanks = [];
     if (!state.challenges) state.challenges = [];
     save(); saveToIDB(); render(); drawChart(); checkNotifBanner();
+    // Запоминаем момент загрузки как "синхронизированы" — чтобы не предлагать загрузить снова
+    localStorage.setItem('gdrive_last_save_ts', Date.now().toString());
     haptic('success');
     showToast('☁️ Данные загружены из Google Drive');
   } catch(e) {
@@ -5228,10 +5230,15 @@ async function gdriveCheckNewerVersion() {
     const meta = await resp.json();
     const driveTime = new Date(meta.modifiedTime).getTime();
     const localSave = localStorage.getItem('gdrive_last_save_ts');
-    if (localSave && driveTime <= Number(localSave)) return;
-    // Drive новее — предлагаем загрузить
+    const localTime = localSave ? Number(localSave) : 0;
+    // Не показываем диалог если Drive новее менее чем на 2 минуты (погрешность sync)
+    if (driveTime <= localTime + 120000) return;
+    // Drive существенно новее — предлагаем загрузить
     if (confirm('☁️ В Google Drive есть более новая версия данных. Загрузить?')) {
       await gdriveLoad(true); // silent=true
+    } else {
+      // Пользователь отказался — запоминаем текущее время Drive чтобы не спрашивать снова
+      localStorage.setItem('gdrive_last_save_ts', String(driveTime));
     }
   } catch(e) {}
 }
