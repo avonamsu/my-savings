@@ -4185,12 +4185,38 @@ async function gdriveSave(silent = false) {
       gdriveUpdateLastSave();
       if (!silent) { haptic('success'); showToast('☁️ Сохранено в Google Drive'); }
       else showToast('☁️ Автосохранение в Drive');
+    } else if (resp.status === 401) {
+      // Токен протух — переавторизуемся и повторяем
+      gdriveToken = null;
+      localStorage.removeItem('gdrive_token');
+      gdriveReauthAndRetry(silent);
     } else {
       throw new Error('HTTP ' + resp.status);
     }
   } catch(e) {
     if (!silent) alert('Ошибка сохранения: ' + e.message);
   }
+}
+
+function gdriveReauthAndRetry(silent = false) {
+  if (typeof google === 'undefined') return;
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GDRIVE_CLIENT_ID,
+    scope: GDRIVE_SCOPE,
+    callback: (resp) => {
+      if (resp.error || !resp.access_token) {
+        gdriveUpdateUI(false);
+        if (!silent) alert('Сессия истекла. Войдите снова.');
+        return;
+      }
+      gdriveToken = resp.access_token;
+      localStorage.setItem('gdrive_token', gdriveToken);
+      localStorage.setItem('gdrive_token_ts', Date.now());
+      gdriveUpdateUI(true);
+      gdriveSave(silent); // повторяем сохранение
+    }
+  });
+  client.requestAccessToken({ prompt: '' });
 }
 
 async function gdriveLoad(silent = false) {
