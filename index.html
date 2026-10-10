@@ -1496,7 +1496,10 @@ function renderHome() {
 
 function toggleExclude(id) {
   const s=state.savings.find(x=>x.id===id);
-  if(s)s.excluded=!s.excluded;
+  if(s){
+    s.excluded=!s.excluded;
+    s.included=!s.excluded; // синхронизируем оба поля
+  }
   save();render();
 }
 
