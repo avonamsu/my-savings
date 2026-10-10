@@ -916,7 +916,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <div class="field">
           <label>НАЧИСЛЕНИЕ ПРОЦЕНТОВ</label>
           <select id="sa-accrual" onchange="updateSavingsAccountPreview()">
-            <option value="daily">Ежедневно (Т-Банк, Сбер и др.)</option>
+            <option value="daily">Ежедневно</option>
             <option value="monthly">Ежемесячно</option>
           </select>
         </div>
@@ -1679,7 +1679,7 @@ function renderSavings() {
 
   const groups = sortBy === 'type' ? {
     '🏦 Вклады':            items.filter(x => x.isDeposit),
-    '💳 Накопительные':    items.filter(x => x.isSavingsAccount),
+    '💳 Накопительные счета': items.filter(x => x.isSavingsAccount),
     '📈 Инвестиции':       items.filter(x => !x.isDeposit && !x.isSavingsAccount && x.icon==='📈'),
     '💵 Наличные':         items.filter(x => x.icon==='💵'),
     '🏠 Недвижимость':     items.filter(x => x.icon==='🏠'),
@@ -1812,8 +1812,8 @@ function showChallengeMenu(e, id, canComplete) {
 
 function showSavingsMenu(e, id, showFix) {
   const items = [
-    {icon:'⧉', label:'Дублировать', fn:()=>duplicateSaving(id)},
     {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
+    {icon:'⧉', label:'Дублировать', fn:()=>duplicateSaving(id)},
     ...(showFix ? [{icon:'💸', label:'Зафиксировать доход', fn:()=>openFixIncomeModal(id)}] : []),
     {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('savings',id)}
   ];
