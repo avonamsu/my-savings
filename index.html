@@ -4428,6 +4428,20 @@ function fillLinkedSavingSelect(containerId, currentVal) {
       <span class="lc-name">${c.label}</span>${c.sub ? `<span class="lc-sub">${c.sub}</span>` : ''}
     </button>`;
   }).join('');
+
+  // Show deposit warning if preselected value is a deposit
+  const existingWarn = container.parentElement?.querySelector('.linked-deposit-warn');
+  if (existingWarn) existingWarn.remove();
+  if (currentVal) {
+    const preselected = (state.savings||[]).find(s=>s.id===currentVal);
+    if (preselected && preselected.isDeposit) {
+      const warn = document.createElement('div');
+      warn.className = 'field-hint info linked-deposit-warn';
+      warn.style.marginTop = '6px';
+      warn.textContent = '⚠️ Это вклад — расчёт процентов будет приблизительным: сумма обновится, но проценты пересчитаются с даты открытия вклада, а не с даты пополнения.';
+      container.parentElement.appendChild(warn);
+    }
+  }
 }
 
 function selectLinkedChip(containerId, val, el) {
@@ -4437,6 +4451,20 @@ function selectLinkedChip(containerId, val, el) {
   container.querySelectorAll('.linked-chip').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   haptic('light');
+
+  // Show deposit warning if selected saving is a deposit
+  const existing = container.parentElement.querySelector('.linked-deposit-warn');
+  if (existing) existing.remove();
+  if (val) {
+    const saving = (state.savings||[]).find(s=>s.id===val);
+    if (saving && saving.isDeposit) {
+      const warn = document.createElement('div');
+      warn.className = 'field-hint info linked-deposit-warn';
+      warn.style.marginTop = '6px';
+      warn.textContent = '⚠️ Это вклад — расчёт процентов будет приблизительным: сумма обновится, но проценты пересчитаются с даты открытия вклада, а не с даты пополнения.';
+      container.parentElement.appendChild(warn);
+    }
+  }
 }
 
 function getLinkedSavingValue(containerId) {
