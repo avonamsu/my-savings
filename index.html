@@ -3192,6 +3192,7 @@ function showPage(name) {
   if (titleEl) titleEl.textContent = PAGE_TITLES[name] || 'Мои накопления';
 
   _currentPage = name;
+  try { localStorage.setItem('last_page', name); } catch(e) {}
   render();
   if(name==='savings') setTimeout(drawChart, 50);
   if(name==='income') setTimeout(drawIncomeChart, 50);
@@ -5485,12 +5486,13 @@ function showToast(msg) {
 load();
 if (!state.challenges) state.challenges = [];
 render();
-// Возвращаемся на страницу, с которой было PTR-обновление
+// Восстанавливаем последнюю открытую вкладку
 try {
-  const returnPage = sessionStorage.getItem('ptr_return_page');
-  if (returnPage && returnPage !== 'home' && PAGES.includes(returnPage)) {
-    sessionStorage.removeItem('ptr_return_page');
-    showPage(returnPage);
+  const ptrPage = sessionStorage.getItem('ptr_return_page');
+  const lastPage = ptrPage || localStorage.getItem('last_page');
+  if (ptrPage) sessionStorage.removeItem('ptr_return_page');
+  if (lastPage && lastPage !== 'home' && PAGES.includes(lastPage)) {
+    showPage(lastPage);
   } else {
     updateFab('home');
   }
