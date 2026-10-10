@@ -4341,7 +4341,7 @@ function renderPiggyCard(pg) {
       <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${color};"></div></div>
     </div>
     ${planCalc && planCalc.remaining > 0 ? `<div style="font-size:12px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:8px;">
-      Откладывай <strong style="color:${color};">${fmt(planCalc.perPeriod)} ₽</strong> ${planCalc.freqLabel}${planCalc.ahead?' · <span style="color:var(--accent);">опережаешь 🚀</span>':''}
+      Откладывай <strong style="color:${color};">${fmt(planCalc.perPeriod)} ₽</strong> ${planCalc.freqLabel}
     </div>` : ''}
     <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
       ${done
