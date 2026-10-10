@@ -361,9 +361,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .calc-preview { background:var(--accent-dim); border:1px solid rgba(78,205,196,0.25); border-radius:var(--radius-sm); padding:11px 13px; font-size:13px; color:var(--text-dim); margin-bottom:14px; line-height:1.7; }
 .calc-preview strong { color:var(--accent); font-size:15px; }
 .linked-saving-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
-.linked-chip { display:flex; flex-direction:column; align-items:flex-start; gap:2px; background:var(--card); border:1.5px solid var(--border); border-radius:10px; padding:8px 12px; cursor:pointer; transition:border-color .15s, background .15s; text-align:left; }
-.linked-chip .lc-name { font-size:13px; color:var(--text); font-weight:500; white-space:nowrap; }
-.linked-chip .lc-sub { font-size:10px; color:var(--text-dim); white-space:nowrap; }
+.linked-chip { display:flex; flex-direction:column; align-items:flex-start; gap:1px; background:var(--surface2); border:1.5px solid rgba(255,255,255,0.12); border-radius:10px; padding:8px 12px; cursor:pointer; transition:border-color .15s, background .15s; text-align:left; min-width:80px; }
+.linked-chip .lc-name { font-size:13px; color:var(--text); font-weight:500; }
+.linked-chip .lc-sub { font-size:10px; color:var(--text-dim); }
 .linked-chip.active { border-color:var(--accent); background:var(--accent-dim); }
 .linked-chip.active .lc-name { color:var(--accent); }
 
@@ -4874,6 +4874,7 @@ function checkChNotifications() {
 }
 // ── EDIT CHALLENGE ────────────────────────────────────────
 function editChallenge(id) {
+  document.getElementById('fab')?.setAttribute('hidden','');
   const ch = state.challenges.find(c => c.id === id);
   if (!ch) return;
   document.getElementById('ech-id').value = id;
@@ -4896,6 +4897,7 @@ function editChallenge(id) {
 
 function closeEditChallenge() {
   document.getElementById('edit-challenge-modal').classList.remove('open');
+  updateFab(_currentPage);
 }
 
 function updateEditChallengePreview() {
