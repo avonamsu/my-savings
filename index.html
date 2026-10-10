@@ -1478,7 +1478,11 @@ function renderHome() {
   const n = state.savings.length;
   document.getElementById('home-sub').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов — добавь первый';
   document.getElementById('dash-income').textContent = fmt(totalInc)+' ₽';
-  document.getElementById('dash-goals-pct').textContent = goalsPct+'%';
+  document.getElementById('dash-income').style.color = '#4ECDC4';
+
+  const goalsPctEl = document.getElementById('dash-goals-pct');
+  goalsPctEl.textContent = goalsPct+'%';
+  goalsPctEl.style.color = goalsPct>=100?'#4ECDC4':goalsPct>=60?'#FFB347':goalsPct>=30?'#FF9F43':'#FF6B6B';
 
   // Urgent alert for expired/soon deposits
   const nowU = new Date(); nowU.setHours(0,0,0,0);
