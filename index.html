@@ -547,7 +547,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
 
   <!-- Widget: Копилка / Челлендж (динамически создаётся в renderHomeWidgets) -->
-  <div id="home-widgets-piggy-container" style="display:contents;"></div>
+  <div id="home-widgets-piggy-container" style="display:flex;flex-direction:column;gap:16px;"></div>
 
   <!-- Widget: Цели -->
   <div id="home-widget-goals" style="display:none;">
@@ -2017,18 +2017,18 @@ function renderPiggyWidget(piggyId, container) {
   if (type === 'piggy') {
     const pg = (state.piggyBanks||[]).find(p=>p.id===id);
     if (!pg || (pg.saved||0) >= pg.goal) {
-      container.innerHTML = `<div><div class="widget-section-header"><span class="widget-section-label">🐷 ${pg ? pg.name : 'Копилка'}</span></div>
+      container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">🐷 ${pg ? pg.name : 'Копилка'}</span></div>
         <div class="home-piggy-widget" style="padding:14px;text-align:center;">
           <div style="font-size:28px;margin-bottom:8px;">🎉</div>
           <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Копилка завершена!</div>
           <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">${pg ? fmt(pg.saved)+' ₽ накоплено' : 'Выбери другую'}</div>
-        </div></div>`;
+        </div>`;
       return;
     }
     const saved = pg.saved||0;
     const pct = Math.min(100,Math.round(saved/pg.goal*100));
     const color = pg.color||'#4ECDC4';
-    container.innerHTML = `<div><div class="widget-section-header"><span class="widget-section-label">${pg.emoji||'🐷'} ${pg.name}</span></div>
+    container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">${pg.emoji||'🐷'} ${pg.name}</span></div>
       <div class="home-piggy-widget">
         <div class="home-piggy-header">
           <div>
@@ -2045,14 +2045,14 @@ function renderPiggyWidget(piggyId, container) {
             <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;transition:width .3s;"></div>
           </div>
         </div>
-      </div></div>`;
+      </div>`;
   } else if (type === 'challenge') {
     const ch = (state.challenges||[]).find(c=>c.id===id);
     if (!ch) {
-      container.innerHTML = `<div><div class="widget-section-header"><span class="widget-section-label">🎯 Челлендж</span></div>
+      container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">🎯 Челлендж</span></div>
         <div class="home-piggy-widget" style="padding:14px;text-align:center;">
           <div style="font-size:12px;color:var(--text-dim);">Челлендж не найден</div>
-        </div></div>`;
+        </div>`;
       return;
     }
     const cells = ch.cells||[];
@@ -2062,12 +2062,12 @@ function renderPiggyWidget(piggyId, container) {
     const isCompleted = totalGoal > 0 && totalDone >= totalGoal;
 
     if (isCompleted) {
-      container.innerHTML = `<div><div class="widget-section-header"><span class="widget-section-label">${ch.emoji||'🎯'} ${ch.name}</span></div>
+      container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">${ch.emoji||'🎯'} ${ch.name}</span></div>
         <div class="home-piggy-widget" style="padding:14px;text-align:center;">
           <div style="font-size:28px;margin-bottom:8px;">🎉</div>
           <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Челлендж завершён!</div>
           <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">${fmt(totalDone)} ₽ собрано</div>
-        </div></div>`;
+        </div>`;
       return;
     }
 
@@ -2083,7 +2083,7 @@ function renderPiggyWidget(piggyId, container) {
     }).join('');
     const remaining = undoneCells.length - showCells.length;
 
-    container.innerHTML = `<div><div class="widget-section-header"><span class="widget-section-label">${ch.emoji||'🎯'} ${ch.name}</span></div>
+    container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">${ch.emoji||'🎯'} ${ch.name}</span></div>
       <div class="home-piggy-widget">
         <div class="home-piggy-header">
           <div>
@@ -2098,7 +2098,7 @@ function renderPiggyWidget(piggyId, container) {
         </div>
         <div class="home-piggy-cells">${cellsHtml}</div>
       ${remaining>0?`<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:0 14px 12px;">+${remaining} ещё — <span style="color:var(--accent);cursor:pointer" onclick="navigateToItem('challenge','${ch.id}')">открыть →</span></div>`:''}
-    </div></div>`;
+    </div>`;
   }
 }
 
@@ -2212,7 +2212,7 @@ function renderHomeWidgets() {
 
   // Рендерим каждый piggy-виджет
   if (piggyContainer) {
-    piggyContainer.style.display = piggyOn ? '' : 'none';
+    piggyContainer.style.display = piggyOn ? 'flex' : 'none';
     if (piggyOn) {
       piggyIds.forEach(pid => {
         const el = piggyContainer.querySelector(`[data-piggy-id="${pid}"]`);
