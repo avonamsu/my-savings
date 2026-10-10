@@ -1684,7 +1684,12 @@ function renderSavings() {
   if (!n) { el.innerHTML=`<div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>`; return; }
   if (!items.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`; return; }
 
-  const sortAlpha = arr => [...arr].sort((a,b) => a.name.localeCompare(b.name, 'ru'));
+  const sortAlpha = arr => [...arr].sort((a,b) => {
+    const aExcl = (a.excluded||a.included===false)?1:0;
+    const bExcl = (b.excluded||b.included===false)?1:0;
+    if (aExcl !== bExcl) return aExcl - bExcl;
+    return a.name.localeCompare(b.name, 'ru');
+  });
   const groups = sortBy === 'type' ? {
     '🏦 Вклады':            sortAlpha(items.filter(x => x.isDeposit)),
     '💳 Накопительные счета': sortAlpha(items.filter(x => x.isSavingsAccount)),
