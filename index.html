@@ -4300,7 +4300,7 @@ function savePiggyDeposit() {
   const linkedSaving = pg.linkedSavingId ? (state.savings||[]).find(s=>s.id===pg.linkedSavingId) : null;
   if (linkedSaving) {
     const action = signed > 0 ? `пополнить счёт «${linkedSaving.name}» на ${fmt(amount)} ₽` : `вычесть ${fmt(amount)} ₽ из счёта «${linkedSaving.name}»`;
-    const depositNote = linkedSaving.isDeposit ? '\n\n⚠️ Для вкладов расчёт процентов приблизительный.' : '';
+    const depositNote = linkedSaving.isDeposit ? '\n\n⚠️ Для вкладов расчёт процентов приблизительный: история пополнений не хранится, поэтому сумма просто обновится, а проценты пересчитаются на неё с даты открытия вклада.' : '';
     if (confirm(`💳 ${action.charAt(0).toUpperCase()+action.slice(1)}?${depositNote}`)) {
       linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) + signed);
       if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
@@ -4602,7 +4602,7 @@ function toggleCell(challengeId, cellIdx) {
     const cellAmount = ch.cells[cellIdx].amt || 0;
     if (!wasDone) {
       // Cell just checked — add to account
-      const depositNote1 = linkedSaving.isDeposit ? '\n\n⚠️ Для вкладов расчёт процентов приблизительный.' : '';
+      const depositNote1 = linkedSaving.isDeposit ? '\n\n⚠️ Для вкладов расчёт процентов приблизительный: история пополнений не хранится, поэтому сумма просто обновится, а проценты пересчитаются на неё с даты открытия вклада.' : '';
       if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на ${fmt(cellAmount)} ₽?${depositNote1}`)) {
         linkedSaving.amount = (parseFloat(linkedSaving.amount)||0) + cellAmount;
         if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
@@ -4610,7 +4610,7 @@ function toggleCell(challengeId, cellIdx) {
       }
     } else {
       // Cell just unchecked — subtract from account
-      const depositNote2 = linkedSaving.isDeposit ? '\n\n⚠️ Для вкладов расчёт процентов приблизительный.' : '';
+      const depositNote2 = linkedSaving.isDeposit ? '\n\n⚠️ Для вкладов расчёт процентов приблизительный: история пополнений не хранится, поэтому сумма просто обновится, а проценты пересчитаются на неё с даты открытия вклада.' : '';
       if (confirm(`💳 Вычесть ${fmt(cellAmount)} ₽ из счёта «${linkedSaving.name}»?${depositNote2}`)) {
         linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) - cellAmount);
         if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
