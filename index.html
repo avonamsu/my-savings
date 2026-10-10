@@ -2405,6 +2405,7 @@ function openModal(mode) {
   document.getElementById('deposit-preview').style.display='none';
   document.getElementById('currency-preview').style.display='none';
   document.getElementById('modal').classList.add('open');
+  const fab=document.getElementById('fab'); if(fab) fab.setAttribute('hidden','');
 }
 
 function onSavingTypeChange() {
@@ -2629,7 +2630,7 @@ function openEdit(list,id) {
   }
 }
 
-function closeModal(){editingId=null;document.getElementById('modal').classList.remove('open');}
+function closeModal(){editingId=null;document.getElementById('modal').classList.remove('open');updateFab(_currentPage);}
 function closeModalOutside(e){if(e.target===document.getElementById('modal'))closeModal();}
 
 function saveItem(){
