@@ -4973,12 +4973,28 @@ function checkBackupReminder(){
   }
 }
 
+function collectUIState() {
+  const ls = k => { try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : null; } catch(e) { return null; } };
+  const ui = {};
+  const lsKeys = ['home_widgets','savings_groups_collapsed','income_breakdown_collapsed','goals_groups_collapsed','last_page'];
+  lsKeys.forEach(k => { const v = ls(k); if (v !== null) ui[k] = v; });
+  if (window._chCollapsed && Object.keys(window._chCollapsed).length > 0) ui._chCollapsed = window._chCollapsed;
+  return Object.keys(ui).length > 0 ? ui : null;
+}
+
+function restoreUIState(ui) {
+  if (!ui) return;
+  const lsKeys = ['home_widgets','savings_groups_collapsed','income_breakdown_collapsed','goals_groups_collapsed','last_page'];
+  lsKeys.forEach(k => { if (ui[k] !== undefined) { try { localStorage.setItem(k, JSON.stringify(ui[k])); } catch(e) {} } });
+  if (ui._chCollapsed) window._chCollapsed = ui._chCollapsed;
+}
+
 function downloadBackupFromBanner(){ downloadBackup(); document.getElementById('backup-banner').style.display='none'; }
 
 function downloadBackup(){
   haptic("success");
-  const hw = (() => { try { return JSON.parse(localStorage.getItem('home_widgets') || 'null'); } catch(e) { return null; } })();
-  const data = { ...state, _appVersion: APP_VERSION, _exportedAt: new Date().toISOString(), ...(hw ? { _home_widgets: hw } : {}) };
+  const ui = collectUIState();
+  const data = { ...state, _appVersion: APP_VERSION, _exportedAt: new Date().toISOString(), ...(ui ? { _ui: ui } : {}) };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -5019,7 +5035,8 @@ function restoreBackup(event){
 
       // Clean service fields before restoring
       delete restored._appVersion; delete restored._exportedAt;
-      if (restored._home_widgets) { try { localStorage.setItem('home_widgets', JSON.stringify(restored._home_widgets)); } catch(e) {} delete restored._home_widgets; }
+      restoreUIState(restored._ui || (restored._home_widgets ? { home_widgets: restored._home_widgets } : null));
+      delete restored._ui; delete restored._home_widgets;
       state = restored;
       if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
       if (!state.piggyBanks) state.piggyBanks = [];
@@ -5182,8 +5199,8 @@ async function gdriveFindFile() {
 async function gdriveSave(silent = false) {
   if (!gdriveToken) { if (!silent) alert('Сначала войдите через Google'); return; }
   try {
-    const hw = (() => { try { return JSON.parse(localStorage.getItem('home_widgets') || 'null'); } catch(e) { return null; } })();
-    const content = JSON.stringify({ ...state, _appVersion: APP_VERSION, _savedAt: new Date().toISOString(), ...(hw ? { _home_widgets: hw } : {}) }, null, 2);
+    const ui = collectUIState();
+    const content = JSON.stringify({ ...state, _appVersion: APP_VERSION, _savedAt: new Date().toISOString(), ...(ui ? { _ui: ui } : {}) }, null, 2);
     const blob = new Blob([content], { type: 'application/json' });
     const fileId = await gdriveFindFile();
 
@@ -5280,7 +5297,8 @@ async function gdriveLoad(silent = false) {
     }
 
     delete data._appVersion; delete data._savedAt;
-    if (data._home_widgets) { try { localStorage.setItem('home_widgets', JSON.stringify(data._home_widgets)); } catch(e) {} delete data._home_widgets; }
+    restoreUIState(data._ui || (data._home_widgets ? { home_widgets: data._home_widgets } : null));
+    delete data._ui; delete data._home_widgets;
     state = data;
     if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
     if (!state.piggyBanks) state.piggyBanks = [];
