@@ -3538,7 +3538,15 @@ function toggleCell(challengeId, cellIdx) {
   else if (!wasDone) { haptic('light'); }
   save();
   window._chCollapsed[challengeId] = false;
+  // сохраняем позицию скролла грида этого челленджа
+  const gridWrap = document.querySelector(`[data-ch="${challengeId}"]`);
+  const savedScroll = gridWrap ? gridWrap.parentElement.scrollLeft : 0;
   renderChallengesPage();
+  // восстанавливаем позицию скролла после перерисовки
+  requestAnimationFrame(() => {
+    const newGridWrap = document.querySelector(`[data-ch="${challengeId}"]`);
+    if (newGridWrap) newGridWrap.parentElement.scrollLeft = savedScroll;
+  });
 }
 
 function renderChallengesPage() {
