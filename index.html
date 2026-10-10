@@ -535,27 +535,32 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div class="hero">
     <div class="hero-label">Пассивный доход в месяц</div>
     <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
-    <div class="hero-sub" id="income-hero-sub" style="margin-top:6px;">0 ₽/год</div>
-  </div>
-  <div style="display:flex;gap:10px;">
-    <div class="dash-card" style="flex:1;text-align:left;padding:12px 14px;">
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ДОХОДНОСТЬ</div>
-      <div id="income-yield" style="font-size:16px;font-weight:700;color:var(--accent);">—</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+      <div class="hero-sub" id="income-hero-sub" style="margin-top:0;">0 ₽/год</div>
+      <div style="display:flex;gap:12px;">
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.04em;">ДОХОДНОСТЬ</div>
+          <div id="income-yield" style="font-size:14px;font-weight:700;color:var(--accent);">—</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.04em;">РЕАЛЬНАЯ</div>
+          <div id="income-real-yield" style="font-size:14px;font-weight:700;">—</div>
+        </div>
+      </div>
     </div>
-    <div class="dash-card" style="flex:1;text-align:left;padding:12px 14px;">
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">РЕАЛЬНАЯ (−инфл.)</div>
-      <div id="income-real-yield" style="font-size:16px;font-weight:700;">—</div>
+  </div>
+  <div id="income-breakdown" class="chart-wrap" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleIncomeBreakdown()">
+      <span class="chart-title">📊 РАЗБИВКА ПО ТИПАМ</span>
+      <span id="income-breakdown-arrow" style="font-size:11px;color:var(--text-dim);transition:transform .2s;display:inline-block;">▾</span>
     </div>
+    <div id="income-breakdown-list" style="margin-top:10px;"></div>
   </div>
-  <div id="income-breakdown" style="display:none;" class="chart-wrap">
-    <div class="chart-title" style="margin-bottom:10px;">📊 РАЗБИВКА ПО ТИПАМ</div>
-    <div id="income-breakdown-list"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:-8px;">
+    <span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);text-transform:uppercase;">Источники</span>
+    <button onclick="togglePageSearch('income')" id="income-search-btn" style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 9px;display:flex;align-items:center;gap:4px;">🔍 Поиск</button>
   </div>
-  <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
-    <span id="income-section-title">Источники дохода</span>
-    <button onclick="togglePageSearch('income')" id="income-search-btn" style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 9px;display:flex;align-items:center;gap:4px;">🔍 <span>Поиск</span></button>
-  </div>
-  <div id="income-search-bar" style="display:none;margin-top:-8px;">
+  <div id="income-search-bar" style="display:none;margin-bottom:-8px;">
     <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(78,205,196,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
       <input type="text" id="income-search" placeholder="Поиск дохода..." oninput="renderIncome()" autocomplete="off"
         style="flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none;padding:8px 0;width:100%;">
@@ -1814,6 +1819,15 @@ document.addEventListener('click', e => {
   if (menu && !menu.parentElement.contains(e.target)) menu.style.display = 'none';
 });
 
+function toggleIncomeBreakdown() {
+  const isCollapsed = localStorage.getItem('income_breakdown_collapsed') === '1';
+  localStorage.setItem('income_breakdown_collapsed', isCollapsed ? '0' : '1');
+  const listEl = document.getElementById('income-breakdown-list');
+  const arrow = document.getElementById('income-breakdown-arrow');
+  if (listEl) listEl.style.display = isCollapsed ? '' : 'none';
+  if (arrow) arrow.style.transform = isCollapsed ? '' : 'rotate(-90deg)';
+}
+
 function toggleGoalsGroup(key) {
   const collapsed = JSON.parse(localStorage.getItem('goals_groups_collapsed')||'{}');
   collapsed[key] = !collapsed[key];
@@ -1974,7 +1988,12 @@ function renderIncome() {
       const key = (x.icon==='🏦'||x.icon==='💰') ? '💰 Вклады' : x.icon==='📊' ? '📊 Дивиденды' : x.icon==='🏠' ? '🏠 Аренда' : x.icon==='💱' ? '💱 Валюта' : x.icon==='💸' ? '💸 Купоны' : '✨ Другое';
       groups[key] = (groups[key]||0) + calcIncomeAmountRub(x);
     });
-    breakdownEl.style.display = '';
+    breakdownEl.style.display = 'block';
+    const isCollapsed = localStorage.getItem('income_breakdown_collapsed') === '1';
+    const listEl = document.getElementById('income-breakdown-list');
+    const arrow = document.getElementById('income-breakdown-arrow');
+    if (listEl) listEl.style.display = isCollapsed ? 'none' : '';
+    if (arrow) arrow.style.transform = isCollapsed ? 'rotate(-90deg)' : '';
     breakdownList.innerHTML = Object.entries(groups).sort(([,a],[,b])=>b-a).map(([name,amt]) => {
       const pct = total>0 ? Math.round(amt/total*100) : 0;
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
