@@ -4416,7 +4416,7 @@ function gdriveInit() {
     const el = ind();
     if (triggered) {
       if (el) { el.classList.add('ptr-loading'); el.querySelector('.ptr-spinner').textContent = '↻'; }
-      setTimeout(() => location.reload(), 300);
+      setTimeout(() => ptrRefresh(el), 300);
     } else {
       if (el) { el.style.transform = 'translateX(-50%) translateY(-60px)'; el.style.opacity = '0'; el.classList.remove('ptr-ready'); }
     }
@@ -4660,6 +4660,25 @@ function forceStartOnboarding() {
 
 function resetOnboarding() { forceStartOnboarding(); }
 
+async function ptrRefresh(indicatorEl) {
+  // Обновляем курсы валют и перерисовываем без location.reload()
+  // (reload сбрасывает OAuth токен в iOS PWA)
+  try {
+    await fetchRates();
+    loadFxBuyRates();
+    recordSnapshot();
+    drawChart();
+    recordIncomeSnapshot();
+    drawIncomeChart();
+    render();
+  } catch(e) {}
+  if (indicatorEl) {
+    indicatorEl.style.transform = 'translateX(-50%) translateY(-60px)';
+    indicatorEl.style.opacity = '0';
+    indicatorEl.classList.remove('ptr-ready', 'ptr-loading');
+  }
+  showToast('Данные обновлены');
+}
 
 // ── PULL TO REFRESH ───────────────────────────────────────
 (function() {
