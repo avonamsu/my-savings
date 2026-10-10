@@ -520,9 +520,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div id="home-deposits-card" style="display:none;"></div>
 
   <!-- urgent alert for expired/expiring deposits -->
-  <div id="home-urgent-alert" style="display:none;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.35);border-radius:var(--radius-sm);padding:11px 14px;cursor:pointer;" onclick="showPage('savings')">
-    <div id="home-urgent-text"></div>
-    <div style="font-size:11px;color:rgba(255,107,107,0.6);margin-top:6px;">Перейти к счетам →</div>
+  <div id="home-urgent-alert" style="display:none;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.35);border-radius:var(--radius-sm);padding:11px 14px;position:relative;">
+    <div id="home-urgent-text" onclick="showPage('savings')" style="cursor:pointer;padding-right:24px;"></div>
+    <div style="font-size:11px;color:rgba(255,107,107,0.6);margin-top:6px;" onclick="showPage('savings')" style="cursor:pointer;">Перейти к счетам →</div>
+    <button onclick="dismissUrgentAlert()" style="position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,107,107,0.5);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;">✕</button>
   </div>
 
   <!-- Widget: График роста -->
@@ -1608,17 +1609,25 @@ function renderHome() {
   const alertEl = document.getElementById('home-urgent-alert');
   const alertText = document.getElementById('home-urgent-text');
   if (urgentDeps.length && alertEl && alertText) {
-    const rows = urgentDeps.map(s => {
-      const isExpired = s.daysLeft <= 0;
-      const label = isExpired ? '⚠️ Истёк' : `🔔 Через ${s.daysLeft} дн.`;
-      const color = isExpired ? 'var(--danger)' : 'var(--warn)';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
-        <span style="font-size:13px;font-weight:600;color:${color};">${label} — ${s.name}</span>
-        <span style="font-size:13px;color:${color};font-weight:600;">${fmt(getSavingCurrentAmountRub(s))} ₽</span>
-      </div>`;
-    }).join('');
-    alertText.innerHTML = rows;
-    alertEl.style.display = 'block';
+    // Ключ закрытия: id+daysLeft каждого вклада — если срок изменился, алерт появится снова
+    const alertKey = urgentDeps.map(s=>`${s.id}:${s.daysLeft}`).join(',');
+    const dismissed = localStorage.getItem('urgent_alert_dismissed');
+    if (dismissed === alertKey) {
+      alertEl.style.display = 'none';
+    } else {
+      const rows = urgentDeps.map(s => {
+        const isExpired = s.daysLeft <= 0;
+        const label = isExpired ? '⚠️ Истёк' : `🔔 Через ${s.daysLeft} дн.`;
+        const color = isExpired ? 'var(--danger)' : 'var(--warn)';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+          <span style="font-size:13px;font-weight:600;color:${color};">${label} — ${s.name}</span>
+          <span style="font-size:13px;color:${color};font-weight:600;">${fmt(getSavingCurrentAmountRub(s))} ₽</span>
+        </div>`;
+      }).join('');
+      alertText.innerHTML = rows;
+      alertEl.dataset.alertKey = alertKey;
+      alertEl.style.display = 'block';
+    }
   } else if (alertEl) alertEl.style.display = 'none';
 
   // Sidebar
@@ -2091,6 +2100,14 @@ function renderPiggyWidget(piggyId) {
       ${remaining>0?`<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:0 14px 12px;">+${remaining} ещё — <span style="color:var(--accent);cursor:pointer" onclick="showPage('challenge')">открыть →</span></div>`:''}
     </div>`;
   }
+}
+
+function dismissUrgentAlert() {
+  const alertEl = document.getElementById('home-urgent-alert');
+  if (!alertEl) return;
+  const key = alertEl.dataset.alertKey;
+  if (key) localStorage.setItem('urgent_alert_dismissed', key);
+  alertEl.style.display = 'none';
 }
 
 function homeToggleChCell(chId, cellIdx) {
