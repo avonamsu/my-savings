@@ -4537,6 +4537,14 @@ function showToast(msg) {
 load();
 if (!state.challenges) state.challenges = [];
 render();
+// Возвращаемся на страницу, с которой было PTR-обновление
+try {
+  const returnPage = sessionStorage.getItem('ptr_return_page');
+  if (returnPage && returnPage !== 'home' && PAGES.includes(returnPage)) {
+    sessionStorage.removeItem('ptr_return_page');
+    showPage(returnPage);
+  }
+} catch(e) {}
 fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); });
 
 initNotifications();
@@ -4763,6 +4771,8 @@ function ptrRefresh(indicatorEl) {
   if (tok) {
     try { sessionStorage.setItem('gdrive_token_backup', tok); } catch(e) {}
   }
+  // Сохраняем текущую страницу чтобы вернуться на неё после reload
+  try { sessionStorage.setItem('ptr_return_page', _currentPage); } catch(e) {}
   setTimeout(() => location.reload(), 300);
 }
 
