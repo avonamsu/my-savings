@@ -4977,7 +4977,8 @@ function downloadBackupFromBanner(){ downloadBackup(); document.getElementById('
 
 function downloadBackup(){
   haptic("success");
-  const data = { ...state, _appVersion: APP_VERSION, _exportedAt: new Date().toISOString() };
+  const hw = (() => { try { return JSON.parse(localStorage.getItem('home_widgets') || 'null'); } catch(e) { return null; } })();
+  const data = { ...state, _appVersion: APP_VERSION, _exportedAt: new Date().toISOString(), ...(hw ? { _home_widgets: hw } : {}) };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -5018,6 +5019,7 @@ function restoreBackup(event){
 
       // Clean service fields before restoring
       delete restored._appVersion; delete restored._exportedAt;
+      if (restored._home_widgets) { try { localStorage.setItem('home_widgets', JSON.stringify(restored._home_widgets)); } catch(e) {} delete restored._home_widgets; }
       state = restored;
       if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
       if (!state.piggyBanks) state.piggyBanks = [];
@@ -5180,7 +5182,8 @@ async function gdriveFindFile() {
 async function gdriveSave(silent = false) {
   if (!gdriveToken) { if (!silent) alert('Сначала войдите через Google'); return; }
   try {
-    const content = JSON.stringify({ ...state, _appVersion: APP_VERSION, _savedAt: new Date().toISOString() }, null, 2);
+    const hw = (() => { try { return JSON.parse(localStorage.getItem('home_widgets') || 'null'); } catch(e) { return null; } })();
+    const content = JSON.stringify({ ...state, _appVersion: APP_VERSION, _savedAt: new Date().toISOString(), ...(hw ? { _home_widgets: hw } : {}) }, null, 2);
     const blob = new Blob([content], { type: 'application/json' });
     const fileId = await gdriveFindFile();
 
@@ -5277,6 +5280,7 @@ async function gdriveLoad(silent = false) {
     }
 
     delete data._appVersion; delete data._savedAt;
+    if (data._home_widgets) { try { localStorage.setItem('home_widgets', JSON.stringify(data._home_widgets)); } catch(e) {} delete data._home_widgets; }
     state = data;
     if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
     if (!state.piggyBanks) state.piggyBanks = [];
