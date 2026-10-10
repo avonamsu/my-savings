@@ -851,6 +851,13 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     </div>
   </div>
 
+  <div class="section-title">🗄 Резервное хранилище</div>
+  <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:8px;">
+    <div style="font-size:13px;color:var(--text-dim);">Автоматическая копия в браузере этого устройства. Создаётся каждый раз при изменении данных.</div>
+    <div style="font-size:12px;color:var(--warn);background:rgba(255,179,71,0.08);border-radius:8px;padding:8px 10px;">⚠️ Хранится только в этом браузере. Исчезнет если очистить кэш или данные сайта.</div>
+    <button class="btn-cancel" style="width:100%;margin-top:0" onclick="restoreFromIDB()">🔄 Восстановить из резервного хранилища</button>
+  </div>
+
   <div class="section-title">💾 Резервная копия файлом</div>
   <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:8px;">
     <div style="font-size:13px;color:var(--text-dim);">Скачай JSON-файл с данными и сохрани в надёжном месте. Для переноса на другое устройство — загрузи этот файл.</div>
