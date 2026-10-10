@@ -1799,7 +1799,6 @@ function selectGoalColor(c) {
 
 function renderGoals() {
   const totalIncome = state.income.reduce((s,x) => s+calcIncomeAmountRub(x), 0);
-  document.getElementById('goals-income-ref').textContent = fmt(Math.round(totalIncome)) + ' ₽';
 
   const el = document.getElementById('goals-list');
   const totalGoals = state.goals.reduce((s,x) => s+Number(x.amount), 0);
