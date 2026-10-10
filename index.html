@@ -167,12 +167,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 /* DASHBOARD GRID */
 
-  .dash-stat { flex:1; background:var(--surface); border-radius:var(--radius-sm); padding:12px 14px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:10px; transition:background .15s; }
+  .dash-stat { flex:1; background:var(--surface); border-radius:var(--radius-sm); padding:12px 14px; border:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; gap:4px; transition:background .15s; }
   .dash-stat:active { background:var(--surface2); }
-  .dash-stat-icon { font-size:22px; flex-shrink:0; }
-  .dash-stat-val { font-size:16px; font-weight:700; color:var(--accent); }
-  .dash-stat-label { font-size:11px; color:var(--text-dim); margin-top:1px; }
-  .dash-divider { width:1px; background:rgba(255,255,255,0.06); align-self:stretch; flex-shrink:0; }
+  .dash-stat-icon { display:none; }
+  .dash-stat-val { font-size:17px; font-weight:700; color:var(--accent); }
+  .dash-stat-label { font-size:11px; color:var(--text-dim); letter-spacing:.04em; text-transform:uppercase; }
+  .dash-divider { display:none; }
   .quick-actions { display:flex; gap:10px; }
   .quick-btn { flex:1; background:var(--surface); border:1px solid rgba(78,205,196,0.25); border-radius:var(--radius-sm); color:var(--accent); font-size:13px; font-weight:600; padding:11px 8px; cursor:pointer; text-align:center; transition:all .15s; }
   .quick-btn:active { background:var(--accent-dim); }
@@ -437,38 +437,44 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <!-- HOME PAGE -->
 <div class="page active" id="page-home">
   <div class="hero" onclick="showPage('savings')" style="cursor:pointer">
-    <div class="hero-label" id="home-greeting">Привет! 👋</div>
+    <div class="hero-label">Всего накоплено <span style="font-size:11px;opacity:.6;">· все счета →</span></div>
     <div class="hero-amount" id="home-total">0 <span>₽</span></div>
-    <div class="hero-sub" id="home-sub">Нет счетов</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+      <div class="hero-sub" id="home-sub" style="margin-top:0;">Нет счетов</div>
+      <div id="home-rates-inline" style="font-size:11px;color:var(--text-dim);text-align:right;line-height:1.5;">⏳ курсы...</div>
+    </div>
   </div>
 
-  <div style="display:flex;gap:12px;">
+  <!-- urgent alert for expired/expiring deposits -->
+  <div id="home-urgent-alert" style="display:none;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.35);border-radius:var(--radius-sm);padding:11px 14px;cursor:pointer;" onclick="showPage('savings')">
+    <div style="font-size:13px;font-weight:600;color:var(--danger);" id="home-urgent-text"></div>
+    <div style="font-size:11px;color:rgba(255,107,107,0.7);margin-top:2px;">Нажми чтобы перейти к счетам →</div>
+  </div>
+
+  <div style="display:flex;gap:10px;">
     <div class="dash-stat" onclick="showPage('income')" style="cursor:pointer">
-      <span class="dash-stat-icon">📈</span>
-      <div>
-        <div class="dash-stat-val" id="dash-income">0 ₽</div>
-        <div class="dash-stat-label">доход/мес</div>
-      </div>
+      <div class="dash-stat-label">Доход/мес</div>
+      <div class="dash-stat-val" id="dash-income">0 ₽</div>
     </div>
-    <div class="dash-divider"></div>
     <div class="dash-stat" onclick="showPage('goals')" style="cursor:pointer">
-      <span class="dash-stat-icon">🎯</span>
-      <div>
-        <div class="dash-stat-val" id="dash-goals-pct">0%</div>
-        <div class="dash-stat-label">целей покрыто</div>
-      </div>
+      <div class="dash-stat-label">Целей покрыто</div>
+      <div class="dash-stat-val" id="dash-goals-pct">0%</div>
     </div>
   </div>
 
-  <div class="rate-bar" id="rate-bar" onclick="showPage('savings')" style="cursor:pointer">⏳ Загружаю курсы ЦБ РФ...</div>
-
-  <div id="home-deposits-card" style="display:none;flex-direction:column;gap:8px;" onclick="showPage('savings')">
-    <div class="section-title">Ближайшие вклады ›</div>
+  <div id="home-deposits-card" style="display:none;flex-direction:column;gap:8px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:-4px;">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);text-transform:uppercase;">Ближайшие вклады</span>
+      <span onclick="showPage('savings')" style="font-size:12px;color:var(--accent);cursor:pointer;">все →</span>
+    </div>
     <div class="card" id="home-deposits-list"></div>
   </div>
 
-  <div class="section-title" onclick="showPage('goals')" style="cursor:pointer">Прогресс целей ›</div>
-  <div id="home-goals-preview" onclick="showPage('goals')" style="cursor:pointer">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:-4px;">
+    <span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);text-transform:uppercase;">Прогресс целей</span>
+    <span onclick="showPage('goals')" style="font-size:12px;color:var(--accent);cursor:pointer;">все →</span>
+  </div>
+  <div id="home-goals-preview">
     <div class="empty"><div class="empty-icon">🎯</div><p>Добавь цели чтобы видеть прогресс</p></div>
   </div>
 
@@ -1248,11 +1254,14 @@ async function fetchRates() {
 
   function updateRateBar(source) {
     const pairs = ['USD','EUR','CNY'].map(c =>
-      `${CURRENCY_SYMBOLS[c]}&nbsp;<span>${rates[c]?rates[c].toLocaleString('ru-RU',{maximumFractionDigits:2}):'—'}</span>`
+      `${CURRENCY_SYMBOLS[c]} ${rates[c]?rates[c].toLocaleString('ru-RU',{maximumFractionDigits:2}):'—'}`
     ).join(' · ');
     const t = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('rate-bar').innerHTML =
-      `Курс ${source}: ${pairs} <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">обновлено ${t}</span>`;
+    const el = document.getElementById('home-rates-inline');
+    if (el) el.innerHTML = `${pairs}<br><span style="font-size:10px;opacity:.5;">ЦБ · ${t}</span>`;
+    // keep rate-bar hidden (element may not exist)
+    const rb = document.getElementById('rate-bar');
+    if (rb) rb.style.display = 'none';
   }
 
   // Source 1: ЦБ РФ
@@ -1300,7 +1309,8 @@ async function fetchRates() {
     }
   } catch(e) {}
 
-  document.getElementById('rate-bar').innerHTML = '<span style="color:var(--warn)">⚠️ Не удалось загрузить курс валют</span>';
+  const ratesInline = document.getElementById('home-rates-inline');
+  if (ratesInline) ratesInline.innerHTML = '<span style="color:var(--warn);font-size:10px;">⚠️ курсы недоступны</span>';
 }
 
 // ── STORAGE ───────────────────────────────────────────────
@@ -1457,15 +1467,29 @@ function renderHome() {
   const totalGoalsAmt = state.goals.reduce((s,x)=>s+Number(x.amount),0);
   const goalsPct = totalGoalsAmt ? Math.min(100,Math.round(totalInc/totalGoalsAmt*100)) : 0;
 
-  // Greeting
-  const h = new Date().getHours();
-  const greet = h<6?'Доброй ночи':'h<12'?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
-  document.getElementById('home-greeting').textContent = (h<6?'Доброй ночи 🌙':h<12?'Доброе утро ☀️':h<18?'Добрый день 👋':'Добрый вечер 🌆');
   document.getElementById('home-total').innerHTML = `${fmt(totalRubVal)} <span>₽</span>`;
   const n = state.savings.length;
   document.getElementById('home-sub').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов — добавь первый';
   document.getElementById('dash-income').textContent = fmt(totalInc)+' ₽';
   document.getElementById('dash-goals-pct').textContent = goalsPct+'%';
+
+  // Urgent alert for expired/soon deposits
+  const nowU = new Date(); nowU.setHours(0,0,0,0);
+  const urgentDeps = state.savings.filter(s=>s.isDeposit&&s.dateEnd).map(s=>{
+    const end=new Date(s.dateEnd); end.setHours(0,0,0,0);
+    return {...s, daysLeft:Math.round((end-nowU)/86400000)};
+  }).filter(s=>s.daysLeft<=3);
+  const alertEl = document.getElementById('home-urgent-alert');
+  const alertText = document.getElementById('home-urgent-text');
+  if (urgentDeps.length && alertEl && alertText) {
+    const expired = urgentDeps.filter(s=>s.daysLeft<=0);
+    const soon = urgentDeps.filter(s=>s.daysLeft>0);
+    let msg = [];
+    if (expired.length) msg.push(`⚠️ Истёк${expired.length>1?'и':''}: ${expired.map(s=>s.name).join(', ')}`);
+    if (soon.length) msg.push(`🔔 Скоро: ${soon.map(s=>s.name+' (через '+s.daysLeft+' дн.)').join(', ')}`);
+    alertText.textContent = msg.join(' · ');
+    alertEl.style.display = 'block';
+  } else if (alertEl) alertEl.style.display = 'none';
 
   // Sidebar
   document.getElementById('sb-total').textContent = fmt(totalRubVal)+' ₽ накоплено';
@@ -1506,18 +1530,27 @@ function renderHome() {
   } else {
     let rem=totalInc;
     const items=state.goals.map(g=>{const cost=Number(g.amount),covered=rem>=cost;if(covered)rem-=cost;return{...g,covered};});
-    // Show last 2 covered + first 1 uncovered
     const covered = items.filter(g=>g.covered);
     const uncovered = items.filter(g=>!g.covered);
     const show = [...covered.slice(-2), ...uncovered.slice(0,1)];
     const remaining = items.length - show.length;
-    goalsEl.innerHTML=`<div class="card">${show.map(g=>`
-      <div class="goal-item ${g.covered?'covered':''}">
-        <div class="goal-check">${g.covered?'✓':''}</div>
-        <div class="goal-info"><div class="goal-name">${g.name}</div></div>
-        <div class="goal-amount">${fmt(g.amount)} ₽</div>
-      </div>`).join('')}
-      ${remaining>0?`<div style="padding:10px;text-align:center;font-size:12px;color:var(--text-dim);">+${remaining} ещё → <span style="color:var(--accent);cursor:pointer" onclick="showPage('goals')">посмотреть все</span></div>`:''}
+    goalsEl.innerHTML=`<div class="card">${show.map(g=>{
+      const cost=Number(g.amount);
+      const pct = g.covered ? 100 : Math.min(99, Math.round(totalInc/cost*100));
+      return `<div class="goal-item ${g.covered?'covered':''}" style="flex-direction:column;align-items:stretch;gap:5px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="goal-check">${g.covered?'✓':''}</div>
+            <div class="goal-name">${g.name}</div>
+          </div>
+          <div class="goal-amount">${fmt(g.amount)} ₽</div>
+        </div>
+        <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${g.covered?'var(--accent)':'rgba(78,205,196,0.4)'};border-radius:2px;transition:width .4s;"></div>
+        </div>
+      </div>`;
+    }).join('')}
+      ${remaining>0?`<div style="padding:8px 0 2px;text-align:center;font-size:12px;color:var(--text-dim);">+${remaining} ещё · <span style="color:var(--accent);cursor:pointer" onclick="showPage('goals')">посмотреть все</span></div>`:''}
     </div>`;
   }
 
