@@ -360,6 +360,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* CALC PREVIEW */
 .calc-preview { background:var(--accent-dim); border:1px solid rgba(78,205,196,0.25); border-radius:var(--radius-sm); padding:11px 13px; font-size:13px; color:var(--text-dim); margin-bottom:14px; line-height:1.7; }
 .calc-preview strong { color:var(--accent); font-size:15px; }
+.linked-saving-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
+.linked-chip { display:flex; flex-direction:column; align-items:flex-start; gap:2px; background:var(--card); border:1.5px solid var(--border); border-radius:10px; padding:8px 12px; cursor:pointer; transition:border-color .15s, background .15s; text-align:left; }
+.linked-chip .lc-name { font-size:13px; color:var(--text); font-weight:500; white-space:nowrap; }
+.linked-chip .lc-sub { font-size:10px; color:var(--text-dim); white-space:nowrap; }
+.linked-chip.active { border-color:var(--accent); background:var(--accent-dim); }
+.linked-chip.active .lc-name { color:var(--accent); }
 
 /* MODAL */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:300; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
@@ -811,7 +817,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <input type="hidden" id="pg-color" value="#4ECDC4">
       </div>
       <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
-        <select id="pg-linked-saving"><option value="">— Без привязки —</option></select>
+        <div id="pg-linked-saving" class="linked-saving-chips" data-value=""></div>
       </div>
       <button class="btn-primary" onclick="createPiggyBank()">Создать копилку</button>
     </div>
@@ -873,7 +879,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     </div>
     <div class="calc-preview" id="ch-preview-p" style="display:none;"></div>
     <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
-      <select id="ch-linked-saving-p"><option value="">— Без привязки —</option></select>
+      <div id="ch-linked-saving-p" class="linked-saving-chips" data-value=""></div>
     </div>
     <button class="btn-primary" onclick="createChallengeFromPage()">Создать челлендж</button>
     </div><!-- end pg-challenge-fields -->
@@ -940,7 +946,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     </div>
     <div class="calc-preview" id="ech-preview" style="display:none;"></div>
     <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
-      <select id="ech-linked-saving"><option value="">— Без привязки —</option></select>
+      <div id="ech-linked-saving" class="linked-saving-chips" data-value=""></div>
     </div>
     <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">⚠️ Уже отмеченные ячейки сохранятся. Если изменишь сумму — незакрытые ячейки пересчитаются.</div>
     <div class="modal-actions">
@@ -4173,7 +4179,7 @@ function createPiggyBank() {
   if (!name || !goal || goal<=0) return;
   if (!state.piggyBanks) state.piggyBanks = [];
   if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
-  const linkedSavingId = document.getElementById('pg-linked-saving')?.value || '';
+  const linkedSavingId = getLinkedSavingValue('pg-linked-saving');
   state.piggyBanks.push({
     id: uid(), name, goal, deadline, dateStart, frequency, planMode, perPeriod, reminder, emoji, color,
     linkedSavingId: linkedSavingId || null,
@@ -4252,7 +4258,7 @@ function savePiggyEdit() {
   pg.reminder = editHasPlan ? !!(document.getElementById('pg-edit-reminder')?.checked) : false;
   pg.emoji = document.getElementById('pg-edit-emoji')?.value||pg.emoji||'🐷';
   pg.color = document.getElementById('pg-edit-color')?.value||pg.color||'#4ECDC4';
-  pg.linkedSavingId = document.getElementById('pg-edit-linked-saving')?.value || null;
+  pg.linkedSavingId = getLinkedSavingValue('pg-edit-linked-saving') || null;
   save();
   closePiggyEdit();
   renderChallengesPage();
@@ -4406,17 +4412,40 @@ function switchChTab(tab) {
   renderChallengesPage();
 }
 
-function fillLinkedSavingSelect(selectId, currentVal) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— Без привязки —</option>';
+function fillLinkedSavingSelect(containerId, currentVal) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.dataset.value = currentVal || '';
+
+  const chips = [];
+  // "No link" chip
+  chips.push({ id: '', label: '✕ Без привязки', sub: '' });
   (state.savings || []).forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.id;
-    opt.textContent = (s.emoji ? s.emoji + ' ' : '') + s.name;
-    if (s.id === currentVal) opt.selected = true;
-    sel.appendChild(opt);
+    const icon = s.emoji || s.icon || '💰';
+    const sub = s.isSavingsAccount ? 'накоп. счёт' : s.isDeposit ? 'вклад' : '';
+    chips.push({ id: s.id, label: icon + ' ' + s.name, sub });
   });
+
+  container.innerHTML = chips.map(c => {
+    const active = c.id === (currentVal || '') ? 'active' : '';
+    return `<button type="button" class="linked-chip ${active}" onclick="selectLinkedChip('${containerId}','${c.id}',this)">
+      <span class="lc-name">${c.label}</span>${c.sub ? `<span class="lc-sub">${c.sub}</span>` : ''}
+    </button>`;
+  }).join('');
+}
+
+function selectLinkedChip(containerId, val, el) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.dataset.value = val;
+  container.querySelectorAll('.linked-chip').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  haptic('light');
+}
+
+function getLinkedSavingValue(containerId) {
+  const container = document.getElementById(containerId);
+  return container ? (container.dataset.value || '') : '';
 }
 
 function showNewChallengeFormPage() {
@@ -4490,7 +4519,7 @@ function createChallengeFromPage() {
   const cells = generateCells(goal, days, mode);
 
   if (!state.challenges) state.challenges = [];
-  const chLinkedSavingId = document.getElementById('ch-linked-saving-p')?.value || '';
+  const chLinkedSavingId = getLinkedSavingValue('ch-linked-saving-p');
   state.challenges.push({
     id:uid(), name, goal, days, mode, emoji, color,
     linkedSavingId: chLinkedSavingId || null,
@@ -4899,7 +4928,7 @@ function saveEditChallenge() {
   ch.mode = mode;
   ch.emoji = document.getElementById('ech-emoji')?.value||ch.emoji||'🎯';
   ch.color = document.getElementById('ech-color')?.value||ch.color||'#4ECDC4';
-  ch.linkedSavingId = document.getElementById('ech-linked-saving')?.value || null;
+  ch.linkedSavingId = getLinkedSavingValue('ech-linked-saving') || null;
 
   if (newGoal > 0) {
     ch.goal = newGoal;
@@ -5928,7 +5957,7 @@ checkPiggyReminders();
       <input type="hidden" id="pg-edit-color" value="#4ECDC4">
     </div>
     <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
-      <select id="pg-edit-linked-saving"><option value="">— Без привязки —</option></select>
+      <div id="pg-edit-linked-saving" class="linked-saving-chips" data-value=""></div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closePiggyEdit()">Отмена</button>
