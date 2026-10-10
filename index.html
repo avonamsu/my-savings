@@ -2117,15 +2117,9 @@ function dismissUrgentAlert() {
 }
 
 function homeToggleChCell(chId, cellIdx) {
-  const ch = (state.challenges||[]).find(c=>c.id===chId);
-  if (!ch||!ch.cells||!ch.cells[cellIdx]) return;
-  ch.cells[cellIdx].done = !ch.cells[cellIdx].done;
-  save();
+  // Делегируем в toggleCell — там вся логика включая привязанный счёт
+  toggleCell(chId, cellIdx);
   renderHomeWidgets();
-  // Синхронизируем вкладку копилок если она открыта
-  if (document.getElementById('page-challenge')?.classList.contains('active')) {
-    renderChallengesPage();
-  }
 }
 
 // ── Goals widget ──────────────────────────────────────────
