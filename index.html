@@ -4197,6 +4197,7 @@ async function gdriveSave(silent = false) {
       throw new Error('HTTP ' + resp.status);
     }
   } catch(e) {
+    console.error('[GDrive] gdriveSave error:', e);
     if (!silent) alert('Ошибка сохранения: ' + e.message);
   }
 }
@@ -4290,7 +4291,7 @@ function gdriveScheduleAutoSave() {
   clearTimeout(_gdriveAutoSaveTimer);
   _gdriveAutoSaveTimer = setTimeout(() => {
     gdriveSave(true); // silent=true, без уведомления
-  }, 30000); // 30 секунд после последнего изменения
+  }, 5000); // 5 секунд после последнего изменения
 }
 
 async function gdriveCheckNewerVersion() {
