@@ -3561,13 +3561,12 @@ function renderPiggyCard(pg) {
   const done = pct >= 100;
   const collapsed = window._chCollapsed[pg.id] !== false;
   return `<div class="pg-card" data-id="${pg.id}" style="border-left:3px solid ${color};">
-    <div style="padding:0 0 6px;"><span class="pg-type-badge piggy">🐷 Копилка</span></div>
     <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="togglePiggy('${pg.id}')">
       <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
         <span style="font-size:22px;">${emoji}</span>
         <div style="min-width:0;">
           <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${pg.name}</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">${fmt(saved)} ₽ из ${fmt(pg.goal)} ₽ · ${pct}%</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:1px;"><span style="color:rgba(78,205,196,0.6);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;">🐷 КОПИЛКА</span>${fmt(saved)} ₽ из ${fmt(pg.goal)} ₽ · ${pct}%</div>
         </div>
       </div>
       <span style="color:${color};font-size:18px;padding-left:8px;flex-shrink:0;">${collapsed?'▸':'▾'}</span>
@@ -3885,7 +3884,6 @@ function renderChCard(ch) {
                 `<span style="color:var(--warn);font-size:11px;">⚠ Нужно ускориться</span>`;
 
   return `<div class="ch-card" data-id="${ch.id}" data-ch="${ch.id}" style="border-left:3px solid ${color};padding:16px;">
-      <div style="padding:0 0 6px;"><span class="pg-type-badge challenge">🎯 Челлендж</span></div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="drag-handle" style="color:var(--text-dim);font-size:16px;cursor:grab;padding:0 4px 0 0;flex-shrink:0;">⠿</span>
         <div onclick="toggleChallenge('${ch.id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;flex:1;">
@@ -3893,7 +3891,7 @@ function renderChCard(ch) {
           <span style="font-size:22px;">${emoji}</span>
           <div style="min-width:0;">
             <div style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.name}</div>
-            <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽ · ${pct}%${streak>1?' · 🔥'+streak+' дн.':''}</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:1px;"><span style="color:rgba(255,107,157,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;">🎯 ЧЕЛЛЕНДЖ</span>${fmt(totalDone)} ₽ из ${fmt(totalGoal)} ₽ · ${pct}%${streak>1?' · 🔥'+streak+' дн.':''}</div>
           </div>
         </div>
         <span style="color:${color};font-size:18px;padding-left:8px;flex-shrink:0;">${collapsed?'▸':'▾'}</span>
