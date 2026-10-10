@@ -4279,18 +4279,19 @@ async function gdriveCheckNewerVersion() {
 
 function gdriveSilentRefresh() {
   // Тихое обновление токена без показа окна авторизации
+  if (typeof google === 'undefined' || !google.accounts) {
+    setTimeout(gdriveSilentRefresh, 2000);
+    return;
+  }
   try {
     const client = google.accounts.oauth2.initTokenClient({
       client_id: GDRIVE_CLIENT_ID,
       scope: GDRIVE_SCOPE,
-      prompt: '',
+      prompt: 'none',
       callback: (resp) => {
         if (resp.error || !resp.access_token) {
-          // Не удалось обновить — выходим из аккаунта
-          gdriveToken = null;
-          localStorage.removeItem('gdrive_token');
-          localStorage.removeItem('gdrive_token_ts');
-          gdriveUpdateUI(false);
+          // Тихое обновление не удалось — просто оставляем старый токен,
+          // пользователь сам войдёт когда понадобится
           return;
         }
         gdriveToken = resp.access_token;
@@ -4300,7 +4301,7 @@ function gdriveSilentRefresh() {
         setTimeout(gdriveCheckNewerVersion, 1000);
       }
     });
-    client.requestAccessToken({ prompt: '' });
+    client.requestAccessToken({ prompt: 'none' });
   } catch(e) {
     // GIS ещё не загружен — попробуем позже
     setTimeout(gdriveSilentRefresh, 2000);
