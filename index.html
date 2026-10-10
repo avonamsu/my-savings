@@ -4317,13 +4317,9 @@ function gdriveInit() {
     gdriveToken = savedToken;
     gdriveFileId = localStorage.getItem('gdrive_file_id');
     gdriveUpdateUI(true);
-
-    if (ageMin > 50) {
-      // Токен скоро протухнет или уже протух — тихо обновляем
-      setTimeout(gdriveSilentRefresh, 1500);
-    } else {
-      setTimeout(gdriveCheckNewerVersion, 2000);
-    }
+    // Просто проверяем версию в Drive — если токен протух, запрос тихо упадёт
+    // и пользователь останется залогинен визуально до следующего реального действия
+    setTimeout(gdriveCheckNewerVersion, 2000);
   } else {
     gdriveUpdateUI(false);
   }
