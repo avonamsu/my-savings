@@ -546,13 +546,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="home-next-deposit-content"></div>
   </div>
 
-  <!-- Widget: Копилка / Челлендж -->
-  <div id="home-widget-piggy" style="display:none;">
-    <div class="widget-section-header">
-      <span class="widget-section-label" id="home-piggy-widget-label">Копилка</span>
-    </div>
-    <div id="home-piggy-widget-content"></div>
-  </div>
+  <!-- Widget: Копилка / Челлендж (динамически создаётся в renderHomeWidgets) -->
+  <div id="home-widgets-piggy-container"></div>
 
   <!-- Widget: Цели -->
   <div id="home-widget-goals" style="display:none;">
@@ -1676,10 +1671,16 @@ function getWidgetSettings() {
     if (raw) {
       const s = JSON.parse(raw);
       if (!s.order) s.order = DEFAULT_ORDER.slice();
+      // Миграция: piggyId (строка) → piggyIds (массив)
+      if (s.piggyId !== undefined && !s.piggyIds) {
+        s.piggyIds = s.piggyId ? [s.piggyId] : [];
+        delete s.piggyId;
+      }
+      if (!s.piggyIds) s.piggyIds = [];
       return s;
     }
   } catch(e) {}
-  return { chart:false, deposit:false, piggy:false, piggyId:null, goals:false, order:DEFAULT_ORDER.slice() };
+  return { chart:false, deposit:false, piggy:false, piggyIds:[], goals:false, order:DEFAULT_ORDER.slice() };
 }
 
 function saveWidgetSettings() {
@@ -1689,7 +1690,14 @@ function saveWidgetSettings() {
     const el = document.getElementById('wt-'+key);
     if (el) s[key] = el.checked;
   });
-  s.piggyId = document.getElementById('piggy-picker-select')?.value || null;
+  // Читаем выбранные копилки/челленджи из чекбоксов
+  const piggyChecks = document.querySelectorAll('.piggy-picker-check:checked');
+  if (piggyChecks.length > 0) {
+    s.piggyIds = Array.from(piggyChecks).map(cb => cb.value);
+  } else if (document.querySelector('.piggy-picker-check') !== null) {
+    // Чекбоксы есть, но ничего не выбрано
+    s.piggyIds = [];
+  }
   localStorage.setItem('home_widgets', JSON.stringify(s));
   renderHomeWidgets();
 }
@@ -1719,7 +1727,7 @@ function renderSettingsList(s) {
     const checked = !!s[key];
     const isPiggy = key === 'piggy';
     const showPicker = isPiggy && checked;
-    // Build piggy picker options inline for piggy widget
+    // Build piggy picker (checkboxes) inline for piggy widget
     let pickerHtml = '';
     if (isPiggy) {
       const piggies = (state.piggyBanks||[]).map(p=>({id:p.id,name:p.name,type:'piggy',emoji:p.emoji||'🐷',archived:(p.saved||0)>=p.goal}));
@@ -1729,14 +1737,23 @@ function renderSettingsList(s) {
         return !valid.length || valid.filter(x=>x.done).reduce((a,x)=>a+x.amt,0) < valid.reduce((a,x)=>a+x.amt,0);
       }).map(c=>({id:c.id,name:c.name,type:'challenge',emoji:c.emoji||'🎯',archived:false}));
       const active = [...piggies.filter(p=>!p.archived), ...challenges];
-      const opts = active.map(item=>`<option value="${item.type}:${item.id}" ${s.piggyId===item.type+':'+item.id?'selected':''}>${item.emoji} ${item.name}</option>`).join('');
-      pickerHtml = `<div class="piggy-picker-wrap${showPicker?' visible':''}" id="piggy-picker-wrap" style="margin-top:8px;">
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Выбери копилку или челлендж:</div>
-        <select class="piggy-picker-select" id="piggy-picker-select" onchange="saveWidgetSettings()">
-          <option value="">— Выбрать —</option>
-          ${opts}
-        </select>
-      </div>`;
+      const piggyIds = s.piggyIds || [];
+      if (active.length === 0) {
+        pickerHtml = showPicker ? `<div class="piggy-picker-wrap visible" style="margin-top:8px;"><div style="font-size:11px;color:var(--text-dim);">Нет доступных копилок или челленджей</div></div>` : '';
+      } else {
+        const rows = active.map(item => {
+          const val = `${item.type}:${item.id}`;
+          const checked = piggyIds.includes(val) ? 'checked' : '';
+          return `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;">
+            <input type="checkbox" class="piggy-picker-check" value="${val}" ${checked} onchange="saveWidgetSettings()">
+            <span style="font-size:13px;">${item.emoji} ${item.name}</span>
+          </label>`;
+        }).join('');
+        pickerHtml = `<div class="piggy-picker-wrap${showPicker?' visible':''}" style="margin-top:8px;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Выбери копилки и челленджи:</div>
+          ${rows}
+        </div>`;
+      }
     }
     return `<div class="widget-toggle-item" style="flex-direction:column;align-items:stretch;">
       <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
@@ -1988,15 +2005,10 @@ function renderNextDepositWidget() {
 }
 
 // ── Piggy/Challenge widget ─────────────────────────────────
-function renderPiggyWidget(piggyId) {
-  const el = document.getElementById('home-piggy-widget-content');
-  const label = document.getElementById('home-piggy-widget-label');
-  if (!el) return;
-
+function renderPiggyWidget(piggyId, container) {
+  if (!container) return;
   if (!piggyId) {
-    el.innerHTML = `<div class="home-piggy-widget" style="padding:14px;color:var(--text-dim);font-size:13px;">
-      <button onclick="openWidgetSettings()" style="background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;padding:9px 18px;cursor:pointer;width:100%;">Выбрать копилку</button>
-    </div>`;
+    container.innerHTML = '';
     return;
   }
 
@@ -2004,63 +2016,45 @@ function renderPiggyWidget(piggyId) {
 
   if (type === 'piggy') {
     const pg = (state.piggyBanks||[]).find(p=>p.id===id);
-    if (!pg) {
-      el.innerHTML = `<div class="home-piggy-widget" style="padding:14px;text-align:center;">
-        <div style="font-size:28px;margin-bottom:8px;">🎉</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Копилка завершена!</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Выбери другую для отслеживания</div>
-        <button onclick="openWidgetSettings()" style="background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;padding:8px 18px;cursor:pointer;">Выбрать другую</button>
-      </div>`;
-      if (label) label.textContent = 'Копилка';
+    if (!pg || (pg.saved||0) >= pg.goal) {
+      container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">🐷 ${pg ? pg.name : 'Копилка'}</span></div>
+        <div class="home-piggy-widget" style="padding:14px;text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">🎉</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Копилка завершена!</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">${pg ? fmt(pg.saved)+' ₽ накоплено' : 'Выбери другую'}</div>
+        </div>`;
       return;
     }
-    // Check if archived
-    const isArchived = (pg.saved||0) >= pg.goal;
-    if (isArchived) {
-      el.innerHTML = `<div class="home-piggy-widget" style="padding:14px;text-align:center;">
-        <div style="font-size:28px;margin-bottom:8px;">🎉</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Копилка завершена!</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">${pg.emoji||'🐷'} ${pg.name}</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">${fmt(pg.saved)} ₽ накоплено</div>
-        <button onclick="openWidgetSettings()" style="background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;padding:8px 18px;cursor:pointer;">Выбрать другую</button>
-      </div>`;
-      if (label) label.textContent = 'Копилка';
-      return;
-    }
-    if (label) label.textContent = `${pg.emoji||'🐷'} ${pg.name}`;
     const saved = pg.saved||0;
     const pct = Math.min(100,Math.round(saved/pg.goal*100));
     const color = pg.color||'#4ECDC4';
-    el.innerHTML = `<div class="home-piggy-widget">
-      <div class="home-piggy-header">
-        <div>
-          <div style="font-size:15px;font-weight:700;">${fmt(saved)} <span style="font-size:12px;color:var(--text-dim);">из ${fmt(pg.goal)} ₽</span></div>
-          <div style="font-size:12px;color:${color};margin-top:2px;">${pct}% накоплено</div>
+    container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">${pg.emoji||'🐷'} ${pg.name}</span></div>
+      <div class="home-piggy-widget">
+        <div class="home-piggy-header">
+          <div>
+            <div style="font-size:15px;font-weight:700;">${fmt(saved)} <span style="font-size:12px;color:var(--text-dim);">из ${fmt(pg.goal)} ₽</span></div>
+            <div style="font-size:12px;color:${color};margin-top:2px;">${pct}% накоплено</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="openPiggyDeposit('${pg.id}','add')" style="background:${color};border:none;border-radius:8px;color:var(--bg);font-size:20px;font-weight:700;width:44px;height:44px;cursor:pointer;">＋</button>
+            <button onclick="openPiggyDeposit('${pg.id}','sub')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-dim);font-size:20px;width:44px;height:44px;cursor:pointer;">－</button>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button onclick="openPiggyDeposit('${pg.id}','add')" style="background:${color};border:none;border-radius:8px;color:var(--bg);font-size:20px;font-weight:700;width:44px;height:44px;cursor:pointer;">＋</button>
-          <button onclick="openPiggyDeposit('${pg.id}','sub')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-dim);font-size:20px;width:44px;height:44px;cursor:pointer;">－</button>
+        <div style="padding:0 14px 14px;">
+          <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;transition:width .3s;"></div>
+          </div>
         </div>
-      </div>
-      <div style="padding:0 14px 14px;">
-        <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
-          <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;transition:width .3s;"></div>
-        </div>
-      </div>
-    </div>`;
+      </div>`;
   } else if (type === 'challenge') {
     const ch = (state.challenges||[]).find(c=>c.id===id);
     if (!ch) {
-      el.innerHTML = `<div class="home-piggy-widget" style="padding:14px;text-align:center;">
-        <div style="font-size:28px;margin-bottom:8px;">🎉</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Копилка завершена!</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Выбери другую для отслеживания</div>
-        <button onclick="openWidgetSettings()" style="background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;padding:8px 18px;cursor:pointer;">Выбрать другую</button>
-      </div>`;
-      if (label) label.textContent = 'Челлендж';
+      container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">🎯 Челлендж</span></div>
+        <div class="home-piggy-widget" style="padding:14px;text-align:center;">
+          <div style="font-size:12px;color:var(--text-dim);">Челлендж не найден</div>
+        </div>`;
       return;
     }
-    if (label) label.textContent = `${ch.emoji||'🎯'} ${ch.name}`;
     const cells = ch.cells||[];
     const validCells = cells.filter(c=>c.amt>0);
     const totalDone = validCells.filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
@@ -2068,12 +2062,12 @@ function renderPiggyWidget(piggyId) {
     const isCompleted = totalGoal > 0 && totalDone >= totalGoal;
 
     if (isCompleted) {
-      el.innerHTML = `<div class="home-piggy-widget" style="padding:14px;text-align:center;">
-        <div style="font-size:28px;margin-bottom:8px;">🎉</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Копилка завершена!</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">${fmt(totalDone)} ₽ собрано</div>
-        <button onclick="openWidgetSettings()" style="background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;padding:8px 18px;cursor:pointer;">Выбрать другую</button>
-      </div>`;
+      container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">${ch.emoji||'🎯'} ${ch.name}</span></div>
+        <div class="home-piggy-widget" style="padding:14px;text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">🎉</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Челлендж завершён!</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">${fmt(totalDone)} ₽ собрано</div>
+        </div>`;
       return;
     }
 
@@ -2089,19 +2083,20 @@ function renderPiggyWidget(piggyId) {
     }).join('');
     const remaining = undoneCells.length - showCells.length;
 
-    el.innerHTML = `<div class="home-piggy-widget">
-      <div class="home-piggy-header">
-        <div>
-          <div style="font-size:15px;font-weight:700;">${fmt(totalDone)} <span style="font-size:12px;color:var(--text-dim);">из ${fmt(totalGoal)} ₽</span></div>
-          <div style="font-size:12px;color:${color};margin-top:2px;">${doneCnt} из ${validCells.length} ячеек · ${pct}%</div>
+    container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">${ch.emoji||'🎯'} ${ch.name}</span></div>
+      <div class="home-piggy-widget">
+        <div class="home-piggy-header">
+          <div>
+            <div style="font-size:15px;font-weight:700;">${fmt(totalDone)} <span style="font-size:12px;color:var(--text-dim);">из ${fmt(totalGoal)} ₽</span></div>
+            <div style="font-size:12px;color:${color};margin-top:2px;">${doneCnt} из ${validCells.length} ячеек · ${pct}%</div>
+          </div>
         </div>
-      </div>
-      <div style="padding:0 14px 6px;">
-        <div style="height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-bottom:10px;">
-          <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;"></div>
+        <div style="padding:0 14px 6px;">
+          <div style="height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-bottom:10px;">
+            <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;"></div>
+          </div>
         </div>
-      </div>
-      <div class="home-piggy-cells">${cellsHtml}</div>
+        <div class="home-piggy-cells">${cellsHtml}</div>
       ${remaining>0?`<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:0 14px 12px;">+${remaining} ещё — <span style="color:var(--accent);cursor:pointer" onclick="navigateToItem('challenge','${ch.id}')">открыть →</span></div>`:''}
     </div>`;
   }
@@ -2158,14 +2153,45 @@ function renderGoalsWidget() {
 function renderHomeWidgets() {
   const s = getWidgetSettings();
   const order = s.order || DEFAULT_ORDER.slice();
-  const anyOn = order.some(k => s[k]);
+  const piggyIds = s.piggyIds || [];
+  const piggyOn = !!s.piggy && piggyIds.length > 0;
+  const anyOn = order.some(k => k === 'piggy' ? piggyOn : !!s[k]);
 
-  // reorder DOM elements according to saved order
+  // Синхронизируем DOM-блоки для копилок/челленджей
+  const piggyContainer = document.getElementById('home-widgets-piggy-container');
+  if (piggyContainer) {
+    // Удаляем блоки которых больше нет в piggyIds
+    Array.from(piggyContainer.children).forEach(el => {
+      const pid = el.dataset.piggyId;
+      if (!piggyOn || !piggyIds.includes(pid)) el.remove();
+    });
+    // Создаём новые блоки в нужном порядке
+    if (piggyOn) {
+      piggyIds.forEach(pid => {
+        if (!piggyContainer.querySelector(`[data-piggy-id="${pid}"]`)) {
+          const div = document.createElement('div');
+          div.dataset.piggyId = pid;
+          piggyContainer.appendChild(div);
+        }
+      });
+      // Сортируем DOM по порядку piggyIds
+      piggyIds.forEach(pid => {
+        const el = piggyContainer.querySelector(`[data-piggy-id="${pid}"]`);
+        if (el) piggyContainer.appendChild(el);
+      });
+    }
+  }
+
+  // Reorder main widget container according to saved order
   const widgetContainer = document.getElementById('home-widget-chart')?.parentElement;
   if (widgetContainer) {
     order.forEach(key => {
-      const el = document.getElementById('home-widget-'+key);
-      if (el) widgetContainer.appendChild(el); // moves to end in order
+      if (key === 'piggy') {
+        if (piggyContainer) widgetContainer.appendChild(piggyContainer);
+      } else {
+        const el = document.getElementById('home-widget-'+key);
+        if (el) widgetContainer.appendChild(el);
+      }
     });
     // move configure buttons to end
     const hint = document.getElementById('home-configure-hint');
@@ -2174,14 +2200,26 @@ function renderHomeWidgets() {
     if (bottom) widgetContainer.appendChild(bottom);
   }
 
-  // show/hide and render each
-  const renderers = { chart: renderHomeChartWidget, deposit: renderNextDepositWidget, piggy: ()=>renderPiggyWidget(s.piggyId), goals: renderGoalsWidget };
+  // show/hide and render each static widget
+  const renderers = { chart: renderHomeChartWidget, deposit: renderNextDepositWidget, goals: renderGoalsWidget };
   order.forEach(key => {
+    if (key === 'piggy') return; // обрабатываем отдельно
     const el = document.getElementById('home-widget-'+key);
     const on = !!s[key];
     if (el) el.style.display = on ? '' : 'none';
     if (on && renderers[key]) renderers[key]();
   });
+
+  // Рендерим каждый piggy-виджет
+  if (piggyContainer) {
+    piggyContainer.style.display = piggyOn ? '' : 'none';
+    if (piggyOn) {
+      piggyIds.forEach(pid => {
+        const el = piggyContainer.querySelector(`[data-piggy-id="${pid}"]`);
+        if (el) renderPiggyWidget(pid, el);
+      });
+    }
+  }
 
   // hint / bottom configure button
   const hint = document.getElementById('home-configure-hint');
