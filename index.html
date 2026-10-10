@@ -3538,14 +3538,21 @@ function toggleCell(challengeId, cellIdx) {
   else if (!wasDone) { haptic('light'); }
   save();
   window._chCollapsed[challengeId] = false;
-  // сохраняем позицию скролла грида этого челленджа
-  const gridWrap = document.querySelector(`[data-ch="${challengeId}"]`);
-  const savedScroll = gridWrap ? gridWrap.parentElement.scrollLeft : 0;
+  // сохраняем scrollLeft всех видимых гридов перед перерисовкой
+  const scrollPositions = {};
+  document.querySelectorAll('[data-ch]').forEach(grid => {
+    const scroller = grid.parentElement;
+    if (scroller) scrollPositions[grid.dataset.ch] = scroller.scrollLeft;
+  });
   renderChallengesPage();
-  // восстанавливаем позицию скролла после перерисовки
+  // восстанавливаем после перерисовки
   requestAnimationFrame(() => {
-    const newGridWrap = document.querySelector(`[data-ch="${challengeId}"]`);
-    if (newGridWrap) newGridWrap.parentElement.scrollLeft = savedScroll;
+    document.querySelectorAll('[data-ch]').forEach(grid => {
+      const scroller = grid.parentElement;
+      if (scroller && scrollPositions[grid.dataset.ch]) {
+        scroller.scrollLeft = scrollPositions[grid.dataset.ch];
+      }
+    });
   });
 }
 
