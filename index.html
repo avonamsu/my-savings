@@ -2502,6 +2502,10 @@ function closeModalOutside(e){if(e.target===document.getElementById('modal'))clo
 
 function saveItem(){
   const id=editingId||uid();
+  // Remember positions before removing, so edits don't move items to end
+  const _goalIdx = editingId ? state.goals.findIndex(x=>x.id===editingId) : -1;
+  const _savingIdx = editingId ? state.savings.findIndex(x=>x.id===editingId) : -1;
+  const _incomeIdx = editingId ? state.income.findIndex(x=>x.id===editingId) : -1;
   if(editingId) ['savings','income','goals'].forEach(list=>{state[list]=state[list].filter(x=>x.id!==editingId);});
   if(modalMode==='savings'){
     if(!validateSavingsForm()) return;
@@ -2514,7 +2518,7 @@ function saveItem(){
     const included=document.getElementById('s-included')?.checked!==false;
     const item={id,name,icon,amount,isDeposit,currency,included,excluded:!included};
     if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
-    state.savings.push(item);
+    if(_savingIdx>=0) state.savings.splice(_savingIdx,0,item); else state.savings.push(item);
   } else if(modalMode==='income'){
     if (!validateIncomeForm()) return;
     const type = _incomeType;
@@ -2525,20 +2529,20 @@ function saveItem(){
       const name=document.getElementById('i-name').value.trim();
       const amount=parseFloat(document.getElementById('i-amount').value);
       if(!name||!amount||amount<=0)return;
-      state.income.push({id,name,icon,amount});
+      const _ii={id,name,icon,amount};if(_incomeIdx>=0)state.income.splice(_incomeIdx,0,_ii);else state.income.push(_ii);
     } else {
       const refId=document.getElementById('i-saving-ref').value; if(!refId)return;
       const saving=state.savings.find(s=>s.id===refId); if(!saving)return;
       if (type === 'fx') {
         const fxDate=document.getElementById('i-fx-date').value; if(!fxDate)return;
         const fxBuyRateRaw=parseFloat(document.getElementById('i-fx-rate').value);
-        state.income.push({id,name:'Курсовая разница · '+saving.name,icon:'💱',amount:0,savingRef:refId,calcMode:'fx',fxBuyRate:fxBuyRateRaw>0?fxBuyRateRaw:null,fxDate});
+        const _ii={id,name:'Курсовая разница · '+saving.name,icon:'💱',amount:0,savingRef:refId,calcMode:'fx',fxBuyRate:fxBuyRateRaw>0?fxBuyRateRaw:null,fxDate};if(_incomeIdx>=0)state.income.splice(_incomeIdx,0,_ii);else state.income.push(_ii);
       } else if (saving.isDeposit&&saving.rate&&saving.dateStart&&saving.dateEnd) {
-        state.income.push({id,name:saving.name,icon:saving.icon,amount:0,savingRef:refId,calcMode:'auto'});
+        const _ii={id,name:saving.name,icon:saving.icon,amount:0,savingRef:refId,calcMode:'auto'};if(_incomeIdx>=0)state.income.splice(_incomeIdx,0,_ii);else state.income.push(_ii);
       } else {
         const calcMode=document.getElementById('i-calc-mode').value;
-        if(calcMode==='percent'){const rate=parseFloat(document.getElementById('i-percent').value);if(!rate||rate<=0)return;state.income.push({id,name:saving.name,icon,amount:0,savingRef:refId,calcMode:'percent',rate});}
-        else{const amt=parseFloat(document.getElementById('i-fixed-amount').value);if(!amt||amt<=0)return;state.income.push({id,name:saving.name,icon,amount:amt,savingRef:refId,calcMode:'fixed'});}
+        if(calcMode==='percent'){const rate=parseFloat(document.getElementById('i-percent').value);if(!rate||rate<=0)return;const _i={id,name:saving.name,icon,amount:0,savingRef:refId,calcMode:'percent',rate};if(_incomeIdx>=0)state.income.splice(_incomeIdx,0,_i);else state.income.push(_i);}
+        else{const amt=parseFloat(document.getElementById('i-fixed-amount').value);if(!amt||amt<=0)return;const _i={id,name:saving.name,icon,amount:amt,savingRef:refId,calcMode:'fixed'};if(_incomeIdx>=0)state.income.splice(_incomeIdx,0,_i);else state.income.push(_i);}
       }
     }
   } else {
@@ -2550,7 +2554,7 @@ function saveItem(){
     const gType=document.getElementById('g-type')?.value||'regular';
     const subPeriod=gType==='subscription'?parseInt(document.getElementById('g-sub-period')?.value||1):null;
     const subDate=gType==='subscription'?document.getElementById('g-sub-date')?.value||null:null;
-    state.goals.push({id,name,amount,emoji,color,type:gType,subPeriod,subDate});
+    const _g={id,name,amount,emoji,color,type:gType,subPeriod,subDate};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
   }
   editingId=null;trackDailyAdd();save();render();closeModal();checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();haptic("success");
 }
