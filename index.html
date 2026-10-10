@@ -810,6 +810,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
         <input type="hidden" id="pg-color" value="#4ECDC4">
       </div>
+      <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
+        <select id="pg-linked-saving"><option value="">— Без привязки —</option></select>
+      </div>
       <button class="btn-primary" onclick="createPiggyBank()">Создать копилку</button>
     </div>
     <!-- Challenge fields (existing) -->
@@ -869,6 +872,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <input type="hidden" id="ch-color-p" value="#4ECDC4">
     </div>
     <div class="calc-preview" id="ch-preview-p" style="display:none;"></div>
+    <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
+      <select id="ch-linked-saving-p"><option value="">— Без привязки —</option></select>
+    </div>
     <button class="btn-primary" onclick="createChallengeFromPage()">Создать челлендж</button>
     </div><!-- end pg-challenge-fields -->
   </div>
@@ -933,6 +939,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <input type="hidden" id="ech-color" value="#4ECDC4">
     </div>
     <div class="calc-preview" id="ech-preview" style="display:none;"></div>
+    <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
+      <select id="ech-linked-saving"><option value="">— Без привязки —</option></select>
+    </div>
     <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">⚠️ Уже отмеченные ячейки сохранятся. Если изменишь сумму — незакрытые ячейки пересчитаются.</div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeEditChallenge()">Отмена</button>
@@ -4164,8 +4173,10 @@ function createPiggyBank() {
   if (!name || !goal || goal<=0) return;
   if (!state.piggyBanks) state.piggyBanks = [];
   if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
+  const linkedSavingId = document.getElementById('pg-linked-saving')?.value || '';
   state.piggyBanks.push({
     id: uid(), name, goal, deadline, dateStart, frequency, planMode, perPeriod, reminder, emoji, color,
+    linkedSavingId: linkedSavingId || null,
     saved: 0, deposits: [], createdAt: today()
   });
   save();
@@ -4212,6 +4223,7 @@ function openPiggyEdit(id) {
   }
   selectEmoji(pg.emoji||'🐷', 'pge');
   selectColor(pg.color||'#4ECDC4', 'pge');
+  fillLinkedSavingSelect('pg-edit-linked-saving', pg.linkedSavingId||'');
   document.getElementById('pg-edit-modal').classList.add('open');
   document.getElementById('fab')?.setAttribute('hidden','');
 }
@@ -4240,6 +4252,7 @@ function savePiggyEdit() {
   pg.reminder = editHasPlan ? !!(document.getElementById('pg-edit-reminder')?.checked) : false;
   pg.emoji = document.getElementById('pg-edit-emoji')?.value||pg.emoji||'🐷';
   pg.color = document.getElementById('pg-edit-color')?.value||pg.color||'#4ECDC4';
+  pg.linkedSavingId = document.getElementById('pg-edit-linked-saving')?.value || null;
   save();
   closePiggyEdit();
   renderChallengesPage();
@@ -4282,6 +4295,16 @@ function savePiggyDeposit() {
   if (!amount||amount<=0) return;
   pg.deposits = pg.deposits||[];
   const signed = _piggyOp === 'sub' ? -amount : amount;
+
+  // Ask about linked account
+  const linkedSaving = pg.linkedSavingId ? (state.savings||[]).find(s=>s.id===pg.linkedSavingId) : null;
+  if (linkedSaving) {
+    const action = signed > 0 ? `пополнить счёт «${linkedSaving.name}» на ${fmt(amount)} ₽` : `вычесть ${fmt(amount)} ₽ из счёта «${linkedSaving.name}»`;
+    if (confirm(`💳 ${action.charAt(0).toUpperCase()+action.slice(1)}?`)) {
+      linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) + signed);
+    }
+  }
+
   pg.deposits.push({amount:signed, date, id:uid()});
   pg.saved = Math.max(0, pg.deposits.reduce((s,d)=>s+d.amount,0));
   if (pg.saved >= pg.goal) haptic('heavy');
@@ -4382,6 +4405,19 @@ function switchChTab(tab) {
   renderChallengesPage();
 }
 
+function fillLinkedSavingSelect(selectId, currentVal) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Без привязки —</option>';
+  (state.savings || []).forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = (s.emoji ? s.emoji + ' ' : '') + s.name;
+    if (s.id === currentVal) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
 function showNewChallengeFormPage() {
   document.getElementById('challenge-list-view-page').style.display = 'none';
   document.getElementById('challenge-form-view-page').style.display = 'flex';
@@ -4392,6 +4428,8 @@ function showNewChallengeFormPage() {
   if(planCheck) planCheck.checked = false;
   const planFields = document.getElementById('pg-plan-fields');
   if(planFields) planFields.style.display = 'none';
+  fillLinkedSavingSelect('pg-linked-saving', '');
+  fillLinkedSavingSelect('ch-linked-saving-p', '');
   updateChallengePreviewPage();
 }
 
@@ -4451,8 +4489,10 @@ function createChallengeFromPage() {
   const cells = generateCells(goal, days, mode);
 
   if (!state.challenges) state.challenges = [];
+  const chLinkedSavingId = document.getElementById('ch-linked-saving-p')?.value || '';
   state.challenges.push({
     id:uid(), name, goal, days, mode, emoji, color,
+    linkedSavingId: chLinkedSavingId || null,
     cells: cells.map(amt=>({amt, done:false})),
     createdAt: today(), streak: 0, lastChecked: null
   });
@@ -4530,6 +4570,23 @@ function toggleCell(challengeId, cellIdx) {
     } else { ch.streak = 1; }
     ch.lastChecked = t;
   }
+  // Update linked saving account
+  const linkedSaving = ch.linkedSavingId ? (state.savings||[]).find(s=>s.id===ch.linkedSavingId) : null;
+  if (linkedSaving) {
+    const cellAmount = ch.cells[cellIdx].amt || 0;
+    if (!wasDone) {
+      // Cell just checked — add to account
+      if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на ${fmt(cellAmount)} ₽?`)) {
+        linkedSaving.amount = (parseFloat(linkedSaving.amount)||0) + cellAmount;
+      }
+    } else {
+      // Cell just unchecked — subtract from account
+      if (confirm(`💳 Вычесть ${fmt(cellAmount)} ₽ из счёта «${linkedSaving.name}»?`)) {
+        linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) - cellAmount);
+      }
+    }
+  }
+
   const allDone = ch.cells.every(c => c.done);
   if (allDone && !wasDone) { haptic('heavy'); startConfetti(); setTimeout(stopConfetti, 4000); }
   else if (!wasDone) { haptic('light'); }
@@ -4801,6 +4858,7 @@ function editChallenge(id) {
   const echCustom = document.getElementById('ech-emoji-custom');
   if (echCustom) echCustom.value = stdEmojis.includes(chEmoji) ? '' : chEmoji;
   selectColor(ch.color||'#4ECDC4', 'ech');
+  fillLinkedSavingSelect('ech-linked-saving', ch.linkedSavingId||'');
   document.getElementById('edit-challenge-modal').classList.add('open');
 }
 
@@ -4838,6 +4896,7 @@ function saveEditChallenge() {
   ch.mode = mode;
   ch.emoji = document.getElementById('ech-emoji')?.value||ch.emoji||'🎯';
   ch.color = document.getElementById('ech-color')?.value||ch.color||'#4ECDC4';
+  ch.linkedSavingId = document.getElementById('ech-linked-saving')?.value || null;
 
   if (newGoal > 0) {
     ch.goal = newGoal;
@@ -5864,6 +5923,9 @@ checkPiggyReminders();
         <button type="button" onclick="selectColor('#64B5F6','pge')" class="color-pick-btn" id="cpb-pge-64B5F6" style="background:#64B5F6;"></button>
       </div>
       <input type="hidden" id="pg-edit-color" value="#4ECDC4">
+    </div>
+    <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
+      <select id="pg-edit-linked-saving"><option value="">— Без привязки —</option></select>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closePiggyEdit()">Отмена</button>
