@@ -830,6 +830,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         Не получается войти? Напиши мне — я добавлю твой email вручную и синхронизация заработает.
         <button class="btn-cancel" style="width:100%;margin-top:8px;font-size:12px;" onclick="shareEmailWithDev()">✉️ Написать разработчику</button>
       </div>
+      <div id="gdrive-pending-hint" style="display:none;margin-top:10px;font-size:12px;background:rgba(255,200,0,0.08);border:1px solid rgba(255,200,0,0.25);border-radius:8px;padding:10px 12px;color:var(--text-dim);">
+        ✅ Письмо отправлено! Как только я добавлю <span style="color:var(--text);font-weight:500;"></span> в список, кнопка «Войти через Google» заработает. Обычно это занимает несколько минут.
+      </div>
     </div>
     <div id="backup-gdrive-in" style="display:none;flex-direction:column;gap:8px;">
       <div style="font-size:12px;color:var(--text-dim);" id="backup-gdrive-email"></div>
@@ -4077,6 +4080,12 @@ function gdriveUpdateUI(signedIn) {
   const bIn = document.getElementById('backup-gdrive-in');
   if (bOut) bOut.style.display = signedIn ? 'none' : '';
   if (bIn) bIn.style.display = signedIn ? 'flex' : 'none';
+  // Если вошли — скрываем подсказку об ожидании и очищаем флаг
+  if (signedIn) {
+    localStorage.removeItem('gdrive_pending_email');
+    const hint = document.getElementById('gdrive-pending-hint');
+    if (hint) hint.style.display = 'none';
+  }
 
   const email = localStorage.getItem('gdrive_user_email');
   const emailEl = document.getElementById('backup-gdrive-email');
@@ -4098,6 +4107,10 @@ function shareEmailWithDev() {
   const subject = encodeURIComponent('My Savings — запрос доступа к Google Drive');
   const body = encodeURIComponent(`Привет! Хочу использовать синхронизацию через Google Drive.\n\nМой email: ${email}`);
   window.open(`mailto:nusmanovaa@gmail.com?subject=${subject}&body=${body}`);
+  localStorage.setItem('gdrive_pending_email', email);
+  // Показываем подсказку на странице бэкапа
+  const hint = document.getElementById('gdrive-pending-hint');
+  if (hint) { hint.style.display = ''; hint.querySelector('span').textContent = email; }
 }
 
 function gdriveUpdateLastSave() {
@@ -4266,6 +4279,12 @@ function gdriveInit() {
     setTimeout(gdriveCheckNewerVersion, 2000);
   } else {
     gdriveUpdateUI(false);
+  }
+  // Показываем подсказку если пользователь уже отправлял email
+  const pendingEmail = localStorage.getItem('gdrive_pending_email');
+  if (pendingEmail && !gdriveToken) {
+    const hint = document.getElementById('gdrive-pending-hint');
+    if (hint) { hint.style.display = ''; hint.querySelector('span').textContent = pendingEmail; }
   }
 }
 
