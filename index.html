@@ -1884,6 +1884,12 @@ function renderHomeChartWidget() {
     return '';
   }).join('');
 
+  // dots at each point
+  const dots = xs.map((x,i) => `<circle cx="${x}" cy="${ys[i]}" r="3.5" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`).join('');
+
+  // invisible hit areas for tap
+  const hits = xs.map((x,i) => `<rect x="${x-18}" y="0" width="36" height="${H}" fill="transparent" style="cursor:pointer" onclick="showHomeChartTooltip(event,${x},${ys[i]},'${points[i].label}',${points[i].val},'${color}')"/>`).join('');
+
   svg.innerHTML = `<defs>
     <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
@@ -1892,7 +1898,45 @@ function renderHomeChartWidget() {
   </defs>
   <path d="${areaPath}" fill="url(#${gid})" />
   <path d="${path}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-  ${labels}`;
+  ${labels}
+  ${dots}
+  ${hits}`;
+}
+
+function showHomeChartTooltip(e, cx, cy, label, val, color) {
+  e.stopPropagation();
+  // remove existing
+  let tip = document.getElementById('home-chart-tip');
+  if (tip) { tip.remove(); tip = null; }
+
+  const svgEl = document.getElementById('home-chart-svg');
+  if (!svgEl) return;
+  const wrap = svgEl.closest('.home-chart-widget');
+  if (!wrap) return;
+
+  tip = document.createElement('div');
+  tip.id = 'home-chart-tip';
+  tip.style.cssText = `position:absolute;background:var(--surface2);border:1px solid ${color};border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--text);pointer-events:none;white-space:nowrap;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,0.4);`;
+  tip.innerHTML = `<span style="color:${color};">${label}</span> · ${fmt(val)} ₽`;
+
+  wrap.style.position = 'relative';
+  wrap.appendChild(tip);
+
+  // position near the dot using SVG coords
+  const svgRect = svgEl.getBoundingClientRect();
+  const wrapRect = wrap.getBoundingClientRect();
+  const scaleX = svgRect.width / 300;
+  const scaleY = svgRect.height / 90;
+  const dotX = svgRect.left - wrapRect.left + cx * scaleX;
+  const dotY = svgRect.top - wrapRect.top + cy * scaleY;
+
+  tip.style.left = Math.min(dotX - tip.offsetWidth/2, wrapRect.width - tip.offsetWidth - 8) + 'px';
+  tip.style.top = (dotY - tip.offsetHeight - 10) + 'px';
+
+  // auto-hide after 2.5s or on next tap
+  const dismiss = () => { tip && tip.remove(); document.removeEventListener('click', dismiss); };
+  setTimeout(() => document.addEventListener('click', dismiss), 10);
+  setTimeout(dismiss, 2500);
 }
 
 // ── Next deposit widget ────────────────────────────────────
