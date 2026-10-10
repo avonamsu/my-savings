@@ -914,6 +914,13 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <div class="field-hint info">Средняя ставка по накопительным счетам ~16–20%</div>
         </div>
         <div class="field">
+          <label>НАЧИСЛЕНИЕ ПРОЦЕНТОВ</label>
+          <select id="sa-accrual" onchange="updateSavingsAccountPreview()">
+            <option value="daily">Ежедневно (Т-Банк, Сбер и др.)</option>
+            <option value="monthly">Ежемесячно</option>
+          </select>
+        </div>
+        <div class="field">
           <label>ДАТА ОТКРЫТИЯ</label>
           <input type="date" id="sa-date-start" onchange="updateSavingsAccountPreview()">
         </div>
@@ -1313,8 +1320,16 @@ function calcSavingsAccount(s) {
   const start = new Date(s.dateStart);
   const now = new Date();
   const daysPassed = Math.max(0, Math.round((now - start) / 86400000));
-  // ежедневная капитализация
-  const currentAmount = principal * Math.pow(1 + rate / 365, daysPassed);
+  const accrual = s.accrual || 'daily';
+  let currentAmount;
+  if (accrual === 'daily') {
+    // ежедневная капитализация: (1 + r/365)^дней
+    currentAmount = principal * Math.pow(1 + rate / 365, daysPassed);
+  } else {
+    // ежемесячная капитализация: (1 + r/12)^месяцев
+    const monthsPassed = daysPassed / 30.4375;
+    currentAmount = principal * Math.pow(1 + rate / 12, monthsPassed);
+  }
   const earnedInterest = currentAmount - principal;
   const dailyIncome = principal * rate / 365;
   return { currentAmount, earnedInterest, dailyIncome, daysPassed };
@@ -1324,10 +1339,11 @@ function updateSavingsAccountPreview() {
   const amount = getSavingAmountValue() || 0;
   const rate = parseFloat(document.getElementById('sa-rate').value) || 0;
   const dateStart = document.getElementById('sa-date-start').value;
+  const accrual = document.getElementById('sa-accrual')?.value || 'daily';
   const preview = document.getElementById('sa-preview');
   if (!preview) return;
   if (!amount || !rate || !dateStart) { preview.style.display = 'none'; return; }
-  const d = calcSavingsAccount({ amount, rate, dateStart });
+  const d = calcSavingsAccount({ amount, rate, dateStart, accrual });
   preview.style.display = '';
   preview.innerHTML = `
     <div style="display:flex;justify-content:space-between;"><span>Сейчас на счёте</span><span style="color:var(--accent);font-weight:600;">${fmt(d.currentAmount)} ₽</span></div>
@@ -2555,7 +2571,7 @@ function openEdit(list,id) {
     const amtEl=document.getElementById('s-amount');if(amtEl){amtEl.value=x.amount;amtEl._rawValue=String(x.amount);formatAmountInput(amtEl);}
     const siEl=document.getElementById('s-included');if(siEl)siEl.checked=(x.included!==false&&!x.excluded);
     if(x.isDeposit){document.getElementById('s-rate').value=x.rate||'';document.getElementById('s-date-start').value=x.dateStart||'';document.getElementById('s-date-end').value=x.dateEnd||'';document.getElementById('s-compound').checked=!!x.compound;updateDepositPreview();}
-    if(x.isSavingsAccount){document.getElementById('sa-rate').value=x.rate||'';document.getElementById('sa-date-start').value=x.dateStart||'';const saInc=document.getElementById('sa-included');if(saInc)saInc.checked=(x.included!==false&&!x.excluded);updateSavingsAccountPreview();}
+    if(x.isSavingsAccount){document.getElementById('sa-rate').value=x.rate||'';document.getElementById('sa-date-start').value=x.dateStart||'';const saAccr=document.getElementById('sa-accrual');if(saAccr)saAccr.value=x.accrual||'daily';const saInc=document.getElementById('sa-included');if(saInc)saInc.checked=(x.included!==false&&!x.excluded);updateSavingsAccountPreview();}
   } else if(list==='income'){
     const x=state.income.find(i=>i.id===id);if(!x)return;
     openModal('income');
@@ -2613,7 +2629,7 @@ function saveItem(){
     const included=(isSavingsAccount?document.getElementById('sa-included'):document.getElementById('s-included'))?.checked!==false;
     const item={id,name,icon,amount,isDeposit,isSavingsAccount,currency,included,excluded:!included};
     if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
-    if(isSavingsAccount){item.rate=parseFloat(document.getElementById('sa-rate').value)||0;item.dateStart=document.getElementById('sa-date-start').value;}
+    if(isSavingsAccount){item.rate=parseFloat(document.getElementById('sa-rate').value)||0;item.dateStart=document.getElementById('sa-date-start').value;item.accrual=document.getElementById('sa-accrual')?.value||'daily';}
     if(_savingIdx>=0) state.savings.splice(_savingIdx,0,item); else state.savings.push(item);
   } else if(modalMode==='income'){
     if (!validateIncomeForm()) return;
