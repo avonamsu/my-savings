@@ -993,17 +993,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- BACKUP PAGE -->
 <div class="page" id="page-backup">
-  <div class="section-title" style="margin-top:0">🔐 Аккаунт и синхронизация</div>
-  <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
-    <div id="sb-signed-out" style="display:flex;flex-direction:column;gap:10px;">
-      <div style="font-size:13px;color:var(--text-dim);">Не авторизована. Открой боковое меню и нажми на профиль чтобы войти.</div>
-    </div>
-    <div id="sb-signed-in" style="display:none;flex-direction:column;gap:8px;">
-      <div style="font-size:13px;color:var(--text-dim);">Вошла как: <span id="sb-user-email" style="color:var(--text);font-weight:500;"></span></div>
-      <div style="font-size:12px;color:var(--accent);">✅ Данные синхронизируются автоматически</div>
-      <button class="btn-cancel" style="width:100%;margin-top:0;color:var(--text-dim);font-size:12px" onclick="sbHandleSignOut()">Выйти из аккаунта</button>
-    </div>
-  </div>
 
 
   <div class="section-title">🗄 Резервное хранилище</div>
@@ -1502,20 +1491,6 @@ async function sbSignOut() {
 }
 
 function sbUpdateUI() {
-  // Backup page
-  const out = document.getElementById('sb-signed-out');
-  const inn = document.getElementById('sb-signed-in');
-  const emailEl = document.getElementById('sb-user-email');
-  if (out && inn) {
-    if (_sbUser) {
-      out.style.display = 'none';
-      inn.style.display = 'flex';
-      if (emailEl) emailEl.textContent = _sbUser.email || '';
-    } else {
-      out.style.display = 'flex';
-      inn.style.display = 'none';
-    }
-  }
   // Sidebar avatar and name
   const avatar = document.getElementById('sb-avatar');
   const sbName = document.getElementById('sb-name');
@@ -1534,7 +1509,7 @@ function sbUpdateUI() {
     sbName.textContent = _sbUser ? _sbUser.email : 'Мои накопления';
   }
   if (authStatus) {
-    authStatus.textContent = _sbUser ? 'Синхронизация включена' : 'Не вошла в аккаунт';
+    authStatus.textContent = _sbUser ? 'Синхронизация включена' : '';
   }
   // Sidebar auth block — always visible, just switch inner state
   const sbpOut = document.getElementById('sbp-signed-out');
