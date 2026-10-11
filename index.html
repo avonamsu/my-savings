@@ -480,19 +480,16 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="sb-avatar" style="width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--bg);flex-shrink:0;">🪙</div>
     <div style="flex:1;min-width:0;">
       <div class="sidebar-name" id="sb-name">Мои накопления</div>
-      <div id="sb-auth-status" style="font-size:11px;color:var(--text-dim);margin-top:2px;"></div>
+      <div id="sbp-signed-out">
+        <button onclick="openAuthModal()" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;font-weight:600;margin-top:3px;">Войти в аккаунт →</button>
+      </div>
+      <div id="sbp-signed-in" style="display:none;">
+        <div id="sb-auth-status" style="font-size:11px;color:var(--accent);margin-top:3px;">☁️ Синхронизация включена</div>
+        <button onclick="sbpHandleSignOut()" style="background:none;border:none;padding:0;color:var(--text-dim);font-size:11px;cursor:pointer;margin-top:2px;">Выйти →</button>
+      </div>
     </div>
   </div>
-
-  <!-- AUTH ROW IN SIDEBAR -->
-  <div id="sbp-signed-out" style="padding:6px 0 12px;">
-    <button onclick="openAuthModal()" style="background:none;border:1px solid rgba(78,205,196,0.4);border-radius:8px;color:var(--accent);font-size:13px;padding:7px 16px;cursor:pointer;font-weight:600;">Войти в аккаунт →</button>
-  </div>
-  <div id="sbp-signed-in" style="display:none;padding:8px 0 12px;">
-    <div style="font-size:12px;color:var(--accent);margin-bottom:8px;">☁️ Данные синхронизируются</div>
-    <button class="btn-cancel" style="width:100%;font-size:12px;" onclick="sbpHandleSignOut()">Выйти из аккаунта</button>
-  </div>
-  <div style="height:1px;background:rgba(255,255,255,0.06);margin:0 0 8px;"></div>
+  <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0 8px;"></div>
 
   <div class="sidebar-section"><span>⚙️ Настройки</span></div>
   <button class="sidebar-item" onclick="showPage('backup');closeSidebar()"><span class="si">💾</span><span>Синхронизация и резервные данные</span></button>
@@ -1508,10 +1505,6 @@ function sbUpdateUI() {
   if (sbName) {
     sbName.textContent = _sbUser ? _sbUser.email : 'Мои накопления';
   }
-  if (authStatus) {
-    authStatus.textContent = _sbUser ? 'Синхронизация включена' : '';
-  }
-  // Sidebar auth block — always visible, just switch inner state
   const sbpOut = document.getElementById('sbp-signed-out');
   const sbpIn = document.getElementById('sbp-signed-in');
   if (sbpOut && sbpIn) {
