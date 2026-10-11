@@ -3318,6 +3318,8 @@ const PAGE_TITLES = {home:'Мои накопления',savings:'Счета',inc
 let _currentPage = 'home';
 function showPage(name) {
   if (name === _currentPage) return;
+  const popup = document.getElementById('profile-popup');
+  if (popup) popup.style.display = 'none';
   const fromIdx = PAGES.indexOf(_currentPage);
   const toIdx   = PAGES.indexOf(name);
   const goRight = toIdx > fromIdx;
