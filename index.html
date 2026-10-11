@@ -1570,6 +1570,7 @@ async function authModalSignIn() {
   const errEl = document.getElementById('auth-modal-error');
   const sentEl = document.getElementById('auth-modal-sent');
   errEl.style.display = 'none';
+  sentEl.style.display = 'none';
   const validErr = sbValidateEmail(email);
   if (validErr) {
     errEl.textContent = '❌ ' + validErr; errEl.style.display = '';
@@ -1577,8 +1578,15 @@ async function authModalSignIn() {
   }
   const error = await sbSignInWithEmail(email);
   if (error) {
-    errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = '';
+    const isRateLimit = (error?.message || '').toLowerCase().includes('rate limit');
+    if (isRateLimit) {
+      sentEl.textContent = '✅ Письмо уже было отправлено — проверь почту (включая папку «Спам»)';
+      sentEl.style.display = '';
+    } else {
+      errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = '';
+    }
   } else {
+    sentEl.textContent = '✅ Письмо отправлено! Открой его и нажми на ссылку для входа.';
     sentEl.style.display = '';
   }
 }
