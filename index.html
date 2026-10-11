@@ -456,6 +456,24 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <div style="position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;height:52px;z-index:99;background:var(--bg);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;padding:0 16px;">
   <button class="menu-btn" onclick="openSidebar()">☰</button>
   <span id="topbar-title" style="position:absolute;left:50%;transform:translateX(-50%);font-size:15px;font-weight:700;color:var(--text);">Мои накопления</span>
+  <button id="topbar-profile-btn" onclick="topbarProfileClick()" style="margin-left:auto;width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;transition:opacity .2s;" title="Аккаунт"></button>
+</div>
+
+<!-- PROFILE POPUP -->
+<div id="profile-popup" style="display:none;position:fixed;top:58px;right:calc(max(0px,(100vw - 480px)/2) + 12px);z-index:200;background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+  <div id="pp-signed-out">
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">Войди чтобы синхронизировать данные между устройствами</div>
+    <input type="email" id="pp-email-input" placeholder="твой@email.com" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;width:100%;margin-bottom:8px;">
+    <button class="btn-primary" style="width:100%;font-size:13px;padding:9px;" onclick="ppHandleSignIn()">✉️ Войти по email</button>
+    <div id="pp-magic-sent" style="display:none;font-size:12px;color:var(--accent);background:var(--accent-dim);border-radius:8px;padding:8px 10px;margin-top:8px;">✅ Письмо отправлено! Открой его и нажми на ссылку.</div>
+    <div id="pp-error" style="display:none;font-size:12px;color:var(--danger);margin-top:6px;"></div>
+  </div>
+  <div id="pp-signed-in" style="display:none;">
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">Вошёл как</div>
+    <div id="pp-email-show" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;word-break:break-all;"></div>
+    <div style="font-size:12px;color:var(--accent);margin-bottom:12px;">✅ Данные синхронизируются</div>
+    <button class="btn-cancel" style="width:100%;font-size:12px;" onclick="ppHandleSignOut()">Выйти из аккаунта</button>
+  </div>
 </div>
 
 <!-- SIDEBAR -->
@@ -1482,18 +1500,87 @@ async function sbSignOut() {
 }
 
 function sbUpdateUI() {
+  // Backup page
   const out = document.getElementById('sb-signed-out');
   const inn = document.getElementById('sb-signed-in');
   const emailEl = document.getElementById('sb-user-email');
-  if (!out || !inn) return;
-  if (_sbUser) {
-    out.style.display = 'none';
-    inn.style.display = 'flex';
-    if (emailEl) emailEl.textContent = _sbUser.email || '';
-  } else {
-    out.style.display = 'flex';
-    inn.style.display = 'none';
+  if (out && inn) {
+    if (_sbUser) {
+      out.style.display = 'none';
+      inn.style.display = 'flex';
+      if (emailEl) emailEl.textContent = _sbUser.email || '';
+    } else {
+      out.style.display = 'flex';
+      inn.style.display = 'none';
+    }
   }
+  // Topbar profile button
+  const btn = document.getElementById('topbar-profile-btn');
+  if (btn) {
+    if (_sbUser) {
+      const letter = (_sbUser.email || '?')[0].toUpperCase();
+      btn.textContent = letter;
+      btn.style.background = 'var(--accent)';
+      btn.style.color = 'var(--bg)';
+    } else {
+      btn.textContent = '👤';
+      btn.style.background = 'var(--surface2)';
+      btn.style.color = 'var(--text)';
+    }
+  }
+  // Profile popup
+  const ppOut = document.getElementById('pp-signed-out');
+  const ppIn = document.getElementById('pp-signed-in');
+  const ppEmail = document.getElementById('pp-email-show');
+  if (ppOut && ppIn) {
+    if (_sbUser) {
+      ppOut.style.display = 'none';
+      ppIn.style.display = '';
+      if (ppEmail) ppEmail.textContent = _sbUser.email || '';
+    } else {
+      ppOut.style.display = '';
+      ppIn.style.display = 'none';
+    }
+  }
+}
+
+function topbarProfileClick() {
+  const popup = document.getElementById('profile-popup');
+  if (!popup) return;
+  const isOpen = popup.style.display !== 'none';
+  popup.style.display = isOpen ? 'none' : '';
+  if (!isOpen) {
+    // закрыть по клику снаружи
+    setTimeout(() => {
+      document.addEventListener('click', function closePopup(e) {
+        if (!popup.contains(e.target) && e.target.id !== 'topbar-profile-btn') {
+          popup.style.display = 'none';
+        }
+        document.removeEventListener('click', closePopup);
+      });
+    }, 0);
+  }
+}
+
+async function ppHandleSignIn() {
+  const email = document.getElementById('pp-email-input')?.value?.trim();
+  if (!email) return;
+  const errEl = document.getElementById('pp-error');
+  const sentEl = document.getElementById('pp-magic-sent');
+  if (errEl) errEl.style.display = 'none';
+  const error = await sbSignInWithEmail(email);
+  if (error) {
+    if (errEl) { errEl.textContent = '❌ ' + error.message; errEl.style.display = ''; }
+  } else {
+    if (sentEl) sentEl.style.display = '';
+  }
+}
+
+async function ppHandleSignOut() {
+  if (!confirm('Выйти из аккаунта?')) return;
+  await sbSignOut();
+  const popup = document.getElementById('profile-popup');
+  if (popup) popup.style.display = 'none';
 }
 
 async function sbHandleSignIn() {
