@@ -460,6 +460,21 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- SIDEBAR -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- AUTH MODAL -->
+<div id="auth-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;backdrop-filter:blur(6px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeAuthModal()">
+  <div style="background:var(--surface);border-radius:20px;padding:28px 24px;width:calc(100% - 48px);max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px;">Вход в аккаунт</div>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:20px;">Синхронизация данных между устройствами</div>
+    <input type="email" id="auth-email-input" placeholder="твой@email.com"
+      style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;color:var(--text);font-size:15px;width:100%;margin-bottom:12px;box-sizing:border-box;"
+      onkeydown="if(event.key==='Enter')authModalSignIn()">
+    <button class="btn-primary" style="width:100%;font-size:14px;padding:13px;" onclick="authModalSignIn()">✉️ Отправить ссылку для входа</button>
+    <div id="auth-modal-sent" style="display:none;font-size:13px;color:var(--accent);background:var(--accent-dim);border-radius:10px;padding:10px 12px;margin-top:12px;">✅ Письмо отправлено! Открой его и нажми на ссылку для входа.</div>
+    <div id="auth-modal-error" style="display:none;font-size:13px;color:var(--danger);margin-top:10px;"></div>
+    <button onclick="closeAuthModal()" style="width:100%;margin-top:12px;padding:10px;background:none;border:none;color:var(--text-dim);font-size:13px;cursor:pointer;">Отмена</button>
+  </div>
+</div>
 <div class="sidebar" id="sidebar">
   <div class="sidebar-profile" style="display:flex;align-items:center;gap:14px;">
     <div id="sb-avatar" style="width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--bg);flex-shrink:0;">🪙</div>
@@ -469,21 +484,15 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     </div>
   </div>
 
-  <!-- AUTH BLOCK IN SIDEBAR — always visible -->
-  <div id="sb-auth-block" style="padding:12px 0 4px;">
-    <div id="sbp-signed-out">
-      <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Войди чтобы синхронизировать данные между устройствами</div>
-      <input type="email" id="sbp-email-input" placeholder="твой@email.com" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;width:100%;margin-bottom:8px;">
-      <button class="btn-primary" style="width:100%;font-size:13px;padding:9px;" onclick="sbpHandleSignIn()">✉️ Войти по email</button>
-      <div id="sbp-magic-sent" style="display:none;font-size:12px;color:var(--accent);background:var(--accent-dim);border-radius:8px;padding:8px 10px;margin-top:8px;">✅ Письмо отправлено! Открой его и нажми на ссылку.</div>
-      <div id="sbp-error" style="display:none;font-size:12px;color:var(--danger);margin-top:6px;"></div>
-    </div>
-    <div id="sbp-signed-in" style="display:none;">
-      <div style="font-size:12px;color:var(--accent);margin-bottom:8px;">☁️ Данные синхронизируются</div>
-      <button class="btn-cancel" style="width:100%;font-size:12px;" onclick="sbpHandleSignOut()">Выйти из аккаунта</button>
-    </div>
+  <!-- AUTH ROW IN SIDEBAR -->
+  <div id="sbp-signed-out" style="padding:8px 0 12px;">
+    <button class="btn-primary" style="width:100%;font-size:13px;padding:9px;" onclick="openAuthModal()">Войти в аккаунт</button>
   </div>
-  <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0 8px;"></div>
+  <div id="sbp-signed-in" style="display:none;padding:8px 0 12px;">
+    <div style="font-size:12px;color:var(--accent);margin-bottom:8px;">☁️ Данные синхронизируются</div>
+    <button class="btn-cancel" style="width:100%;font-size:12px;" onclick="sbpHandleSignOut()">Выйти из аккаунта</button>
+  </div>
+  <div style="height:1px;background:rgba(255,255,255,0.06);margin:0 0 8px;"></div>
 
   <div class="sidebar-section"><span>⚙️ Настройки</span></div>
   <button class="sidebar-item" onclick="showPage('backup');closeSidebar()"><span class="si">💾</span><span>Синхронизация и резервные данные</span></button>
@@ -1443,7 +1452,7 @@ async function sbInit() {
   _sb.auth.onAuthStateChange((_event, session) => {
     _sbUser = session?.user || null;
     sbUpdateUI();
-    if (_sbUser) sbLoadState();
+    if (_sbUser) { closeAuthModal(); sbLoadState(); }
   });
   if (_sbUser) await sbLoadState();
   sbUpdateUI();
@@ -1542,21 +1551,35 @@ function sbUpdateUI() {
 }
 
 
-async function sbpHandleSignIn() {
-  const email = document.getElementById('sbp-email-input')?.value?.trim();
-  const errEl = document.getElementById('sbp-error');
-  const sentEl = document.getElementById('sbp-magic-sent');
-  if (errEl) errEl.style.display = 'none';
+function openAuthModal() {
+  const m = document.getElementById('auth-modal-overlay');
+  if (m) { m.style.display = 'flex'; }
+  document.getElementById('auth-modal-sent').style.display = 'none';
+  document.getElementById('auth-modal-error').style.display = 'none';
+  document.getElementById('auth-email-input').value = '';
+  setTimeout(() => document.getElementById('auth-email-input')?.focus(), 100);
+}
+
+function closeAuthModal() {
+  const m = document.getElementById('auth-modal-overlay');
+  if (m) m.style.display = 'none';
+}
+
+async function authModalSignIn() {
+  const email = document.getElementById('auth-email-input')?.value?.trim();
+  const errEl = document.getElementById('auth-modal-error');
+  const sentEl = document.getElementById('auth-modal-sent');
+  errEl.style.display = 'none';
   const validErr = sbValidateEmail(email);
   if (validErr) {
-    if (errEl) { errEl.textContent = '❌ ' + validErr; errEl.style.display = ''; }
+    errEl.textContent = '❌ ' + validErr; errEl.style.display = '';
     return;
   }
   const error = await sbSignInWithEmail(email);
   if (error) {
-    if (errEl) { errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = ''; }
+    errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = '';
   } else {
-    if (sentEl) sentEl.style.display = '';
+    sentEl.style.display = '';
   }
 }
 
