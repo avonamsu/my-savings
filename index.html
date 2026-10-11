@@ -1564,19 +1564,30 @@ function topbarProfileClick() {
 
 function sbErrorText(error) {
   const msg = (error?.message || '').toLowerCase();
-  if (msg.includes('rate limit')) return 'Слишком много попыток — подожди час и попробуй снова';
-  if (msg.includes('invalid email')) return 'Некорректный email';
-  if (msg.includes('network') || msg.includes('fetch')) return 'Нет соединения с интернетом';
+  if (msg.includes('rate limit')) return 'Слишком много попыток входа — подожди час и попробуй снова';
+  if (msg.includes('invalid email') || msg.includes('unable to validate') || msg.includes('invalid format')) return 'Некорректный email — проверь правильность адреса';
+  if (msg.includes('network') || msg.includes('fetch') || msg.includes('failed to fetch')) return 'Нет соединения с интернетом';
   if (msg.includes('user not found')) return 'Пользователь не найден';
+  if (msg.includes('signup') && msg.includes('disabled')) return 'Регистрация временно недоступна';
   return error?.message || 'Неизвестная ошибка';
+}
+
+function sbValidateEmail(email) {
+  if (!email) return 'Введи email';
+  if (!email.includes('@') || !email.includes('.')) return 'Некорректный email — проверь правильность адреса';
+  return null;
 }
 
 async function ppHandleSignIn() {
   const email = document.getElementById('pp-email-input')?.value?.trim();
-  if (!email) return;
   const errEl = document.getElementById('pp-error');
   const sentEl = document.getElementById('pp-magic-sent');
   if (errEl) errEl.style.display = 'none';
+  const validErr = sbValidateEmail(email);
+  if (validErr) {
+    if (errEl) { errEl.textContent = '❌ ' + validErr; errEl.style.display = ''; }
+    return;
+  }
   const error = await sbSignInWithEmail(email);
   if (error) {
     if (errEl) { errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = ''; }
@@ -1594,10 +1605,14 @@ async function ppHandleSignOut() {
 
 async function sbHandleSignIn() {
   const email = document.getElementById('sb-email-input')?.value?.trim();
-  if (!email) return;
   const errEl = document.getElementById('sb-sign-in-error');
   const sentEl = document.getElementById('sb-magic-sent');
   if (errEl) errEl.style.display = 'none';
+  const validErr = sbValidateEmail(email);
+  if (validErr) {
+    if (errEl) { errEl.textContent = '❌ ' + validErr; errEl.style.display = ''; }
+    return;
+  }
   const error = await sbSignInWithEmail(email);
   if (error) {
     if (errEl) { errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = ''; }
