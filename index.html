@@ -1883,11 +1883,12 @@ function renderHome() {
   } else if (alertEl) alertEl.style.display = 'none';
 
   // Sidebar
-  document.getElementById('sb-total').textContent = fmt(totalRubVal)+' ₽ накоплено';
+  const sbTotalEl = document.getElementById('sb-total');
+  if (sbTotalEl) sbTotalEl.textContent = fmt(totalRubVal)+' ₽ накоплено';
   const avatar = document.getElementById('sb-avatar');
   const unlockedCount = (state._unlocked||[]).length;
   const lvl = LEVELS ? (LEVELS.find((l,i)=>unlockedCount<l.max||i===LEVELS.length-1)||LEVELS[0]) : null;
-  if (avatar) { avatar.textContent = lvl ? lvl.icon : (totalRubVal>=1000000?'👑':totalRubVal>=500000?'💎':totalRubVal>=100000?'🌱':'🪙'); }
+  if (avatar && !_sbUser) { avatar.textContent = lvl ? lvl.icon : (totalRubVal>=1000000?'👑':totalRubVal>=500000?'💎':totalRubVal>=100000?'🌱':'🪙'); }
   const sbLevel = document.getElementById('sb-level');
   if(sbLevel && lvl) sbLevel.textContent = lvl.icon + ' ' + lvl.name;
 
