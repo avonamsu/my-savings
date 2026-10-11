@@ -469,8 +469,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <input type="email" id="auth-email-input" placeholder="твой@email.com"
       style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;color:var(--text);font-size:15px;width:100%;margin-bottom:12px;box-sizing:border-box;"
       onkeydown="if(event.key==='Enter')authModalSignIn()">
-    <button class="btn-primary" style="width:100%;font-size:14px;padding:13px;" onclick="authModalSignIn()">✉️ Отправить ссылку для входа</button>
-    <div id="auth-modal-sent" style="display:none;font-size:13px;color:var(--accent);background:var(--accent-dim);border-radius:10px;padding:10px 12px;margin-top:12px;">✅ Письмо отправлено! Открой его и нажми на ссылку для входа.</div>
+    <button id="auth-modal-btn" class="btn-primary" style="width:100%;font-size:14px;padding:13px;" onclick="authModalSignIn()">✉️ Отправить ссылку для входа</button>
+    <div id="auth-modal-sent" style="display:none;font-size:13px;color:var(--accent);background:var(--accent-dim);border-radius:10px;padding:10px 12px;margin-top:12px;"></div>
     <div id="auth-modal-error" style="display:none;font-size:13px;color:var(--danger);margin-top:10px;"></div>
     <button onclick="closeAuthModal()" style="width:100%;margin-top:12px;padding:10px;background:none;border:none;color:var(--text-dim);font-size:13px;cursor:pointer;">Отмена</button>
   </div>
@@ -1524,12 +1524,36 @@ function openAuthModal() {
   document.getElementById('auth-modal-sent').style.display = 'none';
   document.getElementById('auth-modal-error').style.display = 'none';
   document.getElementById('auth-email-input').value = '';
+  const btn = document.getElementById('auth-modal-btn');
+  if (btn && !btn.disabled) btn.textContent = '✉️ Отправить ссылку для входа';
   setTimeout(() => document.getElementById('auth-email-input')?.focus(), 100);
 }
 
 function closeAuthModal() {
   const m = document.getElementById('auth-modal-overlay');
   if (m) m.style.display = 'none';
+}
+
+let _authCooldownTimer = null;
+
+function _startAuthCooldown() {
+  const btn = document.getElementById('auth-modal-btn');
+  if (!btn) return;
+  let secs = 60;
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  btn.textContent = `Подождите ${secs} сек...`;
+  _authCooldownTimer = setInterval(() => {
+    secs--;
+    if (secs <= 0) {
+      clearInterval(_authCooldownTimer);
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.textContent = '✉️ Отправить ещё раз';
+    } else {
+      btn.textContent = `Подождите ${secs} сек...`;
+    }
+  }, 1000);
 }
 
 async function authModalSignIn() {
@@ -1547,14 +1571,16 @@ async function authModalSignIn() {
   if (error) {
     const isRateLimit = (error?.message || '').toLowerCase().includes('rate limit');
     if (isRateLimit) {
-      sentEl.textContent = '✅ Письмо уже было отправлено — проверь почту (включая папку «Спам»)';
+      sentEl.textContent = '✅ Письмо уже было отправлено — проверь почту (включая папку «Спам»). Письма могут идти до 10 минут.';
       sentEl.style.display = '';
+      _startAuthCooldown();
     } else {
       errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = '';
     }
   } else {
-    sentEl.textContent = '✅ Письмо отправлено! Открой его и нажми на ссылку для входа.';
+    sentEl.textContent = '✅ Письмо отправлено! Открой его и нажми на ссылку для входа. Письма могут идти до 10 минут.';
     sentEl.style.display = '';
+    _startAuthCooldown();
   }
 }
 
