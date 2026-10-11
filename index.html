@@ -1562,6 +1562,15 @@ function topbarProfileClick() {
   }
 }
 
+function sbErrorText(error) {
+  const msg = (error?.message || '').toLowerCase();
+  if (msg.includes('rate limit')) return 'Слишком много попыток — подожди час и попробуй снова';
+  if (msg.includes('invalid email')) return 'Некорректный email';
+  if (msg.includes('network') || msg.includes('fetch')) return 'Нет соединения с интернетом';
+  if (msg.includes('user not found')) return 'Пользователь не найден';
+  return error?.message || 'Неизвестная ошибка';
+}
+
 async function ppHandleSignIn() {
   const email = document.getElementById('pp-email-input')?.value?.trim();
   if (!email) return;
@@ -1570,7 +1579,7 @@ async function ppHandleSignIn() {
   if (errEl) errEl.style.display = 'none';
   const error = await sbSignInWithEmail(email);
   if (error) {
-    if (errEl) { errEl.textContent = '❌ ' + error.message; errEl.style.display = ''; }
+    if (errEl) { errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = ''; }
   } else {
     if (sentEl) sentEl.style.display = '';
   }
@@ -1591,7 +1600,7 @@ async function sbHandleSignIn() {
   if (errEl) errEl.style.display = 'none';
   const error = await sbSignInWithEmail(email);
   if (error) {
-    if (errEl) { errEl.textContent = '❌ ' + error.message; errEl.style.display = ''; }
+    if (errEl) { errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = ''; }
   } else {
     if (sentEl) sentEl.style.display = '';
   }
