@@ -1518,42 +1518,70 @@ function sbUpdateUI() {
 }
 
 
+const AUTH_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+let _authCooldownInterval = null;
+
+function _authSecsLeft() {
+  try {
+    const sent = parseInt(localStorage.getItem('auth_sent_at') || '0');
+    if (!sent) return 0;
+    const elapsed = Date.now() - sent;
+    return Math.max(0, Math.ceil((AUTH_COOLDOWN_MS - elapsed) / 1000));
+  } catch(e) { return 0; }
+}
+
+function _updateAuthBtn() {
+  const btn = document.getElementById('auth-modal-btn');
+  if (!btn) return;
+  const secs = _authSecsLeft();
+  if (secs > 0) {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    const label = m > 0 ? `${m} мин ${s} сек` : `${s} сек`;
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.textContent = `Повторить через ${label}`;
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.textContent = btn._wasSent ? '✉️ Отправить ещё раз' : '✉️ Отправить ссылку для входа';
+    if (_authCooldownInterval) { clearInterval(_authCooldownInterval); _authCooldownInterval = null; }
+  }
+}
+
+function _startAuthCooldown() {
+  try { localStorage.setItem('auth_sent_at', Date.now().toString()); } catch(e) {}
+  const btn = document.getElementById('auth-modal-btn');
+  if (btn) btn._wasSent = true;
+  if (_authCooldownInterval) clearInterval(_authCooldownInterval);
+  _authCooldownInterval = setInterval(_updateAuthBtn, 1000);
+  _updateAuthBtn();
+}
+
 function openAuthModal() {
   const m = document.getElementById('auth-modal-overlay');
   if (m) { m.style.display = 'flex'; }
-  document.getElementById('auth-modal-sent').style.display = 'none';
-  document.getElementById('auth-modal-error').style.display = 'none';
+  const sentEl = document.getElementById('auth-modal-sent');
+  const errEl = document.getElementById('auth-modal-error');
+  sentEl.style.display = 'none';
+  errEl.style.display = 'none';
   document.getElementById('auth-email-input').value = '';
-  const btn = document.getElementById('auth-modal-btn');
-  if (btn && !btn.disabled) btn.textContent = '✉️ Отправить ссылку для входа';
+  // Restore cooldown state if still active
+  const secs = _authSecsLeft();
+  if (secs > 0) {
+    sentEl.textContent = '✅ Письмо уже было отправлено — проверь почту (включая папку «Спам»).';
+    sentEl.style.display = '';
+    if (!_authCooldownInterval) {
+      _authCooldownInterval = setInterval(_updateAuthBtn, 1000);
+    }
+  }
+  _updateAuthBtn();
   setTimeout(() => document.getElementById('auth-email-input')?.focus(), 100);
 }
 
 function closeAuthModal() {
   const m = document.getElementById('auth-modal-overlay');
   if (m) m.style.display = 'none';
-}
-
-let _authCooldownTimer = null;
-
-function _startAuthCooldown() {
-  const btn = document.getElementById('auth-modal-btn');
-  if (!btn) return;
-  let secs = 60;
-  btn.disabled = true;
-  btn.style.opacity = '0.5';
-  btn.textContent = `Подождите ${secs} сек...`;
-  _authCooldownTimer = setInterval(() => {
-    secs--;
-    if (secs <= 0) {
-      clearInterval(_authCooldownTimer);
-      btn.disabled = false;
-      btn.style.opacity = '';
-      btn.textContent = '✉️ Отправить ещё раз';
-    } else {
-      btn.textContent = `Подождите ${secs} сек...`;
-    }
-  }, 1000);
 }
 
 async function authModalSignIn() {
@@ -1571,14 +1599,14 @@ async function authModalSignIn() {
   if (error) {
     const isRateLimit = (error?.message || '').toLowerCase().includes('rate limit');
     if (isRateLimit) {
-      sentEl.textContent = '✅ Письмо уже было отправлено — проверь почту (включая папку «Спам»). Письма могут идти до 10 минут.';
+      sentEl.textContent = '✅ Письмо уже было отправлено — проверь почту (включая папку «Спам»).';
       sentEl.style.display = '';
       _startAuthCooldown();
     } else {
       errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = '';
     }
   } else {
-    sentEl.textContent = '✅ Письмо отправлено! Открой его и нажми на ссылку для входа. Письма могут идти до 10 минут.';
+    sentEl.textContent = '✅ Письмо отправлено! Открой его и нажми на ссылку для входа.';
     sentEl.style.display = '';
     _startAuthCooldown();
   }
