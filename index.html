@@ -469,6 +469,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <div id="sb-level" style="font-size:11px;color:var(--accent);margin-top:2px;font-weight:600;"></div>
       <div id="sb-auth-status" style="font-size:11px;color:var(--text-dim);margin-top:2px;"></div>
     </div>
+    <div id="sb-chevron" style="font-size:18px;color:var(--text-dim);flex-shrink:0;transition:transform 0.2s;">›</div>
+  </div>
+  <!-- not signed in hint -->
+  <div id="sb-signin-hint" style="display:none;margin:0 0 8px;padding:8px 12px;background:rgba(78,205,196,0.08);border-radius:10px;border:1px dashed rgba(78,205,196,0.3);cursor:pointer;" onclick="sidebarProfileClick()">
+    <div style="font-size:12px;color:var(--accent);font-weight:600;">🔑 Войти в аккаунт</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Синхронизация между устройствами</div>
   </div>
 
   <!-- AUTH BLOCK IN SIDEBAR -->
@@ -1523,8 +1529,11 @@ function sbUpdateUI() {
     }
   }
   if (authStatus) {
-    authStatus.textContent = _sbUser ? ('☁️ ' + _sbUser.email) : '· Нажми чтобы войти';
+    authStatus.textContent = _sbUser ? ('☁️ ' + _sbUser.email) : '';
   }
+  // Sign-in hint (shown when not signed in)
+  const hint = document.getElementById('sb-signin-hint');
+  if (hint) hint.style.display = _sbUser ? 'none' : '';
   // Sidebar auth block
   const sbpOut = document.getElementById('sbp-signed-out');
   const sbpIn = document.getElementById('sbp-signed-in');
@@ -1541,8 +1550,15 @@ function sbUpdateUI() {
 
 function sidebarProfileClick() {
   const block = document.getElementById('sb-auth-block');
+  const chevron = document.getElementById('sb-chevron');
+  const hint = document.getElementById('sb-signin-hint');
   if (!block) return;
-  block.style.display = block.style.display === 'none' ? '' : 'none';
+  const open = block.style.display === 'none' || block.style.display === '';
+  // toggle: if currently hidden → show, if shown → hide
+  const isHidden = block.style.display === 'none';
+  block.style.display = isHidden ? '' : 'none';
+  if (chevron) chevron.style.transform = isHidden ? 'rotate(90deg)' : '';
+  if (hint && isHidden) hint.style.display = 'none'; // hide hint when block opens
 }
 
 async function sbpHandleSignIn() {
@@ -3334,6 +3350,14 @@ function openSidebar() {
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+  // Reset auth block and chevron
+  const ab = document.getElementById('sb-auth-block');
+  const ch = document.getElementById('sb-chevron');
+  if (ab) ab.style.display = 'none';
+  if (ch) ch.style.transform = '';
+  // Show signin hint if not logged in
+  const hint = document.getElementById('sb-signin-hint');
+  if (hint) hint.style.display = _sbUser ? 'none' : '';
   // Restore onboarding tooltip if active
   const overlay = document.getElementById('ob-overlay');
   const tip = document.getElementById('ob-tooltip');
