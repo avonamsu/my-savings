@@ -456,37 +456,36 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <div style="position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;height:52px;z-index:99;background:var(--bg);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;padding:0 16px;">
   <button class="menu-btn" onclick="openSidebar()">☰</button>
   <span id="topbar-title" style="position:absolute;left:50%;transform:translateX(-50%);font-size:15px;font-weight:700;color:var(--text);">Мои накопления</span>
-  <button id="topbar-profile-btn" onclick="topbarProfileClick()" style="margin-left:auto;width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;transition:opacity .2s;" title="Аккаунт"></button>
-</div>
-
-<!-- PROFILE POPUP -->
-<div id="profile-popup" style="display:none;position:fixed;top:58px;right:calc(max(0px,(100vw - 480px)/2) + 12px);z-index:200;background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
-  <div id="pp-signed-out">
-    <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">Войди чтобы синхронизировать данные между устройствами</div>
-    <input type="email" id="pp-email-input" placeholder="твой@email.com" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;width:100%;margin-bottom:8px;">
-    <button class="btn-primary" style="width:100%;font-size:13px;padding:9px;" onclick="ppHandleSignIn()">✉️ Войти по email</button>
-    <div id="pp-magic-sent" style="display:none;font-size:12px;color:var(--accent);background:var(--accent-dim);border-radius:8px;padding:8px 10px;margin-top:8px;">✅ Письмо отправлено! Открой его и нажми на ссылку.</div>
-    <div id="pp-error" style="display:none;font-size:12px;color:var(--danger);margin-top:6px;"></div>
-  </div>
-  <div id="pp-signed-in" style="display:none;">
-    <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">Вошёл как</div>
-    <div id="pp-email-show" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;word-break:break-all;"></div>
-    <div style="font-size:12px;color:var(--accent);margin-bottom:12px;">✅ Данные синхронизируются</div>
-    <button class="btn-cancel" style="width:100%;font-size:12px;" onclick="ppHandleSignOut()">Выйти из аккаунта</button>
-  </div>
 </div>
 
 <!-- SIDEBAR -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-profile" style="display:flex;align-items:center;gap:14px;">
+  <div class="sidebar-profile" style="display:flex;align-items:center;gap:14px;cursor:pointer;" onclick="sidebarProfileClick()">
     <div id="sb-avatar" style="width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--bg);flex-shrink:0;">🪙</div>
-    <div>
+    <div style="flex:1;min-width:0;">
       <div class="sidebar-name" id="sb-name">Мои накопления</div>
       <div class="sidebar-total" id="sb-total">Загрузка...</div>
       <div id="sb-level" style="font-size:11px;color:var(--accent);margin-top:2px;font-weight:600;"></div>
+      <div id="sb-auth-status" style="font-size:11px;color:var(--text-dim);margin-top:2px;"></div>
     </div>
   </div>
+
+  <!-- AUTH BLOCK IN SIDEBAR -->
+  <div id="sb-auth-block" style="display:none;padding:12px 0 4px;">
+    <div id="sbp-signed-out">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Войди чтобы синхронизировать данные между устройствами</div>
+      <input type="email" id="sbp-email-input" placeholder="твой@email.com" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;width:100%;margin-bottom:8px;">
+      <button class="btn-primary" style="width:100%;font-size:13px;padding:9px;" onclick="sbpHandleSignIn()">✉️ Войти по email</button>
+      <div id="sbp-magic-sent" style="display:none;font-size:12px;color:var(--accent);background:var(--accent-dim);border-radius:8px;padding:8px 10px;margin-top:8px;">✅ Письмо отправлено! Открой его и нажми на ссылку.</div>
+      <div id="sbp-error" style="display:none;font-size:12px;color:var(--danger);margin-top:6px;"></div>
+    </div>
+    <div id="sbp-signed-in" style="display:none;">
+      <div style="font-size:12px;color:var(--accent);margin-bottom:8px;">✅ Данные синхронизируются</div>
+      <button class="btn-cancel" style="width:100%;font-size:12px;" onclick="sbpHandleSignOut()">Выйти из аккаунта</button>
+    </div>
+  </div>
+  <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0 8px;"></div>
 
   <div class="sidebar-section"><span>⚙️ Настройки</span></div>
   <button class="sidebar-item" onclick="showPage('backup');closeSidebar()"><span class="si">💾</span><span>Синхронизация и резервные данные</span></button>
@@ -990,7 +989,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div class="section-title" style="margin-top:0">🔐 Аккаунт и синхронизация</div>
   <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
     <div id="sb-signed-out" style="display:flex;flex-direction:column;gap:10px;">
-      <div style="font-size:13px;color:var(--text-dim);">Не авторизована. Нажми на иконку профиля в шапке чтобы войти.</div>
+      <div style="font-size:13px;color:var(--text-dim);">Не авторизована. Открой боковое меню и нажми на профиль чтобы войти.</div>
     </div>
     <div id="sb-signed-in" style="display:none;flex-direction:column;gap:8px;">
       <div style="font-size:13px;color:var(--text-dim);">Вошла как: <span id="sb-user-email" style="color:var(--text);font-weight:500;"></span></div>
@@ -1510,34 +1509,65 @@ function sbUpdateUI() {
       inn.style.display = 'none';
     }
   }
-  // Topbar profile button
-  const btn = document.getElementById('topbar-profile-btn');
-  if (btn) {
+  // Sidebar avatar and auth status
+  const avatar = document.getElementById('sb-avatar');
+  const authStatus = document.getElementById('sb-auth-status');
+  if (avatar) {
     if (_sbUser) {
       const letter = (_sbUser.email || '?')[0].toUpperCase();
-      btn.textContent = letter;
-      btn.style.background = 'var(--accent)';
-      btn.style.color = 'var(--bg)';
+      avatar.textContent = letter;
+      avatar.style.fontSize = '20px';
     } else {
-      btn.textContent = '👤';
-      btn.style.background = 'var(--surface2)';
-      btn.style.color = 'var(--text)';
+      avatar.textContent = '🪙';
+      avatar.style.fontSize = '24px';
     }
   }
-  // Profile popup
-  const ppOut = document.getElementById('pp-signed-out');
-  const ppIn = document.getElementById('pp-signed-in');
-  const ppEmail = document.getElementById('pp-email-show');
-  if (ppOut && ppIn) {
+  if (authStatus) {
+    authStatus.textContent = _sbUser ? ('☁️ ' + _sbUser.email) : '· Нажми чтобы войти';
+  }
+  // Sidebar auth block
+  const sbpOut = document.getElementById('sbp-signed-out');
+  const sbpIn = document.getElementById('sbp-signed-in');
+  if (sbpOut && sbpIn) {
     if (_sbUser) {
-      ppOut.style.display = 'none';
-      ppIn.style.display = '';
-      if (ppEmail) ppEmail.textContent = _sbUser.email || '';
+      sbpOut.style.display = 'none';
+      sbpIn.style.display = '';
     } else {
-      ppOut.style.display = '';
-      ppIn.style.display = 'none';
+      sbpOut.style.display = '';
+      sbpIn.style.display = 'none';
     }
   }
+}
+
+function sidebarProfileClick() {
+  const block = document.getElementById('sb-auth-block');
+  if (!block) return;
+  block.style.display = block.style.display === 'none' ? '' : 'none';
+}
+
+async function sbpHandleSignIn() {
+  const email = document.getElementById('sbp-email-input')?.value?.trim();
+  const errEl = document.getElementById('sbp-error');
+  const sentEl = document.getElementById('sbp-magic-sent');
+  if (errEl) errEl.style.display = 'none';
+  const validErr = sbValidateEmail(email);
+  if (validErr) {
+    if (errEl) { errEl.textContent = '❌ ' + validErr; errEl.style.display = ''; }
+    return;
+  }
+  const error = await sbSignInWithEmail(email);
+  if (error) {
+    if (errEl) { errEl.textContent = '❌ ' + sbErrorText(error); errEl.style.display = ''; }
+  } else {
+    if (sentEl) sentEl.style.display = '';
+  }
+}
+
+async function sbpHandleSignOut() {
+  if (!confirm('Выйти из аккаунта?')) return;
+  await sbSignOut();
+  const block = document.getElementById('sb-auth-block');
+  if (block) block.style.display = 'none';
 }
 
 function topbarProfileClick() {
@@ -1560,7 +1590,7 @@ function topbarProfileClick() {
 
 function sbErrorText(error) {
   const msg = (error?.message || '').toLowerCase();
-  if (msg.includes('rate limit')) return 'Слишком много попыток входа — подожди час и попробуй снова';
+  if (msg.includes('rate limit')) return 'Письмо уже было отправлено — проверь почту (включая папку «Спам»)';
   if (msg.includes('invalid email') || msg.includes('unable to validate') || msg.includes('invalid format')) return 'Некорректный email — проверь правильность адреса';
   if (msg.includes('network') || msg.includes('fetch') || msg.includes('failed to fetch')) return 'Нет соединения с интернетом';
   if (msg.includes('user not found')) return 'Пользователь не найден';
