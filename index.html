@@ -17,6 +17,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 :root {
@@ -981,7 +982,23 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- BACKUP PAGE -->
 <div class="page" id="page-backup">
-  <div class="section-title" style="margin-top:0">☁️ Google Drive</div>
+  <div class="section-title" style="margin-top:0">🔐 Аккаунт и синхронизация</div>
+  <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+    <div id="sb-signed-out" style="display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:13px;color:var(--text-dim);">Войди по email — данные будут автоматически синхронизироваться между устройствами.</div>
+      <input type="email" id="sb-email-input" placeholder="твой@email.com" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;width:100%;">
+      <button class="btn-primary" style="width:100%" onclick="sbHandleSignIn()">✉️ Войти по email</button>
+      <div id="sb-magic-sent" style="display:none;font-size:12px;color:var(--accent);background:var(--accent-dim);border-radius:8px;padding:10px 12px;">✅ Письмо отправлено! Открой его и нажми на ссылку для входа.</div>
+      <div id="sb-sign-in-error" style="display:none;font-size:12px;color:var(--danger);"></div>
+    </div>
+    <div id="sb-signed-in" style="display:none;flex-direction:column;gap:8px;">
+      <div style="font-size:13px;color:var(--text-dim);">Вошёл как: <span id="sb-user-email" style="color:var(--text);font-weight:500;"></span></div>
+      <div style="font-size:12px;color:var(--accent);">✅ Данные синхронизируются автоматически</div>
+      <button class="btn-cancel" style="width:100%;margin-top:0;color:var(--text-dim);font-size:12px" onclick="sbHandleSignOut()">Выйти из аккаунта</button>
+    </div>
+  </div>
+
+  <div class="section-title">☁️ Google Drive</div>
   <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
     <div style="font-size:13px;color:var(--text-dim);">Автоматическая синхронизация данных между устройствами. Данные хранятся в скрытой папке вашего Google Drive.</div>
     <div id="backup-gdrive-out">
@@ -1436,6 +1453,102 @@ async function fetchRates() {
   if (ratesInline) ratesInline.innerHTML = '<span style="color:var(--warn);font-size:10px;">⚠️ курсы недоступны</span>';
 }
 
+// ── SUPABASE ───────────────────────────────────────────────
+const SUPABASE_URL = 'https://lcumgywtiydwbbvtcld.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_V7DJVQ-mdnaT5emIbdP-FA_XEui_yGg';
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let _sbUser = null;
+let _sbSaveTimer = null;
+
+async function sbInit() {
+  const { data: { session } } = await _sb.auth.getSession();
+  _sbUser = session?.user || null;
+  _sb.auth.onAuthStateChange((_event, session) => {
+    _sbUser = session?.user || null;
+    sbUpdateUI();
+    if (_sbUser) sbLoadState();
+  });
+  if (_sbUser) await sbLoadState();
+  sbUpdateUI();
+}
+
+async function sbLoadState() {
+  if (!_sbUser) return;
+  const { data, error } = await _sb.from('user_state').select('state').eq('user_id', _sbUser.id).single();
+  if (error && error.code !== 'PGRST116') { console.warn('sbLoad error', error); return; }
+  if (data?.state && Object.keys(data.state).length > 0) {
+    state = data.state;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    renderAll();
+  }
+}
+
+async function sbSaveState() {
+  if (!_sbUser) return;
+  const { error } = await _sb.from('user_state').upsert({
+    user_id: _sbUser.id,
+    state: state,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' });
+  if (error) console.warn('sbSave error', error);
+}
+
+async function sbLogTransaction(savingId, type, amount, source) {
+  if (!_sbUser) return;
+  await _sb.from('transactions').insert({
+    user_id: _sbUser.id,
+    saving_id: savingId,
+    type,
+    amount,
+    source: source || null
+  });
+}
+
+async function sbSignInWithEmail(email) {
+  const { error } = await _sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
+  return error;
+}
+
+async function sbSignOut() {
+  await _sb.auth.signOut();
+  _sbUser = null;
+  sbUpdateUI();
+}
+
+function sbUpdateUI() {
+  const out = document.getElementById('sb-signed-out');
+  const inn = document.getElementById('sb-signed-in');
+  const emailEl = document.getElementById('sb-user-email');
+  if (!out || !inn) return;
+  if (_sbUser) {
+    out.style.display = 'none';
+    inn.style.display = 'flex';
+    if (emailEl) emailEl.textContent = _sbUser.email || '';
+  } else {
+    out.style.display = 'flex';
+    inn.style.display = 'none';
+  }
+}
+
+async function sbHandleSignIn() {
+  const email = document.getElementById('sb-email-input')?.value?.trim();
+  if (!email) return;
+  const errEl = document.getElementById('sb-sign-in-error');
+  const sentEl = document.getElementById('sb-magic-sent');
+  if (errEl) errEl.style.display = 'none';
+  const error = await sbSignInWithEmail(email);
+  if (error) {
+    if (errEl) { errEl.textContent = '❌ ' + error.message; errEl.style.display = ''; }
+  } else {
+    if (sentEl) sentEl.style.display = '';
+  }
+}
+
+async function sbHandleSignOut() {
+  if (!confirm('Выйти из аккаунта? Данные останутся на устройстве.')) return;
+  await sbSignOut();
+}
+
 // ── STORAGE ───────────────────────────────────────────────
 const STORAGE_KEY = 'fin_v3';
 const OLD_KEYS = ['fin_state', 'fin_state_v2'];
@@ -1445,6 +1558,8 @@ function save() {
   clearTimeout(_idbSaveTimer);
   _idbSaveTimer = setTimeout(saveToIDB, 1000);
   if (typeof gdriveScheduleAutoSave === 'function') gdriveScheduleAutoSave();
+  clearTimeout(_sbSaveTimer);
+  _sbSaveTimer = setTimeout(sbSaveState, 1500);
 }
 function load() {
   const allKeys = [STORAGE_KEY, ...OLD_KEYS];
@@ -5679,6 +5794,7 @@ checkNotifBanner();
 checkBackupReminder();
 updateBackupDateDisplay();
 gdriveInit();
+sbInit();
 
 // ── ONBOARDING ────────────────────────────────────────────
 const OB_STEPS = [
