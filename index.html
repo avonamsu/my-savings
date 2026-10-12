@@ -3453,26 +3453,22 @@ function openSavingsAccountSheet(id) {
         ${cur !== 'RUB' ? `<div style="font-size:14px;color:var(--text-dim);margin-top:8px;">≈ ${fmt(Math.round(toRub(bal, cur)))} ₽</div>` : ''}
       </div>
       <!-- stats -->
-      ${sa ? `<div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;border-bottom:1px solid rgba(255,255,255,0.06);">
-        <div style="background:var(--surface2);border-radius:12px;padding:12px;">
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">СТАВКА</div>
-          <div style="font-size:18px;font-weight:700;color:var(--accent);">${s.rate}%</div>
-          <div style="font-size:11px;color:var(--text-dim);">годовых</div>
+      ${sa ? `<div style="padding:12px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;">
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.05em;">СТАВКА</div>
+          <div style="font-size:15px;font-weight:700;color:var(--accent);">${s.rate}% <span style="font-size:11px;font-weight:400;color:var(--text-dim);">годовых</span></div>
         </div>
-        <div style="background:var(--surface2);border-radius:12px;padding:12px;">
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ДОХОД В ДЕНЬ</div>
-          <div style="font-size:18px;font-weight:700;color:#4CAF50;">+${fmt(Math.round(sa.dailyIncome))}</div>
-          <div style="font-size:11px;color:var(--text-dim);">${currSym(cur)}</div>
+        <div style="background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;">
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.05em;">ДОХОД В ДЕНЬ</div>
+          <div style="font-size:15px;font-weight:700;color:#4CAF50;">+${fmt(Math.round(sa.dailyIncome))} <span style="font-size:11px;font-weight:400;color:var(--text-dim);">${currSym(cur)}</span></div>
         </div>
-        <div style="background:var(--surface2);border-radius:12px;padding:12px;">
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ЗАРАБОТАНО</div>
-          <div style="font-size:18px;font-weight:700;">+${fmt(Math.round(sa.earnedInterest))}</div>
-          <div style="font-size:11px;color:var(--text-dim);">за ${sa.daysPassed} дн.</div>
+        <div style="background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;">
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.05em;">ЗАРАБОТАНО</div>
+          <div style="font-size:15px;font-weight:700;">+${fmt(Math.round(sa.earnedInterest))} <span style="font-size:11px;font-weight:400;color:var(--text-dim);">за ${sa.daysPassed} дн.</span></div>
         </div>
-        <div style="background:var(--surface2);border-radius:12px;padding:12px;">
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ЗА МЕСЯЦ</div>
-          <div style="font-size:18px;font-weight:700;">≈${fmt(Math.round(sa.dailyIncome * 30))}</div>
-          <div style="font-size:11px;color:var(--text-dim);">${currSym(cur)}</div>
+        <div style="background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;">
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.05em;">ЗА МЕСЯЦ</div>
+          <div style="font-size:15px;font-weight:700;">≈${fmt(Math.round(sa.dailyIncome * 30))} <span style="font-size:11px;font-weight:400;color:var(--text-dim);">${currSym(cur)}</span></div>
         </div>
       </div>` : ''}
       <!-- actions -->
