@@ -4072,17 +4072,19 @@ async function accrueInterestIfNeeded(s, txs) {
     }
   }
 
-  // Now walk forward, applying cash changes + compounding interest day by day
+  // Now walk forward: interest is calculated on balance at START of day, then cash changes applied
   const newRows = [];
   let cur = new Date(startFromStr + 'T12:00:00');
   while (cur.toLocaleDateString('sv') <= todayStr) {
     const key = cur.toLocaleDateString('sv');
-    if (cashByDate[key]) balance += cashByDate[key];
+    // 1. Accrue interest on balance at start of day
     if (balance > 0) {
       const interest = Math.round(balance * rate / 365 * 100) / 100;
       newRows.push({ user_id: _sbUser.id, saving_id: s.id, type: 'interest', amount: interest, date: key, note: null, source: null });
-      balance += interest; // compound: add interest to balance for next day
+      balance += interest;
     }
+    // 2. Apply deposits/withdrawals of this day
+    if (cashByDate[key]) balance += cashByDate[key];
     cur.setDate(cur.getDate() + 1);
   }
 
