@@ -4031,7 +4031,8 @@ const openSavingsAccountSheet = openAccountSheet;
 
 async function accrueInterestIfNeeded(s, txs) {
   // Only for savings accounts with rate and dateStart
-  if (!s.isSavingsAccount || !s.rate || !s.dateStart || !_sbUser) return;
+  console.log('[accrue] called for', s.name, '| isSavingsAccount:', s.isSavingsAccount, '| rate:', s.rate, '| dateStart:', s.dateStart, '| user:', !!_sbUser);
+  if (!s.isSavingsAccount || !s.rate || !s.dateStart || !_sbUser) { console.log('[accrue] skipped early'); return; }
 
   const rate = Number(s.rate) / 100;
   const today = new Date(); today.setHours(0,0,0,0);
@@ -4043,10 +4044,11 @@ async function accrueInterestIfNeeded(s, txs) {
     : new Date(s.dateStart); // from account opening
 
   startFrom.setHours(0,0,0,0);
-  if (startFrom >= today) return; // nothing to accrue yet
+  console.log('[accrue] startFrom:', startFrom.toISOString(), '| today:', today.toISOString(), '| lastInterestTx:', lastInterestTx?.date);
+  if (startFrom >= today) { console.log('[accrue] nothing to accrue yet'); return; }
 
-  // Build balance timeline from cash-flow txs (ascending)
-  const cashTxs = [...txs].sort((a,b) => a.date.localeCompare(b.date));
+  // Build balance timeline from cash-flow txs only (deposit/withdrawal), ascending
+  const cashTxs = [...txs].filter(t => t.type === 'deposit' || t.type === 'withdrawal').sort((a,b) => a.date.localeCompare(b.date));
   const timeline = _buildBalanceTimeline(cashTxs, s.dateStart);
   const timelineMap = {};
   for (const {date, balance} of timeline) timelineMap[date.toISOString().slice(0,10)] = balance;
@@ -4074,9 +4076,11 @@ async function accrueInterestIfNeeded(s, txs) {
     cur.setDate(cur.getDate() + 1);
   }
 
+  console.log('[accrue] newRows to insert:', newRows.length, newRows);
   if (!newRows.length) return;
   const { error } = await _sb.from('transactions').insert(newRows);
   if (error) { console.warn('accrueInterest error', error); return; }
+  console.log('[accrue] inserted OK');
   delete _txCache[s.id];
 }
 
