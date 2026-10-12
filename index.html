@@ -3857,8 +3857,8 @@ function _buildHistorySheetContent(savingId, rows) {
   }
 
   let aprStr = '—';
-  if (s.isSavingsAccount && s.rate) {
-    // For savings accounts, show the actual rate
+  if (s.rate && (s.isSavingsAccount || s.isDeposit)) {
+    // For accounts with a known rate, show the actual rate
     aprStr = '+' + Number(s.rate).toFixed(1) + '% годовых';
   } else if (principal > 0 && rows.length > 0) {
     const firstDateStr = rows[rows.length - 1].date.slice(0, 10);
