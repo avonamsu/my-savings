@@ -3447,10 +3447,10 @@ function openSavingsAccountSheet(id) {
         <button onclick="document.getElementById('sa-sheet').remove()" style="background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;color:var(--text-dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
       </div>
       <!-- balance -->
-      <div style="padding:20px 20px 16px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
-        <div style="font-size:11px;color:var(--text-dim);letter-spacing:.08em;margin-bottom:4px;">БАЛАНС</div>
-        <div style="font-size:32px;font-weight:700;letter-spacing:-.5px;">${fmt(Math.round(bal))} ${currSym(cur)}</div>
-        ${cur !== 'RUB' ? `<div style="font-size:14px;color:var(--text-dim);margin-top:2px;">≈ ${fmt(Math.round(toRub(bal, cur)))} ₽</div>` : ''}
+      <div style="padding:28px 20px 24px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:11px;color:var(--text-dim);letter-spacing:.1em;margin-bottom:10px;text-transform:uppercase;">Баланс</div>
+        <div style="font-size:42px;font-weight:800;letter-spacing:-1.5px;line-height:1;">${fmt(Math.round(bal))} <span style="font-size:28px;font-weight:600;opacity:.7;">${currSym(cur)}</span></div>
+        ${cur !== 'RUB' ? `<div style="font-size:14px;color:var(--text-dim);margin-top:8px;">≈ ${fmt(Math.round(toRub(bal, cur)))} ₽</div>` : ''}
       </div>
       <!-- stats -->
       ${sa ? `<div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;border-bottom:1px solid rgba(255,255,255,0.06);">
@@ -3493,8 +3493,9 @@ function openSavingsAccountSheet(id) {
       <!-- history button -->
       <div style="padding:0 20px 20px;">
         <button onclick="document.getElementById('sa-sheet').remove();openHistorySheet('${id}')"
-          style="width:100%;padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text-dim);font-size:14px;cursor:pointer;text-align:left;">
-          📋 История операций
+          style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:var(--text);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+          <span>📋 История операций</span>
+          <span style="color:var(--text-dim);font-size:16px;">›</span>
         </button>
       </div>
     </div>`;
