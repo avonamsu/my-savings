@@ -2939,9 +2939,11 @@ function showChallengeMenu(e, id, canComplete) {
 function showSavingsMenu(e, id, showFix) {
   const s = state.savings.find(x => x.id === id);
   const isSA = s?.isSavingsAccount;
+  const isCash = s?.icon === '💵' || (!s?.isDeposit && !s?.isSavingsAccount && !['📈','🏠','₿'].includes(s?.icon));
+  const hasDepositWithdraw = isSA || isCash;
   const items = [
     {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
-    ...(isSA ? [
+    ...(hasDepositWithdraw ? [
       {icon:'➕', label:'Пополнить', fn:()=>openDepositWithdrawModal(id,'deposit')},
       {icon:'➖', label:'Снять', fn:()=>openDepositWithdrawModal(id,'withdrawal')},
     ] : []),
@@ -4011,12 +4013,20 @@ function saveItem(){
     const item={id,name,icon,amount,isDeposit,isSavingsAccount,currency,included,excluded:!included};
     if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
     if(isSavingsAccount){item.rate=parseFloat(document.getElementById('sa-rate').value)||0;item.dateStart=document.getElementById('sa-date-start').value;item.accrual=document.getElementById('sa-accrual')?.value||'daily';}
-    // Log transaction to Supabase — только при создании нового
+    // Log transaction to Supabase
+    const isCashOrOther = !isDeposit && !isSavingsAccount && !['📈','🏠','₿'].includes(icon);
     if (!prevItem) {
+      // Новый счёт — init транзакция
       const initDate = (isDeposit && item.dateStart) ? item.dateStart : new Date().toISOString().slice(0,10);
       sbLogTransaction(id, 'init', amount, { date: initDate });
+    } else if (isCashOrOther) {
+      // Наличные/Другое — при редактировании суммы логируем разницу
+      const diff = amount - Number(prevItem.amount);
+      if (Math.abs(diff) > 0.01) {
+        sbLogTransaction(id, diff > 0 ? 'deposit' : 'withdrawal', Math.abs(diff), { note: 'Изменено вручную' });
+      }
     }
-    // Накопительный при редактировании — сумма в поле не менялась, транзакция не нужна
+    // Накопительный при редактировании — сумма не менялась через поле, транзакция не нужна
     if(_savingIdx>=0) state.savings.splice(_savingIdx,0,item); else state.savings.push(item);
   } else if(modalMode==='income'){
     if (!validateIncomeForm()) return;
