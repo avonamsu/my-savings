@@ -3414,6 +3414,20 @@ document.addEventListener('click', e => {
   if (gmenu && !gmenu.parentElement.contains(e.target)) gmenu.style.display = 'none';
 });
 
+function toggleGoalsBlock(key) {
+  const gc = JSON.parse(localStorage.getItem('goals_blocks_collapsed')||'{}');
+  gc[key] = !gc[key];
+  localStorage.setItem('goals_blocks_collapsed', JSON.stringify(gc));
+  const el = document.getElementById('gb-'+key);
+  if (el) el.style.display = gc[key] ? 'none' : '';
+  // rotate arrow
+  const headers = document.querySelectorAll('#goals-list [onclick*="toggleGoalsBlock(\''+key+'\')"]');
+  headers.forEach(h => {
+    const arrow = h.querySelector('.gl-arrow');
+    if (arrow) arrow.style.transform = gc[key] ? 'rotate(-90deg)' : 'rotate(0deg)';
+  });
+}
+
 window._goalsSort = 'alpha-coverage';
 function setGoalsSort(val) {
   window._goalsSort = val;
@@ -4670,18 +4684,23 @@ function renderGoals() {
     </div>`;
   }
 
+  const gc = JSON.parse(localStorage.getItem('goals_blocks_collapsed')||'{}');
   let html = '';
 
   // --- REGULAR GOALS BLOCK ---
   if (regularItems.length) {
     const coveredCount = regularItems.filter(g => g.covered).length;
-    html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;">🎯 Цели</div>
+    const isCol = !!gc['goals'];
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px;cursor:pointer;" onclick="toggleGoalsBlock('goals')">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;">🎯 Цели</span>
+        <span class="gl-arrow" style="color:var(--text-dim);font-size:12px;transform:rotate(${isCol?'-90':'0'}deg);transition:transform .2s;">▾</span>
+      </div>
       ${coveredCount < regularItems.length
         ? `<span style="font-size:10px;background:rgba(255,176,71,0.12);border-radius:8px;padding:3px 8px;color:#FFB347;">${coveredCount}/${regularItems.length} покрыто</span>`
         : `<span style="font-size:10px;background:rgba(78,205,196,0.12);border-radius:8px;padding:3px 8px;color:#4ECDC4;">все покрыты ✓</span>`}
     </div>`;
-    html += `<div class="card" id="goals-list-inner">${regularItems.map(renderGoalItem).join('')}</div>`;
+    html += `<div id="gb-goals" style="${isCol?'display:none;':''}"><div class="card" id="goals-list-inner">${regularItems.map(renderGoalItem).join('')}</div></div>`;
   }
 
   // --- SUBSCRIPTIONS BLOCK ---
@@ -4689,15 +4708,19 @@ function renderGoals() {
     const subMonthlyTotal = subItems.reduce((s,g) => s + (getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount)), 0);
     const subYearlyTotal = subMonthlyTotal * 12;
     const coveredSubCount = subItems.filter(g => g.covered).length;
-    html += `<div style="margin-top:${regularItems.length?'20px':'0'};display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;">📦 Подписки</div>
+    const isColSub = !!gc['subscriptions'];
+    html += `<div style="margin-top:${regularItems.length?'20px':'0'};display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px;cursor:pointer;" onclick="toggleGoalsBlock('subscriptions')">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;">📦 Подписки</span>
+        <span class="gl-arrow" style="color:var(--text-dim);font-size:12px;transform:rotate(${isColSub?'-90':'0'}deg);transition:transform .2s;">▾</span>
+      </div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
         <span style="font-size:10px;background:rgba(255,255,255,0.07);border-radius:8px;padding:3px 8px;color:var(--text-dim);">${fmt(Math.round(subMonthlyTotal))} ₽/мес</span>
         <span style="font-size:10px;background:rgba(255,255,255,0.07);border-radius:8px;padding:3px 8px;color:var(--text-dim);">${fmt(Math.round(subYearlyTotal))} ₽/год</span>
         ${coveredSubCount < subItems.length ? `<span style="font-size:10px;background:rgba(255,176,71,0.12);border-radius:8px;padding:3px 8px;color:#FFB347;">${coveredSubCount}/${subItems.length} покрыто</span>` : `<span style="font-size:10px;background:rgba(78,205,196,0.12);border-radius:8px;padding:3px 8px;color:#4ECDC4;">все покрыты ✓</span>`}
       </div>
     </div>`;
-    html += `<div class="card">${subItems.map(renderSubItem).join('')}</div>`;
+    html += `<div id="gb-subscriptions" style="${isColSub?'display:none;':''}"><div class="card">${subItems.map(renderSubItem).join('')}</div></div>`;
   }
 
   if (!html) html = `<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`;
