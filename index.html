@@ -1466,8 +1466,49 @@ async function sbLoadState() {
     renderAll();
     checkAutoRenew();
   }
-  // Preload transactions + CB key rate in parallel, then re-render
-  Promise.all([preloadTxCache(), loadCbKeyRate()]).then(() => renderSavings());
+  // Preload transactions + CB key rate + snapshots in parallel, then re-render
+  Promise.all([preloadTxCache(), loadCbKeyRate(), sbLoadSnapshots()]).then(() => { renderSavings(); drawChart(); drawIncomeChart(); });
+}
+
+// ── SNAPSHOTS SYNC ────────────────────────────────────────────
+async function sbUpsertSnapshot(type, ym, amount) {
+  if (!_sbUser) return;
+  const { error } = await _sb.from('snapshots').upsert({
+    user_id: _sbUser.id, type, ym, amount
+  }, { onConflict: 'user_id,type,ym' });
+  if (error) console.warn('sbUpsertSnapshot error', error);
+}
+
+async function sbLoadSnapshots() {
+  if (!_sbUser) return;
+  const { data, error } = await _sb.from('snapshots').select('type,ym,amount').eq('user_id', _sbUser.id);
+  if (error) { console.warn('sbLoadSnapshots error', error); return; }
+  if (!data || !data.length) {
+    // First time: migrate localStorage data to Supabase
+    await sbMigrateSnapshots();
+    return;
+  }
+  if (!state._history) state._history = {};
+  if (!state._incomeHistory) state._incomeHistory = {};
+  for (const row of data) {
+    if (row.type === 'savings') state._history[row.ym] = row.amount;
+    else if (row.type === 'income') state._incomeHistory[row.ym] = row.amount;
+  }
+  save();
+}
+
+async function sbMigrateSnapshots() {
+  if (!_sbUser) return;
+  const rows = [];
+  for (const [ym, amount] of Object.entries(state._history || {})) {
+    rows.push({ user_id: _sbUser.id, type: 'savings', ym, amount });
+  }
+  for (const [ym, amount] of Object.entries(state._incomeHistory || {})) {
+    rows.push({ user_id: _sbUser.id, type: 'income', ym, amount });
+  }
+  if (!rows.length) return;
+  const { error } = await _sb.from('snapshots').upsert(rows, { onConflict: 'user_id,type,ym' });
+  if (error) console.warn('sbMigrateSnapshots error', error);
 }
 
 async function sbSaveState() {
@@ -5266,8 +5307,8 @@ function drawChart() {
 function recordIncomeSnapshot() {
   const ym = new Date().toISOString().slice(0,7);
   if (!state._incomeHistory) state._incomeHistory = {};
-  const total = state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0);
-  if (total > 0) { state._incomeHistory[ym] = Math.round(total); save(); }
+  const amt = Math.round(state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0));
+  if (amt > 0) { state._incomeHistory[ym] = amt; save(); sbUpsertSnapshot('income', ym, amt); }
 }
 
 function addIncomeHistoryPoint() {
@@ -5283,8 +5324,9 @@ function saveIncomeHistoryPoint() {
   const amt = parseFloat(document.getElementById('ih-amount').value);
   if (!ym || isNaN(amt) || amt < 0) return;
   if (!state._incomeHistory) state._incomeHistory = {};
-  state._incomeHistory[ym] = Math.round(amt);
-  save(); closeIncomeHistoryModal(); drawIncomeChart();
+  const rounded = Math.round(amt);
+  state._incomeHistory[ym] = rounded;
+  save(); sbUpsertSnapshot('income', ym, rounded); closeIncomeHistoryModal(); drawIncomeChart();
 }
 
 function drawIncomeChart() {
@@ -5389,8 +5431,8 @@ function drawIncomeChart() {
 
 function addHistoryPoint(){document.getElementById('history-modal').classList.add('open');document.getElementById('h-month').value=new Date().toISOString().slice(0,7);document.getElementById('h-amount').value='';}
 function closeHistoryModal(){document.getElementById('history-modal').classList.remove('open');}
-function saveHistoryPoint(){const ym=document.getElementById('h-month').value;const amt=parseFloat(document.getElementById('h-amount').value);if(!ym||isNaN(amt)||amt<0)return;if(!state._history)state._history={};state._history[ym]=Math.round(amt);save();closeHistoryModal();drawChart();}
-function recordSnapshot(){const ym=new Date().toISOString().slice(0,7);if(!state._history)state._history={};state._history[ym]=Math.round(state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0));save();}
+function saveHistoryPoint(){const ym=document.getElementById('h-month').value;const amt=Math.round(parseFloat(document.getElementById('h-amount').value));if(!ym||isNaN(amt)||amt<0)return;if(!state._history)state._history={};state._history[ym]=amt;save();sbUpsertSnapshot('savings',ym,amt);closeHistoryModal();drawChart();}
+function recordSnapshot(){const ym=new Date().toISOString().slice(0,7);if(!state._history)state._history={};const amt=Math.round(state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0));state._history[ym]=amt;save();sbUpsertSnapshot('savings',ym,amt);}
 
 
 // ── PIGGY BANK ────────────────────────────────────────────
