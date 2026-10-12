@@ -2959,7 +2959,7 @@ function showChallengeMenu(e, id, canComplete) {
 function showSavingsMenu(e, id, showFix) {
   const s = state.savings.find(x => x.id === id);
   const isSA = s?.isSavingsAccount;
-  const isCashOrOther = !s?.isDeposit && !s?.isSavingsAccount && !['📈','🏠','₿'].includes(s?.icon);
+  const isCashOrOther = !s?.isDeposit && !s?.isSavingsAccount;
   const hasDepositWithdraw = isSA || isCashOrOther;
   const canRefill = s?.isDeposit && s?.refillable && (!s?.refillUntil || s.refillUntil >= today());
   const canEarlyClose = s?.isDeposit && s?.dateStart && (!s?.dateEnd || s.dateEnd > today());
@@ -3948,7 +3948,7 @@ function onSavingTypeChange() {
   document.getElementById('savings-account-fields').style.display=isSavingsAccount?'':'none';
   if(isDeposit||isSavingsAccount) document.getElementById('s-currency').value='RUB';
   // Для накопительного / наличных / другого при редактировании скрываем поле суммы — баланс из транзакций
-  const _isCashOrOther = !isDeposit && !isSavingsAccount && !['📈','🏠','₿'].includes(sel.value);
+  const _isCashOrOther = !isDeposit && !isSavingsAccount;
   const amountRow = document.getElementById('s-amount')?.closest('.field-row');
   if (amountRow) amountRow.style.display = ((isSavingsAccount || _isCashOrOther) && editingId) ? 'none' : '';
   updateDepositPreview();
@@ -4191,7 +4191,7 @@ function saveItem(){
     const opt=sel.options[sel.selectedIndex];
     const icon=sel.value,isDeposit=opt.dataset.deposit==='1',isSavingsAccount=opt.dataset.savingsAccount==='1';
     const prevItem = editingId ? state.savings.find(x=>x.id===editingId) : null;
-    const _isCashOrOther = !isDeposit && !isSavingsAccount && !['📈','🏠','₿'].includes(icon);
+    const _isCashOrOther = !isDeposit && !isSavingsAccount;
     const _amountFromField = (isSavingsAccount || _isCashOrOther) && editingId;
     const amount = _amountFromField ? (Number(prevItem?.amount)||0) : getSavingAmountValue();
     if(!name) return;
