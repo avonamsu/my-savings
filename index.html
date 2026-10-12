@@ -3871,8 +3871,8 @@ function _buildHistorySheetContent(savingId, rows) {
     : rows.map(h => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
         <div>
-          <div style="font-size:13px;font-weight:600;color:${typeColor[h.type]||'var(--text)'};">${typeLabel[h.type]||h.type}</div>
-          <div style="font-size:11px;color:var(--text-dim);margin-top:1px;">${new Date(h.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})}${h.note?' · '+h.note:''}</div>
+          <div style="font-size:13px;font-weight:600;color:${typeColor[h.type]||'var(--text)'};">${h.note==='Открытие счёта'?'Открытие':(typeLabel[h.type]||h.type)}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:1px;">${new Date(h.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})}${h.note&&h.note!=='Открытие счёта'?' · '+h.note:''}</div>
         </div>
         <div style="font-size:14px;font-weight:700;color:${typeColor[h.type]||'var(--text)'};">${typeSign[h.type]||''}${fmt(Number(h.amount))} ${s.currency||'₽'}</div>
       </div>`).join('');
@@ -4993,7 +4993,7 @@ function saveItem(){
     // Log transaction to Supabase — только при создании нового счёта
     if (!prevItem) {
       const initDate = (isDeposit && item.dateStart) ? item.dateStart : new Date().toISOString().slice(0,10);
-      sbLogTransaction(id, 'init', amount, { date: initDate });
+      sbLogTransaction(id, 'deposit', amount, { date: initDate, note: 'Открытие счёта' });
     }
     // При редактировании — сумма меняется только через пополнение/снятие, не через форму
     if(_savingIdx>=0) state.savings.splice(_savingIdx,0,item); else state.savings.push(item);
