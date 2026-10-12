@@ -3869,9 +3869,17 @@ function _buildHistorySheetContent(savingId, rows) {
   let realReturn;
   if (s.isSavingsAccount && s.rate && s.dateStart) {
     realReturn = interest > 0 ? interest : (calcSavingsAccount(s).earnedInterest || 0);
+  } else if (s.isDeposit) {
+    // For deposits: always use actual interest transactions; fallback to formula only if no txs at all
+    if (interest > 0) {
+      realReturn = interest;
+    } else {
+      const d = s.rate && s.dateStart && s.dateEnd ? calcDeposit(s) : null;
+      realReturn = d ? Math.max(0, d.earnedInterest || 0) : 0;
+    }
   } else {
     const currentAmt = getSavingCurrentAmountLocal(s);
-    realReturn = interest > 0 ? interest : (currentAmt - principal + withdrawals);
+    realReturn = interest > 0 ? interest : Math.max(0, currentAmt - principal + withdrawals);
   }
 
   let aprStr = null; // null = don't show yield row
