@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012193000">
+  <meta name="version" content="20261012194000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2123,7 +2123,7 @@ function calcDeposit(s) {
     // For non-compound: balance is principal only, so we add earnedInterest separately
     const currentAmount = s.compound ? balance : balance + earnedInterest;
     const monthlyIncome = s.compound ? currentAmount*(rate/12) : balance*rate/12;
-    return {currentAmount, monthlyIncome, daysTotal, daysPassed, expired};
+    return {currentAmount, monthlyIncome, daysTotal, daysPassed, expired, earnedInterest};
   }
 
   // Fallback: simple calculation — use initialAmount if set, else first tx, else s.amount
@@ -2134,7 +2134,8 @@ function calcDeposit(s) {
     ? principal*Math.pow(1+rate/12,monthsPassed)
     : principal+principal*rate*(daysPassed/365);
   const monthlyIncome=s.compound ? currentAmount*(rate/12) : principal*rate/12;
-  return {currentAmount,monthlyIncome,daysTotal,daysPassed,expired};
+  const earnedInterest=currentAmount-principal;
+  return {currentAmount,monthlyIncome,daysTotal,daysPassed,expired,earnedInterest};
 }
 function getSavingCurrentAmountLocal(s) {
   if (s.isDeposit&&s.rate&&s.dateStart&&s.dateEnd) return calcDeposit(s).currentAmount;
@@ -7313,7 +7314,7 @@ function showToast(msg) {
 
 // ── AUTO-UPDATE CHECK ──────────────────────────────────────
 (function() {
-  const CURRENT_VERSION = '20261012193000';
+  const CURRENT_VERSION = '20261012194000';
   fetch(location.href + '?_v=' + Date.now(), { cache: 'no-store' })
     .then(r => r.text())
     .then(html => {
