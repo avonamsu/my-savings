@@ -1946,16 +1946,16 @@ const fmt2 = n => Number(n).toLocaleString('ru-RU', {maximumFractionDigits:2});
 // Only counts init/deposit/withdrawal — not interest payouts (those are separate income events)
 // txs: sorted by date ascending
 // Returns array of {date (Date), balance}
-function _buildBalanceTimeline(txs, startDate) {
+function _buildBalanceTimeline(txs, startDate, includeInterest = false) {
   const start = new Date(startDate);
   start.setHours(0,0,0,0);
-  // Group cash-flow txs by date
+  // Group txs by date
   const byDate = {};
   for (const tx of txs) {
-    if (tx.type === 'interest') continue; // interest stays on account, tracked separately
+    if (tx.type === 'interest' && !includeInterest) continue;
     const d = tx.date.slice(0, 10);
     if (!byDate[d]) byDate[d] = 0;
-    const sign = (tx.type === 'withdrawal') ? -1 : 1; // init and deposit are positive
+    const sign = (tx.type === 'withdrawal') ? -1 : 1;
     byDate[d] += sign * Number(tx.amount);
   }
   // Walk days from start to today, accumulate balance
@@ -4048,9 +4048,9 @@ async function accrueInterestIfNeeded(s, txs) {
   console.log('[accrue] startFrom:', startFrom.toISOString(), '| today:', today.toISOString(), '| lastInterestTx:', lastInterestTx?.date);
   if (startFrom > today) { console.log('[accrue] nothing to accrue yet'); return; }
 
-  // Build balance timeline from cash-flow txs only (deposit/withdrawal), ascending
-  const cashTxs = [...txs].filter(t => t.type === 'deposit' || t.type === 'withdrawal').sort((a,b) => a.date.localeCompare(b.date));
-  const timeline = _buildBalanceTimeline(cashTxs, s.dateStart);
+  // Build balance timeline including already-accrued interest (for compounding), ascending
+  const cashTxs = [...txs].sort((a,b) => a.date.localeCompare(b.date));
+  const timeline = _buildBalanceTimeline(cashTxs, s.dateStart, true); // include interest for compounding
   const timelineMap = {};
   for (const {date, balance} of timeline) timelineMap[date.toISOString().slice(0,10)] = balance;
 
