@@ -5068,9 +5068,9 @@ function selectGoalType(type) {
 }
 
 function getSubPeriodValue() {
-  const sel = parseInt(document.getElementById('g-sub-period')?.value) || 1;
-  if (sel === 0) return parseInt(document.getElementById('g-sub-custom')?.value) || 1;
-  return sel;
+  const raw = document.getElementById('g-sub-period')?.value;
+  if (raw === '0') return parseInt(document.getElementById('g-sub-custom')?.value) || 1;
+  return parseInt(raw) || 1;
 }
 
 function onSubPeriodChange() {
