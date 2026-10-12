@@ -2939,7 +2939,8 @@ function showChallengeMenu(e, id, canComplete) {
 function showSavingsMenu(e, id, showFix) {
   const s = state.savings.find(x => x.id === id);
   const isSA = s?.isSavingsAccount;
-  const hasDepositWithdraw = isSA;
+  const isCashOrOther = !s?.isDeposit && !s?.isSavingsAccount && !['📈','🏠','₿'].includes(s?.icon);
+  const hasDepositWithdraw = isSA || isCashOrOther;
   const items = [
     {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
     ...(hasDepositWithdraw ? [
@@ -3769,9 +3770,10 @@ function onSavingTypeChange() {
   document.getElementById('deposit-fields').style.display=isDeposit?'':'none';
   document.getElementById('savings-account-fields').style.display=isSavingsAccount?'':'none';
   if(isDeposit||isSavingsAccount) document.getElementById('s-currency').value='RUB';
-  // Для накопительного счёта при редактировании скрываем поле суммы — баланс из транзакций
+  // Для накопительного / наличных / другого при редактировании скрываем поле суммы — баланс из транзакций
+  const _isCashOrOther = !isDeposit && !isSavingsAccount && !['📈','🏠','₿'].includes(sel.value);
   const amountRow = document.getElementById('s-amount')?.closest('.field-row');
-  if (amountRow) amountRow.style.display = (isSavingsAccount && editingId) ? 'none' : '';
+  if (amountRow) amountRow.style.display = ((isSavingsAccount || _isCashOrOther) && editingId) ? 'none' : '';
   updateDepositPreview();
   if(isSavingsAccount) updateSavingsAccountPreview();
 }
@@ -4002,30 +4004,23 @@ function saveItem(){
     const sel=document.getElementById('s-icon');
     const opt=sel.options[sel.selectedIndex];
     const icon=sel.value,isDeposit=opt.dataset.deposit==='1',isSavingsAccount=opt.dataset.savingsAccount==='1';
-    // Для накопительного счёта при редактировании — сумма берётся из текущего состояния (не из поля)
     const prevItem = editingId ? state.savings.find(x=>x.id===editingId) : null;
-    const amount = (isSavingsAccount && editingId) ? (Number(prevItem?.amount)||0) : getSavingAmountValue();
-    if(!name||(!isSavingsAccount&&(!amount||amount<=0)))return;
-    if(!name)return;
+    const _isCashOrOther = !isDeposit && !isSavingsAccount && !['📈','🏠','₿'].includes(icon);
+    const _amountFromField = (isSavingsAccount || _isCashOrOther) && editingId;
+    const amount = _amountFromField ? (Number(prevItem?.amount)||0) : getSavingAmountValue();
+    if(!name) return;
+    if(!_amountFromField && (!amount||amount<=0)) return;
     const currency=document.getElementById('s-currency').value;
     const included=(isSavingsAccount?document.getElementById('sa-included'):document.getElementById('s-included'))?.checked!==false;
     const item={id,name,icon,amount,isDeposit,isSavingsAccount,currency,included,excluded:!included};
     if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
     if(isSavingsAccount){item.rate=parseFloat(document.getElementById('sa-rate').value)||0;item.dateStart=document.getElementById('sa-date-start').value;item.accrual=document.getElementById('sa-accrual')?.value||'daily';}
-    // Log transaction to Supabase
-    const isCashOrOther = !isDeposit && !isSavingsAccount && !['📈','🏠','₿'].includes(icon);
+    // Log transaction to Supabase — только при создании нового счёта
     if (!prevItem) {
-      // Новый счёт — init транзакция
       const initDate = (isDeposit && item.dateStart) ? item.dateStart : new Date().toISOString().slice(0,10);
       sbLogTransaction(id, 'init', amount, { date: initDate });
-    } else if (isCashOrOther) {
-      // Наличные/Другое — при редактировании суммы логируем разницу
-      const diff = amount - Number(prevItem.amount);
-      if (Math.abs(diff) > 0.01) {
-        sbLogTransaction(id, diff > 0 ? 'deposit' : 'withdrawal', Math.abs(diff), { note: 'Изменено вручную' });
-      }
     }
-    // Накопительный при редактировании — сумма не менялась через поле, транзакция не нужна
+    // При редактировании — сумма меняется только через пополнение/снятие, не через форму
     if(_savingIdx>=0) state.savings.splice(_savingIdx,0,item); else state.savings.push(item);
   } else if(modalMode==='income'){
     if (!validateIncomeForm()) return;
