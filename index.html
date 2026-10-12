@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012222500">
+  <meta name="version" content="20261012223000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3241,12 +3241,14 @@ function openTaxDetailSheet() {
   sheet.innerHTML = `
     <div onclick="${close}" style="flex:1;"></div>
     <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:85vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.5);">
-      <div style="display:flex;justify-content:center;align-items:center;padding:14px 20px 14px;position:relative;min-height:52px;">
-        <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;"></div>
-        <button onclick="${close}" style="position:absolute;right:12px;top:0;bottom:0;margin:auto;background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;line-height:1;padding:0;">×</button>
+      <div style="padding:14px 20px 0;">
+        <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 14px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:17px;font-weight:800;">💸 НДФЛ с процентов</div>
+          <button onclick="${close}" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;margin-left:12px;">×</button>
+        </div>
       </div>
       <div style="padding:8px 20px 20px;">
-        <div style="font-size:17px;font-weight:800;margin-bottom:2px;">💸 НДФЛ с процентов</div>
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">${currentYear} год · ставка ЦБ на 1 января: ${t.cbRate}%</div>
         ${taxSummary}
         <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);margin:16px 0 4px;">НАЧИСЛЕНИЯ ПО СЧЕТАМ</div>
@@ -3416,12 +3418,14 @@ function openIncomeBreakdownSheet() {
   sheet.innerHTML = `
     <div onclick="${close}" style="flex:1;"></div>
     <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:85vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.5);">
-      <div style="display:flex;justify-content:center;align-items:center;padding:14px 20px 14px;position:relative;min-height:52px;">
-        <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;"></div>
-        <button onclick="${close}" style="position:absolute;right:12px;top:0;bottom:0;margin:auto;background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;line-height:1;padding:0;">×</button>
+      <div style="padding:14px 20px 0;">
+        <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 14px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:17px;font-weight:800;">📊 Пассивный доход</div>
+          <button onclick="${close}" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;margin-left:12px;">×</button>
+        </div>
       </div>
       <div style="padding:8px 20px 20px;">
-        <div style="font-size:17px;font-weight:800;margin-bottom:2px;">📊 Пассивный доход</div>
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">Разбивка по типам источников</div>
         <div style="background:var(--surface2);border-radius:12px;padding:4px 16px;margin-bottom:16px;">
           ${rowsHtml || '<div style="padding:16px 0;text-align:center;color:var(--text-dim);font-size:13px;">Нет данных</div>'}
