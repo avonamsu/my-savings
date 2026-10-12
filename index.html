@@ -3724,11 +3724,154 @@ function showCtxMenu(e, items) {
 }
 function closeCtxMenu() { if (_ctxCleanup) _ctxCleanup(); }
 function showGoalMenu(e, id) {
-  const items = [
-    {icon:'✏️', label:'Редактировать', fn:()=>openEdit('goals',id)},
-    {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('goals',id)}
-  ];
+  const g = (state.goals||[]).find(x=>x.id===id);
+  const isSub = g && g.type === 'subscription';
+  const items = [];
+  if (isSub) {
+    items.push({icon:'🔄', label:'Продлить', fn:()=>openSubRenewModal(id)});
+    items.push({icon:'📋', label:'История платежей', fn:()=>openSubHistorySheet(id)});
+  }
+  items.push({icon:'✏️', label:'Редактировать', fn:()=>openEdit('goals',id)});
+  items.push({icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('goals',id)});
   showCtxMenu(e, items);
+}
+
+function openSubRenewModal(id) {
+  const g = (state.goals||[]).find(x=>x.id===id);
+  if (!g) return;
+  const isForeign = g.subCurrency && g.subCurrency !== 'RUB';
+  const curAmt = isForeign ? (g.subAmountOrig||0) : Math.round(g.amount);
+  const curSym = isForeign ? (CURRENCY_SYMBOLS[g.subCurrency]||g.subCurrency) : '₽';
+  const _pmap = {1:'мес',2:'2 мес',3:'квартал',6:'полгода',12:'год'};
+  const periodLabel = _pmap[g.subPeriod] || (g.subPeriod ? `за ${g.subPeriod} мес` : 'мес');
+
+  // Compute next date: next period from subDate or today
+  function nextSubDate() {
+    const period = g.subPeriod || 1;
+    let base = g.subDate ? new Date(g.subDate) : new Date();
+    base.setMonth(base.getMonth() + period);
+    return base.toISOString().slice(0,10);
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sub-renew-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;padding:24px;width:calc(100% - 40px);max-width:360px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">🔄 Продлить подписку</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:18px;">${g.emoji||'🔄'} ${g.name} · ${curAmt} ${curSym}/${periodLabel}</div>
+
+      <div class="field" style="margin-bottom:12px;">
+        <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:5px;">НОВАЯ ДАТА ПЛАТЕЖА</label>
+        <input type="date" id="srm-date" value="${nextSubDate()}"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;box-sizing:border-box;">
+      </div>
+
+      <div class="field" style="margin-bottom:12px;">
+        <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:5px;">СУММА ${curSym.trim() === '₽' ? '(₽)' : `(${curSym}, ${g.subCurrency})`}</label>
+        <input type="text" id="srm-amount" value="${curAmt}" inputmode="decimal"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:18px;font-weight:700;box-sizing:border-box;"
+          oninput="formatAmountInput(this)">
+      </div>
+
+      <div class="field" style="margin-bottom:20px;">
+        <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:5px;">ЗАМЕТКА (необязательно)</label>
+        <input type="text" id="srm-note" placeholder="Повышение цены, акция…"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;color:var(--text);font-size:14px;box-sizing:border-box;">
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('sub-renew-overlay').remove()"
+          style="flex:1;padding:13px;background:var(--surface2);border:none;border-radius:12px;color:var(--text);font-size:15px;cursor:pointer;">Отмена</button>
+        <button onclick="saveSubRenew('${id}')"
+          style="flex:1;padding:13px;background:var(--accent);border:none;border-radius:12px;color:var(--bg);font-size:15px;font-weight:700;cursor:pointer;">Сохранить</button>
+      </div>
+    </div>`;
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+  setTimeout(()=>document.getElementById('srm-amount')?.select(), 50);
+}
+
+function saveSubRenew(id) {
+  const g = (state.goals||[]).find(x=>x.id===id);
+  if (!g) return;
+  const dateVal = document.getElementById('srm-date')?.value;
+  const amtRaw = parseFloat((document.getElementById('srm-amount')?.value||'').replace(/\s/g,'').replace(',','.'));
+  const note = document.getElementById('srm-note')?.value?.trim() || '';
+  if (!dateVal || isNaN(amtRaw) || amtRaw <= 0) return;
+
+  const isForeign = g.subCurrency && g.subCurrency !== 'RUB';
+  const amountRub = isForeign ? toRub(amtRaw, g.subCurrency) : amtRaw;
+
+  // Save history entry (previous state)
+  if (!g.priceHistory) g.priceHistory = [];
+  g.priceHistory.push({
+    date: dateVal,
+    amount: Math.round(amountRub),
+    amountOrig: isForeign ? amtRaw : null,
+    currency: g.subCurrency || 'RUB',
+    note: note || null
+  });
+
+  // Update goal
+  g.subDate = dateVal;
+  g.amount = Math.round(amountRub);
+  if (isForeign) g.subAmountOrig = amtRaw;
+
+  save();
+  document.getElementById('sub-renew-overlay')?.remove();
+  renderGoals();
+}
+
+function openSubHistorySheet(id) {
+  const g = (state.goals||[]).find(x=>x.id===id);
+  if (!g) return;
+  const history = [...(g.priceHistory||[])].reverse(); // newest first
+  const isForeign = g.subCurrency && g.subCurrency !== 'RUB';
+  const curSym = isForeign ? (CURRENCY_SYMBOLS[g.subCurrency]||g.subCurrency) : '₽';
+
+  function fmtEntry(e) {
+    const amtStr = e.amountOrig && e.currency !== 'RUB'
+      ? `${fmt2(e.amountOrig)} ${CURRENCY_SYMBOLS[e.currency]||e.currency} (≈${fmt(e.amount)} ₽)`
+      : `${fmt(e.amount)} ₽`;
+    const d = e.date ? new Date(e.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}) : '';
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(78,205,196,0.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">🔄</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;">${amtStr}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">${d}${e.note ? ' · ' + e.note : ''}</div>
+      </div>
+    </div>`;
+  }
+
+  const rows = history.length
+    ? history.map(fmtEntry).join('')
+    : '<div style="text-align:center;color:var(--text-dim);font-size:13px;padding:32px 0;">Ещё нет записей о продлениях</div>';
+
+  const sheet = document.createElement('div');
+  sheet.id = 'sub-history-overlay';
+  sheet.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;';
+  sheet.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:85dvh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);">
+      <div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+        <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 14px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-size:17px;font-weight:700;">${g.emoji||'🔄'} ${g.name}</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">История платежей</div>
+          </div>
+          <button onclick="document.getElementById('sub-history-overlay').remove()" style="background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;padding:0;line-height:1;">×</button>
+        </div>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:0 20px;">
+        ${rows}
+      </div>
+      <div style="padding:16px 20px;flex-shrink:0;">
+        <button onclick="document.getElementById('sub-history-overlay').remove()" style="width:100%;padding:13px;background:var(--surface2);border:none;border-radius:12px;color:var(--text);font-size:15px;cursor:pointer;">Закрыть</button>
+      </div>
+    </div>`;
+  sheet.onclick = e => { if(e.target===sheet) sheet.remove(); };
+  document.body.appendChild(sheet);
 }
 
 function showChallengeMenu(e, id, canComplete) {
@@ -5672,7 +5815,8 @@ function saveItem(){
     // Store original amount in foreign currency; amount field always in RUB for coverage calc
     const amountRub = subCurrency !== 'RUB' ? toRub(amount, subCurrency) : amount;
     const subAmountOrig = subCurrency !== 'RUB' ? amount : null;
-    const _g={id,name,amount:amountRub,emoji,color,type:gType,subPeriod,subDate,note,subCurrency,subAmountOrig};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
+    const _prevG = state.goals.find(x=>x.id===id);
+    const _g={id,name,amount:amountRub,emoji,color,type:gType,subPeriod,subDate,note,subCurrency,subAmountOrig,priceHistory:_prevG?.priceHistory||[]};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
   }
   editingId=null;trackDailyAdd();save();render();closeModal();checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();haptic("success");
 }
