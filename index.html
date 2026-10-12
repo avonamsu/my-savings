@@ -3491,7 +3491,7 @@ function openAccountSheet(id) {
     </div>`;
   }
 
-  const historyBtn = `<div style="padding:0 20px 20px;">
+  const historyBtn = s.isDeposit ? '' : `<div style="padding:0 20px 20px;">
     <button onclick="${close}openHistorySheet('${id}')"
       style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:var(--text);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
       <span>📋 История операций</span><span style="color:var(--text-dim);font-size:16px;">›</span>
