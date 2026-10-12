@@ -4119,15 +4119,15 @@ async function accrueInterestIfNeeded(s, txs) {
       cur.setDate(cur.getDate() + 1);
     }
   } else {
-    // Daily: interest on balance at START of day, then apply cash changes
+    // Daily: apply cash changes first, then accrue interest on end-of-day balance
     while (cur.toLocaleDateString('sv') <= todayStr) {
       const key = cur.toLocaleDateString('sv');
+      if (cashByDate[key]) balance += cashByDate[key];
       if (balance > 0) {
         const interest = Math.round(balance * rate / 365 * 100) / 100;
         newRows.push({ user_id: _sbUser.id, saving_id: s.id, type: 'interest', amount: interest, date: key, note: null, source: null });
         balance += interest;
       }
-      if (cashByDate[key]) balance += cashByDate[key];
       cur.setDate(cur.getDate() + 1);
     }
   }
