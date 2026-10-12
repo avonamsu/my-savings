@@ -5039,7 +5039,12 @@ function saveItem(){
 
 function deleteItem(list,id){
   state[list]=state[list].filter(x=>x.id!==id);
-  if(list==='savings')state.income=state.income.filter(x=>!x.savingRef||x.savingRef!==id);
+  if(list==='savings'){
+    state.income=state.income.filter(x=>!x.savingRef||x.savingRef!==id);
+    // Delete all transactions for this account from Supabase
+    if(_sbUser) _sb.from('transactions').delete().eq('user_id',_sbUser.id).eq('saving_id',id)
+      .then(({error})=>{ if(error) console.warn('delete transactions error',error); delete _txCache[id]; });
+  }
   save();render();
 }
 
