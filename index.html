@@ -1444,6 +1444,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let _sbUser = null;
 let _sbSaveTimer = null;
+let _sbStateLoaded = false; // guard: don't overwrite DB before loading from it
 
 async function sbInit() {
   const { data: { session } } = await _sb.auth.getSession();
@@ -1476,6 +1477,7 @@ async function sbLoadState() {
     });
     // Load snapshots independently
     sbLoadSnapshots();
+    _sbStateLoaded = true; // safe to write to DB now
   } catch(e) { alert('sbLoadState exception: ' + e.message); }
 }
 
@@ -1524,6 +1526,7 @@ async function sbMigrateSnapshots() {
 
 async function sbSaveState() {
   if (!_sbUser) return;
+  if (!_sbStateLoaded) return; // never overwrite DB before loading from it
   const { error } = await _sb.from('user_state').upsert({
     user_id: _sbUser.id,
     state: state,
@@ -1639,6 +1642,7 @@ async function sbSignInWithEmail(email) {
 async function sbSignOut() {
   await _sb.auth.signOut();
   _sbUser = null;
+  _sbStateLoaded = false;
   sbUpdateUI();
 }
 
