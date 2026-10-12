@@ -2898,6 +2898,12 @@ function showCtxMenu(e, items) {
   const menu = document.createElement('div');
   menu.className = 'ctx-menu';
   items.forEach(item => {
+    if (item.separator) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'height:1px;background:rgba(255,255,255,0.08);margin:4px 0;';
+      menu.appendChild(sep);
+      return;
+    }
     const el = document.createElement('div');
     el.className = 'ctx-menu-item' + (item.danger ? ' danger' : '');
     el.innerHTML = `<span>${item.icon}</span><span>${item.label}</span>`;
@@ -2942,14 +2948,15 @@ function showSavingsMenu(e, id, showFix) {
   const isCashOrOther = !s?.isDeposit && !s?.isSavingsAccount && !['📈','🏠','₿'].includes(s?.icon);
   const hasDepositWithdraw = isSA || isCashOrOther;
   const items = [
-    {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
     ...(hasDepositWithdraw ? [
       {icon:'➕', label:'Пополнить', fn:()=>openDepositWithdrawModal(id,'deposit')},
       {icon:'➖', label:'Снять', fn:()=>openDepositWithdrawModal(id,'withdrawal')},
     ] : []),
     {icon:'📋', label:'История операций', fn:()=>openHistorySheet(id)},
-    {icon:'⧉', label:'Дублировать', fn:()=>duplicateSaving(id)},
     ...(showFix ? [{icon:'💸', label:'Зафиксировать доход', fn:()=>openFixIncomeModal(id)}] : []),
+    {separator: true},
+    {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
+    {icon:'⧉', label:'Дублировать', fn:()=>duplicateSaving(id)},
     {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('savings',id)}
   ];
   showCtxMenu(e, items);
