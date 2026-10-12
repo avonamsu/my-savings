@@ -3054,12 +3054,12 @@ function openTaxDetailSheet() {
   const barColor = t.taxBase > 0 ? 'var(--danger)' : pct >= 70 ? 'var(--warn)' : 'var(--accent)';
 
   const taxSummary = `
-    <div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:4px;">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+    <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:4px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;">
         <span style="color:var(--text-dim);">Доход с процентов ${currentYear}</span>
         <span style="font-weight:700;">${fmt(Math.round(t.totalYearlyIncome))} ₽</span>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:14px;">
         <span style="color:var(--text-dim);">Необлагаемый порог <span style="opacity:.7;">(ЦБ ${t.cbRate}% × 1 млн)</span></span>
         <span>${fmt(Math.round(t.taxFreeAmount))} ₽</span>
       </div>
@@ -3083,11 +3083,11 @@ function openTaxDetailSheet() {
   sheet.innerHTML = `
     <div onclick="${close}" style="flex:1;"></div>
     <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:85vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.5);">
-      <div style="display:flex;justify-content:center;align-items:center;padding:12px 20px 4px;position:relative;">
+      <div style="display:flex;justify-content:center;align-items:center;padding:16px 20px 8px;position:relative;">
         <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;"></div>
         <button onclick="${close}" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;line-height:1;padding:4px 8px;">×</button>
       </div>
-      <div style="padding:4px 20px 20px;">
+      <div style="padding:8px 20px 20px;">
         <div style="font-size:17px;font-weight:800;margin-bottom:2px;">💸 НДФЛ с процентов</div>
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">${currentYear} год · ставка ЦБ на 1 января: ${t.cbRate}%</div>
         ${taxSummary}
@@ -3916,7 +3916,7 @@ function openAccountSheet(id) {
   sheet.innerHTML = `
     <div onclick="${close}" style="flex:1;"></div>
     <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:85vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.5);">
-      <div style="display:flex;justify-content:center;align-items:center;padding:12px 20px 4px;position:relative;">
+      <div style="display:flex;justify-content:center;align-items:center;padding:16px 20px 8px;position:relative;">
         <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;"></div>
         <button onclick="${close}" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;line-height:1;padding:4px 8px;">×</button>
       </div>
