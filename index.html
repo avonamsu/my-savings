@@ -2844,7 +2844,8 @@ function renderSavingCard(x, grandTotal) {
   const localAmt = getSavingCurrentAmountLocal(x);
   const rubAmt = getSavingCurrentAmountRub(x);
   const pctOfTotal = grandTotal>0 ? Math.round(rubAmt/grandTotal*100) : 0;
-  let badges='', sub='', inflWarn='', depositBar='';
+  let badges='', sub='';
+  const showIcon = !x.isDeposit && !x.isSavingsAccount;
 
   let showFixBtn = false;
   if (x.isDeposit&&x.rate&&x.dateStart&&x.dateEnd) {
@@ -2860,6 +2861,9 @@ function renderSavingCard(x, grandTotal) {
       }
     }
   }
+  if (x.rate && (x.isDeposit || x.isSavingsAccount)) {
+    sub = `<span style="font-size:12px;color:var(--accent);font-weight:600;">${x.rate}% годовых</span>`;
+  }
   if(cur!=='RUB') badges+=` <span class="badge badge-cur">${(CURRENCY_FLAGS[cur]||"")} ${cur}</span>`;
   const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
   const subAmt = cur!=='RUB'?`≈ ${fmt(rubAmt)} ₽`:'';
@@ -2867,9 +2871,10 @@ function renderSavingCard(x, grandTotal) {
   return `<div class="card-item savings-card-item${(x.excluded||x.included===false)?' excluded':''}" data-id="${x.id}">
     <div class="card-item-inner" onclick="openAccountSheet('${x.id}')" style="cursor:pointer;">
       <button class="excl-btn" onclick="event.stopPropagation();toggleExclude('${x.id}')">${x.excluded?'🔘':'⚫'}</button>
-      <div class="card-icon">${x.icon}</div>
+      ${showIcon ? `<div class="card-icon">${x.icon}</div>` : ''}
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
+        ${sub ? `<div style="margin-top:2px;">${sub}</div>` : ''}
       </div>
       <div class="card-amount">${mainAmt}${subAmt?`<span class="sub-amount">${subAmt}</span>`:''}</div>
       <button class="card-menu-btn" onclick="event.stopPropagation();showSavingsMenu(event,'${x.id}')">⋯</button>
