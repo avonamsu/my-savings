@@ -639,7 +639,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
     </div>
   </div>
-  <div id="savings-list" style="opacity:0;transition:opacity 0.25s ease;">
+  <div id="savings-list" style="transition:opacity 0.25s ease;">
     <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('savings')">＋ Добавить счёт</button>
@@ -3214,11 +3214,6 @@ function openTaxDetailSheet() {
 
 
 function renderSavings() {
-  // If not using Supabase, reveal list immediately (no tx cache loading)
-  if (!_sbUser) {
-    const el = document.getElementById('savings-list');
-    if (el && el.style.opacity === '0') el.style.opacity = '1';
-  }
   const total = state.savings.reduce((s,x) => s+(x.excluded?0:getSavingCurrentAmountRub(x)), 0);
   renderDepositTax();
   document.getElementById('total-savings').innerHTML = `${fmt(total)} <span>₽</span>`;
@@ -7318,11 +7313,25 @@ try {
   }
 } catch(e) {}
 
+// Hide savings list before first render if user was previously logged in
+// (avoids flash of localStorage amounts before Supabase+tx-cache amounts load)
+try {
+  const hadSession = localStorage.getItem('sb_session') || localStorage.getItem('supabase.auth.token');
+  // Also check if state has savings with rates (means tx cache matters)
+  const hasSavingsWithRates = (state.savings||[]).some(s => s.rate && (s.isSavingsAccount || s.isDeposit));
+  if (hasSavingsWithRates) {
+    const sl = document.getElementById('savings-list');
+    if (sl) sl.style.opacity = '0';
+  }
+} catch(e) {}
+
 render();
 updateFab(_currentPage);
 if (_currentPage === 'challenge') renderChallengesPage();
 const titleEl = document.getElementById('topbar-title');
 if (titleEl) titleEl.textContent = PAGE_TITLES[_currentPage] || 'Мои накопления';
+// Fallback: reveal savings list after 5s in case Supabase/tx-cache load fails
+setTimeout(() => { const sl = document.getElementById('savings-list'); if (sl && sl.style.opacity === '0') sl.style.opacity = '1'; }, 5000);
 fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); });
 loadCbKeyRate().then(() => renderDepositTax());
 
