@@ -3621,11 +3621,16 @@ function closeCtxMenu() { if (_ctxCleanup) _ctxCleanup(); }
 function showGoalMenu(e, id) {
   const goal = state.goals.find(g=>g.id===id);
   const isPinned = goal?.pinned;
-  const items = [
-    {icon: isPinned?'⭐':'☆', label: isPinned?'Снять приоритет':'Сделать приоритетной', fn:()=>toggleGoalPin(id)},
-    {icon:'✏️', label:'Редактировать', fn:()=>openEdit('goals',id)},
-    {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('goals',id)}
-  ];
+  // Coverage check
+  const coverageMap = getGoalsCoverageMap();
+  const isCovered = coverageMap[id];
+  const items = [];
+  // Show pin only if not covered, or if already pinned (to allow unpin)
+  if (!isCovered || isPinned) {
+    items.push({icon: isPinned?'⭐':'☆', label: isPinned?'Снять приоритет':'Сделать приоритетной', fn:()=>toggleGoalPin(id)});
+  }
+  items.push({icon:'✏️', label:'Редактировать', fn:()=>openEdit('goals',id)});
+  items.push({icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('goals',id)});
   showCtxMenu(e, items);
 }
 
