@@ -3471,16 +3471,24 @@ function openAccountSheet(id) {
 
     if (d) {
       const pctDone = Math.round(d.daysPassed / d.daysTotal * 100);
+      const progressBar = daysLeft !== null ? `
+        <div style="margin-top:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-bottom:3px;">
+            <span>${s.dateStart || ''}</span><span>${s.dateEnd || ''}</span>
+          </div>
+          <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:${Math.min(pctDone,100)}%;background:${d.expired?'var(--danger)':'var(--accent)'};border-radius:2px;transition:width .3s;"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:3px;text-align:right;">${Math.min(pctDone,100)}% срока прошло</div>
+        </div>` : '';
       stats = `<div style="padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.06);">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           ${_sheetStat('СТАВКА', s.rate+'%', 'годовых', 'var(--accent)')}
           ${_sheetStat('ДОХОД В ГОД', '≈'+fmt(yearlyIncome), currSym(cur), '#4CAF50')}
           ${_sheetStat('ЗАРАБОТАНО', '+'+fmt(Math.round(d.currentAmount - Number(s.amount))), currSym(cur))}
-          ${daysLeft !== null ? _sheetStat(d.expired ? 'ИСТЁК' : 'ОСТАЛОСЬ', d.expired ? '—' : daysLeft+' дн.', d.expired ? '' : 'до '+s.dateEnd, d.expired ? 'var(--danger)' : '') : ''}
+          ${daysLeft !== null ? _sheetStat(d.expired ? 'ИСТЁК' : 'ОСТАЛОСЬ', d.expired ? 'срок истёк' : daysLeft+' дн.', d.expired ? '' : 'до '+s.dateEnd, d.expired ? 'var(--danger)' : '') : ''}
         </div>
-        <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;">
-          <div style="height:100%;width:${Math.min(pctDone,100)}%;background:${d.expired?'var(--danger)':'var(--accent)'};border-radius:2px;transition:width .3s;"></div>
-        </div>
+        ${progressBar}
       </div>`;
     }
 
