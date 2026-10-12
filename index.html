@@ -4157,7 +4157,8 @@ async function openHistorySheet(id) {
       .select('*')
       .eq('user_id', _sbUser.id)
       .eq('saving_id', id)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
     if (error) {
       const el = document.getElementById('history-sheet-body');
       if (el) el.innerHTML = `<div style="text-align:center;color:var(--danger);font-size:13px;padding:24px 0;">Ошибка загрузки</div>`;
@@ -4174,7 +4175,7 @@ async function openHistorySheet(id) {
     await accrueInterestIfNeeded(s, txs);
     // Reload transactions after accrual
     const { data: fresh } = await _sb.from('transactions')
-      .select('*').eq('user_id', _sbUser.id).eq('saving_id', id).order('date', { ascending: false });
+      .select('*').eq('user_id', _sbUser.id).eq('saving_id', id).order('date', { ascending: false }).order('created_at', { ascending: false });
     if (fresh) {
       txs = fresh;
       _txCache[id] = { txs: [...fresh].reverse(), loadedAt: Date.now() };
