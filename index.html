@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012211000">
+  <meta name="version" content="20261012212000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1502,6 +1502,10 @@ async function sbLoadState() {
     if (error && error.code !== 'PGRST116') { console.warn('sbLoadState error', error); return; }
     if (data?.state && Object.keys(data.state).length > 0) {
       state = data.state;
+      // Migrate: remove income entries with savingRef pointing to existing account and calcMode !== 'fixed'
+      const before = (state.income||[]).length;
+      state.income = (state.income||[]).filter(x => !x.savingRef || x.calcMode === 'fixed' || !(state.savings||[]).find(s=>s.id===x.savingRef));
+      if (state.income.length !== before) { save(); }
       // restore UI settings (home widgets etc) from synced state
       if (state._ui) { try { restoreUIState(state._ui); } catch(e) {} }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
