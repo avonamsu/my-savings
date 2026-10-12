@@ -1212,11 +1212,17 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
       <div id="g-subscription-fields" style="display:none;">
         <div class="field"><label>ПЕРИОД</label>
-          <select id="g-sub-period" onchange="updateGoalAmountLabel()">
+          <select id="g-sub-period" onchange="onSubPeriodChange()">
             <option value="1">Каждый месяц</option>
             <option value="3">Каждый квартал (3 мес)</option>
+            <option value="6">Каждые полгода (6 мес)</option>
             <option value="12">Каждый год</option>
+            <option value="0">Свой период…</option>
           </select>
+        </div>
+        <div class="field" id="g-sub-custom-field" style="display:none;">
+          <label>ПЕРИОД (МЕС)</label>
+          <input type="number" id="g-sub-custom" min="1" max="24" placeholder="напр. 2" oninput="updateGoalAmountLabel()">
         </div>
         <div class="field"><label>ДАТА СЛЕДУЮЩЕГО СПИСАНИЯ</label>
           <input type="date" id="g-sub-date">
@@ -4580,7 +4586,8 @@ function renderGoals() {
     const emoji = g.emoji || '🔄';
     const d = getDaysUntilSub(g);
     const soon = d !== null && d <= 3;
-    const periodLabel = g.subPeriod === 12 ? 'год' : g.subPeriod === 3 ? 'квартал' : 'мес';
+    const _pmap = {1:'мес',2:'2 мес',3:'квартал',6:'полгода',12:'год'};
+    const periodLabel = _pmap[g.subPeriod] || `${g.subPeriod} мес`;
     const monthlyAmt = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
     const daysStr = d === null ? '' : d === 0 ? 'сегодня' : `через ${d} дн.`;
     return `<div class="goal-item sub-item ${g.covered?'covered':''}" data-id="${g.id}" draggable="true">
@@ -4682,15 +4689,29 @@ function selectGoalType(type) {
   updateGoalAmountLabel();
 }
 
+function getSubPeriodValue() {
+  const sel = parseInt(document.getElementById('g-sub-period')?.value) || 1;
+  if (sel === 0) return parseInt(document.getElementById('g-sub-custom')?.value) || 1;
+  return sel;
+}
+
+function onSubPeriodChange() {
+  const sel = document.getElementById('g-sub-period')?.value;
+  const customField = document.getElementById('g-sub-custom-field');
+  if (customField) customField.style.display = sel === '0' ? '' : 'none';
+  updateGoalAmountLabel();
+}
+
 function updateGoalAmountLabel() {
   const type = document.getElementById('g-type')?.value;
-  const period = parseInt(document.getElementById('g-sub-period')?.value) || 1;
+  const period = getSubPeriodValue();
   const label = document.getElementById('g-amount-label');
   const preview = document.getElementById('g-sub-preview');
   if (!label) return;
   if (type !== 'subscription') { label.textContent = 'СУММА В МЕСЯЦ (₽)'; if(preview) preview.style.display='none'; return; }
-  const periodNames = {1:'в месяц', 3:'в квартал', 12:'в год'};
-  label.textContent = 'СУММА ' + (periodNames[period]||'').toUpperCase() + ' (₽)';
+  const periodNames = {1:'в месяц', 2:'в 2 мес', 3:'в квартал', 6:'в полгода', 12:'в год'};
+  const pname = periodNames[period] || `в ${period} мес`;
+  label.textContent = 'СУММА ' + pname.toUpperCase() + ' (₽)';
   const amount = parseFloat(document.getElementById('g-amount')?.value) || 0;
   if (amount > 0 && period > 1 && preview) {
     const monthly = amount / period;
@@ -5099,6 +5120,9 @@ function openModal(mode) {
     document.querySelectorAll('[id^="gcpb-"]').forEach(b=>b.classList.remove('selected'));
     const defC=document.getElementById('gcpb-4ECDC4'); if(defC) defC.classList.add('selected');
     selectGoalType('regular');
+    const spReset=document.getElementById('g-sub-period'); if(spReset) spReset.value='1';
+    const scReset=document.getElementById('g-sub-custom'); if(scReset) scReset.value='';
+    const scfReset=document.getElementById('g-sub-custom-field'); if(scfReset) scfReset.style.display='none';
     setTimeout(()=>{ const el=document.getElementById('g-name'); if(el) el.focus(); }, 200);
   }
   if(mode==='income') setTimeout(()=>{ const el=document.getElementById('i-name'); if(el) el.focus(); }, 200);
@@ -5340,7 +5364,7 @@ function openEdit(list,id) {
     document.getElementById('g-amount').value=x.amount;
     if(x.emoji){const gEmoji=document.getElementById('g-emoji');if(gEmoji)gEmoji.value=x.emoji;document.querySelectorAll('[id^="gepb-"]').forEach(b=>b.classList.remove('selected'));const emap={'🎯':'target','🏠':'home','🛒':'cart','💊':'pill','📱':'phone','🚗':'car','✈️':'plane','💆':'spa','📚':'book','🎮':'game','🐾':'paw','⚡':'bolt','🎵':'music','☁️':'cloud','📺':'tv','🏋️':'gym'};const defE=document.getElementById('gepb-'+(emap[x.emoji]||''));if(defE)defE.classList.add('selected');else{const custom=document.getElementById('g-emoji-custom');if(custom)custom.value=x.emoji;}}
     if(x.color){const gColor=document.getElementById('g-color');if(gColor)gColor.value=x.color;document.querySelectorAll('[id^="gcpb-"]').forEach(b=>b.classList.remove('selected'));const defC=document.getElementById('gcpb-'+x.color.replace('#',''));if(defC)defC.classList.add('selected');}
-    if(x.type==='subscription'){selectGoalType('subscription');const sp=document.getElementById('g-sub-period');if(sp)sp.value=x.subPeriod||1;const sd=document.getElementById('g-sub-date');if(sd)sd.value=x.subDate||'';const sn=document.getElementById('g-note');if(sn)sn.value=x.note||'';updateGoalAmountLabel();}
+    if(x.type==='subscription'){selectGoalType('subscription');const sp=document.getElementById('g-sub-period');if(sp){const stdPeriods=[1,3,6,12];if(stdPeriods.includes(x.subPeriod||1)){sp.value=x.subPeriod||1;}else{sp.value='0';const cf=document.getElementById('g-sub-custom-field');if(cf)cf.style.display='';const sc=document.getElementById('g-sub-custom');if(sc)sc.value=x.subPeriod||1;}}const sd=document.getElementById('g-sub-date');if(sd)sd.value=x.subDate||'';const sn=document.getElementById('g-note');if(sn)sn.value=x.note||'';updateGoalAmountLabel();}
   }
 }
 
@@ -5416,7 +5440,7 @@ function saveItem(){
     const emoji=document.getElementById('g-emoji')?.value||'🎯';
     const color=document.getElementById('g-color')?.value||'#4ECDC4';
     const gType=document.getElementById('g-type')?.value||'regular';
-    const subPeriod=gType==='subscription'?parseInt(document.getElementById('g-sub-period')?.value||1):null;
+    const subPeriod=gType==='subscription'?getSubPeriodValue():null;
     const subDate=gType==='subscription'?document.getElementById('g-sub-date')?.value||null:null;
     const note=gType==='subscription'?(document.getElementById('g-note')?.value?.trim()||null):null;
     const _g={id,name,amount,emoji,color,type:gType,subPeriod,subDate,note};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
