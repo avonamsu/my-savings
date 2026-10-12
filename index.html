@@ -1485,9 +1485,10 @@ async function sbUpsertSnapshot(type, ym, amount) {
 }
 
 async function sbLoadSnapshots() {
-  if (!_sbUser) return;
+  if (!_sbUser) { alert('sbLoadSnapshots: нет _sbUser'); return; }
   const { data, error } = await _sb.from('snapshots').select('type,ym,amount').eq('user_id', _sbUser.id);
-  if (error) { console.warn('sbLoadSnapshots error', error); return; }
+  if (error) { alert('sbLoadSnapshots error: ' + error.message); return; }
+  alert('sbLoadSnapshots: data.length=' + (data?.length ?? 'null') + ', _history keys=' + Object.keys(state._history||{}).length);
   if (!data || !data.length) {
     // First time: migrate localStorage data to Supabase
     await sbMigrateSnapshots();
