@@ -1446,16 +1446,52 @@ let _sbUser = null;
 let _sbSaveTimer = null;
 let _sbStateLoaded = false; // guard: don't overwrite DB before loading from it
 
+let _sbRealtimeChannel = null;
+
 async function sbInit() {
   const { data: { session } } = await _sb.auth.getSession();
   _sbUser = session?.user || null;
   _sb.auth.onAuthStateChange((_event, session) => {
     _sbUser = session?.user || null;
     sbUpdateUI();
-    if (_sbUser) { closeAuthModal(); sbLoadState(); }
+    if (_sbUser) { closeAuthModal(); sbLoadState().then(() => sbSubscribeRealtime()); }
+    else { sbUnsubscribeRealtime(); }
   });
-  if (_sbUser) await sbLoadState();
+  if (_sbUser) { await sbLoadState(); sbSubscribeRealtime(); }
   sbUpdateUI();
+}
+
+function sbSubscribeRealtime() {
+  if (!_sbUser || _sbRealtimeChannel) return;
+  _sbRealtimeChannel = _sb
+    .channel('user_state_changes')
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'user_state',
+      filter: `user_id=eq.${_sbUser.id}`
+    }, (payload) => {
+      // Игнорируем если сами только что писали (debounce ещё активен)
+      if (_sbSaveTimer) return;
+      const remoteState = payload.new?.state;
+      if (!remoteState || !Object.keys(remoteState).length) return;
+      state = remoteState;
+      if (state._ui) { try { restoreUIState(state._ui); } catch(e) {} }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      try { render(); } catch(e) {}
+      try { checkAutoRenew(); } catch(e) {}
+      Promise.all([preloadTxCache(), loadCbKeyRate()]).then(() => {
+        renderSavings(); drawChart(); drawIncomeChart();
+      });
+    })
+    .subscribe();
+}
+
+function sbUnsubscribeRealtime() {
+  if (_sbRealtimeChannel) {
+    _sb.removeChannel(_sbRealtimeChannel);
+    _sbRealtimeChannel = null;
+  }
 }
 
 async function sbLoadState() {
