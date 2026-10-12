@@ -2954,7 +2954,7 @@ function showSavingsMenu(e, id, showFix) {
     ] : []),
     {icon:'📋', label:'История операций', fn:()=>openHistorySheet(id)},
     ...(showFix ? [{icon:'💸', label:'Зафиксировать доход', fn:()=>openFixIncomeModal(id)}] : []),
-    {separator: true},
+    ...(hasDepositWithdraw || showFix ? [{separator: true}] : []),
     {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
     {icon:'⧉', label:'Дублировать', fn:()=>duplicateSaving(id)},
     {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('savings',id)}
