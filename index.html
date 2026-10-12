@@ -4595,9 +4595,13 @@ function renderGoals() {
     return;
   }
 
-  // Calculate coverage in list order (top to bottom)
+  // Calculate coverage: subscriptions first, then regular goals (within each group — original list order)
   let remaining = totalIncome, coveredSum = 0;
-  const items = state.goals.map(g => {
+  const goalsOrdered = [
+    ...state.goals.filter(g => g.type === 'subscription'),
+    ...state.goals.filter(g => g.type !== 'subscription')
+  ];
+  const items = goalsOrdered.map(g => {
     const cost = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
     const covered = remaining >= cost;
     const partial = !covered && remaining > 0 ? remaining / cost : 0;
@@ -4711,29 +4715,13 @@ function renderGoals() {
   const gc = JSON.parse(localStorage.getItem('goals_blocks_collapsed')||'{}');
   let html = '';
 
-  // --- REGULAR GOALS BLOCK ---
-  if (regularItems.length) {
-    const coveredCount = regularItems.filter(g => g.covered).length;
-    const isCol = !!gc['goals'];
-    html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px;cursor:pointer;" onclick="toggleGoalsBlock('goals')">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;">🎯 Цели</span>
-        <span class="gl-arrow" style="color:var(--text-dim);font-size:12px;transform:rotate(${isCol?'-90':'0'}deg);transition:transform .2s;">▾</span>
-      </div>
-      ${coveredCount < regularItems.length
-        ? `<span style="font-size:10px;background:rgba(255,176,71,0.12);border-radius:8px;padding:3px 8px;color:#FFB347;">${coveredCount}/${regularItems.length} покрыто</span>`
-        : `<span style="font-size:10px;background:rgba(78,205,196,0.12);border-radius:8px;padding:3px 8px;color:#4ECDC4;">все покрыты ✓</span>`}
-    </div>`;
-    html += `<div id="gb-goals" style="${isCol?'display:none;':''}"><div class="card" id="goals-list-inner">${regularItems.map(renderGoalItem).join('')}</div></div>`;
-  }
-
-  // --- SUBSCRIPTIONS BLOCK ---
+  // --- SUBSCRIPTIONS BLOCK (first) ---
   if (subItems.length) {
     const subMonthlyTotal = subItems.reduce((s,g) => s + (getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount)), 0);
     const subYearlyTotal = subMonthlyTotal * 12;
     const coveredSubCount = subItems.filter(g => g.covered).length;
     const isColSub = !!gc['subscriptions'];
-    html += `<div style="margin-top:${regularItems.length?'20px':'0'};display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px;cursor:pointer;" onclick="toggleGoalsBlock('subscriptions')">
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px;cursor:pointer;" onclick="toggleGoalsBlock('subscriptions')">
       <div style="display:flex;align-items:center;gap:6px;">
         <span style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;">📦 Подписки</span>
         <span class="gl-arrow" style="color:var(--text-dim);font-size:12px;transform:rotate(${isColSub?'-90':'0'}deg);transition:transform .2s;">▾</span>
@@ -4745,6 +4733,22 @@ function renderGoals() {
       </div>
     </div>`;
     html += `<div id="gb-subscriptions" style="${isColSub?'display:none;':''}"><div class="card">${subItems.map(renderSubItem).join('')}</div></div>`;
+  }
+
+  // --- REGULAR GOALS BLOCK (second) ---
+  if (regularItems.length) {
+    const coveredCount = regularItems.filter(g => g.covered).length;
+    const isCol = !!gc['goals'];
+    html += `<div style="margin-top:${subItems.length?'20px':'0'};display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px;cursor:pointer;" onclick="toggleGoalsBlock('goals')">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;">🎯 Цели</span>
+        <span class="gl-arrow" style="color:var(--text-dim);font-size:12px;transform:rotate(${isCol?'-90':'0'}deg);transition:transform .2s;">▾</span>
+      </div>
+      ${coveredCount < regularItems.length
+        ? `<span style="font-size:10px;background:rgba(255,176,71,0.12);border-radius:8px;padding:3px 8px;color:#FFB347;">${coveredCount}/${regularItems.length} покрыто</span>`
+        : `<span style="font-size:10px;background:rgba(78,205,196,0.12);border-radius:8px;padding:3px 8px;color:#4ECDC4;">все покрыты ✓</span>`}
+    </div>`;
+    html += `<div id="gb-goals" style="${isCol?'display:none;':''}"><div class="card" id="goals-list-inner">${regularItems.map(renderGoalItem).join('')}</div></div>`;
   }
 
   if (!html) html = `<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`;
