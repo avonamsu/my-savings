@@ -1282,7 +1282,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('📺')" id="gepb-tv">📺</button>
           <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('🏋️')" id="gepb-gym">🏋️</button>
         </div>
-        <input type="text" id="g-emoji-custom" placeholder="Или введи своё эмодзи" maxlength="2" oninput="if(this.value.trim())selectGoalEmoji(this.value.trim())" style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-size:20px;padding:6px 10px;text-align:center;">
+        <input type="text" id="g-emoji-custom" placeholder="Или введи своё эмодзи" maxlength="2" oninput="onGoalEmojiCustomInput(this)" style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-size:20px;padding:6px 10px;text-align:center;">
+        <div id="g-emoji-custom-err" style="display:none;font-size:11px;color:#FF6B6B;margin-top:4px;">Флаги стран не поддерживаются — выбери другой эмодзи</div>
         <input type="hidden" id="g-emoji" value="🎯">
       </div>
       <div id="g-note-field" class="field" style="display:none;"><label>ЗАМЕТКА (необязательно)</label>
@@ -4560,6 +4561,20 @@ function renderIncome() {
 function initIncomeSwipe() { /* replaced by ctx menu */ }
 
 
+function isFlag(str) {
+  // Regional indicator symbols: U+1F1E0–U+1F1FF
+  return /[\u{1F1E0}-\u{1F1FF}]/u.test(str);
+}
+function onGoalEmojiCustomInput(el) {
+  const val = el.value.trim();
+  const err = document.getElementById('g-emoji-custom-err');
+  if (val && isFlag(val)) {
+    if (err) err.style.display = '';
+    return;
+  }
+  if (err) err.style.display = 'none';
+  if (val) selectGoalEmoji(val);
+}
 function selectGoalEmoji(e) {
   document.getElementById('g-emoji').value = e;
   document.querySelectorAll('[id^="gepb-"]').forEach(b => b.classList.remove('selected'));
