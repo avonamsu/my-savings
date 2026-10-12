@@ -2121,8 +2121,9 @@ function calcDeposit(s) {
     return {currentAmount, monthlyIncome, daysTotal, daysPassed, expired};
   }
 
-  // Fallback: simple calculation on s.amount
-  const principal=Number(s.amount);
+  // Fallback: simple calculation — use initialAmount if set, else first tx, else s.amount
+  const firstTxAmount = (() => { const c=_txCache[s.id]; if(!c||!c.txs.length) return null; const t=c.txs.find(tx=>tx.type==='deposit'||tx.type==='init'); return t?Number(t.amount):null; })();
+  const principal=Number(s.initialAmount||firstTxAmount||s.amount);
   const monthsPassed=daysPassed/30.4375;
   const currentAmount=s.compound
     ? principal*Math.pow(1+rate/12,monthsPassed)
@@ -2131,8 +2132,7 @@ function calcDeposit(s) {
   return {currentAmount,monthlyIncome,daysTotal,daysPassed,expired};
 }
 function getSavingCurrentAmountLocal(s) {
-  // For deposits: use s.amount (user-entered real balance) — calcDeposit is for interest projection only
-  if (s.isDeposit) return Number(s.amount);
+  if (s.isDeposit&&s.rate&&s.dateStart&&s.dateEnd) return calcDeposit(s).currentAmount;
   if (s.isSavingsAccount&&s.rate&&s.dateStart) return calcSavingsAccount(s).currentAmount;
   return Number(s.amount);
 }
@@ -5165,7 +5165,10 @@ function saveItem(){
     const currency=document.getElementById('s-currency').value;
     const included=(isSavingsAccount?document.getElementById('sa-included'):document.getElementById('s-included'))?.checked!==false;
     const item={id,name,icon,amount,isDeposit,isSavingsAccount,currency,included,excluded:!included};
-    if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;item.refillable=document.getElementById('s-refillable').checked;item.refillUntil=item.refillable?(document.getElementById('s-refill-until').value||''):'';item.autorenew=document.getElementById('s-autorenew').checked;}
+    if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;item.refillable=document.getElementById('s-refillable').checked;item.refillUntil=item.refillable?(document.getElementById('s-refill-until').value||''):'';item.autorenew=document.getElementById('s-autorenew').checked;
+      // Preserve initialAmount: set on creation, never overwrite on edit
+      item.initialAmount = prevItem ? (prevItem.initialAmount || prevItem.amount) : amount;
+    }
     if(isSavingsAccount){item.rate=parseFloat(document.getElementById('sa-rate').value)||0;item.dateStart=document.getElementById('sa-date-start').value;item.accrual=document.getElementById('sa-accrual')?.value||'daily';}
     // Log transaction to Supabase — только при создании нового счёта
     if (!prevItem) {
