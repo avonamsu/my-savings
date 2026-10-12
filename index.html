@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012233000">
+  <meta name="version" content="20261013010000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -293,6 +293,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .goal-item:last-child { border-bottom:none; border-radius:0 0 var(--radius) var(--radius); }
 .goal-item:first-child { border-radius:var(--radius) var(--radius) 0 0; }
 .goal-item:only-child { border-radius:var(--radius); }
+.sub-item .goal-item-inner { gap:10px; align-items:flex-start; padding:4px 0; }
 .goal-check { width:22px; height:22px; border-radius:50%; border:2px solid var(--text-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; }
 .goal-item.covered .goal-check { background:var(--done); border-color:var(--done); color:var(--bg); }
 .goal-info { flex:1; min-width:0; }
@@ -1223,7 +1224,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <div class="calc-preview" id="g-sub-preview" style="display:none;"></div>
       </div>
       <div class="field"><label>ЭМОДЗИ</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
           <button type="button" class="emoji-pick-btn selected" onclick="selectGoalEmoji('🎯')" id="gepb-target">🎯</button>
           <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('🏠')" id="gepb-home">🏠</button>
           <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('🛒')" id="gepb-cart">🛒</button>
@@ -1236,8 +1237,16 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('🎮')" id="gepb-game">🎮</button>
           <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('🐾')" id="gepb-paw">🐾</button>
           <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('⚡')" id="gepb-bolt">⚡</button>
+          <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('🎵')" id="gepb-music">🎵</button>
+          <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('☁️')" id="gepb-cloud">☁️</button>
+          <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('📺')" id="gepb-tv">📺</button>
+          <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('🏋️')" id="gepb-gym">🏋️</button>
         </div>
+        <input type="text" id="g-emoji-custom" placeholder="Или введи своё эмодзи" maxlength="2" oninput="if(this.value.trim())selectGoalEmoji(this.value.trim())" style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-size:20px;padding:6px 10px;text-align:center;">
         <input type="hidden" id="g-emoji" value="🎯">
+      </div>
+      <div id="g-note-field" class="field" style="display:none;"><label>ЗАМЕТКА (необязательно)</label>
+        <input type="text" id="g-note" placeholder="Например: пользуюсь каждый день / стоит ли того?">
       </div>
       <div class="field"><label>ЦВЕТ</label>
         <div style="display:flex;gap:8px;">
@@ -4486,9 +4495,12 @@ function initIncomeSwipe() { /* replaced by ctx menu */ }
 function selectGoalEmoji(e) {
   document.getElementById('g-emoji').value = e;
   document.querySelectorAll('[id^="gepb-"]').forEach(b => b.classList.remove('selected'));
-  const emap = {'🎯':'target','🏠':'home','🛒':'cart','💊':'pill','📱':'phone','🚗':'car','✈️':'plane','💆':'spa','📚':'book','🎮':'game','🐾':'paw','⚡':'bolt'};
-  const btn = document.getElementById('gepb-' + (emap[e]||e));
+  const emap = {'🎯':'target','🏠':'home','🛒':'cart','💊':'pill','📱':'phone','🚗':'car','✈️':'plane','💆':'spa','📚':'book','🎮':'game','🐾':'paw','⚡':'bolt','🎵':'music','☁️':'cloud','📺':'tv','🏋️':'gym'};
+  const btn = document.getElementById('gepb-' + (emap[e]||''));
   if (btn) btn.classList.add('selected');
+  // сбрасываем custom input если выбрали пресет
+  const custom = document.getElementById('g-emoji-custom');
+  if (custom && btn) custom.value = '';
 }
 function selectGoalColor(c) {
   document.getElementById('g-color').value = c;
@@ -4499,9 +4511,10 @@ function selectGoalColor(c) {
 
 function renderGoals() {
   const totalIncome = calcTotalIncome();
-
   const el = document.getElementById('goals-list');
-  const totalGoals = state.goals.reduce((s,x) => s+Number(x.amount), 0);
+
+  const regularGoals = state.goals.filter(g => g.type !== 'subscription');
+  const subGoals = state.goals.filter(g => g.type === 'subscription');
 
   if (!state.goals.length) {
     el.innerHTML = `<div class="empty"><div class="empty-icon">✨</div><p>Добавь ежемесячные расходы — и смотри, как доход покрывает их одну за другой</p></div>`;
@@ -4514,6 +4527,7 @@ function renderGoals() {
     return;
   }
 
+  // Calculate coverage (all goals together for the progress bar)
   let remaining = totalIncome, coveredSum = 0;
   const items = state.goals.map(g => {
     const cost = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
@@ -4521,17 +4535,15 @@ function renderGoals() {
     const partial = !covered && remaining > 0 ? remaining / cost : 0;
     if (covered) { remaining -= cost; coveredSum += cost; }
     else if (partial > 0) remaining = 0;
-    return { ...g, covered, partial };
+    return { ...g, cost, covered, partial };
   });
 
-  const coveredItems = items.filter(g => g.covered);
-  const uncoveredItems = items.filter(g => !g.covered);
-
+  const totalGoals = items.reduce((s,x) => s + x.cost, 0);
+  const coveredCount = items.filter(g => g.covered).length;
   const pct = totalGoals ? Math.min(100, Math.round(coveredSum/totalGoals*100)) : 0;
-  const totalCount = state.goals.length;
-  const coveredCount = coveredItems.length;
+
   const labelEl = document.getElementById('goals-label');
-  if (labelEl) labelEl.textContent = `${coveredCount} из ${totalCount} ${plural(totalCount,'цели','целей','целей')} покрыт${coveredCount===1?'а':'ы'}`;
+  if (labelEl) labelEl.textContent = `${coveredCount} из ${state.goals.length} ${plural(state.goals.length,'цели','целей','целей')} покрыт${coveredCount===1?'а':'ы'}`;
   document.getElementById('goals-pct').textContent = pct + '%';
   document.getElementById('goals-bar').style.width = pct + '%';
   const hintEl = document.getElementById('goals-income-hint');
@@ -4539,6 +4551,10 @@ function renderGoals() {
     const freeIncome = Math.max(0, totalIncome - coveredSum);
     hintEl.innerHTML = `💸 Доход: <b style="color:var(--text);">${fmt(Math.round(totalIncome))} ₽</b> · Свободно: <b style="color:var(--accent);">${fmt(Math.round(freeIncome))} ₽</b>`;
   }
+
+  // map items back split by type
+  const regularItems = items.filter(g => g.type !== 'subscription');
+  const subItems = items.filter(g => g.type === 'subscription');
 
   function renderGoalItem(g) {
     const color = g.color || '#4ECDC4';
@@ -4549,7 +4565,7 @@ function renderGoals() {
         <div class="drag-handle">⠿</div>
         <div class="goal-check" style="${g.covered?'background:'+color+';border-color:'+color+';':''}">${g.covered?'✓':''}</div>
         <div class="goal-info">
-          <div class="goal-name">${emoji} ${g.name}</div>${g.type==='subscription'?(()=>{const d=getDaysUntilSub(g);const soon=d!==null&&d<=3?` <span class="sub-due-soon">· через ${d===0?'сегодня':d+' дн.'}</span>`:'';return `<div style="font-size:10px;color:var(--text-dim);margin-top:1px;"><span class="sub-badge">🔄 ${g.subPeriod===12?'год':g.subPeriod===3?'квартал':'мес'}</span>${soon}</div>`;})():''}
+          <div class="goal-name">${emoji} ${g.name}</div>
           ${!g.covered && g.partial > 0 ? `<div class="goal-progress-bar"><div class="goal-progress-fill" style="width:${partialPct}%;background:${color};"></div></div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${partialPct}% · не хватает <span style="color:#FFB347;">${fmt(Math.round(Number(g.amount)*(1-g.partial)))} ₽/мес</span></div>` : ''}
           ${!g.covered && !g.partial ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">не хватает <span style="color:#FFB347;">${fmt(Number(g.amount))} ₽/мес</span></div>` : ''}
         </div>
@@ -4559,18 +4575,73 @@ function renderGoals() {
     </div>`;
   }
 
+  function renderSubItem(g) {
+    const color = g.color || '#4ECDC4';
+    const emoji = g.emoji || '🔄';
+    const d = getDaysUntilSub(g);
+    const soon = d !== null && d <= 3;
+    const periodLabel = g.subPeriod === 12 ? 'год' : g.subPeriod === 3 ? 'квартал' : 'мес';
+    const monthlyAmt = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
+    const daysStr = d === null ? '' : d === 0 ? 'сегодня' : `через ${d} дн.`;
+    return `<div class="goal-item sub-item ${g.covered?'covered':''}" data-id="${g.id}" draggable="true">
+      <div class="goal-item-inner">
+        <div class="drag-handle">⠿</div>
+        <div style="font-size:20px;min-width:32px;text-align:center;line-height:1;">${emoji}</div>
+        <div class="goal-info" style="flex:1;min-width:0;">
+          <div class="goal-name" style="font-size:14px;">${g.name}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;">
+            <span style="font-size:10px;background:rgba(255,255,255,0.07);border-radius:6px;padding:2px 6px;color:var(--text-dim);">🔄 ${periodLabel}</span>
+            ${soon ? `<span style="font-size:10px;color:#FFB347;font-weight:600;">${daysStr}</span>` : (d !== null ? `<span style="font-size:10px;color:var(--text-dim);">${daysStr}</span>` : '')}
+          </div>
+          ${g.note ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;font-style:italic;">${g.note}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:fit-content;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${fmt(g.amount)} ₽</div>
+          ${g.subPeriod && g.subPeriod > 1 ? `<div style="font-size:10px;color:var(--text-dim);">${fmt(Math.round(monthlyAmt))} ₽/мес</div>` : ''}
+          ${g.covered ? `<div style="font-size:11px;color:#4ECDC4;font-weight:600;">✓ покрыта</div>` : `<div style="font-size:11px;color:#FFB347;">не покрыта</div>`}
+        </div>
+        <button class="card-menu-btn" onclick="showGoalMenu(event,'${g.id}')">⋯</button>
+      </div>
+    </div>`;
+  }
+
   const gc = JSON.parse(localStorage.getItem('goals_groups_collapsed')||'{}');
   let html = '';
-  if (uncoveredItems.length) {
-    const isCol = !!gc['uncovered'];
-    if (coveredItems.length) html += `<div class="goals-group-label" onclick="toggleGoalsGroup('uncovered')"><span>🎯 Не покрыты</span><span class="gl-arrow" style="transform:rotate(${isCol?'-90':'0'}deg)">▾</span></div>`;
-    html += `<div id="gg-uncovered" style="${isCol?'display:none;':''}"><div class="card" id="goals-list-inner">${uncoveredItems.map(renderGoalItem).join('')}</div></div>`;
+
+  // --- REGULAR GOALS BLOCK ---
+  if (regularItems.length) {
+    const coveredR = regularItems.filter(g => g.covered);
+    const uncoveredR = regularItems.filter(g => !g.covered);
+    html += `<div style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;padding:0 2px 6px;">🎯 Цели</div>`;
+    if (uncoveredR.length) {
+      const isCol = !!gc['uncovered'];
+      if (coveredR.length) html += `<div class="goals-group-label" onclick="toggleGoalsGroup('uncovered')"><span>Не покрыты</span><span class="gl-arrow" style="transform:rotate(${isCol?'-90':'0'}deg)">▾</span></div>`;
+      html += `<div id="gg-uncovered" style="${isCol?'display:none;':''}"><div class="card" id="goals-list-inner">${uncoveredR.map(renderGoalItem).join('')}</div></div>`;
+    }
+    if (coveredR.length) {
+      const isCol2 = !!gc['covered'];
+      html += `<div class="goals-group-label" style="margin-top:${uncoveredR.length?'8px':'0'};" onclick="toggleGoalsGroup('covered')"><span>✅ Покрыты доходом</span><span class="gl-arrow" style="transform:rotate(${isCol2?'-90':'0'}deg)">▾</span></div>`;
+      html += `<div id="gg-covered" style="${isCol2?'display:none;':''}"><div class="card">${coveredR.map(renderGoalItem).join('')}</div></div>`;
+    }
   }
-  if (coveredItems.length) {
-    const isCol2 = !!gc['covered'];
-    html += `<div class="goals-group-label" style="margin-top:${uncoveredItems.length?'8px':'0'};" onclick="toggleGoalsGroup('covered')"><span>✅ Покрыты доходом</span><span class="gl-arrow" style="transform:rotate(${isCol2?'-90':'0'}deg)">▾</span></div>`;
-    html += `<div id="gg-covered" style="${isCol2?'display:none;':''}"><div class="card">${coveredItems.map(renderGoalItem).join('')}</div></div>`;
+
+  // --- SUBSCRIPTIONS BLOCK ---
+  if (subItems.length) {
+    const subMonthlyTotal = subItems.reduce((s,g) => s + (getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount)), 0);
+    const subYearlyTotal = subMonthlyTotal * 12;
+    const coveredSubCount = subItems.filter(g => g.covered).length;
+    html += `<div style="margin-top:${regularItems.length?'20px':'0'};display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;">📦 Подписки</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="font-size:10px;background:rgba(255,255,255,0.07);border-radius:8px;padding:3px 8px;color:var(--text-dim);">${fmt(Math.round(subMonthlyTotal))} ₽/мес</span>
+        <span style="font-size:10px;background:rgba(255,255,255,0.07);border-radius:8px;padding:3px 8px;color:var(--text-dim);">${fmt(Math.round(subYearlyTotal))} ₽/год</span>
+        ${coveredSubCount < subItems.length ? `<span style="font-size:10px;background:rgba(255,176,71,0.12);border-radius:8px;padding:3px 8px;color:#FFB347;">${coveredSubCount}/${subItems.length} покрыто</span>` : `<span style="font-size:10px;background:rgba(78,205,196,0.12);border-radius:8px;padding:3px 8px;color:#4ECDC4;">все покрыты ✓</span>`}
+      </div>
+    </div>`;
+    const isColSub = !!gc['subscriptions'];
+    html += `<div id="gg-subscriptions" style="${isColSub?'display:none;':''}"><div class="card">${subItems.map(renderSubItem).join('')}</div></div>`;
   }
+
   el.innerHTML = html;
 
   initGoalDrag();
@@ -4606,6 +4677,8 @@ function selectGoalType(type) {
   document.getElementById('g-type-subscription').classList.toggle('active', type === 'subscription');
   const subFields = document.getElementById('g-subscription-fields');
   if(subFields) subFields.style.display = type === 'subscription' ? '' : 'none';
+  const noteField = document.getElementById('g-note-field');
+  if(noteField) noteField.style.display = type === 'subscription' ? '' : 'none';
   updateGoalAmountLabel();
 }
 
@@ -5265,8 +5338,9 @@ function openEdit(list,id) {
     openModal('goals');
     document.getElementById('g-name').value=x.name;
     document.getElementById('g-amount').value=x.amount;
-    if(x.emoji){const gEmoji=document.getElementById('g-emoji');if(gEmoji)gEmoji.value=x.emoji;document.querySelectorAll('[id^="gepb-"]').forEach(b=>b.classList.remove('selected'));const emap={'🎯':'target','🏠':'home','🛒':'cart','💊':'pill','📱':'phone','🚗':'car','✈️':'plane','💆':'spa','📚':'book','🎮':'game','🐾':'paw','⚡':'bolt'};const defE=document.getElementById('gepb-'+(emap[x.emoji]||x.emoji));if(defE)defE.classList.add('selected');}
+    if(x.emoji){const gEmoji=document.getElementById('g-emoji');if(gEmoji)gEmoji.value=x.emoji;document.querySelectorAll('[id^="gepb-"]').forEach(b=>b.classList.remove('selected'));const emap={'🎯':'target','🏠':'home','🛒':'cart','💊':'pill','📱':'phone','🚗':'car','✈️':'plane','💆':'spa','📚':'book','🎮':'game','🐾':'paw','⚡':'bolt','🎵':'music','☁️':'cloud','📺':'tv','🏋️':'gym'};const defE=document.getElementById('gepb-'+(emap[x.emoji]||''));if(defE)defE.classList.add('selected');else{const custom=document.getElementById('g-emoji-custom');if(custom)custom.value=x.emoji;}}
     if(x.color){const gColor=document.getElementById('g-color');if(gColor)gColor.value=x.color;document.querySelectorAll('[id^="gcpb-"]').forEach(b=>b.classList.remove('selected'));const defC=document.getElementById('gcpb-'+x.color.replace('#',''));if(defC)defC.classList.add('selected');}
+    if(x.type==='subscription'){selectGoalType('subscription');const sp=document.getElementById('g-sub-period');if(sp)sp.value=x.subPeriod||1;const sd=document.getElementById('g-sub-date');if(sd)sd.value=x.subDate||'';const sn=document.getElementById('g-note');if(sn)sn.value=x.note||'';updateGoalAmountLabel();}
   }
 }
 
@@ -5344,7 +5418,8 @@ function saveItem(){
     const gType=document.getElementById('g-type')?.value||'regular';
     const subPeriod=gType==='subscription'?parseInt(document.getElementById('g-sub-period')?.value||1):null;
     const subDate=gType==='subscription'?document.getElementById('g-sub-date')?.value||null:null;
-    const _g={id,name,amount,emoji,color,type:gType,subPeriod,subDate};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
+    const note=gType==='subscription'?(document.getElementById('g-note')?.value?.trim()||null):null;
+    const _g={id,name,amount,emoji,color,type:gType,subPeriod,subDate,note};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
   }
   editingId=null;trackDailyAdd();save();render();closeModal();checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();haptic("success");
 }
