@@ -4079,20 +4079,51 @@ async function accrueInterestIfNeeded(s, txs) {
     }
   }
 
-  // Now walk forward: interest is calculated on balance at START of day, then cash changes applied
+  const accrual = s.accrual || 'daily';
   const newRows = [];
   let cur = new Date(startFromStr + 'T12:00:00');
-  while (cur.toLocaleDateString('sv') <= todayStr) {
-    const key = cur.toLocaleDateString('sv');
-    // 1. Accrue interest on balance at start of day
-    if (balance > 0) {
-      const interest = Math.round(balance * rate / 365 * 100) / 100;
-      newRows.push({ user_id: _sbUser.id, saving_id: s.id, type: 'interest', amount: interest, date: key, note: null, source: null });
-      balance += interest;
+
+  if (accrual === 'monthly') {
+    // Monthly: accrue on the last day of each month, using minimum balance of that month
+    let monthMinBalance = balance;
+    let curMonth = startFromStr.slice(0, 7); // YYYY-MM
+
+    while (cur.toLocaleDateString('sv') <= todayStr) {
+      const key = cur.toLocaleDateString('sv');
+      const month = key.slice(0, 7);
+
+      // New month started — process previous month
+      if (month !== curMonth) {
+        if (monthMinBalance > 0) {
+          const interest = Math.round(monthMinBalance * rate / 12 * 100) / 100;
+          // Post interest on last day of previous month
+          const lastDayOfPrevMonth = new Date(cur.getFullYear(), cur.getMonth(), 0).toLocaleDateString('sv');
+          newRows.push({ user_id: _sbUser.id, saving_id: s.id, type: 'interest', amount: interest, date: lastDayOfPrevMonth, note: null, source: null });
+          balance += interest;
+        }
+        monthMinBalance = balance;
+        curMonth = month;
+      }
+
+      // Apply cash changes of this day
+      if (cashByDate[key]) balance += cashByDate[key];
+      // Track minimum balance within current month
+      if (balance < monthMinBalance) monthMinBalance = balance;
+
+      cur.setDate(cur.getDate() + 1);
     }
-    // 2. Apply deposits/withdrawals of this day
-    if (cashByDate[key]) balance += cashByDate[key];
-    cur.setDate(cur.getDate() + 1);
+  } else {
+    // Daily: interest on balance at START of day, then apply cash changes
+    while (cur.toLocaleDateString('sv') <= todayStr) {
+      const key = cur.toLocaleDateString('sv');
+      if (balance > 0) {
+        const interest = Math.round(balance * rate / 365 * 100) / 100;
+        newRows.push({ user_id: _sbUser.id, saving_id: s.id, type: 'interest', amount: interest, date: key, note: null, source: null });
+        balance += interest;
+      }
+      if (cashByDate[key]) balance += cashByDate[key];
+      cur.setDate(cur.getDate() + 1);
+    }
   }
 
   console.log('[accrue] newRows to insert:', newRows.length, newRows);
