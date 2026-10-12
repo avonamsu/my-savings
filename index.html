@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012206000">
+  <meta name="version" content="20261012210000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2200,12 +2200,34 @@ function calcIncomeAmountRub(item) {
   return Number(item.amount)||0;
 }
 
+// Доход от вклада/накопительного счета в месяц (авто-расчёт)
+function calcSavingMonthlyIncome(s) {
+  if (s.excluded) return 0;
+  if (s.isDeposit && s.rate && s.dateStart && s.dateEnd)
+    return toRub(calcDeposit(s).monthlyIncome, s.currency||'RUB');
+  if (s.isSavingsAccount && s.rate) {
+    const amt = getSavingCurrentAmountRub(s);
+    return amt * Number(s.rate) / 100 / 12;
+  }
+  return 0;
+}
+
+// Суммарный доход: авто из savings + ручные из state.income (без savingRef на существующий счёт)
+function calcTotalIncome() {
+  const autoIncome = (state.savings||[]).reduce((s,x) => s + calcSavingMonthlyIncome(x), 0);
+  // Ручные — только те, у которых нет savingRef или savingRef указывает на несуществующий счёт
+  const manualIncome = (state.income||[])
+    .filter(x => !x.savingRef || !state.savings.find(s=>s.id===x.savingRef))
+    .reduce((s,x) => s + calcIncomeAmountRub(x), 0);
+  return autoIncome + manualIncome;
+}
+
 // ── RENDER ────────────────────────────────────────────────
 function render() { renderHome(); renderSavings(); renderIncome(); renderGoals(); }
 
 function renderHome() {
   const totalRubVal = state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
-  const totalInc = state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0);
+  const totalInc = calcTotalIncome();
   const totalGoalsAmt = state.goals.reduce((s,x)=>s+Number(x.amount),0);
   const goalsPct = totalGoalsAmt ? Math.min(100,Math.round(totalInc/totalGoalsAmt*100)) : 0;
 
@@ -2489,7 +2511,7 @@ function renderHomeChartWidget() {
     // Income history from state._incomeHistory: {ym: total}
     const hist = Object.assign({}, state._incomeHistory || {});
     const ym = new Date().toISOString().slice(0,7);
-    const currentInc = Math.round(state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0));
+    const currentInc = Math.round(calcTotalIncome());
     if (currentInc > 0) hist[ym] = currentInc;
     const entries = Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
     if (entries.length >= 2) {
@@ -2747,7 +2769,7 @@ function homeToggleChCell(chId, cellIdx) {
 function renderGoalsWidget() {
   const goalsEl = document.getElementById('home-goals-preview');
   if (!goalsEl) return;
-  const totalInc = state.income.reduce((s,x)=>s+calcIncomeAmountRub(x),0);
+  const totalInc = calcTotalIncome();
   if (!state.goals.length) {
     goalsEl.innerHTML='<div class="empty"><div class="empty-icon">🎯</div><p>Добавь цели чтобы видеть прогресс</p></div>';
   } else {
@@ -4299,7 +4321,7 @@ async function openHistorySheet(id) {
 
 
 function renderIncome() {
-  const total = state.income.reduce((s,x) => s+calcIncomeAmountRub(x), 0);
+  const total = calcTotalIncome();
   const totalYearly = total * 12;
   const totalSavings = state.savings.reduce((s,x) => s+(x.excluded?0:getSavingCurrentAmountRub(x)), 0);
   const inflPct = ROSSTAT_INFLATION[2024] || 9.52;
@@ -4315,12 +4337,22 @@ function renderIncome() {
   if(yieldEl) yieldEl.textContent = yieldPct > 0 ? yieldPct.toFixed(1)+'% год.' : '—';
   if(realEl) { realEl.textContent = yieldPct > 0 ? (realYield>=0?'+':'')+realYield.toFixed(1)+'% год.' : '—'; realEl.style.color = realYield>=0?'var(--accent)':'var(--danger)'; }
 
+  // Авто-строки: все вклады и накопительные счета
+  const autoItems = (state.savings||[]).filter(s => !s.excluded && (s.isDeposit||s.isSavingsAccount) && calcSavingMonthlyIncome(s) > 0);
+  // Ручные: только без savingRef или с несуществующим savingRef
+  const manualItems = (state.income||[]).filter(x => !x.savingRef || !state.savings.find(s=>s.id===x.savingRef));
+
   const breakdownEl = document.getElementById('income-breakdown');
   const breakdownList = document.getElementById('income-breakdown-list');
-  if (state.income.length > 1 && breakdownEl && breakdownList) {
+  const totalItems = autoItems.length + manualItems.length;
+  if (totalItems > 1 && breakdownEl && breakdownList) {
     const groups = {};
-    state.income.forEach(x => {
-      const key = (x.icon==='🏦'||x.icon==='💰') ? '💰 Вклады' : x.icon==='📊' ? '📊 Дивиденды' : x.icon==='🏠' ? '🏠 Аренда' : x.icon==='💱' ? '💱 Валюта' : x.icon==='💸' ? '💸 Купоны' : '✨ Другое';
+    autoItems.forEach(s => {
+      const key = s.isDeposit ? '💰 Вклады' : '🏦 Накопит. счета';
+      groups[key] = (groups[key]||0) + calcSavingMonthlyIncome(s);
+    });
+    manualItems.forEach(x => {
+      const key = x.icon==='📊' ? '📊 Дивиденды' : x.icon==='🏠' ? '🏠 Аренда' : x.icon==='💱' ? '💱 Валюта' : x.icon==='💸' ? '💸 Купоны' : '✨ Другое';
       groups[key] = (groups[key]||0) + calcIncomeAmountRub(x);
     });
     breakdownEl.style.display = 'block';
@@ -4344,28 +4376,49 @@ function renderIncome() {
   } else if(breakdownEl) breakdownEl.style.display='none';
 
   const query = (document.getElementById('income-search')?.value||'').toLowerCase();
-  const items = query ? state.income.filter(x=>x.name.toLowerCase().includes(query)) : state.income;
 
   const el = document.getElementById('income-list');
-  if (!state.income.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>`; return; }
-  if (!items.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`; return; }
+  if (totalItems === 0) { el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><p>Доход появится автоматически когда добавишь вклад или накопительный счёт</p></div>`; return; }
 
-  const COLORS = {'💰':'#4ECDC4','📊':'#64B5F6','🏠':'#FFB347','💸':'#7B68EE','💱':'#5BC8AF','✨':'#FF6B9D','🏦':'#4ECDC4'};
-  el.innerHTML = `<div class="group-block">${items.map(x=>{
-    const amt=calcIncomeAmountRub(x);
-    const linked=x.savingRef?state.savings.find(s=>s.id===x.savingRef):null;
-    const color=COLORS[x.icon]||'#4ECDC4';
-    let sub='в месяц';
-    if(linked){const cur=linked.currency||'RUB';if(x.calcMode==='fx'){const buyR=Number(x.fxBuyRate)||Number(x._fetchedBuyRate)||0;const curR=rates[cur]||0;sub='покупка: '+(buyR?buyR.toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽':'загрузка...')+' · сейчас: '+(curR?curR.toLocaleString('ru-RU',{maximumFractionDigits:2}):'?')+' ₽';}else if(linked.isDeposit&&linked.rate)sub='авто · '+linked.name;else if(x.calcMode==='percent')sub=x.rate+'% годовых · '+linked.name;else sub=linked.name;}
-    return `<div class="card-item savings-card-item" data-id="${x.id}" style="border-left:3px solid ${color};">
-      <div class="card-item-inner">
-        <div class="card-icon" style="background:${color}22;">${x.icon}</div>
-        <div class="card-info"><div class="card-name">${x.name}${linked?' <span class="badge badge-link">🔗</span>':''}</div><div class="card-sub">${sub}</div></div>
-        <div class="card-amount" style="color:${color};">+${fmt(Math.round(amt))} ₽</div>
-        <button class="card-menu-btn" onclick="showCtxMenu(event,[{icon:'✏️',label:'Редактировать',fn:()=>openEdit('income','${x.id}')},{icon:'🗑',label:'Удалить',danger:true,fn:()=>deleteItem('income','${x.id}')}])">⋯</button>
-      </div>
-    </div>`;
-  }).join('')}</div>`;
+  const COLORS_MANUAL = {'📊':'#64B5F6','🏠':'#FFB347','💸':'#7B68EE','💱':'#5BC8AF','✨':'#FF6B9D'};
+
+  // Авто-строки из savings
+  const autoHtml = autoItems
+    .filter(s => !query || s.name.toLowerCase().includes(query))
+    .map(s => {
+      const amt = calcSavingMonthlyIncome(s);
+      const icon = s.isDeposit ? '💰' : '🏦';
+      const color = s.isDeposit ? '#4ECDC4' : '#5BC8AF';
+      const ratePct = s.rate ? Number(s.rate).toFixed(1)+'% год.' : '';
+      const sub = ratePct ? `авто · ${ratePct}` : 'авто';
+      return `<div class="card-item savings-card-item" style="border-left:3px solid ${color};">
+        <div class="card-item-inner">
+          <div class="card-icon" style="background:${color}22;">${icon}</div>
+          <div class="card-info"><div class="card-name">${s.name}</div><div class="card-sub">${sub}</div></div>
+          <div class="card-amount" style="color:${color};">+${fmt(Math.round(amt))} ₽</div>
+          <button class="card-menu-btn" onclick="navigate('savings')" title="Открыть счёт">→</button>
+        </div>
+      </div>`;
+    }).join('');
+
+  // Ручные строки
+  const manualHtml = manualItems
+    .filter(x => !query || x.name.toLowerCase().includes(query))
+    .map(x => {
+      const amt = calcIncomeAmountRub(x);
+      const color = COLORS_MANUAL[x.icon] || '#4ECDC4';
+      return `<div class="card-item savings-card-item" data-id="${x.id}" style="border-left:3px solid ${color};">
+        <div class="card-item-inner">
+          <div class="card-icon" style="background:${color}22;">${x.icon||'✨'}</div>
+          <div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">в месяц</div></div>
+          <div class="card-amount" style="color:${color};">+${fmt(Math.round(amt))} ₽</div>
+          <button class="card-menu-btn" onclick="showCtxMenu(event,[{icon:'✏️',label:'Редактировать',fn:()=>openEdit('income','${x.id}')},{icon:'🗑',label:'Удалить',danger:true,fn:()=>deleteItem('income','${x.id}')}])">⋯</button>
+        </div>
+      </div>`;
+    }).join('');
+
+  if (!autoHtml && !manualHtml) { el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`; return; }
+  el.innerHTML = `<div class="group-block">${autoHtml}${manualHtml}</div>`;
 }
 
 function initIncomeSwipe() { /* replaced by ctx menu */ }
@@ -4386,7 +4439,7 @@ function selectGoalColor(c) {
 }
 
 function renderGoals() {
-  const totalIncome = state.income.reduce((s,x) => s+calcIncomeAmountRub(x), 0);
+  const totalIncome = calcTotalIncome();
 
   const el = document.getElementById('goals-list');
   const totalGoals = state.goals.reduce((s,x) => s+Number(x.amount), 0);
