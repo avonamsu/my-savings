@@ -4662,7 +4662,7 @@ function renderGoals() {
         <div class="goal-info" style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:4px;">
             <div class="goal-name" style="font-size:14px;">${g.name}</div>
-            ${g.pinned ? `<span title="Приоритетная цель" style="font-size:13px;line-height:1;">⭐</span>` : ''}
+            ${g.pinned && !g.covered ? `<span title="Приоритетная цель" style="font-size:13px;line-height:1;">⭐</span>` : ''}
           </div>
           ${!g.covered && g.partial > 0 ? `<div class="goal-progress-bar" style="margin-top:4px;"><div class="goal-progress-fill" style="width:${partialPct}%;background:${color};"></div></div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${partialPct}% · не хватает <span style="color:#FFB347;">${fmt(Math.round(Number(g.amount)*(1-g.partial)))} ₽/мес</span></div>` : ''}
           ${!g.covered && !g.partial ? `<div style="font-size:10px;color:#FFB347;margin-top:2px;">не хватает ${fmt(Number(g.amount))} ₽/мес</div>` : ''}
@@ -4691,7 +4691,7 @@ function renderGoals() {
         <div class="goal-info" style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:4px;">
             <div class="goal-name" style="font-size:14px;">${g.name}</div>
-            ${g.pinned ? `<span title="Приоритетная цель" style="font-size:13px;line-height:1;">⭐</span>` : ''}
+            ${g.pinned && !g.covered ? `<span title="Приоритетная цель" style="font-size:13px;line-height:1;">⭐</span>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;">
             <span style="font-size:10px;background:rgba(255,255,255,0.07);border-radius:6px;padding:2px 6px;color:var(--text-dim);">🔄 ${periodLabel}</span>
