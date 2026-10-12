@@ -2552,6 +2552,14 @@ function saveFixedIncome() {
   state.fixedDepositIncome.push({
     id: uid(), savingId: _fixIncomeEditId, amount, year, createdAt: today()
   });
+  // Record interest in saving's history
+  const s = state.savings.find(x => x.id === _fixIncomeEditId);
+  if (s) {
+    if (!s.history) s.history = [];
+    const closeDate = s.dateEnd && s.dateEnd <= today() ? s.dateEnd : today();
+    s.history.push({ date: closeDate, type: 'interest', amount, note: `Доход за ${year} г.` });
+    s.history.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
   save();
   closeFixIncomeModal();
   renderSavings();
