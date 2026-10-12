@@ -2850,31 +2850,15 @@ function renderSavingCard(x, grandTotal) {
   if (x.isDeposit&&x.rate&&x.dateStart&&x.dateEnd) {
     const d = calcDeposit(x);
     const daysLeft = d.daysTotal-d.daysPassed;
-    const yearlyIncome = Math.round(Number(x.amount)*Number(x.rate)/100);
     if (d.expired) {
       badges+=`<span class="badge badge-exp">Истёк</span>`;
       showFixBtn = true;
-      sub += ' · <span style="color:#4CAF50;font-size:11px;">💸 зафиксируй доход</span>';
     } else {
-      badges+=`<span class="badge badge-cap">${x.rate}%</span>`;
       showFixBtn = daysLeft <= 14;
-      if (daysLeft <= 0) {
-        sub=`${fmt(yearlyIncome)} ₽/год · <span style="color:#4CAF50;font-size:11px;">💸 зафиксируй доход</span>`;
-      } else if (daysLeft <= 14) {
-        sub=`${fmt(yearlyIncome)} ₽/год · <span style="color:#FFB347;">⏳ ${daysLeft} дн. осталось</span>`;
-      } else {
-        sub=`${fmt(yearlyIncome)} ₽/год · ${daysLeft} дн. осталось`;
+      if (daysLeft <= 14) {
+        badges+=`<span class="badge" style="background:rgba(255,179,71,0.15);color:#FFB347;border:1px solid rgba(255,179,71,0.3);">⏳ ${daysLeft} дн.</span>`;
       }
-      const pctDone=Math.round(d.daysPassed/d.daysTotal*100);
-      depositBar=`<div style="margin-top:4px;height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pctDone}%;background:var(--accent);border-radius:2px;"></div></div>`;
-      const curInfl=ROSSTAT_INFLATION[2024]||9.52;
-      if(Number(x.rate)<curInfl) inflWarn=`<div style="font-size:11px;color:var(--warn);margin-top:3px;">⚠️ Ставка ниже инфляции ${curInfl}%</div>`;
     }
-  }
-  if (x.isSavingsAccount && x.rate && x.dateStart) {
-    const sa = calcSavingsAccount(x);
-    badges += `<span class="badge badge-cap">${x.rate}% · накоп.</span>`;
-    sub = `+${fmt(Math.round(sa.earnedInterest))} ₽ за ${sa.daysPassed} дн. · ${fmt(Math.round(sa.dailyIncome))} ₽/день`;
   }
   if(cur!=='RUB') badges+=` <span class="badge badge-cur">${(CURRENCY_FLAGS[cur]||"")} ${cur}</span>`;
   const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
@@ -2886,10 +2870,6 @@ function renderSavingCard(x, grandTotal) {
       <div class="card-icon">${x.icon}</div>
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
-        ${sub?`<div class="card-sub">${sub}</div>`:''}
-        ${depositBar}
-        ${inflWarn}
-        <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${pctOfTotal}% от всех накоплений</div>
       </div>
       <div class="card-amount">${mainAmt}${subAmt?`<span class="sub-amount">${subAmt}</span>`:''}</div>
       <button class="card-menu-btn" onclick="event.stopPropagation();showSavingsMenu(event,'${x.id}')">⋯</button>
