@@ -6582,19 +6582,22 @@ function restoreBackup(event){
 
       // Clean service fields before restoring
       delete restored._appVersion; delete restored._exportedAt;
-      restoreUIState(restored._ui || (restored._home_widgets ? { home_widgets: restored._home_widgets } : null));
+      try { restoreUIState(restored._ui || (restored._home_widgets ? { home_widgets: restored._home_widgets } : null)); } catch(e) {}
       delete restored._ui; delete restored._home_widgets;
       state = restored;
       if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
       if (!state.piggyBanks) state.piggyBanks = [];
       if (!state.challenges) state.challenges = [];
-      save(); saveToIDB(); render(); drawChart(); checkNotifBanner();
+      try { save(); } catch(e) { alert('save error: ' + e.message); return; }
+      try { saveToIDB(); } catch(e) {}
+      try { render(); } catch(e) { alert('render error: ' + e.message); return; }
+      try { drawChart(); } catch(e) {}
+      try { checkNotifBanner(); } catch(e) {}
       // immediately sync restored data to Supabase (bypass debounce)
       sbSaveState().then(() => {
-        // re-migrate snapshots from restored data
         if (_sbUser) sbMigrateSnapshots();
       });
-      alert('✅ Данные восстановлены!');
+      alert('✅ Данные восстановлены! Счетов: ' + state.savings.length);
     } catch(e){ alert('Не удалось прочитать файл.'); }
   };
   reader.readAsText(file); event.target.value='';
