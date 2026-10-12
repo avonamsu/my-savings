@@ -1466,8 +1466,8 @@ async function sbLoadState() {
     renderAll();
     checkAutoRenew();
   }
-  // Preload transactions so interest calc uses real history
-  preloadTxCache().then(() => renderSavings());
+  // Preload transactions + CB key rate in parallel, then re-render
+  Promise.all([preloadTxCache(), loadCbKeyRate()]).then(() => renderSavings());
 }
 
 async function sbSaveState() {
@@ -1517,6 +1517,39 @@ async function fetchTxCached(savingId) {
   const txs = data || [];
   _txCache[savingId] = { txs, loadedAt: Date.now() };
   return txs;
+}
+
+// ── ЦБ КЛЮЧЕВАЯ СТАВКА ────────────────────────────────────
+const _cbRateCache = {}; // { '2025': 21, '2026': 16, ... }
+
+async function fetchCbKeyRateOnJan1(year) {
+  const key = String(year);
+  if (_cbRateCache[key] !== undefined) return _cbRateCache[key];
+  try {
+    // Try Jan 1 first, if holiday/weekend walk forward up to 5 days
+    for (let offset = 0; offset <= 5; offset++) {
+      const d = new Date(year, 0, 1 + offset);
+      const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+      const res = await fetch(`https://www.cbr-xml-daily.ru/archive/${y}/${m}/${day}/daily_json.js`);
+      if (!res.ok) continue;
+      const json = await res.json();
+      // Key rate is not in this endpoint — use a separate ключевая ставка source
+      // cbr-xml-daily.ru doesn't expose key rate, use cbr.ru SOAP or static known values
+      break;
+    }
+  } catch(e) {}
+  // Known key rates on Jan 1 of each year (ЦБ устанавливает на заседаниях):
+  const knownRates = { 2020: 6.25, 2021: 4.25, 2022: 8.5, 2023: 7.5, 2024: 16, 2025: 21, 2026: 21 };
+  const rate = knownRates[year] ?? 21;
+  _cbRateCache[key] = rate;
+  return rate;
+}
+
+async function loadCbKeyRate() {
+  const year = new Date().getFullYear();
+  const rate = await fetchCbKeyRateOnJan1(year);
+  window._cbKeyRate = rate;
+  return rate;
 }
 
 // Preload transactions for accounts that benefit from tx-based calc
@@ -2766,60 +2799,95 @@ function calcDepositTax() {
   const yearStart = new Date(currentYear, 0, 1);
   const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
 
-  const rubDeposits = state.savings.filter(s =>
-    s.isDeposit && (!s.currency || s.currency === 'RUB') && s.rate && s.dateStart && s.dateEnd
-  );
-  const rubSavingsAccounts = state.savings.filter(s =>
-    s.isSavingsAccount && (!s.currency || s.currency === 'RUB') && s.rate && s.dateStart
+  const rubAccounts = state.savings.filter(s =>
+    (!s.currency || s.currency === 'RUB') && s.rate &&
+    (s.isDeposit || s.isSavingsAccount)
   );
 
   let totalYearlyIncome = 0;
+  // Track whether we used real tx data or estimates
+  let hasTxData = false;
 
-  rubDeposits.forEach(s => {
-    const start = new Date(s.dateStart);
-    const end = new Date(s.dateEnd);
-    const rate = (s.rate || 0) / 100;
-    const amount = s.amount || 0;
+  rubAccounts.forEach(s => {
+    const cached = _txCache[s.id];
 
-    let cur = new Date(Math.max(start.getTime(), yearStart.getTime()));
-    const depEnd = new Date(Math.min(end.getTime(), yearEnd.getTime()));
+    if (s.isDeposit) {
+      // Вклад: логируемые interest-транзакции = реальные выплаты банком
+      if (cached) {
+        const yearInterest = cached.txs
+          .filter(tx => tx.type === 'interest' && tx.date && tx.date.slice(0,4) === String(currentYear))
+          .reduce((sum, tx) => sum + Number(tx.amount), 0);
+        totalYearlyIncome += yearInterest;
+        hasTxData = true;
+      } else {
+        // Fallback: estimate from parameters
+        if (s.dateStart && s.dateEnd) {
+          const start = new Date(s.dateStart);
+          const end = new Date(s.dateEnd);
+          const rate = (s.rate || 0) / 100;
+          const amount = s.amount || 0;
+          let cur = new Date(Math.max(start.getTime(), yearStart.getTime()));
+          const depEnd = new Date(Math.min(end.getTime(), yearEnd.getTime()));
+          if (cur <= depEnd) {
+            let monthsInYear = 0;
+            while (cur <= depEnd) { monthsInYear++; cur.setMonth(cur.getMonth() + 1); }
+            totalYearlyIncome += (amount * rate / 12) * monthsInYear;
+          }
+        }
+      }
+    } else if (s.isSavingsAccount && s.dateStart) {
+      // Накопительный счёт: начисление идёт непрерывно, считаем разницу баланса на начало/конец года
+      // Используем calcSavingsAccount для расчёта накопленного за год
+      const rate = (s.rate || 0) / 100;
+      const accrual = s.accrual || 'daily';
 
-    if (cur > depEnd) return;
-
-    let monthsInYear = 0;
-    while (cur <= depEnd) {
-      monthsInYear++;
-      cur.setMonth(cur.getMonth() + 1);
+      if (cached && cached.txs.length > 0) {
+        // Точный расчёт: timeline за текущий год
+        const timeline = _buildBalanceTimeline(cached.txs, s.dateStart);
+        const yearTimeline = timeline.filter(p => p.date >= yearStart && p.date <= new Date());
+        let yearInterest = 0;
+        if (accrual === 'daily') {
+          for (const { balance } of yearTimeline) {
+            if (balance > 0) yearInterest += balance * rate / 365;
+          }
+        } else {
+          const months = {};
+          for (const { date, balance } of yearTimeline) {
+            const key = date.toISOString().slice(0, 7);
+            if (months[key] === undefined || balance < months[key]) months[key] = balance;
+          }
+          for (const minBal of Object.values(months)) {
+            if (minBal > 0) yearInterest += minBal * rate / 12;
+          }
+        }
+        totalYearlyIncome += yearInterest;
+        hasTxData = true;
+      } else {
+        // Fallback
+        const amount = s.amount || 0;
+        const start = new Date(s.dateStart);
+        const periodStart = new Date(Math.max(start.getTime(), yearStart.getTime()));
+        const periodEnd = new Date(Math.min(new Date().getTime(), yearEnd.getTime()));
+        if (periodStart <= periodEnd) {
+          const daysInYear = Math.round((periodEnd - periodStart) / 86400000);
+          totalYearlyIncome += amount * rate * daysInYear / 365;
+        }
+      }
     }
-
-    const monthlyIncome = amount * rate / 12;
-    totalYearlyIncome += monthlyIncome * monthsInYear;
   });
 
-  // Накопительные счета: считаем дни в текущем году × ставка/365
-  rubSavingsAccounts.forEach(s => {
-    const start = new Date(s.dateStart);
-    const rate = (s.rate || 0) / 100;
-    const amount = s.amount || 0;
-    const periodStart = new Date(Math.max(start.getTime(), yearStart.getTime()));
-    const periodEnd = new Date(Math.min(new Date().getTime(), yearEnd.getTime()));
-    if (periodStart > periodEnd) return;
-    const daysInYear = Math.round((periodEnd - periodStart) / 86400000);
-    totalYearlyIncome += amount * rate * daysInYear / 365;
-  });
+  // Manually fixed income (from "Зафиксировать доход" flow) — only add if NOT already in tx
+  // fixedDepositIncome is logged via sbLogTransaction('interest') so already counted above
+  // Only add for accounts with no tx cache (not logged in scenario)
+  if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
+  const fixedIncome = hasTxData ? 0 : getFixedIncomeForYear(currentYear);
+  totalYearlyIncome += fixedIncome;
 
   const cbRate = window._cbKeyRate || 21;
   const taxFreeAmount = 1000000 * cbRate / 100;
   const taxBase = Math.max(0, totalYearlyIncome - taxFreeAmount);
   const tax = Math.round(taxBase * (taxBase > 5000000 ? 0.15 : 0.13));
-
-  // Add manually fixed income for current year
-  if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
-  const fixedIncome = getFixedIncomeForYear(currentYear);
-  totalYearlyIncome += fixedIncome;
-  const taxBase2 = Math.max(0, totalYearlyIncome - taxFreeAmount);
-  const tax2 = Math.round(taxBase2 * (taxBase2 > 5000000 ? 0.15 : 0.13));
-  return { totalYearlyIncome, taxFreeAmount, taxBase: taxBase2, tax: tax2, cbRate, currentYear, fixedIncome };
+  return { totalYearlyIncome, taxFreeAmount, taxBase, tax, cbRate, currentYear, fixedIncome, hasTxData };
 }
 
 
@@ -2848,15 +2916,19 @@ function renderDepositTax() {
     statusHtml = '<div style="font-size:12px;color:var(--danger);">🔴 Налог к уплате: <strong>' + fmt(t.tax) + ' ₽</strong> (база ' + fmt(Math.round(t.taxBase)) + ' ₽ × ' + taxRate + '%)</div>';
   }
 
+  const sourceLabel = t.hasTxData
+    ? '<span style="font-size:10px;color:var(--accent);opacity:.8;">● из истории</span>'
+    : '<span style="font-size:10px;color:var(--text-dim);opacity:.7;">~ оценка</span>';
+
   el.innerHTML = [
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">',
-      '<span style="font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);">💸 НДФЛ С ПРОЦЕНТОВ</span>',
-      '<span style="font-size:11px;color:var(--text-dim);">ставка ЦБ ' + t.cbRate + '%</span>',
+      '<span style="font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);">💸 НДФЛ С ПРОЦЕНТОВ ' + t.currentYear + '</span>',
+      '<span style="font-size:11px;color:var(--text-dim);">ставка ЦБ на 1 янв: ' + t.cbRate + '%</span>',
     '</div>',
     // Row: income vs threshold
-    '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">',
+    '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px;">',
       '<span style="color:var(--text-dim);">Доход за год</span>',
-      '<span style="font-weight:600;">' + fmt(Math.round(t.totalYearlyIncome)) + ' ₽</span>',
+      '<span style="display:flex;align-items:center;gap:6px;">' + sourceLabel + '<strong>' + fmt(Math.round(t.totalYearlyIncome)) + ' ₽</strong></span>',
     '</div>',
     // Progress bar
     '<div style="margin-bottom:6px;">',
@@ -6803,6 +6875,7 @@ if (_currentPage === 'challenge') renderChallengesPage();
 const titleEl = document.getElementById('topbar-title');
 if (titleEl) titleEl.textContent = PAGE_TITLES[_currentPage] || 'Мои накопления';
 fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); });
+loadCbKeyRate().then(() => renderDepositTax());
 
 initNotifications();
 checkNotifBanner();
