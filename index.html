@@ -3857,18 +3857,9 @@ function _buildHistorySheetContent(savingId, rows) {
     realReturn = interest > 0 ? interest : (currentAmt - principal + withdrawals);
   }
 
-  let aprStr = '—';
+  let aprStr = null; // null = don't show yield row
   if (s.rate && (s.isSavingsAccount || s.isDeposit)) {
-    // For accounts with a known rate, show the actual rate
     aprStr = '+' + Number(s.rate).toFixed(1) + '% годовых';
-  } else if (principal > 0 && rows.length > 0) {
-    const firstDateStr = rows[rows.length - 1].date.slice(0, 10);
-    const todayStr = new Date().toLocaleDateString('sv');
-    const firstDate = new Date(firstDateStr + 'T12:00:00');
-    const today = new Date(todayStr + 'T12:00:00');
-    const days = Math.max(1, (today - firstDate) / 86400000);
-    const annualized = (realReturn / principal) * (365 / days) * 100;
-    if (isFinite(annualized) && annualized > -999) aprStr = (annualized > 0 ? '+' : '') + annualized.toFixed(1) + '% годовых';
   }
 
   if (statsEl) {
@@ -3878,14 +3869,14 @@ function _buildHistorySheetContent(savingId, rows) {
         <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ВЛОЖЕНО</div>
         <div style="font-size:15px;font-weight:700;">${fmt(principal)} ₽</div>
       </div>
-      <div style="flex:1;padding:12px 16px;border-right:1px solid rgba(255,255,255,0.06);">
+      <div style="flex:1;padding:12px 16px;${aprStr !== null ? 'border-right:1px solid rgba(255,255,255,0.06);' : ''}">
         <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ЗАРАБОТАНО</div>
         <div style="font-size:15px;font-weight:700;color:${realReturn>=0?'#4CAF50':'var(--danger)'};">${realReturn>=0?'+':''}${fmt(Math.round(realReturn))} ₽</div>
       </div>
-      <div style="flex:1;padding:12px 16px;">
+      ${aprStr !== null ? `<div style="flex:1;padding:12px 16px;">
         <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ДОХОДНОСТЬ</div>
         <div style="font-size:15px;font-weight:700;color:var(--accent);">${aprStr}</div>
-      </div>`;
+      </div>` : ''}`;
   }
 
   const typeOrder = { deposit: 0, withdrawal: 0, interest: 1 };
