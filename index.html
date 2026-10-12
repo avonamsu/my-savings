@@ -816,6 +816,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <button type="button" onclick="selectEmoji('💻','pg')" class="emoji-pick-btn" id="epb-pg-laptop">💻</button>
           <button type="button" onclick="selectEmoji('🌴','pg')" class="emoji-pick-btn" id="epb-pg-palm">🌴</button>
         </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <span style="font-size:12px;color:var(--text-dim);">Свой:</span>
+          <input type="text" id="pg-emoji-custom" placeholder="✨" maxlength="4" oninput="onCustomEmojiInput('pg')" style="width:48px;text-align:center;font-size:20px;padding:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;">
+        </div>
         <input type="hidden" id="pg-emoji" value="🐷">
       </div>
       <div class="field"><label>ЦВЕТ</label>
@@ -1282,7 +1286,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('📺')" id="gepb-tv">📺</button>
           <button type="button" class="emoji-pick-btn" onclick="selectGoalEmoji('🏋️')" id="gepb-gym">🏋️</button>
         </div>
-        <input type="text" id="g-emoji-custom" placeholder="Или введи своё эмодзи" maxlength="4" oninput="onGoalEmojiCustomInput(this)" style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-size:20px;padding:6px 10px;text-align:center;">
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <span style="font-size:12px;color:var(--text-dim);">Свой:</span>
+          <input type="text" id="g-emoji-custom" placeholder="✨" maxlength="4" oninput="onGoalEmojiCustomInput(this)" style="width:48px;text-align:center;font-size:20px;padding:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;">
+        </div>
         <input type="hidden" id="g-emoji" value="🎯">
       </div>
       <div id="g-note-field" class="field" style="display:none;"><label>ЗАМЕТКА (необязательно)</label>
@@ -6236,7 +6243,10 @@ function openPiggyEdit(id) {
     }
     updatePiggyPlanPreview('pg-edit');
   }
+  const stdPgEmojis = ['🐷','✈️','🏠','🚗','💍','🎓','💻','🌴'];
   selectEmoji(pg.emoji||'🐷', 'pge');
+  const pgeCustom = document.getElementById('pge-emoji-custom');
+  if (pgeCustom) pgeCustom.value = stdPgEmojis.includes(pg.emoji||'🐷') ? '' : (pg.emoji||'');
   selectColor(pg.color||'#4ECDC4', 'pge');
   fillLinkedSavingSelect('pg-edit-linked-saving', pg.linkedSavingId||'');
   document.getElementById('pg-edit-modal').classList.add('open');
@@ -7204,20 +7214,20 @@ function selectEmoji(e, suffix) {
   const btn = document.getElementById('epb-'+suffix+'-'+(emap[e]||e));
   if (btn) btn.classList.add('selected');
   // очищаем поле своего эмодзи
-  const customFieldId = suffix==='ech' ? 'ech-emoji-custom' : (suffix==='p' ? 'ch-emoji-p-custom' : null);
+  const customFieldMap = {ech:'ech-emoji-custom', p:'ch-emoji-p-custom', pg:'pg-emoji-custom', pge:'pge-emoji-custom'};
+  const customFieldId = customFieldMap[suffix] || null;
   if (customFieldId) { const cf = document.getElementById(customFieldId); if(cf) cf.value=''; }
 }
 function onCustomEmojiInput(suffix) {
-  const customFieldId = suffix==='ech' ? 'ech-emoji-custom' : 'ch-emoji-p-custom';
-  const fieldId = suffix==='ech' ? 'ech-emoji' : 'ch-emoji-'+suffix;
+  const customFieldMap = {ech:'ech-emoji-custom', p:'ch-emoji-p-custom', pg:'pg-emoji-custom', pge:'pge-emoji-custom'};
+  const hiddenFieldMap = {ech:'ech-emoji', pg:'pg-emoji', pge:'pg-edit-emoji'};
+  const customFieldId = customFieldMap[suffix] || (suffix+'-emoji-custom');
+  const fieldId = hiddenFieldMap[suffix] || ('ch-emoji-'+suffix);
   const cf = document.getElementById(customFieldId);
   if (!cf || !cf.value.trim()) return;
-  // берём первый символ (может быть эмодзи из нескольких code units)
-  const chars = [...cf.value.trim()];
-  const emoji = chars[0];
+  const emoji = [...cf.value.trim()].slice(0,2).join('');
   const el = document.getElementById(fieldId);
   if(el) el.value = emoji;
-  // снимаем выделение с кнопок
   document.querySelectorAll('[id^="epb-'+suffix+'-"]').forEach(b => b.classList.remove('selected'));
 }
 function selectColor(c, suffix) {
@@ -8382,6 +8392,10 @@ checkPiggyReminders();
         <button type="button" onclick="selectEmoji('🎓','pge')" class="emoji-pick-btn" id="epb-pge-grad">🎓</button>
         <button type="button" onclick="selectEmoji('💻','pge')" class="emoji-pick-btn" id="epb-pge-laptop">💻</button>
         <button type="button" onclick="selectEmoji('🌴','pge')" class="emoji-pick-btn" id="epb-pge-palm">🌴</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+        <span style="font-size:12px;color:var(--text-dim);">Свой:</span>
+        <input type="text" id="pge-emoji-custom" placeholder="✨" maxlength="4" oninput="onCustomEmojiInput('pge')" style="width:48px;text-align:center;font-size:20px;padding:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;">
       </div>
       <input type="hidden" id="pg-edit-emoji" value="🐷">
     </div>
