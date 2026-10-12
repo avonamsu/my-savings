@@ -2880,9 +2880,8 @@ function renderSavingCard(x, grandTotal) {
   const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
   const subAmt = cur!=='RUB'?`≈ ${fmt(rubAmt)} ₽`:'';
 
-  const onCardClick = x.isSavingsAccount ? `onclick="openSavingsAccountSheet('${x.id}')"` : '';
   return `<div class="card-item savings-card-item${(x.excluded||x.included===false)?' excluded':''}" data-id="${x.id}">
-    <div class="card-item-inner" ${onCardClick} style="${x.isSavingsAccount?'cursor:pointer;':''}">
+    <div class="card-item-inner" onclick="openAccountSheet('${x.id}')" style="cursor:pointer;">
       <button class="excl-btn" onclick="event.stopPropagation();toggleExclude('${x.id}')">${x.excluded?'🔘':'⚫'}</button>
       <div class="card-icon">${x.icon}</div>
       <div class="card-info">
@@ -3416,82 +3415,145 @@ function _buildHistorySheetContent(savingId, rows) {
       </div>`).join('');
 }
 
-// ── SAVINGS ACCOUNT DETAIL SHEET ─────────────────────────
-function openSavingsAccountSheet(id) {
+// ── ACCOUNT DETAIL SHEET ──────────────────────────────────
+function _sheetBtn(onclick, icon, label, accent) {
+  const bg = accent ? 'rgba(78,205,196,0.12)' : 'var(--surface2)';
+  const border = accent ? '1px solid rgba(78,205,196,0.2)' : '1px solid rgba(255,255,255,0.08)';
+  const color = accent ? 'var(--accent)' : 'var(--text)';
+  return `<button onclick="document.getElementById('sa-sheet').remove();${onclick}"
+    style="padding:12px 0;background:${bg};border:${border};border-radius:12px;color:${color};font-size:13px;font-weight:600;cursor:pointer;">
+    ${icon}<br><span style="font-size:11px;">${label}</span>
+  </button>`;
+}
+
+function _sheetStat(label, value, sub, color) {
+  return `<div style="background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;">
+    <div style="font-size:10px;color:var(--text-dim);letter-spacing:.05em;">${label}</div>
+    <div style="font-size:15px;font-weight:700;${color?'color:'+color+';':''}">${value} <span style="font-size:11px;font-weight:400;color:var(--text-dim);">${sub}</span></div>
+  </div>`;
+}
+
+function openAccountSheet(id) {
   const s = state.savings.find(x => x.id === id);
   if (!s) return;
   document.getElementById('sa-sheet')?.remove();
 
-  const sa = s.rate && s.dateStart ? calcSavingsAccount(s) : null;
   const bal = getSavingCurrentAmountLocal(s);
   const cur = s.currency || 'RUB';
   const canTransfer = state.savings.some(x => x.id !== id && canTransferTo(x));
+  const close = `document.getElementById('sa-sheet').remove();`;
+
+  // Тип счёта — лейбл
+  let typeLabel = 'Счёт';
+  if (s.isDeposit) typeLabel = 'Вклад';
+  else if (s.isSavingsAccount) typeLabel = 'Накопительный счёт';
+  else if (s.icon === '📈') typeLabel = 'Инвестиции';
+  else if (s.icon === '🏠') typeLabel = 'Недвижимость';
+  else typeLabel = 'Наличные';
+
+  // Шапка — одинакова для всех
+  const header = `
+    <div style="padding:8px 20px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="font-size:32px;line-height:1;">${s.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;color:var(--text-dim);">${typeLabel} · ${s.name}</div>
+      </div>
+      <button onclick="${close}" style="background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;color:var(--text-dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
+    </div>
+    <div style="padding:12px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 16px;">
+        <div style="font-size:10px;color:var(--text-dim);letter-spacing:.08em;margin-bottom:6px;">БАЛАНС</div>
+        <div style="font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;">${fmt(Math.round(bal))} <span style="font-size:20px;font-weight:600;opacity:.6;">${currSym(cur)}</span></div>
+        ${cur !== 'RUB' ? `<div style="font-size:12px;color:var(--text-dim);margin-top:4px;">≈ ${fmt(Math.round(toRub(bal, cur)))} ₽</div>` : ''}
+      </div>
+    </div>`;
+
+  // Статистика + кнопки — по типу
+  let stats = '';
+  let actions = '';
+
+  if (s.isSavingsAccount) {
+    const sa = s.rate && s.dateStart ? calcSavingsAccount(s) : null;
+    if (sa) {
+      stats = `<div style="padding:12px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-bottom:1px solid rgba(255,255,255,0.06);">
+        ${_sheetStat('СТАВКА', s.rate+'%', 'годовых', 'var(--accent)')}
+        ${_sheetStat('ДОХОД В ДЕНЬ', '+'+fmt(Math.round(sa.dailyIncome)), currSym(cur), '#4CAF50')}
+        ${_sheetStat('ЗАРАБОТАНО', '+'+fmt(Math.round(sa.earnedInterest)), 'за '+sa.daysPassed+' дн.')}
+        ${_sheetStat('ЗА МЕСЯЦ', '≈'+fmt(Math.round(sa.dailyIncome*30)), currSym(cur))}
+      </div>`;
+    }
+    const cols = canTransfer ? 3 : 2;
+    actions = `<div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;">
+      ${_sheetBtn(`openDepositWithdrawModal('${id}','deposit')`, '➕', 'Пополнить', true)}
+      ${_sheetBtn(`openDepositWithdrawModal('${id}','withdrawal')`, '➖', 'Снять', false)}
+      ${canTransfer ? _sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false) : ''}
+    </div>`;
+
+  } else if (s.isDeposit) {
+    const d = s.rate && s.dateStart && s.dateEnd ? calcDeposit(s) : null;
+    const daysLeft = d ? d.daysTotal - d.daysPassed : null;
+    const yearlyIncome = Math.round(Number(s.amount) * Number(s.rate) / 100);
+    const canRefill = s.refillable && (!s.refillUntil || s.refillUntil >= today());
+    const canEarlyClose = s.dateStart && (!s.dateEnd || s.dateEnd > today()) && !s.earlyClosed;
+    const showFix = d && (d.expired || daysLeft <= 14);
+
+    if (d) {
+      const pctDone = Math.round(d.daysPassed / d.daysTotal * 100);
+      stats = `<div style="padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          ${_sheetStat('СТАВКА', s.rate+'%', 'годовых', 'var(--accent)')}
+          ${_sheetStat('ДОХОД В ГОД', '≈'+fmt(yearlyIncome), currSym(cur), '#4CAF50')}
+          ${_sheetStat('ЗАРАБОТАНО', '+'+fmt(Math.round(d.currentAmount - Number(s.amount))), currSym(cur))}
+          ${daysLeft !== null ? _sheetStat(d.expired ? 'ИСТЁК' : 'ОСТАЛОСЬ', d.expired ? '—' : daysLeft+' дн.', d.expired ? '' : 'до '+s.dateEnd, d.expired ? 'var(--danger)' : '') : ''}
+        </div>
+        <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${Math.min(pctDone,100)}%;background:${d.expired?'var(--danger)':'var(--accent)'};border-radius:2px;transition:width .3s;"></div>
+        </div>
+      </div>`;
+    }
+
+    const btns = [];
+    if (canRefill) btns.push(_sheetBtn(`openDepositWithdrawModal('${id}','deposit')`, '➕', 'Пополнить', true));
+    if (canRefill && canTransfer) btns.push(_sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false));
+    if (canEarlyClose) btns.push(_sheetBtn(`openEarlyCloseModal('${id}')`, '🔓', 'Закрыть досрочно', false));
+    if (showFix) btns.push(_sheetBtn(`openFixIncomeModal('${id}')`, '💸', 'Зафиксировать', false));
+    if (btns.length) {
+      actions = `<div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${Math.min(btns.length,3)},1fr);gap:8px;">${btns.join('')}</div>`;
+    }
+
+  } else {
+    // Наличные / инвестиции / недвижимость
+    const cols = canTransfer ? 3 : 2;
+    actions = `<div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;">
+      ${_sheetBtn(`openDepositWithdrawModal('${id}','deposit')`, '➕', 'Пополнить', true)}
+      ${_sheetBtn(`openDepositWithdrawModal('${id}','withdrawal')`, '➖', 'Снять', false)}
+      ${canTransfer ? _sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false) : ''}
+    </div>`;
+  }
+
+  const historyBtn = `<div style="padding:0 20px 20px;">
+    <button onclick="${close}openHistorySheet('${id}')"
+      style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:var(--text);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+      <span>📋 История операций</span><span style="color:var(--text-dim);font-size:16px;">›</span>
+    </button>
+  </div>`;
 
   const sheet = document.createElement('div');
   sheet.id = 'sa-sheet';
   sheet.style.cssText = 'position:fixed;inset:0;z-index:600;display:flex;flex-direction:column;justify-content:flex-end;';
   sheet.innerHTML = `
-    <div onclick="document.getElementById('sa-sheet').remove()" style="flex:1;"></div>
+    <div onclick="${close}" style="flex:1;"></div>
     <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:85vh;overflow-y:auto;">
-      <!-- handle -->
       <div style="display:flex;justify-content:center;padding:12px 0 4px;">
         <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;"></div>
       </div>
-      <!-- header -->
-      <div style="padding:8px 20px 20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,0.06);">
-        <div style="font-size:36px;line-height:1;">${s.icon}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;color:var(--text-dim);margin-bottom:2px;">Накопительный счёт · ${s.name}</div>
-          <div style="font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1.1;">${fmt(Math.round(bal))} <span style="font-size:18px;font-weight:600;opacity:.6;">${currSym(cur)}</span></div>
-          ${cur !== 'RUB' ? `<div style="font-size:12px;color:var(--text-dim);margin-top:2px;">≈ ${fmt(Math.round(toRub(bal, cur)))} ₽</div>` : ''}
-        </div>
-        <button onclick="document.getElementById('sa-sheet').remove()" style="background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;color:var(--text-dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:flex-start;margin-top:4px;">×</button>
-      </div>
-      <!-- stats -->
-      ${sa ? `<div style="padding:12px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-bottom:1px solid rgba(255,255,255,0.06);">
-        <div style="background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;">
-          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.05em;">СТАВКА</div>
-          <div style="font-size:15px;font-weight:700;color:var(--accent);">${s.rate}% <span style="font-size:11px;font-weight:400;color:var(--text-dim);">годовых</span></div>
-        </div>
-        <div style="background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;">
-          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.05em;">ДОХОД В ДЕНЬ</div>
-          <div style="font-size:15px;font-weight:700;color:#4CAF50;">+${fmt(Math.round(sa.dailyIncome))} <span style="font-size:11px;font-weight:400;color:var(--text-dim);">${currSym(cur)}</span></div>
-        </div>
-        <div style="background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;">
-          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.05em;">ЗАРАБОТАНО</div>
-          <div style="font-size:15px;font-weight:700;">+${fmt(Math.round(sa.earnedInterest))} <span style="font-size:11px;font-weight:400;color:var(--text-dim);">за ${sa.daysPassed} дн.</span></div>
-        </div>
-        <div style="background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;">
-          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.05em;">ЗА МЕСЯЦ</div>
-          <div style="font-size:15px;font-weight:700;">≈${fmt(Math.round(sa.dailyIncome * 30))} <span style="font-size:11px;font-weight:400;color:var(--text-dim);">${currSym(cur)}</span></div>
-        </div>
-      </div>` : ''}
-      <!-- actions -->
-      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${canTransfer?3:2},1fr);gap:8px;">
-        <button onclick="document.getElementById('sa-sheet').remove();openDepositWithdrawModal('${id}','deposit')"
-          style="padding:12px 0;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.2);border-radius:12px;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;">
-          ➕<br><span style="font-size:11px;">Пополнить</span>
-        </button>
-        <button onclick="document.getElementById('sa-sheet').remove();openDepositWithdrawModal('${id}','withdrawal')"
-          style="padding:12px 0;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">
-          ➖<br><span style="font-size:11px;">Снять</span>
-        </button>
-        ${canTransfer ? `<button onclick="document.getElementById('sa-sheet').remove();openTransferModal('${id}')"
-          style="padding:12px 0;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">
-          ↔️<br><span style="font-size:11px;">Перевести</span>
-        </button>` : ''}
-      </div>
-      <!-- history button -->
-      <div style="padding:0 20px 20px;">
-        <button onclick="document.getElementById('sa-sheet').remove();openHistorySheet('${id}')"
-          style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:var(--text);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
-          <span>📋 История операций</span>
-          <span style="color:var(--text-dim);font-size:16px;">›</span>
-        </button>
-      </div>
+      ${header}${stats}${actions}${historyBtn}
     </div>`;
   document.body.appendChild(sheet);
 }
+
+// Алиас для обратной совместимости
+const openSavingsAccountSheet = openAccountSheet;
 
 async function openHistorySheet(id) {
   const s = state.savings.find(x => x.id === id);
