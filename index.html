@@ -4156,7 +4156,6 @@ async function openHistorySheet(id) {
   }
 
   // Accrue missing daily interest for savings accounts, then reload
-  const s = state.savings.find(x => x.id === id);
   if (s?.isSavingsAccount && s.rate && s.dateStart) {
     await accrueInterestIfNeeded(s, txs);
     // Reload transactions after accrual
