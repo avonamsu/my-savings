@@ -2844,7 +2844,7 @@ function renderSavingCard(x, grandTotal) {
   const localAmt = getSavingCurrentAmountLocal(x);
   const rubAmt = getSavingCurrentAmountRub(x);
   const pctOfTotal = grandTotal>0 ? Math.round(rubAmt/grandTotal*100) : 0;
-  let badges='', sub='';
+  let badges='', rateBadge='', sub='';
   const isCash = !x.isDeposit && !x.isSavingsAccount && x.icon === '💵';
   const showIcon = false;
 
@@ -2863,24 +2863,20 @@ function renderSavingCard(x, grandTotal) {
     }
   }
   if (x.rate && (x.isDeposit || x.isSavingsAccount)) {
-    badges += `<span class="badge badge-cap">${x.rate}%</span>`;
+    rateBadge = `<span class="badge badge-cap">${x.rate}%</span>`;
   }
   if(cur!=='RUB' && !isCash) badges+=` <span class="badge badge-cur">${(CURRENCY_FLAGS[cur]||"")} ${cur}</span>`;
   const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
   const subAmt = cur!=='RUB'?`≈ ${fmt(rubAmt)} ₽`:'';
-  const cashIcon = isCash ? `<div class="card-icon" style="display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:18px;line-height:1.2;gap:1px;">
-    <span>${CURRENCY_FLAGS[cur]||cur}</span>
-    <span style="font-size:9px;font-weight:700;color:var(--text-dim);letter-spacing:.03em;">${cur}</span>
-  </div>` : '';
+  const cashIcon = isCash ? `<div style="font-size:26px;line-height:1;flex-shrink:0;width:36px;text-align:center;">${CURRENCY_FLAGS[cur]||'💵'}</div>` : '';
 
   return `<div class="card-item savings-card-item${(x.excluded||x.included===false)?' excluded':''}" data-id="${x.id}">
     <div class="card-item-inner" onclick="openAccountSheet('${x.id}')" style="cursor:pointer;">
       <button class="excl-btn" onclick="event.stopPropagation();toggleExclude('${x.id}')">${x.excluded?'🔘':'⚫'}</button>
-      ${showIcon ? `<div class="card-icon">${x.icon}</div>` : ''}
       ${cashIcon}
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
-        ${sub ? `<div style="margin-top:2px;">${sub}</div>` : ''}
+        ${rateBadge ? `<div style="margin-top:3px;">${rateBadge}</div>` : ''}
       </div>
       <div class="card-amount">${mainAmt}${subAmt?`<span class="sub-amount">${subAmt}</span>`:''}</div>
       <button class="card-menu-btn" onclick="event.stopPropagation();showSavingsMenu(event,'${x.id}')">⋯</button>
