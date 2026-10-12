@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012222000">
+  <meta name="version" content="20261012222500">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -4166,14 +4166,16 @@ function openAccountSheet(id) {
       <div style="padding:16px 20px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
         <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 14px;"></div>
         <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;">
-          <div>
+          <div style="min-width:0;flex:1;">
             <div style="font-size:20px;font-weight:700;">${s.icon} ${s.name}</div>
             <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${typeLabel}</div>
+            <div style="font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1;margin-top:8px;color:var(--accent);">${fmt(Math.round(bal))} <span style="font-size:18px;font-weight:600;opacity:.7;">${currSym(cur)}</span></div>
+            ${cur !== 'RUB' ? `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">≈ ${fmt(Math.round(toRub(bal, cur)))} ₽</div>` : ''}
           </div>
-          <button onclick="${close}" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;">×</button>
+          <button onclick="${close}" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;margin-left:12px;">×</button>
         </div>
       </div>
-      ${header}${stats}${actions}${historyBtn}
+      ${stats}${actions}${historyBtn}
     </div>`;
   document.body.appendChild(sheet);
 }
