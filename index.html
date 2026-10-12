@@ -639,7 +639,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
     </div>
   </div>
-  <div id="savings-list">
+  <div id="savings-list" style="opacity:0;transition:opacity 0.25s ease;">
     <div class="empty"><div class="empty-icon">🏦</div><p>Добавь первый счёт или инвестицию</p></div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('savings')">＋ Добавить счёт</button>
@@ -1650,7 +1650,11 @@ async function preloadTxCache() {
     (s.isSavingsAccount && s.rate && s.dateStart) ||
     (s.isDeposit && s.rate && s.dateStart && s.dateEnd)
   );
-  if (!accounts.length) return;
+  if (!accounts.length) {
+    const el = document.getElementById('savings-list');
+    if (el) el.style.opacity = '1';
+    return;
+  }
   // Batch fetch all in one query
   const ids = accounts.map(s => s.id);
   const { data, error } = await _sb.from('transactions')
@@ -1658,7 +1662,11 @@ async function preloadTxCache() {
     .eq('user_id', _sbUser.id)
     .in('saving_id', ids)
     .order('date', { ascending: true });
-  if (error) return;
+  if (error) {
+    const el = document.getElementById('savings-list');
+    if (el) el.style.opacity = '1';
+    return;
+  }
   const byId = {};
   for (const tx of (data || [])) {
     if (!byId[tx.saving_id]) byId[tx.saving_id] = [];
@@ -1668,6 +1676,9 @@ async function preloadTxCache() {
   for (const id of ids) {
     _txCache[id] = { txs: byId[id] || [], loadedAt: now };
   }
+  // Reveal list only after tx cache is ready — prevents amount flash
+  const el = document.getElementById('savings-list');
+  if (el) el.style.opacity = '1';
 }
 
 async function sbSignInWithEmail(email) {
@@ -3203,6 +3214,11 @@ function openTaxDetailSheet() {
 
 
 function renderSavings() {
+  // If not using Supabase, reveal list immediately (no tx cache loading)
+  if (!_sbUser) {
+    const el = document.getElementById('savings-list');
+    if (el && el.style.opacity === '0') el.style.opacity = '1';
+  }
   const total = state.savings.reduce((s,x) => s+(x.excluded?0:getSavingCurrentAmountRub(x)), 0);
   renderDepositTax();
   document.getElementById('total-savings').innerHTML = `${fmt(total)} <span>₽</span>`;
