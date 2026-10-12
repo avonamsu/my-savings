@@ -4219,7 +4219,8 @@ async function openHistorySheet(id) {
   }
 
   // Auto-create opening transaction for existing accounts that have none
-  if (_sbUser && s && txs.length === 0) {
+  const hasOpeningTx = txs.some(tx => tx.note === 'Открытие счёта' || tx.type === 'init');
+  if (_sbUser && s && !hasOpeningTx) {
     const openDate = s.dateStart || today();
     const openAmount = Number(s.amount) || 0;
     if (openAmount > 0) {
