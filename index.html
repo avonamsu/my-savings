@@ -1510,11 +1510,11 @@ async function sbMigrateSnapshots() {
   for (const [ym, amount] of Object.entries(state._incomeHistory || {})) {
     rows.push({ user_id: _sbUser.id, type: 'income', ym, amount });
   }
-  console.log('sbMigrateSnapshots: rows to migrate', rows.length, rows);
-  if (!rows.length) { console.warn('sbMigrateSnapshots: nothing to migrate'); return; }
+  if (!rows.length) { showToast('Migrate: нет данных в _history'); return; }
+  showToast('Migrate: отправляю ' + rows.length + ' строк...');
   const { error } = await _sb.from('snapshots').upsert(rows, { onConflict: 'user_id,type,ym' });
-  if (error) console.warn('sbMigrateSnapshots error', error);
-  else console.log('sbMigrateSnapshots: done');
+  if (error) showToast('Migrate error: ' + JSON.stringify(error).slice(0,80));
+  else showToast('Migrate: OK, ' + rows.length + ' строк сохранено');
 }
 
 async function sbSaveState() {
