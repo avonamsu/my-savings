@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012230000">
+  <meta name="version" content="20261012213100">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3564,6 +3564,7 @@ function showGoalMenu(e, id) {
 function showChallengeMenu(e, id, canComplete) {
   const items = [
     {icon:'✅', label:'Завершить челлендж', fn:()=>completeChallenge(id)},
+    {icon:'📋', label:'История операций', fn:()=>openChallengeHistorySheet(id)},
     {icon:'✏️', label:'Изменить', fn:()=>editChallenge(id)},
     {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteChallenge(id)}
   ];
@@ -6127,6 +6128,145 @@ function deletePiggyBank(id) {
   save(); renderChallengesPage();
 }
 
+function openPiggyHistorySheet(id) {
+  const pg = (state.piggyBanks||[]).find(p=>p.id===id);
+  if (!pg) return;
+  const deposits = (pg.deposits||[]).slice().sort((a,b)=>b.date>a.date?1:b.date<a.date?-1:0);
+  const totalSaved = pg.saved||0;
+  const sheet = document.createElement('div');
+  sheet.id = 'piggy-history-overlay';
+  sheet.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;';
+  const color = pg.color||'#4ECDC4';
+  const txRows = deposits.length ? deposits.map(d=>{
+    const amt = d.amount||0;
+    const isNeg = amt < 0;
+    const sign = isNeg ? '−' : '+';
+    const amtStr = fmtInt(Math.abs(amt));
+    const note = d.note || (isNeg ? 'Списание' : 'Пополнение');
+    const dateStr = d.date ? d.date.slice(0,10) : '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <div style="width:34px;height:34px;border-radius:50%;background:${isNeg?'rgba(255,80,80,0.12)':'rgba(78,205,196,0.12)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${isNeg?'↓':'↑'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;">${sign}${amtStr} ₽</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">${note}${dateStr?' · '+dateStr:''}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div style="text-align:center;color:var(--text-dim);font-size:13px;padding:32px 0;">Операций пока нет</div>';
+
+  sheet.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:85dvh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);">
+      <div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+        <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 14px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-size:17px;font-weight:700;">${pg.emoji||'🐷'} ${pg.name}</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">История операций</div>
+          </div>
+          <button onclick="document.getElementById('piggy-history-overlay').remove()" style="background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;padding:0;line-height:1;">×</button>
+        </div>
+      </div>
+      <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+        <div style="flex:1;padding:12px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;color:${color};">${fmtInt(totalSaved)} ₽</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Накоплено</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,0.06);"></div>
+        <div style="flex:1;padding:12px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;">${fmtInt(pg.goal)} ₽</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Цель</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,0.06);"></div>
+        <div style="flex:1;padding:12px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;">${deposits.length}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Операций</div>
+        </div>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:0 20px;">
+        <div style="padding:14px 0 4px;flex-shrink:0;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-dim);letter-spacing:.05em;">ОПЕРАЦИИ</div>
+        </div>
+        ${txRows}
+      </div>
+      <div style="padding:12px 20px;flex-shrink:0;">
+        <button onclick="document.getElementById('piggy-history-overlay').remove()" style="width:100%;padding:13px;background:var(--surface2);border:none;border-radius:12px;color:var(--text);font-size:15px;cursor:pointer;">Закрыть</button>
+      </div>
+    </div>`;
+  sheet.onclick = e => { if (e.target === sheet) sheet.remove(); };
+  document.body.appendChild(sheet);
+}
+
+function openChallengeHistorySheet(id) {
+  const ch = (state.challenges||[]).find(c=>c.id===id);
+  if (!ch) return;
+  // Collect done cells sorted by date desc
+  const doneCells = (ch.cells||[])
+    .map((c,i)=>({...c, idx:i}))
+    .filter(c=>c.done)
+    .sort((a,b)=>{
+      const da = a.doneAt||'';
+      const db = b.doneAt||'';
+      return db>da?1:db<da?-1:0;
+    });
+  const totalDone = (ch.cells||[]).filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
+  const totalGoal = (ch.cells||[]).reduce((s,c)=>s+c.amt,0);
+  const color = ch.color||'#4ECDC4';
+  const sheet = document.createElement('div');
+  sheet.id = 'challenge-history-overlay';
+  sheet.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;';
+
+  const txRows = doneCells.length ? doneCells.map(c=>{
+    const dateStr = c.doneAt ? c.doneAt.slice(0,10) : '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(78,205,196,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">✓</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;">+${fmtInt(c.amt)} ₽</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">Ячейка #${c.idx+1}${dateStr?' · '+dateStr:''}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div style="text-align:center;color:var(--text-dim);font-size:13px;padding:32px 0;">Ещё ни одна ячейка не отмечена</div>';
+
+  sheet.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:85dvh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);">
+      <div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+        <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 14px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-size:17px;font-weight:700;">${ch.emoji||'🎯'} ${ch.name}</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">История операций</div>
+          </div>
+          <button onclick="document.getElementById('challenge-history-overlay').remove()" style="background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;padding:0;line-height:1;">×</button>
+        </div>
+      </div>
+      <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+        <div style="flex:1;padding:12px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;color:${color};">${fmtInt(totalDone)} ₽</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Накоплено</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,0.06);"></div>
+        <div style="flex:1;padding:12px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;">${fmtInt(totalGoal)} ₽</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Цель</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,0.06);"></div>
+        <div style="flex:1;padding:12px 16px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;">${doneCells.length}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Ячеек закрыто</div>
+        </div>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:0 20px;">
+        <div style="padding:14px 0 4px;flex-shrink:0;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-dim);letter-spacing:.05em;">ОТМЕЧЕННЫЕ ЯЧЕЙКИ</div>
+        </div>
+        ${txRows}
+      </div>
+      <div style="padding:12px 20px;flex-shrink:0;">
+        <button onclick="document.getElementById('challenge-history-overlay').remove()" style="width:100%;padding:13px;background:var(--surface2);border:none;border-radius:12px;color:var(--text);font-size:15px;cursor:pointer;">Закрыть</button>
+      </div>
+    </div>`;
+  sheet.onclick = e => { if (e.target === sheet) sheet.remove(); };
+  document.body.appendChild(sheet);
+}
+
 function renderPiggyCard(pg) {
   if (!window._chCollapsed) window._chCollapsed = {};
   const saved = pg.saved||0;
@@ -6174,7 +6314,7 @@ function renderPiggyCard(pg) {
             <button class="pg-add-btn" style="background:var(--surface2);color:var(--text-dim);border:1px solid rgba(255,255,255,0.1);width:44px;font-size:20px;padding:8px 0;" onclick="openPiggyDeposit('${pg.id}','sub')">－</button>
            </div>`
       }
-      <button class="card-menu-btn" style="margin-left:auto;" onclick="showCtxMenu(event,[{icon:'✏️',label:'Изменить',fn:()=>openPiggyEdit('${pg.id}')},{icon:'✅',label:'Завершить досрочно',fn:()=>completePiggyBank('${pg.id}')},{icon:'🗑',label:'Удалить',danger:true,fn:()=>deletePiggyBank('${pg.id}')}])">⋯</button>
+      <button class="card-menu-btn" style="margin-left:auto;" onclick="showCtxMenu(event,[{icon:'✏️',label:'Изменить',fn:()=>openPiggyEdit('${pg.id}')},{icon:'📋',label:'История операций',fn:()=>openPiggyHistorySheet('${pg.id}')},{icon:'✅',label:'Завершить досрочно',fn:()=>completePiggyBank('${pg.id}')},{icon:'🗑',label:'Удалить',danger:true,fn:()=>deletePiggyBank('${pg.id}')}])">⋯</button>
     </div>` : ''}
   </div>`;
 }
@@ -6379,11 +6519,14 @@ async function toggleCell(challengeId, cellIdx) {
   ch.cells[cellIdx].done = !wasDone;
   if (!wasDone) {
     const t = today();
+    ch.cells[cellIdx].doneAt = t;
     if (ch.lastChecked === t) {}
     else if (ch.lastChecked && Math.round((new Date(t)-new Date(ch.lastChecked))/86400000) === 1) {
       ch.streak = (ch.streak||0) + 1;
     } else { ch.streak = 1; }
     ch.lastChecked = t;
+  } else {
+    delete ch.cells[cellIdx].doneAt;
   }
   // Ячейка уже изменила состояние выше. Теперь отдельно спрашиваем про счёт.
   const linkedSaving = ch.linkedSavingId ? (state.savings||[]).find(s=>s.id===ch.linkedSavingId) : null;
