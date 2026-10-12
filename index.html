@@ -4036,6 +4036,7 @@ async function accrueInterestIfNeeded(s, txs) {
 
   const rate = Number(s.rate) / 100;
   const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
 
   // Find last accrued interest date
   const lastInterestTx = txs.filter(t => t.type === 'interest').sort((a,b) => b.date.localeCompare(a.date))[0];
@@ -4045,7 +4046,7 @@ async function accrueInterestIfNeeded(s, txs) {
 
   startFrom.setHours(0,0,0,0);
   console.log('[accrue] startFrom:', startFrom.toISOString(), '| today:', today.toISOString(), '| lastInterestTx:', lastInterestTx?.date);
-  if (startFrom >= today) { console.log('[accrue] nothing to accrue yet'); return; }
+  if (startFrom > today) { console.log('[accrue] nothing to accrue yet'); return; }
 
   // Build balance timeline from cash-flow txs only (deposit/withdrawal), ascending
   const cashTxs = [...txs].filter(t => t.type === 'deposit' || t.type === 'withdrawal').sort((a,b) => a.date.localeCompare(b.date));
@@ -4056,7 +4057,7 @@ async function accrueInterestIfNeeded(s, txs) {
   // Calculate interest for each missing day
   const newRows = [];
   let cur = new Date(startFrom);
-  while (cur < today) {
+  while (cur <= today) {
     const key = cur.toISOString().slice(0,10);
     // Find balance: exact day or last known
     let bal = timelineMap[key];
