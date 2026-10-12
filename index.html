@@ -2869,7 +2869,7 @@ function renderSavingCard(x, grandTotal) {
   const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
   const subAmt = cur!=='RUB'?`≈ ${fmt(rubAmt)} ₽`:'';
   const cashIcon = isCash ? `<div class="card-icon" style="display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:18px;line-height:1.2;gap:1px;">
-    <span>${CURRENCY_FLAGS[cur]||'💵'}</span>
+    <span>${CURRENCY_FLAGS[cur]||cur}</span>
     <span style="font-size:9px;font-weight:700;color:var(--text-dim);letter-spacing:.03em;">${cur}</span>
   </div>` : '';
 
