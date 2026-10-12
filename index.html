@@ -3504,6 +3504,12 @@ async function confirmDepositWithdraw(savingId, type) {
   s.amount = Math.max(0, (parseFloat(s.amount)||0) + signed);
   save();
   await sbLogTransaction(savingId, type, amount, { date });
+  // For savings accounts: invalidate future interest txs from this date so they get recalculated
+  if (_sbUser && s.isSavingsAccount) {
+    await _sb.from('transactions').delete()
+      .eq('user_id', _sbUser.id).eq('saving_id', savingId).eq('type', 'interest').gte('date', date);
+    delete _txCache[savingId];
+  }
   document.getElementById('dw-overlay')?.remove();
   renderSavings();
 }
