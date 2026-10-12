@@ -7319,7 +7319,7 @@ function showToast(msg) {
 
 // ── AUTO-UPDATE CHECK ──────────────────────────────────────
 (function() {
-  const CURRENT_VERSION = '20261012198000';
+  const CURRENT_VERSION = document.querySelector('meta[name="version"]')?.content || '';
   fetch(location.href + '?_v=' + Date.now(), { cache: 'no-store' })
     .then(r => r.text())
     .then(html => {
