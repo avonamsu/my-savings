@@ -5149,6 +5149,8 @@ function saveItem(){
   const _goalIdx = editingId ? state.goals.findIndex(x=>x.id===editingId) : -1;
   const _savingIdx = editingId ? state.savings.findIndex(x=>x.id===editingId) : -1;
   const _incomeIdx = editingId ? state.income.findIndex(x=>x.id===editingId) : -1;
+  // Capture prevItem BEFORE removing from state (used to detect create vs edit)
+  const _prevSaving = editingId ? state.savings.find(x=>x.id===editingId) : null;
   if(editingId) ['savings','income','goals'].forEach(list=>{state[list]=state[list].filter(x=>x.id!==editingId);});
   if(modalMode==='savings'){
     if(!validateSavingsForm()) return;
@@ -5156,7 +5158,7 @@ function saveItem(){
     const sel=document.getElementById('s-icon');
     const opt=sel.options[sel.selectedIndex];
     const icon=sel.value,isDeposit=opt.dataset.deposit==='1',isSavingsAccount=opt.dataset.savingsAccount==='1';
-    const prevItem = editingId ? state.savings.find(x=>x.id===editingId) : null;
+    const prevItem = _prevSaving;
     const _isCashOrOther = !isDeposit && !isSavingsAccount;
     const _amountFromField = (isSavingsAccount || _isCashOrOther) && editingId;
     const amount = _amountFromField ? (Number(prevItem?.amount)||0) : getSavingAmountValue();
