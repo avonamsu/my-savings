@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012198000">
+  <meta name="version" content="20261012199000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1680,8 +1680,10 @@ async function preloadTxCache() {
   for (const id of ids) {
     _txCache[id] = { txs: byId[id] || [], loadedAt: now };
   }
-  // Reveal list, hero and tax block only after tx cache is ready — prevents amount flash
+  // Re-render with correct tx data, then reveal heroes
   window._txCacheReady = true;
+  renderHome();
+  renderSavings();
   const el = document.getElementById('savings-list');
   if (el) el.style.opacity = '1';
   const hero = document.getElementById('savings-hero');
