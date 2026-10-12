@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012210000">
+  <meta name="version" content="20261012211000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2215,9 +2215,9 @@ function calcSavingMonthlyIncome(s) {
 // Суммарный доход: авто из savings + ручные из state.income (без savingRef на существующий счёт)
 function calcTotalIncome() {
   const autoIncome = (state.savings||[]).reduce((s,x) => s + calcSavingMonthlyIncome(x), 0);
-  // Ручные — только те, у которых нет savingRef или savingRef указывает на несуществующий счёт
+  // Ручные — без savingRef, с несуществующим savingRef, или с fixed calcMode (ручная сумма)
   const manualIncome = (state.income||[])
-    .filter(x => !x.savingRef || !state.savings.find(s=>s.id===x.savingRef))
+    .filter(x => !x.savingRef || x.calcMode === 'fixed' || !state.savings.find(s=>s.id===x.savingRef))
     .reduce((s,x) => s + calcIncomeAmountRub(x), 0);
   return autoIncome + manualIncome;
 }
@@ -4339,8 +4339,8 @@ function renderIncome() {
 
   // Авто-строки: все вклады и накопительные счета
   const autoItems = (state.savings||[]).filter(s => !s.excluded && (s.isDeposit||s.isSavingsAccount) && calcSavingMonthlyIncome(s) > 0);
-  // Ручные: только без savingRef или с несуществующим savingRef
-  const manualItems = (state.income||[]).filter(x => !x.savingRef || !state.savings.find(s=>s.id===x.savingRef));
+  // Ручные: без savingRef, с несуществующим savingRef, или с fixed calcMode (ручная сумма)
+  const manualItems = (state.income||[]).filter(x => !x.savingRef || x.calcMode === 'fixed' || !state.savings.find(s=>s.id===x.savingRef));
 
   const breakdownEl = document.getElementById('income-breakdown');
   const breakdownList = document.getElementById('income-breakdown-list');
