@@ -2131,7 +2131,8 @@ function calcDeposit(s) {
   return {currentAmount,monthlyIncome,daysTotal,daysPassed,expired};
 }
 function getSavingCurrentAmountLocal(s) {
-  if (s.isDeposit&&s.rate&&s.dateStart&&s.dateEnd) return calcDeposit(s).currentAmount;
+  // For deposits: use s.amount (user-entered real balance) — calcDeposit is for interest projection only
+  if (s.isDeposit) return Number(s.amount);
   if (s.isSavingsAccount&&s.rate&&s.dateStart) return calcSavingsAccount(s).currentAmount;
   return Number(s.amount);
 }
