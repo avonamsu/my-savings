@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012200000">
+  <meta name="version" content="20261012201000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2069,7 +2069,9 @@ function updateSavingsAccountPreview() {
 
 function calcDeposit(s) {
   const rate=Number(s.rate)/100;
-  const start=new Date(s.dateStart), end=new Date(s.dateEnd), now=new Date();
+  // Parse dates as local midnight to avoid UTC timezone offset issues
+  const _pd = d => { const [y,m,day] = d.slice(0,10).split('-'); return new Date(+y,+m-1,+day); };
+  const start=_pd(s.dateStart), end=_pd(s.dateEnd), now=new Date();
   const clampedNow=now>end?end:now, expired=now>end;
   const ms=86400000;
   const daysTotal=Math.max(1,Math.round((end-start)/ms));
@@ -2086,9 +2088,11 @@ function calcDeposit(s) {
     endDate.setHours(0,0,0,0);
 
     // Build balance change events sorted by date
+    // Parse tx dates as local midnight (not UTC) to avoid timezone offset issues
+    const parseDateLocal = d => { const [y,m,day] = d.slice(0,10).split('-'); return new Date(+y, +m-1, +day); };
     const events = txs
       .map(tx => ({
-        date: new Date(tx.date.slice(0,10)),
+        date: parseDateLocal(tx.date),
         delta: tx.type === 'withdrawal' ? -Number(tx.amount) : Number(tx.amount),
         isInterest: tx.type === 'interest'
       }))
