@@ -1466,6 +1466,8 @@ async function sbLoadState() {
     renderAll();
     checkAutoRenew();
   }
+  // Preload transactions so interest calc uses real history
+  preloadTxCache().then(() => renderSavings());
 }
 
 async function sbSaveState() {
@@ -1491,6 +1493,57 @@ async function sbLogTransaction(savingId, type, amount, { date, note, source } =
   };
   const { error } = await _sb.from('transactions').insert(row);
   if (error) console.warn('sbLogTransaction error', error);
+  // Invalidate cache for this account so next render recalculates
+  delete _txCache[savingId];
+  // Refresh cache in background and re-render
+  fetchTxCached(savingId).then(() => renderSavings());
+}
+
+// ── TRANSACTION CACHE ──────────────────────────────────────
+// Cache: { [savingId]: { txs: [...], loadedAt: timestamp } }
+const _txCache = {};
+const _TX_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function fetchTxCached(savingId) {
+  const cached = _txCache[savingId];
+  if (cached && (Date.now() - cached.loadedAt) < _TX_CACHE_TTL) return cached.txs;
+  if (!_sbUser) return null;
+  const { data, error } = await _sb.from('transactions')
+    .select('*')
+    .eq('user_id', _sbUser.id)
+    .eq('saving_id', savingId)
+    .order('date', { ascending: true });
+  if (error) return null;
+  const txs = data || [];
+  _txCache[savingId] = { txs, loadedAt: Date.now() };
+  return txs;
+}
+
+// Preload transactions for accounts that benefit from tx-based calc
+async function preloadTxCache() {
+  if (!_sbUser) return;
+  const accounts = (state.savings || []).filter(s =>
+    (s.isSavingsAccount && s.rate && s.dateStart) ||
+    (s.isDeposit && s.rate && s.dateStart && s.dateEnd)
+  );
+  if (!accounts.length) return;
+  // Batch fetch all in one query
+  const ids = accounts.map(s => s.id);
+  const { data, error } = await _sb.from('transactions')
+    .select('*')
+    .eq('user_id', _sbUser.id)
+    .in('saving_id', ids)
+    .order('date', { ascending: true });
+  if (error) return;
+  const byId = {};
+  for (const tx of (data || [])) {
+    if (!byId[tx.saving_id]) byId[tx.saving_id] = [];
+    byId[tx.saving_id].push(tx);
+  }
+  const now = Date.now();
+  for (const id of ids) {
+    _txCache[id] = { txs: byId[id] || [], loadedAt: now };
+  }
 }
 
 async function sbSignInWithEmail(email) {
@@ -1761,6 +1814,37 @@ const fmt2 = n => Number(n).toLocaleString('ru-RU', {maximumFractionDigits:2});
 
 
 // ── DEPOSIT MATH ──────────────────────────────────────────
+
+// Build daily balance timeline from transactions (for savings accounts)
+// Only counts init/deposit/withdrawal — not interest payouts (those are separate income events)
+// txs: sorted by date ascending
+// Returns array of {date (Date), balance}
+function _buildBalanceTimeline(txs, startDate) {
+  const start = new Date(startDate);
+  start.setHours(0,0,0,0);
+  // Group cash-flow txs by date
+  const byDate = {};
+  for (const tx of txs) {
+    if (tx.type === 'interest') continue; // interest stays on account, tracked separately
+    const d = tx.date.slice(0, 10);
+    if (!byDate[d]) byDate[d] = 0;
+    const sign = (tx.type === 'withdrawal') ? -1 : 1; // init and deposit are positive
+    byDate[d] += sign * Number(tx.amount);
+  }
+  // Walk days from start to today, accumulate balance
+  const today = new Date(); today.setHours(0,0,0,0);
+  const timeline = [];
+  let balance = 0;
+  let cur = new Date(start);
+  while (cur <= today) {
+    const key = cur.toISOString().slice(0,10);
+    if (byDate[key] !== undefined) balance += byDate[key];
+    timeline.push({ date: new Date(cur), balance });
+    cur.setDate(cur.getDate() + 1);
+  }
+  return timeline;
+}
+
 function calcSavingsAccount(s) {
   const principal = Number(s.amount);
   const rate = Number(s.rate) / 100;
@@ -1768,12 +1852,43 @@ function calcSavingsAccount(s) {
   const now = new Date();
   const daysPassed = Math.max(0, Math.round((now - start) / 86400000));
   const accrual = s.accrual || 'daily';
+
+  // Use cached transactions if available for accurate calculation
+  const cached = _txCache[s.id];
+  if (cached && cached.txs.length > 0) {
+    const txs = cached.txs;
+    const timeline = _buildBalanceTimeline(txs, s.dateStart);
+
+    let earnedInterest = 0;
+    if (accrual === 'daily') {
+      // Each day: balance × rate/365
+      for (const { balance } of timeline) {
+        if (balance > 0) earnedInterest += balance * rate / 365;
+      }
+    } else {
+      // Monthly: use minimum balance in each calendar month
+      const months = {};
+      for (const { date, balance } of timeline) {
+        const key = date.toISOString().slice(0, 7); // YYYY-MM
+        if (months[key] === undefined || balance < months[key]) months[key] = balance;
+      }
+      for (const minBal of Object.values(months)) {
+        if (minBal > 0) earnedInterest += minBal * rate / 12;
+      }
+    }
+
+    // Current balance = last timeline balance + earned interest
+    const lastBalance = timeline.length > 0 ? timeline[timeline.length - 1].balance : principal;
+    const currentAmount = lastBalance + earnedInterest;
+    const dailyIncome = lastBalance * rate / 365;
+    return { currentAmount, earnedInterest, dailyIncome, daysPassed };
+  }
+
+  // Fallback: simple calculation on s.amount (no tx data)
   let currentAmount;
   if (accrual === 'daily') {
-    // ежедневная капитализация: (1 + r/365)^дней
     currentAmount = principal * Math.pow(1 + rate / 365, daysPassed);
   } else {
-    // ежемесячная капитализация: (1 + r/12)^месяцев
     const monthsPassed = daysPassed / 30.4375;
     currentAmount = principal * Math.pow(1 + rate / 12, monthsPassed);
   }
@@ -1799,12 +1914,70 @@ function updateSavingsAccountPreview() {
 }
 
 function calcDeposit(s) {
-  const principal=Number(s.amount), rate=Number(s.rate)/100;
+  const rate=Number(s.rate)/100;
   const start=new Date(s.dateStart), end=new Date(s.dateEnd), now=new Date();
   const clampedNow=now>end?end:now, expired=now>end;
   const ms=86400000;
   const daysTotal=Math.max(1,Math.round((end-start)/ms));
   const daysPassed=Math.max(0,Math.round((clampedNow-start)/ms));
+
+  // Use cached transactions if available (handles top-ups/partial withdrawals)
+  const cached = _txCache[s.id];
+  if (cached && cached.txs.length > 0) {
+    const txs = cached.txs;
+    // For deposits, interest accrues on the balance at each point in time
+    // Non-compound: sum(amount_i × rate × days_i / 365) for each segment
+    // Compound: for each segment, compound on running principal
+    const endDate = expired ? end : clampedNow;
+    endDate.setHours(0,0,0,0);
+
+    // Build balance change events sorted by date
+    const events = txs
+      .map(tx => ({
+        date: new Date(tx.date.slice(0,10)),
+        delta: tx.type === 'withdrawal' ? -Number(tx.amount) : Number(tx.amount),
+        isInterest: tx.type === 'interest'
+      }))
+      .filter(e => e.date >= start && e.date <= endDate)
+      .sort((a,b) => a.date - b.date);
+
+    let balance = 0;
+    let earnedInterest = 0;
+    let prevDate = new Date(start); prevDate.setHours(0,0,0,0);
+
+    for (const ev of events) {
+      const days = Math.max(0, Math.round((ev.date - prevDate) / ms));
+      if (balance > 0 && days > 0) {
+        if (s.compound) {
+          const grown = balance * Math.pow(1 + rate/12, days/30.4375);
+          earnedInterest += grown - balance;
+          balance = grown;
+        } else {
+          earnedInterest += balance * rate * days / 365;
+        }
+      }
+      if (!ev.isInterest) balance += ev.delta; // don't double-count interest tx
+      prevDate = new Date(ev.date);
+    }
+    // Final segment to endDate
+    const finalDays = Math.max(0, Math.round((endDate - prevDate) / ms));
+    if (balance > 0 && finalDays > 0) {
+      if (s.compound) {
+        const grown = balance * Math.pow(1 + rate/12, finalDays/30.4375);
+        earnedInterest += grown - balance;
+        balance = grown;
+      } else {
+        earnedInterest += balance * rate * finalDays / 365;
+      }
+    }
+
+    const currentAmount = balance + earnedInterest;
+    const monthlyIncome = s.compound ? currentAmount*(rate/12) : balance*rate/12;
+    return {currentAmount, monthlyIncome, daysTotal, daysPassed, expired};
+  }
+
+  // Fallback: simple calculation on s.amount
+  const principal=Number(s.amount);
   const monthsPassed=daysPassed/30.4375;
   const currentAmount=s.compound
     ? principal*Math.pow(1+rate/12,monthsPassed)
@@ -3577,19 +3750,29 @@ async function openHistorySheet(id) {
   sheet.onclick = e => { if (e.target === sheet) sheet.remove(); };
   document.body.appendChild(sheet);
 
-  // Fetch from Supabase
-  const { data, error } = await _sb.from('transactions')
-    .select('*')
-    .eq('user_id', _sbUser.id)
-    .eq('saving_id', id)
-    .order('date', { ascending: false });
-
-  if (error) {
-    const el = document.getElementById('history-sheet-body');
-    if (el) el.innerHTML = `<div style="text-align:center;color:var(--danger);font-size:13px;padding:24px 0;">Ошибка загрузки</div>`;
-    return;
+  // Use cache if fresh, otherwise fetch
+  let txs = null;
+  const cached = _txCache[id];
+  if (cached && (Date.now() - cached.loadedAt) < _TX_CACHE_TTL) {
+    txs = [...cached.txs].reverse(); // history sheet shows newest first
+  } else {
+    const { data, error } = await _sb.from('transactions')
+      .select('*')
+      .eq('user_id', _sbUser.id)
+      .eq('saving_id', id)
+      .order('date', { ascending: false });
+    if (error) {
+      const el = document.getElementById('history-sheet-body');
+      if (el) el.innerHTML = `<div style="text-align:center;color:var(--danger);font-size:13px;padding:24px 0;">Ошибка загрузки</div>`;
+      return;
+    }
+    txs = data || [];
+    // Populate cache (ascending order for calc)
+    _txCache[id] = { txs: [...txs].reverse(), loadedAt: Date.now() };
+    // Re-render cards now that we have fresh tx data
+    renderSavings();
   }
-  _buildHistorySheetContent(id, data || []);
+  _buildHistorySheetContent(id, txs);
 }
 
 
