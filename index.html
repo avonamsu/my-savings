@@ -3520,12 +3520,12 @@ function openAccountSheet(id) {
 
   const sheet = document.createElement('div');
   sheet.id = 'sa-sheet';
-  sheet.style.cssText = 'position:fixed;inset:0;z-index:600;display:flex;flex-direction:column;justify-content:flex-end;';
+  sheet.style.cssText = 'position:fixed;inset:0;z-index:600;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);';
   sheet.innerHTML = `
     <div onclick="${close}" style="flex:1;"></div>
-    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:85vh;overflow-y:auto;">
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:85vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.5);">
       <div style="display:flex;justify-content:center;padding:12px 0 4px;">
-        <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;"></div>
+        <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;"></div>
       </div>
       ${header}${stats}${actions}${historyBtn}
     </div>`;
