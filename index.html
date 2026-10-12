@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012220500">
+  <meta name="version" content="20261012221000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -4074,15 +4074,9 @@ function openAccountSheet(id) {
 
   // Шапка — одинакова для всех
   const header = `
-    <div style="padding:4px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">
-      <div style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:12px;">
-        <div style="font-size:32px;line-height:1;flex-shrink:0;">${s.icon}</div>
-        <div style="min-width:0;flex:1;">
-          <div style="font-size:12px;color:var(--text-dim);margin-bottom:3px;">${typeLabel} · ${s.name}</div>
-          <div style="font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1;">${fmt(Math.round(bal))} <span style="font-size:17px;font-weight:600;opacity:.6;">${currSym(cur)}</span></div>
-          ${cur !== 'RUB' ? `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">≈ ${fmt(Math.round(toRub(bal, cur)))} ₽</div>` : ''}
-        </div>
-      </div>
+    <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1;">${fmt(Math.round(bal))} <span style="font-size:18px;font-weight:600;opacity:.6;">${currSym(cur)}</span></div>
+      ${cur !== 'RUB' ? `<div style="font-size:12px;color:var(--text-dim);margin-top:4px;">≈ ${fmt(Math.round(toRub(bal, cur)))} ₽</div>` : ''}
     </div>`;
 
   // Статистика + кнопки — по типу
@@ -4169,9 +4163,15 @@ function openAccountSheet(id) {
   sheet.innerHTML = `
     <div onclick="${close}" style="flex:1;"></div>
     <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:85vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.5);">
-      <div style="display:flex;justify-content:center;align-items:center;padding:14px 20px 14px;position:relative;min-height:52px;">
-        <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;"></div>
-        <button onclick="${close}" style="position:absolute;right:12px;top:0;bottom:0;margin:auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:none;border-radius:50%;color:var(--text-dim);font-size:18px;cursor:pointer;line-height:1;padding:0;">×</button>
+      <div style="padding:16px 20px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 14px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;">
+          <div>
+            <div style="font-size:20px;font-weight:700;">${s.icon} ${s.name}</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${typeLabel}</div>
+          </div>
+          <button onclick="${close}" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;">×</button>
+        </div>
       </div>
       ${header}${stats}${actions}${historyBtn}
     </div>`;
