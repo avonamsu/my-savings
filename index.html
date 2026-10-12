@@ -4605,18 +4605,24 @@ function renderGoals() {
     hintEl.innerHTML = `💸 Доход: <b style="color:var(--text);">${fmt(Math.round(totalIncome))} ₽</b> · Свободно: <b style="color:var(--accent);">${fmt(Math.round(freeIncome))} ₽</b>`;
   }
 
-  // Sort helper
+  // Sort helper — covered always go to bottom visually (doesn't affect coverage calculation)
   const sortBy = window._goalsSort || 'alpha-coverage';
   function sortGoals(arr) {
     const a = [...arr];
-    if (sortBy === 'alpha') return a.sort((x,y) => x.name.localeCompare(y.name, 'ru'));
-    if (sortBy === 'alpha-coverage') return a.sort((x,y) => {
-      if (x.covered !== y.covered) return x.covered ? -1 : 1; // покрыты сначала
+    if (sortBy === 'alpha') return a.sort((x,y) => {
+      if (x.covered !== y.covered) return x.covered ? 1 : -1;
       return x.name.localeCompare(y.name, 'ru');
     });
-    if (sortBy === 'amount') return a.sort((x,y) => Number(y.amount) - Number(x.amount));
+    if (sortBy === 'alpha-coverage') return a.sort((x,y) => {
+      if (x.covered !== y.covered) return x.covered ? 1 : -1;
+      return x.name.localeCompare(y.name, 'ru');
+    });
+    if (sortBy === 'amount') return a.sort((x,y) => {
+      if (x.covered !== y.covered) return x.covered ? 1 : -1;
+      return Number(y.amount) - Number(x.amount);
+    });
     if (sortBy === 'coverage') return a.sort((x,y) => {
-      if (x.covered !== y.covered) return x.covered ? -1 : 1;
+      if (x.covered !== y.covered) return x.covered ? 1 : -1;
       return 0;
     });
     return a;
