@@ -6593,11 +6593,13 @@ function restoreBackup(event){
       try { render(); } catch(e) { alert('render error: ' + e.message); return; }
       try { drawChart(); } catch(e) {}
       try { checkNotifBanner(); } catch(e) {}
-      // immediately sync restored data to Supabase (bypass debounce)
+      // immediately sync restored data to Supabase (bypass debounce), then confirm
       sbSaveState().then(() => {
         if (_sbUser) sbMigrateSnapshots();
+        alert('✅ Данные восстановлены! Счетов: ' + state.savings.length);
+      }).catch(() => {
+        alert('✅ Данные восстановлены локально! Счетов: ' + state.savings.length);
       });
-      alert('✅ Данные восстановлены! Счетов: ' + state.savings.length);
     } catch(e){ alert('Не удалось прочитать файл.'); }
   };
   reader.readAsText(file); event.target.value='';
