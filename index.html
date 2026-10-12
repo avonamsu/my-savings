@@ -2928,8 +2928,8 @@ function showChallengeMenu(e, id, canComplete) {
 
 function showSavingsMenu(e, id, showFix) {
   const items = [
-    {icon:'📋', label:'История операций', fn:()=>openHistorySheet(id)},
     {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
+    {icon:'📋', label:'История операций', fn:()=>openHistorySheet(id)},
     {icon:'⧉', label:'Дублировать', fn:()=>duplicateSaving(id)},
     ...(showFix ? [{icon:'💸', label:'Зафиксировать доход', fn:()=>openFixIncomeModal(id)}] : []),
     {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('savings',id)}
@@ -2977,7 +2977,7 @@ function openHistorySheet(id) {
 
   const sheet = document.createElement('div');
   sheet.id = 'history-sheet-overlay';
-  sheet.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;';
+  sheet.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;';
   sheet.innerHTML = `
     <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:85dvh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);">
       <div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
