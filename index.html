@@ -3041,9 +3041,8 @@ async function openHistorySheet(id) {
       </div>
       <div id="history-sheet-stats" style="display:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;"></div>
       <div style="overflow-y:auto;flex:1;padding:0 20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0 4px;flex-shrink:0;">
+        <div style="padding:14px 0 4px;flex-shrink:0;">
           <div style="font-size:12px;font-weight:600;color:var(--text-dim);letter-spacing:.05em;">ОПЕРАЦИИ</div>
-          <button onclick="openAddHistoryEntry('${id}')" style="background:none;border:1px solid rgba(78,205,196,0.4);border-radius:8px;padding:4px 10px;color:var(--accent);font-size:12px;cursor:pointer;font-weight:600;">+ Добавить</button>
         </div>
         <div id="history-sheet-body" style="padding-bottom:8px;">
           <div style="text-align:center;color:var(--text-dim);font-size:13px;padding:24px 0;">Загрузка...</div>
@@ -3071,54 +3070,6 @@ async function openHistorySheet(id) {
   _buildHistorySheetContent(id, data || []);
 }
 
-function openAddHistoryEntry(savingId) {
-  const s = state.savings.find(x => x.id === savingId);
-  if (!s) return;
-  const overlay = document.createElement('div');
-  overlay.id = 'add-history-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
-  overlay.innerHTML = `
-    <div style="background:var(--surface);border-radius:20px;padding:24px;width:calc(100% - 48px);max-width:360px;">
-      <div style="font-size:16px;font-weight:700;margin-bottom:16px;">Добавить операцию</div>
-      <div style="display:flex;gap:6px;margin-bottom:14px;">
-        ${['deposit','interest','withdrawal'].map(t => {
-          const labels = {deposit:'Пополнение', interest:'Проценты', withdrawal:'Снятие'};
-          return `<button onclick="this.parentNode.querySelectorAll('button').forEach(b=>{b.style.background='var(--surface2)';b.style.color='var(--text)'});this.style.background='var(--accent)';this.style.color='var(--bg)';document.getElementById('ah-type').value='${t}'"
-            style="flex:1;padding:7px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">${labels[t]}</button>`;
-        }).join('')}
-      </div>
-      <input type="hidden" id="ah-type" value="deposit">
-      <input type="number" id="ah-amount" placeholder="Сумма" inputmode="decimal"
-        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;margin-bottom:10px;box-sizing:border-box;">
-      <input type="date" id="ah-date" value="${new Date().toISOString().slice(0,10)}"
-        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;margin-bottom:10px;box-sizing:border-box;">
-      <input type="text" id="ah-note" placeholder="Комментарий (необязательно)"
-        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;margin-bottom:14px;box-sizing:border-box;">
-      <div style="display:flex;gap:8px;">
-        <button onclick="document.getElementById('add-history-overlay').remove()" style="flex:1;padding:12px;background:var(--surface2);border:none;border-radius:10px;color:var(--text);font-size:14px;cursor:pointer;">Отмена</button>
-        <button onclick="saveHistoryEntry('${savingId}')" style="flex:2;padding:12px;background:var(--accent);border:none;border-radius:10px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">Сохранить</button>
-      </div>
-    </div>`;
-  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
-  document.body.appendChild(overlay);
-  overlay.querySelectorAll('div > button')[0]?.click();
-  setTimeout(() => document.getElementById('ah-amount')?.focus(), 100);
-}
-
-async function saveHistoryEntry(savingId) {
-  const amount = parseFloat(document.getElementById('ah-amount')?.value);
-  const type = document.getElementById('ah-type')?.value || 'deposit';
-  const date = document.getElementById('ah-date')?.value || new Date().toISOString().slice(0,10);
-  const note = document.getElementById('ah-note')?.value?.trim() || '';
-  if (!amount || amount <= 0) { alert('Введи сумму'); return; }
-  const { error } = await _sb.from('transactions').insert({
-    user_id: _sbUser.id, saving_id: savingId, type, amount, date, note: note || null
-  });
-  if (error) { alert('Ошибка сохранения'); return; }
-  document.getElementById('add-history-overlay')?.remove();
-  document.getElementById('history-sheet-overlay')?.remove();
-  openHistorySheet(savingId);
-}
 
 
 function renderIncome() {
