@@ -1460,22 +1460,23 @@ async function sbInit() {
 
 async function sbLoadState() {
   if (!_sbUser) return;
-  const { data, error } = await _sb.from('user_state').select('state').eq('user_id', _sbUser.id).single();
-  if (error && error.code !== 'PGRST116') { console.warn('sbLoad error', error); return; }
-  if (data?.state && Object.keys(data.state).length > 0) {
-    state = data.state;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    renderAll();
-    checkAutoRenew();
-  }
-  // Preload transactions + CB key rate in parallel, then re-render
-  Promise.all([preloadTxCache(), loadCbKeyRate()]).then(() => {
-    renderSavings(); drawChart(); drawIncomeChart();
-    // Record current month snapshot now that user is logged in
-    recordSnapshot(); recordIncomeSnapshot();
-  });
-  // Load snapshots independently
-  sbLoadSnapshots();
+  try {
+    const { data, error } = await _sb.from('user_state').select('state').eq('user_id', _sbUser.id).single();
+    if (error && error.code !== 'PGRST116') { alert('sbLoadState error: ' + error.message); return; }
+    if (data?.state && Object.keys(data.state).length > 0) {
+      state = data.state;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      try { renderAll(); } catch(e) { alert('renderAll error: ' + e.message); }
+      try { checkAutoRenew(); } catch(e) {}
+    }
+    // Preload transactions + CB key rate in parallel, then re-render
+    Promise.all([preloadTxCache(), loadCbKeyRate()]).then(() => {
+      renderSavings(); drawChart(); drawIncomeChart();
+      recordSnapshot(); recordIncomeSnapshot();
+    });
+    // Load snapshots independently
+    sbLoadSnapshots();
+  } catch(e) { alert('sbLoadState exception: ' + e.message); }
 }
 
 // ── SNAPSHOTS SYNC ────────────────────────────────────────────
