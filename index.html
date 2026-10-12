@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012190000">
+  <meta name="version" content="20261012192000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2116,7 +2116,9 @@ function calcDeposit(s) {
       }
     }
 
-    const currentAmount = balance + earnedInterest;
+    // For compound: balance already includes earned interest (balance = grown after each segment)
+    // For non-compound: balance is principal only, so we add earnedInterest separately
+    const currentAmount = s.compound ? balance : balance + earnedInterest;
     const monthlyIncome = s.compound ? currentAmount*(rate/12) : balance*rate/12;
     return {currentAmount, monthlyIncome, daysTotal, daysPassed, expired};
   }
@@ -7306,7 +7308,7 @@ function showToast(msg) {
 
 // ── AUTO-UPDATE CHECK ──────────────────────────────────────
 (function() {
-  const CURRENT_VERSION = '20261012190000';
+  const CURRENT_VERSION = '20261012192000';
   fetch(location.href + '?_v=' + Date.now(), { cache: 'no-store' })
     .then(r => r.text())
     .then(html => {
