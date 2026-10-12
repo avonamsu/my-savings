@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012215500">
+  <meta name="version" content="20261012220000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -6357,11 +6357,12 @@ function openPiggySheet(id) {
           ${done ? `<div style="margin-top:10px;text-align:center;font-size:15px;font-weight:700;color:${color};">🎉 Цель достигнута!</div>` : ''}
         </div>
         <!-- Кнопки действий -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
-          ${!done ? `
+        ${!done ? `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 0 0;">
           <button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyDeposit('${id}','add')" style="padding:13px;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.2);border-radius:12px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;">＋ Пополнить</button>
           <button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyDeposit('${id}','sub')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;">－ Снять</button>
-          ` : `<div></div><div></div>`}
+        </div>` : ''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
           <button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyHistorySheet('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;">📋 История</button>
           <button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyEdit('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;">✏️ Изменить</button>
           ${!done ? `<button onclick="document.getElementById('piggy-sheet-overlay').remove();completePiggyBank('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;">✅ Завершить</button>` : ''}
@@ -6445,8 +6446,11 @@ function openChallengeSheet(id) {
           ${done ? `<div style="margin-top:10px;text-align:center;font-size:15px;font-weight:700;color:${color};">🎉 Цель достигнута!</div>` : ''}
         </div>
         <!-- Кнопки действий -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
-          ${!done ? `<button onclick="highlightRandomCellInSheet('${id}')" style="padding:13px;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.2);border-radius:12px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;">🎲 Случайная</button>` : '<div></div>'}
+        ${!done ? `
+        <div style="display:grid;grid-template-columns:1fr;gap:10px;padding:14px 0 0;">
+          <button onclick="highlightRandomCellInSheet('${id}')" style="padding:13px;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.2);border-radius:12px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;">🎲 Случайная ячейка</button>
+        </div>` : ''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
           <button onclick="document.getElementById('challenge-sheet-overlay').remove();openChallengeHistorySheet('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;">📋 История</button>
           <button onclick="document.getElementById('challenge-sheet-overlay').remove();editChallenge('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;">✏️ Изменить</button>
           ${!done ? `<button onclick="document.getElementById('challenge-sheet-overlay').remove();completeChallenge('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;">✅ Завершить</button>` : ''}
