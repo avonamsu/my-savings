@@ -1511,11 +1511,10 @@ async function sbMigrateSnapshots() {
   for (const [ym, amount] of Object.entries(state._incomeHistory || {})) {
     rows.push({ user_id: _sbUser.id, type: 'income', ym, amount });
   }
-  if (!rows.length) { showToast('Migrate: нет данных в _history'); return; }
-  showToast('Migrate: отправляю ' + rows.length + ' строк...');
+  if (!rows.length) { alert('Migrate: нет данных (_history пуст)'); return; }
   const { error } = await _sb.from('snapshots').upsert(rows, { onConflict: 'user_id,type,ym' });
-  if (error) showToast('Migrate error: ' + JSON.stringify(error).slice(0,80));
-  else showToast('Migrate: OK, ' + rows.length + ' строк сохранено');
+  if (error) alert('Migrate error: ' + (error.message || JSON.stringify(error)));
+  else alert('Migrate OK: ' + rows.length + ' строк. Проверь таблицу.');
 }
 
 async function sbSaveState() {
