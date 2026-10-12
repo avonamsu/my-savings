@@ -2892,7 +2892,7 @@ function renderSavingCard(x, grandTotal) {
         <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${pctOfTotal}% от всех накоплений</div>
       </div>
       <div class="card-amount">${mainAmt}${subAmt?`<span class="sub-amount">${subAmt}</span>`:''}</div>
-      <button class="card-menu-btn" onclick="event.stopPropagation();showSavingsMenu(event,'${x.id}',${showFixBtn})">⋯</button>
+      <button class="card-menu-btn" onclick="event.stopPropagation();showSavingsMenu(event,'${x.id}')">⋯</button>
     </div>
   </div>`;
 }
@@ -2955,33 +2955,8 @@ function showChallengeMenu(e, id, canComplete) {
   showCtxMenu(e, items);
 }
 
-function showSavingsMenu(e, id, showFix) {
-  const s = state.savings.find(x => x.id === id);
-  const isSA = s?.isSavingsAccount;
-  const isCashOrOther = !s?.isDeposit && !s?.isSavingsAccount;
-  const hasDepositWithdraw = isSA || isCashOrOther;
-  const canRefill = s?.isDeposit && s?.refillable && (!s?.refillUntil || s.refillUntil >= today());
-  const canEarlyClose = s?.isDeposit && s?.dateStart && (!s?.dateEnd || s.dateEnd > today()) && !s?.earlyClosed;
-  // Можно переводить С счёта: накоп/наличные/прочие (не вклады), или вклад с досрочным закрытием
-  const canTransferFrom = hasDepositWithdraw;
-  const hasActionsAboveSep = hasDepositWithdraw || canRefill || canEarlyClose || showFix;
+function showSavingsMenu(e, id) {
   const items = [
-    ...(hasDepositWithdraw ? [
-      {icon:'➕', label:'Пополнить', fn:()=>openDepositWithdrawModal(id,'deposit')},
-      {icon:'➖', label:'Снять', fn:()=>openDepositWithdrawModal(id,'withdrawal')},
-    ] : []),
-    ...(canRefill ? [
-      {icon:'➕', label:'Пополнить', fn:()=>openDepositWithdrawModal(id,'deposit')},
-    ] : []),
-    ...(canTransferFrom ? [
-      {icon:'↔️', label:'Перевести', fn:()=>openTransferModal(id)},
-    ] : []),
-    ...(canEarlyClose ? [
-      {icon:'🔓', label:'Закрыть досрочно', fn:()=>openEarlyCloseModal(id)},
-    ] : []),
-    ...(showFix ? [{icon:'💸', label:'Зафиксировать доход', fn:()=>openFixIncomeModal(id)}] : []),
-    {icon:'📋', label:'История операций', fn:()=>openHistorySheet(id)},
-    ...(hasActionsAboveSep ? [{separator: true}] : []),
     {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
     {icon:'⧉', label:'Дублировать', fn:()=>duplicateSaving(id)},
     {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('savings',id)}
