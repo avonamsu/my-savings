@@ -6247,18 +6247,31 @@ async function toggleCell(challengeId, cellIdx) {
         ch.lastChecked = null;
       }
     } else {
-      // Cell just unchecked — subtract from account
-      if (confirm(`💳 Вычесть ${fmtInt(cellAmount)} ₽ из счёта «${linkedSaving.name}»?`)) {
+      // Cell just unchecked — find and delete the original deposit transaction
+      if (confirm(`💳 Отменить пополнение счёта «${linkedSaving.name}» на ${fmtInt(cellAmount)} ₽?`)) {
         linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) - cellAmount);
         if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = dateStr;
         save();
-        await sbLogTransaction(linkedSaving.id, 'withdrawal', cellAmount, { date: dateStr, note: 'Вычет из челленджа' });
-        if (_sbUser && linkedSaving.isSavingsAccount) {
-          const nextDay = new Date(dateStr + 'T12:00:00');
-          nextDay.setDate(nextDay.getDate() + 1);
-          const nextDayStr = nextDay.toLocaleDateString('sv');
-          await _sb.from('transactions').delete()
-            .eq('user_id', _sbUser.id).eq('saving_id', linkedSaving.id).eq('type', 'interest').gte('date', nextDayStr);
+        // удаляем оригинальную транзакцию пополнения из челленджа (последнюю с таким amount и note)
+        if (_sbUser) {
+          const cached = _txCache[linkedSaving.id];
+          const origTx = cached && cached.txs.slice().reverse().find(tx =>
+            tx.type === 'deposit' && Number(tx.amount) === cellAmount && tx.note === 'Пополнение из челленджа'
+          );
+          if (origTx) {
+            await _sb.from('transactions').delete()
+              .eq('user_id', _sbUser.id).eq('id', origTx.id);
+          } else {
+            // транзакция не найдена в кэше — логируем withdrawal как запасной вариант
+            await sbLogTransaction(linkedSaving.id, 'withdrawal', cellAmount, { date: dateStr, note: 'Отмена пополнения из челленджа' });
+          }
+          if (linkedSaving.isSavingsAccount) {
+            const nextDay = new Date(dateStr + 'T12:00:00');
+            nextDay.setDate(nextDay.getDate() + 1);
+            const nextDayStr = nextDay.toLocaleDateString('sv');
+            await _sb.from('transactions').delete()
+              .eq('user_id', _sbUser.id).eq('saving_id', linkedSaving.id).eq('type', 'interest').gte('date', nextDayStr);
+          }
           delete _txCache[linkedSaving.id];
         }
         renderSavings();
