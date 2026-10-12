@@ -2880,9 +2880,10 @@ function renderSavingCard(x, grandTotal) {
   const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
   const subAmt = cur!=='RUB'?`≈ ${fmt(rubAmt)} ₽`:'';
 
+  const onCardClick = x.isSavingsAccount ? `onclick="openSavingsAccountSheet('${x.id}')"` : '';
   return `<div class="card-item savings-card-item${(x.excluded||x.included===false)?' excluded':''}" data-id="${x.id}">
-    <div class="card-item-inner">
-      <button class="excl-btn" onclick="toggleExclude('${x.id}')">${x.excluded?'🔘':'⚫'}</button>
+    <div class="card-item-inner" ${onCardClick} style="${x.isSavingsAccount?'cursor:pointer;':''}">
+      <button class="excl-btn" onclick="event.stopPropagation();toggleExclude('${x.id}')">${x.excluded?'🔘':'⚫'}</button>
       <div class="card-icon">${x.icon}</div>
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
@@ -2892,7 +2893,7 @@ function renderSavingCard(x, grandTotal) {
         <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${pctOfTotal}% от всех накоплений</div>
       </div>
       <div class="card-amount">${mainAmt}${subAmt?`<span class="sub-amount">${subAmt}</span>`:''}</div>
-      <button class="card-menu-btn" onclick="showSavingsMenu(event,'${x.id}',${showFixBtn})">⋯</button>
+      <button class="card-menu-btn" onclick="event.stopPropagation();showSavingsMenu(event,'${x.id}',${showFixBtn})">⋯</button>
     </div>
   </div>`;
 }
@@ -3413,6 +3414,91 @@ function _buildHistorySheetContent(savingId, rows) {
         </div>
         <div style="font-size:14px;font-weight:700;color:${typeColor[h.type]||'var(--text)'};">${typeSign[h.type]||''}${fmt(Number(h.amount))} ${s.currency||'₽'}</div>
       </div>`).join('');
+}
+
+// ── SAVINGS ACCOUNT DETAIL SHEET ─────────────────────────
+function openSavingsAccountSheet(id) {
+  const s = state.savings.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('sa-sheet')?.remove();
+
+  const sa = s.rate && s.dateStart ? calcSavingsAccount(s) : null;
+  const bal = getSavingCurrentAmountLocal(s);
+  const cur = s.currency || 'RUB';
+  const canTransfer = state.savings.some(x => x.id !== id && canTransferTo(x));
+
+  const sheet = document.createElement('div');
+  sheet.id = 'sa-sheet';
+  sheet.style.cssText = 'position:fixed;inset:0;z-index:600;display:flex;flex-direction:column;justify-content:flex-end;';
+  sheet.innerHTML = `
+    <div onclick="document.getElementById('sa-sheet').remove()" style="flex:1;"></div>
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:85vh;overflow-y:auto;">
+      <!-- handle -->
+      <div style="display:flex;justify-content:center;padding:12px 0 4px;">
+        <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;"></div>
+      </div>
+      <!-- header -->
+      <div style="padding:8px 20px 16px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:36px;line-height:1;">${s.icon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:17px;font-weight:700;margin-bottom:2px;">${s.name}</div>
+          <div style="font-size:13px;color:var(--text-dim);">Накопительный счёт</div>
+        </div>
+        <button onclick="document.getElementById('sa-sheet').remove()" style="background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;color:var(--text-dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
+      </div>
+      <!-- balance -->
+      <div style="padding:20px 20px 16px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:11px;color:var(--text-dim);letter-spacing:.08em;margin-bottom:4px;">БАЛАНС</div>
+        <div style="font-size:32px;font-weight:700;letter-spacing:-.5px;">${fmt(Math.round(bal))} ${currSym(cur)}</div>
+        ${cur !== 'RUB' ? `<div style="font-size:14px;color:var(--text-dim);margin-top:2px;">≈ ${fmt(Math.round(toRub(bal, cur)))} ₽</div>` : ''}
+      </div>
+      <!-- stats -->
+      ${sa ? `<div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="background:var(--surface2);border-radius:12px;padding:12px;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">СТАВКА</div>
+          <div style="font-size:18px;font-weight:700;color:var(--accent);">${s.rate}%</div>
+          <div style="font-size:11px;color:var(--text-dim);">годовых</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:12px;padding:12px;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ДОХОД В ДЕНЬ</div>
+          <div style="font-size:18px;font-weight:700;color:#4CAF50;">+${fmt(Math.round(sa.dailyIncome))}</div>
+          <div style="font-size:11px;color:var(--text-dim);">${currSym(cur)}</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:12px;padding:12px;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ЗАРАБОТАНО</div>
+          <div style="font-size:18px;font-weight:700;">+${fmt(Math.round(sa.earnedInterest))}</div>
+          <div style="font-size:11px;color:var(--text-dim);">за ${sa.daysPassed} дн.</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:12px;padding:12px;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">ЗА МЕСЯЦ</div>
+          <div style="font-size:18px;font-weight:700;">≈${fmt(Math.round(sa.dailyIncome * 30))}</div>
+          <div style="font-size:11px;color:var(--text-dim);">${currSym(cur)}</div>
+        </div>
+      </div>` : ''}
+      <!-- actions -->
+      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${canTransfer?3:2},1fr);gap:8px;">
+        <button onclick="document.getElementById('sa-sheet').remove();openDepositWithdrawModal('${id}','deposit')"
+          style="padding:12px 0;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.2);border-radius:12px;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;">
+          ➕<br><span style="font-size:11px;">Пополнить</span>
+        </button>
+        <button onclick="document.getElementById('sa-sheet').remove();openDepositWithdrawModal('${id}','withdrawal')"
+          style="padding:12px 0;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">
+          ➖<br><span style="font-size:11px;">Снять</span>
+        </button>
+        ${canTransfer ? `<button onclick="document.getElementById('sa-sheet').remove();openTransferModal('${id}')"
+          style="padding:12px 0;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">
+          ↔️<br><span style="font-size:11px;">Перевести</span>
+        </button>` : ''}
+      </div>
+      <!-- history button -->
+      <div style="padding:0 20px 20px;">
+        <button onclick="document.getElementById('sa-sheet').remove();openHistorySheet('${id}')"
+          style="width:100%;padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text-dim);font-size:14px;cursor:pointer;text-align:left;">
+          📋 История операций
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(sheet);
 }
 
 async function openHistorySheet(id) {
