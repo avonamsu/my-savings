@@ -3838,8 +3838,14 @@ function _buildHistorySheetContent(savingId, rows) {
   const principal = rows.filter(h => h.type === 'deposit' || h.type === 'init').reduce((sum, h) => sum + Number(h.amount), 0);
   const withdrawals = rows.filter(h => h.type === 'withdrawal').reduce((sum, h) => sum + Number(h.amount), 0);
   const interest = rows.filter(h => h.type === 'interest').reduce((sum, h) => sum + Number(h.amount), 0);
-  const currentAmt = getSavingCurrentAmountLocal(s);
-  const realReturn = interest > 0 ? interest : (currentAmt - principal + withdrawals);
+  // For savings accounts use earnedInterest from calc; for deposits use logged interest or fallback
+  let realReturn;
+  if (s.isSavingsAccount && s.rate && s.dateStart) {
+    realReturn = interest > 0 ? interest : (calcSavingsAccount(s).earnedInterest || 0);
+  } else {
+    const currentAmt = getSavingCurrentAmountLocal(s);
+    realReturn = interest > 0 ? interest : (currentAmt - principal + withdrawals);
+  }
 
   let aprStr = '—';
   if (principal > 0 && rows.length > 0) {
