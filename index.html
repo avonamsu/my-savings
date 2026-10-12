@@ -3504,10 +3504,13 @@ async function confirmDepositWithdraw(savingId, type) {
   s.amount = Math.max(0, (parseFloat(s.amount)||0) + signed);
   save();
   await sbLogTransaction(savingId, type, amount, { date });
-  // For savings accounts: invalidate future interest txs from this date so they get recalculated
+  // For savings accounts: invalidate interest txs from next day so they get recalculated with new balance
   if (_sbUser && s.isSavingsAccount) {
+    const nextDay = new Date(date + 'T12:00:00');
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayStr = nextDay.toLocaleDateString('sv');
     await _sb.from('transactions').delete()
-      .eq('user_id', _sbUser.id).eq('saving_id', savingId).eq('type', 'interest').gte('date', date);
+      .eq('user_id', _sbUser.id).eq('saving_id', savingId).eq('type', 'interest').gte('date', nextDayStr);
     delete _txCache[savingId];
   }
   document.getElementById('dw-overlay')?.remove();
@@ -4119,15 +4122,15 @@ async function accrueInterestIfNeeded(s, txs) {
       cur.setDate(cur.getDate() + 1);
     }
   } else {
-    // Daily: apply cash changes first, then accrue interest on end-of-day balance
+    // Daily: interest on balance at START of day, then apply cash changes
     while (cur.toLocaleDateString('sv') <= todayStr) {
       const key = cur.toLocaleDateString('sv');
-      if (cashByDate[key]) balance += cashByDate[key];
       if (balance > 0) {
         const interest = Math.round(balance * rate / 365 * 100) / 100;
         newRows.push({ user_id: _sbUser.id, saving_id: s.id, type: 'interest', amount: interest, date: key, note: null, source: null });
         balance += interest;
       }
+      if (cashByDate[key]) balance += cashByDate[key];
       cur.setDate(cur.getDate() + 1);
     }
   }
