@@ -716,9 +716,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:-8px;gap:6px;">
     <button onclick="togglePageSearch('goals')" id="goals-search-btn" style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 9px;display:flex;align-items:center;gap:4px;">🔍 Поиск</button>
     <div style="position:relative;">
-      <button onclick="document.getElementById('goals-sort-menu').style.display=document.getElementById('goals-sort-menu').style.display==='block'?'none':'block'" style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 9px;display:flex;align-items:center;gap:3px;white-space:nowrap;"><span id="goals-sort-label">По алфавиту</span> ▾</button>
-      <div id="goals-sort-menu" style="display:none;position:absolute;right:0;top:28px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;z-index:200;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,0.4);overflow:hidden;">
-        <div onclick="setGoalsSort('alpha-coverage')" id="gsort-alpha-coverage" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--accent);">✓ По алфавиту + статус</div>
+      <button onclick="document.getElementById('goals-sort-menu').style.display=document.getElementById('goals-sort-menu').style.display==='block'?'none':'block'" style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 9px;display:flex;align-items:center;gap:3px;white-space:nowrap;"><span id="goals-sort-label">Сортировка</span> ▾</button>
+      <div id="goals-sort-menu" style="display:none;position:absolute;right:0;top:28px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;z-index:200;min-width:150px;box-shadow:0 4px 20px rgba(0,0,0,0.4);overflow:hidden;">
         <div onclick="setGoalsSort('alpha')" id="gsort-alpha" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--text-dim);">По алфавиту</div>
         <div onclick="setGoalsSort('amount')" id="gsort-amount" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--text-dim);">По сумме ↓</div>
         <div onclick="setGoalsSort('coverage')" id="gsort-coverage" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--text-dim);">Покрыты первыми</div>
@@ -3433,13 +3432,13 @@ function setGoalsSort(val) {
   window._goalsSort = val;
   const menu = document.getElementById('goals-sort-menu');
   if (menu) menu.style.display = 'none';
-  const labels = {'alpha-coverage':'По алфавиту + статус','alpha':'По алфавиту','amount':'По сумме ↓','coverage':'Покрыты первыми'};
-  ['alpha-coverage','alpha','amount','coverage'].forEach(k => {
+  const labels = {'alpha':'По алфавиту','amount':'По сумме ↓','coverage':'Покрыты первыми'};
+  ['alpha','amount','coverage'].forEach(k => {
     const el = document.getElementById('gsort-'+k);
     if (el) { el.style.color = k===val ? 'var(--accent)' : 'var(--text-dim)'; el.textContent = (k===val?'✓ ':'')+labels[k]; }
   });
   const lbl = document.getElementById('goals-sort-label');
-  if (lbl) lbl.textContent = labels[val];
+  if (lbl) lbl.textContent = val === 'alpha-coverage' ? 'Сортировка' : labels[val];
   renderGoals();
 }
 
