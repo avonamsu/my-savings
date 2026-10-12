@@ -6588,17 +6588,13 @@ function restoreBackup(event){
       if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
       if (!state.piggyBanks) state.piggyBanks = [];
       if (!state.challenges) state.challenges = [];
-      try { save(); } catch(e) { alert('save error: ' + e.message); return; }
-      try { saveToIDB(); } catch(e) {}
-      try { render(); } catch(e) { alert('render error: ' + e.message); return; }
-      try { drawChart(); } catch(e) {}
-      try { checkNotifBanner(); } catch(e) {}
+      save(); saveToIDB(); render(); drawChart(); checkNotifBanner();
       // immediately sync restored data to Supabase (bypass debounce), then confirm
       sbSaveState().then(() => {
         if (_sbUser) sbMigrateSnapshots();
-        alert('✅ Данные восстановлены! Счетов: ' + state.savings.length);
+        alert('✅ Данные восстановлены!');
       }).catch(() => {
-        alert('✅ Данные восстановлены локально! Счетов: ' + state.savings.length);
+        alert('✅ Данные восстановлены локально!');
       });
     } catch(e){ alert('Не удалось прочитать файл.'); }
   };
