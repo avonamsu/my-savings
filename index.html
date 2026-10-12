@@ -1273,6 +1273,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <div class="field"><label>ДАТА СЛЕДУЮЩЕГО СПИСАНИЯ</label>
           <input type="date" id="g-sub-date">
         </div>
+        <div class="field" style="display:flex;align-items:center;justify-content:space-between;">
+          <label style="margin:0;">АВТОПРОДЛЕНИЕ</label>
+          <label class="toggle"><input type="checkbox" id="g-sub-autorenew"><span class="toggle-slider"></span></label>
+        </div>
         <div class="calc-preview" id="g-sub-preview" style="display:none;"></div>
       </div>
       <div class="field"><label>ЭМОДЗИ</label>
@@ -4207,6 +4211,35 @@ async function confirmEarlyClose(savingId) {
 
 // ── AUTO-RENEW CHECK ──────────────────────────────────────
 function checkAutoRenew() {
+  // Auto-renew subscriptions with passed payment date
+  const todayStr = today();
+  const expiredSubs = (state.goals||[]).filter(g =>
+    g.type === 'subscription' && g.subAutorenew && g.subDate && g.subDate < todayStr
+  );
+  if (expiredSubs.length) {
+    expiredSubs.forEach(g => {
+      const period = g.subPeriod || 1;
+      let next = new Date(g.subDate);
+      // advance by period months until in future
+      while (next.toISOString().slice(0,10) < todayStr) {
+        next.setMonth(next.getMonth() + period);
+      }
+      const newDate = next.toISOString().slice(0,10);
+      if (!g.priceHistory) g.priceHistory = [];
+      g.priceHistory.push({
+        date: newDate,
+        amount: Math.round(g.amount),
+        amountOrig: g.subAmountOrig || null,
+        currency: g.subCurrency || 'RUB',
+        note: 'Автопродление'
+      });
+      g.subDate = newDate;
+    });
+    save();
+    renderGoals();
+  }
+
+  // Auto-renew deposits (existing logic)
   const expired = state.savings.filter(s =>
     s.isDeposit && s.autorenew && s.dateEnd && s.dateEnd < today() && !s.earlyClosed && !s._renewPending
   );
@@ -5487,6 +5520,7 @@ function openModal(mode) {
     const spReset=document.getElementById('g-sub-period'); if(spReset) spReset.value='1';
     const scReset=document.getElementById('g-sub-custom'); if(scReset) scReset.value='';
     const scfReset=document.getElementById('g-sub-custom-field'); if(scfReset) scfReset.style.display='none';
+    const sarReset=document.getElementById('g-sub-autorenew'); if(sarReset) sarReset.checked=false;
     setTimeout(()=>{ const el=document.getElementById('g-name'); if(el) el.focus(); }, 200);
   }
   if(mode==='income') setTimeout(()=>{ const el=document.getElementById('i-name'); if(el) el.focus(); }, 200);
@@ -5728,7 +5762,7 @@ function openEdit(list,id) {
     document.getElementById('g-amount').value=x.amount;
     if(x.emoji){const gEmoji=document.getElementById('g-emoji');if(gEmoji)gEmoji.value=x.emoji;document.querySelectorAll('[id^="gepb-"]').forEach(b=>b.classList.remove('selected'));const emap={'🎯':'target','🏠':'home','🛒':'cart','💊':'pill','📱':'phone','🚗':'car','✈️':'plane','💆':'spa','📚':'book','🎮':'game','🐾':'paw','⚡':'bolt','🎵':'music','☁️':'cloud','📺':'tv','🏋️':'gym'};const defE=document.getElementById('gepb-'+(emap[x.emoji]||''));if(defE)defE.classList.add('selected');else{const custom=document.getElementById('g-emoji-custom');if(custom)custom.value=x.emoji;}}
     if(x.color){const gColor=document.getElementById('g-color');if(gColor)gColor.value=x.color;document.querySelectorAll('[id^="gcpb-"]').forEach(b=>b.classList.remove('selected'));const defC=document.getElementById('gcpb-'+x.color.replace('#',''));if(defC)defC.classList.add('selected');}
-    if(x.type==='subscription'){selectGoalType('subscription');const sp=document.getElementById('g-sub-period');if(sp){const stdPeriods=[1,3,6,12];if(stdPeriods.includes(x.subPeriod||1)){sp.value=x.subPeriod||1;}else{sp.value='0';const cf=document.getElementById('g-sub-custom-field');if(cf)cf.style.display='';const sc=document.getElementById('g-sub-custom');if(sc)sc.value=x.subPeriod||1;}}const sd=document.getElementById('g-sub-date');if(sd)sd.value=x.subDate||'';const sn=document.getElementById('g-note');if(sn)sn.value=x.note||'';
+    if(x.type==='subscription'){selectGoalType('subscription');const sp=document.getElementById('g-sub-period');if(sp){const stdPeriods=[1,3,6,12];if(stdPeriods.includes(x.subPeriod||1)){sp.value=x.subPeriod||1;}else{sp.value='0';const cf=document.getElementById('g-sub-custom-field');if(cf)cf.style.display='';const sc=document.getElementById('g-sub-custom');if(sc)sc.value=x.subPeriod||1;}}const sd=document.getElementById('g-sub-date');if(sd)sd.value=x.subDate||'';const sar=document.getElementById('g-sub-autorenew');if(sar)sar.checked=!!x.subAutorenew;const sn=document.getElementById('g-note');if(sn)sn.value=x.note||'';
     // Restore currency and original amount
     const gCurSel=document.getElementById('g-sub-currency');if(gCurSel){gCurSel.value=x.subCurrency||'RUB';gCurSel.style.display='';}
     const gAmtEl=document.getElementById('g-amount');if(gAmtEl&&x.subCurrency&&x.subCurrency!=='RUB'&&x.subAmountOrig){gAmtEl.value=x.subAmountOrig;}
@@ -5810,13 +5844,14 @@ function saveItem(){
     const gType=document.getElementById('g-type')?.value||'regular';
     const subPeriod=gType==='subscription'?getSubPeriodValue():null;
     const subDate=gType==='subscription'?document.getElementById('g-sub-date')?.value||null:null;
+    const subAutorenew=gType==='subscription'?!!(document.getElementById('g-sub-autorenew')?.checked):false;
     const note=gType==='subscription'?(document.getElementById('g-note')?.value?.trim()||null):null;
     const subCurrency=gType==='subscription'?(document.getElementById('g-sub-currency')?.value||'RUB'):'RUB';
     // Store original amount in foreign currency; amount field always in RUB for coverage calc
     const amountRub = subCurrency !== 'RUB' ? toRub(amount, subCurrency) : amount;
     const subAmountOrig = subCurrency !== 'RUB' ? amount : null;
     const _prevG = state.goals.find(x=>x.id===id);
-    const _g={id,name,amount:amountRub,emoji,color,type:gType,subPeriod,subDate,note,subCurrency,subAmountOrig,priceHistory:_prevG?.priceHistory||[]};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
+    const _g={id,name,amount:amountRub,emoji,color,type:gType,subPeriod,subDate,subAutorenew,note,subCurrency,subAmountOrig,priceHistory:_prevG?.priceHistory||[]};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
   }
   editingId=null;trackDailyAdd();save();render();closeModal();checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();haptic("success");
 }
