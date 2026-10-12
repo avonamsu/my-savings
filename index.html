@@ -3993,7 +3993,7 @@ function openAccountSheet(id) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           ${_sheetStat('СТАВКА', s.rate+'%', 'годовых', 'var(--accent)')}
           ${_sheetStat('ДОХОД В ГОД', '≈'+fmt(yearlyIncome), currSym(cur), '#4CAF50')}
-          ${_sheetStat('ЗАРАБОТАНО', '+'+fmt(Math.round(d.currentAmount - Number(s.amount))), currSym(cur))}
+          ${_sheetStat('ЗАРАБОТАНО', '+'+ (() => { const cached = _txCache[id]; const int = cached ? cached.txs.filter(t=>t.type==='interest').reduce((a,t)=>a+Number(t.amount),0) : 0; return fmt(Math.round(int || d.earnedInterest || 0)); })(), currSym(cur))}
           ${daysLeft !== null ? _sheetStat(d.expired ? 'ИСТЁК' : 'ОСТАЛОСЬ', d.expired ? 'срок истёк' : daysLeft+' дн.', d.expired ? '' : 'до '+s.dateEnd, d.expired ? 'var(--danger)' : '') : ''}
         </div>
         ${progressBar}
