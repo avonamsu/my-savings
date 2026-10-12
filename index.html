@@ -3497,26 +3497,22 @@ function openAccountSheet(id) {
     if (canRefill && canTransfer) btns.push(_sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false));
     if (canEarlyClose) btns.push(_sheetBtn(`openEarlyCloseModal('${id}')`, '🔓', 'Закрыть досрочно', false));
     if (showFix) btns.push(_sheetBtn(`openFixIncomeModal('${id}')`, '💸', 'Зафиксировать', false));
-    if (btns.length) {
-      actions = `<div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${Math.min(btns.length,3)},1fr);gap:8px;">${btns.join('')}</div>`;
-    }
+    btns.push(_sheetBtn(`openHistorySheet('${id}')`, '📋', 'История', false));
+    const cols = Math.min(btns.length, 4);
+    actions = `<div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;">${btns.join('')}</div>`;
 
   } else {
     // Наличные / инвестиции / недвижимость
-    const cols = canTransfer ? 3 : 2;
+    const cols = canTransfer ? 4 : 3;
     actions = `<div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;">
       ${_sheetBtn(`openDepositWithdrawModal('${id}','deposit')`, '➕', 'Пополнить', true)}
       ${_sheetBtn(`openDepositWithdrawModal('${id}','withdrawal')`, '➖', 'Снять', false)}
       ${canTransfer ? _sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false) : ''}
+      ${_sheetBtn(`openHistorySheet('${id}')`, '📋', 'История', false)}
     </div>`;
   }
 
-  const historyBtn = `<div style="padding:0 20px 20px;">
-    <button onclick="${close}openHistorySheet('${id}')"
-      style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:var(--text);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
-      <span>📋 История операций</span><span style="color:var(--text-dim);font-size:16px;">›</span>
-    </button>
-  </div>`;
+  const historyBtn = '';
 
   const sheet = document.createElement('div');
   sheet.id = 'sa-sheet';
