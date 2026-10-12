@@ -4598,9 +4598,16 @@ function renderGoals() {
     return;
   }
 
-  // Calculate coverage (pinned goal goes first, rest follow original order)
+  // Calculate coverage:
+  // 1. Cover all non-pinned goals in original order first
+  // 2. Then apply remaining income to the pinned goal
+  // This way pinned goal gets the free leftover, not stealing from already-covered goals
   let remaining = totalIncome, coveredSum = 0;
-  const goalsForCalc = [...state.goals].sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0));
+  const pinnedGoal = state.goals.find(g => g.pinned);
+  const goalsForCalc = [
+    ...state.goals.filter(g => !g.pinned),
+    ...(pinnedGoal ? [pinnedGoal] : [])
+  ];
   const items = goalsForCalc.map(g => {
     const cost = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
     const covered = remaining >= cost;
