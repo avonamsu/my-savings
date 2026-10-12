@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012194000">
+  <meta name="version" content="20261012195000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -511,7 +511,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- HOME PAGE -->
 <div class="page active" id="page-home">
-  <div class="hero" onclick="showPage('savings')" style="cursor:pointer;display:flex;flex-direction:column;min-height:160px;">
+  <div class="hero" id="home-hero" onclick="showPage('savings')" style="cursor:pointer;display:flex;flex-direction:column;min-height:160px;opacity:0;transition:opacity 0.25s ease;">
     <div class="hero-label">Всего накоплено <span style="font-size:11px;opacity:.6;">· все счета →</span></div>
     <div class="hero-amount" id="home-total">0 <span>₽</span></div>
     <div style="flex:1;min-height:24px;"></div>
@@ -1686,6 +1686,8 @@ async function preloadTxCache() {
   if (el) el.style.opacity = '1';
   const hero = document.querySelector('#page-savings .hero');
   if (hero) hero.style.opacity = '1';
+  const homeHero = document.getElementById('home-hero');
+  if (homeHero) homeHero.style.opacity = '1';
   renderDepositTax();
 }
 
@@ -1699,6 +1701,8 @@ async function sbSignOut() {
   _sbUser = null;
   _sbStateLoaded = false;
   window._txCacheReady = false;
+  const homeHero = document.getElementById('home-hero');
+  if (homeHero) homeHero.style.opacity = '0';
   sbUpdateUI();
 }
 
@@ -7314,7 +7318,7 @@ function showToast(msg) {
 
 // ── AUTO-UPDATE CHECK ──────────────────────────────────────
 (function() {
-  const CURRENT_VERSION = '20261012194000';
+  const CURRENT_VERSION = '20261012195000';
   fetch(location.href + '?_v=' + Date.now(), { cache: 'no-store' })
     .then(r => r.text())
     .then(html => {
