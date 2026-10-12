@@ -3477,7 +3477,7 @@ function openAccountSheet(id) {
     if (canRefill && canTransfer) btns.push(_sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false));
     if (canEarlyClose) btns.push(_sheetBtn(`openEarlyCloseModal('${id}')`, '🔓', 'Закрыть досрочно', false));
     if (showFix) btns.push(_sheetBtn(`openFixIncomeModal('${id}')`, '💸', 'Зафикс. доход', false));
-    btns.push(_sheetBtn(`openHistorySheet('${id}')`, '📋', 'История', false));
+    btns.push(_sheetBtn(`openHistorySheet('${id}')`, '📋', 'История операций', false));
     const cols = Math.min(btns.length, 4);
     actions = `<div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;">${btns.join('')}</div>`;
 
