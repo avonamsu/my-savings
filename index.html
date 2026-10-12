@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012202000">
+  <meta name="version" content="20261012203000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3473,7 +3473,7 @@ function showGoalMenu(e, id) {
 
 function showChallengeMenu(e, id, canComplete) {
   const items = [
-    {icon:'✅', label:'Проставить все ячейки', fn:()=>completeChallenge(id)},
+    {icon:'✅', label:'Завершить челлендж', fn:()=>completeChallenge(id)},
     {icon:'✏️', label:'Изменить', fn:()=>editChallenge(id)},
     {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteChallenge(id)}
   ];
@@ -5993,14 +5993,37 @@ function completePiggyBank(id) {
   save(); renderChallengesPage();
 }
 
-function completeChallenge(id) {
-  if (!confirm('Завершить челлендж досрочно? Все ячейки будут закрыты.')) return;
+async function completeChallenge(id) {
   const ch = (state.challenges||[]).find(c=>c.id===id);
   if (!ch) return;
+  const undoneCells = ch.cells.filter(c => !c.done);
+  const undoneTotal = undoneCells.reduce((s,c) => s + (c.amt||0), 0);
+  if (!confirm('Завершить челлендж? Все ячейки будут закрыты.')) return;
   ch.cells = ch.cells.map(c => ({...c, done: true}));
+  // Если есть привязанный счёт и незакрытые ячейки — предложить пополнить
+  const linkedSaving = ch.linkedSavingId ? (state.savings||[]).find(s=>s.id===ch.linkedSavingId) : null;
+  if (linkedSaving && undoneTotal > 0) {
+    if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на оставшиеся ${fmtInt(undoneTotal)} ₽?`)) {
+      linkedSaving.amount = (parseFloat(linkedSaving.amount)||0) + undoneTotal;
+      save();
+      const dateStr = today();
+      if (_sbUser && linkedSaving.isSavingsAccount) {
+        const nextDay = new Date(dateStr + 'T12:00:00');
+        nextDay.setDate(nextDay.getDate() + 1);
+        const nextDayStr = nextDay.toLocaleDateString('sv');
+        await _sb.from('transactions').delete()
+          .eq('user_id', _sbUser.id).eq('saving_id', linkedSaving.id).eq('type', 'interest').gte('date', nextDayStr);
+      }
+      await sbLogTransaction(linkedSaving.id, 'deposit', undoneTotal, { date: dateStr, note: 'Завершение челленджа' });
+    } else {
+      save();
+    }
+  } else {
+    save();
+  }
   haptic('success');
   startConfetti(); setTimeout(stopConfetti, 3000);
-  save(); renderChallengesPage();
+  renderChallengesPage(); renderHomeWidgets();
 }
 
 function deletePiggyBank(id) {
