@@ -565,6 +565,14 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="home-next-deposit-content"></div>
   </div>
 
+  <!-- Widget: Ближайшие подписки -->
+  <div id="home-widget-subscriptions" style="display:none;">
+    <div class="widget-section-header">
+      <span class="widget-section-label">Ближайшие подписки</span>
+    </div>
+    <div id="home-next-subscriptions-content"></div>
+  </div>
+
   <!-- Widget: Копилка / Челлендж (динамически создаётся в renderHomeWidgets) -->
   <div id="home-widgets-piggy-container" style="display:flex;flex-direction:column;gap:16px;"></div>
 
@@ -2366,12 +2374,13 @@ function renderHome() {
 // ══════════════════════════════════════════════════════════
 
 const WIDGET_DEFS = {
-  chart:   { icon:'📈', name:'График роста',        desc:'Накопления и доход по месяцам' },
-  deposit: { icon:'🏦', name:'Ближайший вклад',     desc:'Следующий вклад к закрытию' },
-  piggy:   { icon:'🐷', name:'Копилка / Челлендж',  desc:'Быстрый доступ к одной копилке' },
-  goals:   { icon:'🎯', name:'Цели',                desc:'Список целей и покрытие доходом' },
+  chart:         { icon:'📈', name:'График роста',           desc:'Накопления и доход по месяцам' },
+  deposit:       { icon:'🏦', name:'Ближайший вклад',        desc:'Следующий вклад к закрытию' },
+  subscriptions: { icon:'📦', name:'Ближайшие подписки',     desc:'Подписки с ближайшей датой оплаты' },
+  piggy:         { icon:'🐷', name:'Копилка / Челлендж',     desc:'Быстрый доступ к одной копилке' },
+  goals:         { icon:'🎯', name:'Цели',                   desc:'Список целей и покрытие доходом' },
 };
-const DEFAULT_ORDER = ['chart','deposit','piggy','goals'];
+const DEFAULT_ORDER = ['chart','deposit','subscriptions','piggy','goals'];
 
 function getWidgetSettings() {
   try {
@@ -2388,7 +2397,7 @@ function getWidgetSettings() {
       return s;
     }
   } catch(e) {}
-  return { chart:false, deposit:false, piggy:false, piggyIds:[], goals:false, order:DEFAULT_ORDER.slice() };
+  return { chart:false, deposit:false, subscriptions:false, piggy:false, piggyIds:[], goals:false, order:DEFAULT_ORDER.slice() };
 }
 
 function saveWidgetSettings() {
@@ -2712,6 +2721,63 @@ function renderNextDepositWidget() {
   </div>`;
 }
 
+// ── Next subscriptions widget ──────────────────────────────
+function renderNextSubscriptionsWidget() {
+  const el = document.getElementById('home-next-subscriptions-content');
+  if (!el) return;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const today = now.getTime();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const subs = (state.goals || []).filter(g => g.type === 'subscription' && g.subDate);
+  if (!subs.length) {
+    el.innerHTML = `<div class="home-next-deposit" onclick="showPage('goals')" style="color:var(--text-dim);font-size:13px;">Нет подписок с датой оплаты →</div>`;
+    return;
+  }
+
+  // Для каждой подписки найдём ближайшую дату в текущем или следующем месяце
+  const withDays = subs.map(g => {
+    const day = parseInt(g.subDate) || 1;
+    let next = new Date(currentYear, currentMonth, day);
+    next.setHours(0,0,0,0);
+    if (next.getTime() < today) {
+      // уже прошло — берём следующий месяц
+      next = new Date(currentYear, currentMonth + 1, day);
+      next.setHours(0,0,0,0);
+    }
+    const daysLeft = Math.round((next.getTime() - today) / 86400000);
+    return { ...g, daysLeft, nextDate: next };
+  }).sort((a, b) => a.daysLeft - b.daysLeft);
+
+  // Показываем до 3 ближайших
+  const shown = withDays.slice(0, 3);
+  const rows = shown.map(g => {
+    const isUrgent = g.daysLeft <= 3;
+    const color = isUrgent ? 'var(--danger)' : g.daysLeft <= 7 ? 'var(--warn)' : 'var(--text-dim)';
+    const label = g.daysLeft === 0 ? '⚠️ Сегодня' : `через ${g.daysLeft} дн.`;
+    const dateStr = g.nextDate.toLocaleDateString('ru-RU', { day:'numeric', month:'short' });
+    const amtDisplay = g.subCurrency && g.subCurrency !== 'RUB' && g.subAmountOrig
+      ? `${fmt2(g.subAmountOrig / (g.subPeriod||1))} ${CURRENCY_SYMBOLS?.[g.subCurrency]||g.subCurrency}`
+      : `${fmt(Math.round(g.amount / (g.subPeriod||1)))} ₽`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;${g !== shown[shown.length-1] ? 'border-bottom:1px solid rgba(255,255,255,0.05);' : ''}">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">${g.emoji||'📦'}</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;">${g.name}</div>
+          <div style="font-size:11px;color:${color};margin-top:1px;">${label} · ${dateStr}</div>
+        </div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);">${amtDisplay}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="home-next-deposit" onclick="showPage('goals')" style="cursor:pointer;padding:4px 16px;">
+    ${rows}
+    ${withDays.length > 3 ? `<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:8px 0 2px;">и ещё ${withDays.length - 3} подписок →</div>` : ''}
+  </div>`;
+}
+
 // ── Piggy/Challenge widget ─────────────────────────────────
 function renderPiggyWidget(piggyId, container) {
   if (!container) return;
@@ -2903,7 +2969,7 @@ function renderHomeWidgets() {
   }
 
   // show/hide and render each static widget
-  const renderers = { chart: renderHomeChartWidget, deposit: renderNextDepositWidget, goals: renderGoalsWidget };
+  const renderers = { chart: renderHomeChartWidget, deposit: renderNextDepositWidget, subscriptions: renderNextSubscriptionsWidget, goals: renderGoalsWidget };
   order.forEach(key => {
     if (key === 'piggy') return; // обрабатываем отдельно
     const el = document.getElementById('home-widget-'+key);
