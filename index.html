@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012221000">
+  <meta name="version" content="20261012222000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -665,18 +665,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
       <div class="hero-sub" id="income-hero-sub" style="margin-top:0;">0 ₽/год</div>
-      <div style="display:flex;gap:12px;align-items:center;">
-        <div style="text-align:right;">
-          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.04em;">ДОХОДНОСТЬ</div>
-          <div id="income-yield" style="font-size:14px;font-weight:700;color:var(--accent);">—</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:10px;color:var(--text-dim);letter-spacing:.04em;">РЕАЛЬНАЯ</div>
-          <div id="income-real-yield" style="font-size:14px;font-weight:700;">—</div>
-        </div>
-      </div>
-    </div>
-    <div style="margin-top:8px;text-align:right;">
       <span onclick="openIncomeBreakdownSheet()" style="font-size:11px;color:var(--text-dim);opacity:.6;white-space:nowrap;cursor:pointer;">Подробнее ›</span>
     </div>
   </div>
@@ -3434,14 +3422,31 @@ function openIncomeBreakdownSheet() {
         <div style="background:var(--surface2);border-radius:12px;padding:4px 16px;margin-bottom:16px;">
           ${rowsHtml || '<div style="padding:16px 0;text-align:center;color:var(--text-dim);font-size:13px;">Нет данных</div>'}
         </div>
+        ${(() => {
+          const yp = window._incomeYieldPct || 0;
+          const ry = window._incomeRealYield || 0;
+          const ip = window._incomeInflPct || 0;
+          const yieldStr = yp > 0 ? yp.toFixed(1)+'% год.' : '—';
+          const realStr = yp > 0 ? (ry>=0?'+':'')+ry.toFixed(1)+'% год.' : '—';
+          const realColor = ry >= 0 ? 'var(--accent)' : 'var(--danger)';
+          return `
         <div style="display:flex;justify-content:space-between;padding:8px 4px;border-top:1px solid rgba(255,255,255,0.06);">
           <span style="font-size:13px;color:var(--text-dim);">Итого в месяц</span>
           <span style="font-size:15px;font-weight:700;color:var(--accent);">${fmt(Math.round(total))} ₽</span>
         </div>
-        <div style="display:flex;justify-content:space-between;padding:8px 4px 4px;">
+        <div style="display:flex;justify-content:space-between;padding:8px 4px;border-top:1px solid rgba(255,255,255,0.06);">
           <span style="font-size:13px;color:var(--text-dim);">В год</span>
           <span style="font-size:13px;font-weight:600;color:var(--text);">${fmt(Math.round(totalYearly))} ₽</span>
         </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 4px;border-top:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:13px;color:var(--text-dim);">Доходность</span>
+          <span style="font-size:13px;font-weight:600;color:var(--accent);">${yieldStr}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 4px 4px;border-top:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:13px;color:var(--text-dim);">Реальная <span style="opacity:.6;">(инфл. ${ip.toFixed(1)}%)</span></span>
+          <span style="font-size:13px;font-weight:600;color:${realColor};">${realStr}</span>
+        </div>`;
+        })()}
       </div>
     </div>`;
   sheet.onclick = e => { if (e.target === sheet) sheet.remove(); };
@@ -4395,10 +4400,10 @@ function renderIncome() {
 
   const yieldPct = totalSavings > 0 ? (totalYearly / totalSavings * 100) : 0;
   const realYield = yieldPct - inflPct;
-  const yieldEl = document.getElementById('income-yield');
-  const realEl = document.getElementById('income-real-yield');
-  if(yieldEl) yieldEl.textContent = yieldPct > 0 ? yieldPct.toFixed(1)+'% год.' : '—';
-  if(realEl) { realEl.textContent = yieldPct > 0 ? (realYield>=0?'+':'')+realYield.toFixed(1)+'% год.' : '—'; realEl.style.color = realYield>=0?'var(--accent)':'var(--danger)'; }
+  // Store for use in breakdown sheet
+  window._incomeYieldPct = yieldPct;
+  window._incomeRealYield = realYield;
+  window._incomeInflPct = inflPct;
 
   // Авто-строки: все вклады и накопительные счета (включая отключённые от дохода — показываем, но зачёркнуто)
   const autoItems = (state.savings||[]).filter(s => !s.excluded && (s.isDeposit||s.isSavingsAccount) && (calcSavingMonthlyIncome(s) > 0 || s.incomeExcluded));
