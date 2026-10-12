@@ -2939,8 +2939,7 @@ function showChallengeMenu(e, id, canComplete) {
 function showSavingsMenu(e, id, showFix) {
   const s = state.savings.find(x => x.id === id);
   const isSA = s?.isSavingsAccount;
-  const isCash = s?.icon === '💵' || (!s?.isDeposit && !s?.isSavingsAccount && !['📈','🏠','₿'].includes(s?.icon));
-  const hasDepositWithdraw = isSA || isCash;
+  const hasDepositWithdraw = isSA;
   const items = [
     {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
     ...(hasDepositWithdraw ? [
