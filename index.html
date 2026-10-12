@@ -1448,6 +1448,7 @@ let _sbSaveTimer = null;
 async function sbInit() {
   const { data: { session } } = await _sb.auth.getSession();
   _sbUser = session?.user || null;
+  alert('sbInit: _sbUser=' + (_sbUser ? _sbUser.email : 'null'));
   _sb.auth.onAuthStateChange((_event, session) => {
     _sbUser = session?.user || null;
     sbUpdateUI();
