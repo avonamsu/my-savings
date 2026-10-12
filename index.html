@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012199000">
+  <meta name="version" content="20261012200000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -6275,17 +6275,16 @@ async function toggleCell(challengeId, cellIdx) {
         if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = dateStr;
         // для вклада dateStart не трогаем — пополняемый вклад считает % от новой суммы с исходной даты
         save();
-        await sbLogTransaction(linkedSaving.id, 'deposit', cellAmount, { date: dateStr, note: 'Пополнение из челленджа' });
         if (_sbUser && linkedSaving.isSavingsAccount) {
+          // Delete future interest txs before logging deposit, then do a single cache refresh
           const nextDay = new Date(dateStr + 'T12:00:00');
           nextDay.setDate(nextDay.getDate() + 1);
           const nextDayStr = nextDay.toLocaleDateString('sv');
           await _sb.from('transactions').delete()
             .eq('user_id', _sbUser.id).eq('saving_id', linkedSaving.id).eq('type', 'interest').gte('date', nextDayStr);
-          delete _txCache[linkedSaving.id];
-          fetchTxCached(linkedSaving.id).then(() => renderSavings());
         }
-        // For deposits: sbLogTransaction already triggers fetchTxCached + renderSavings internally
+        await sbLogTransaction(linkedSaving.id, 'deposit', cellAmount, { date: dateStr, note: 'Пополнение из челленджа' });
+        // sbLogTransaction already does fetchTxCached + renderSavings + renderHome internally
       } else {
         // отменили — откатываем изменение ячейки
         ch.cells[cellIdx].done = wasDone;
