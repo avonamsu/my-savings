@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012220000">
+  <meta name="version" content="20261012220500">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -420,7 +420,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .ch-card { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); overflow:hidden; }
 
 .ch-progress-wrap { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.05); }
-.ch-grid { display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start; align-items:flex-start; max-height:387px; gap:5px; padding:8px 0; }
+.ch-grid { display:flex; flex-direction:row; flex-wrap:wrap; align-content:flex-start; align-items:flex-start; gap:5px; padding:8px 0; }
 .ch-cell { border-radius:8px; border:2px solid rgba(255,255,255,0.1); padding:0; width:60px; height:44px; min-height:44px; max-height:44px; text-align:center; cursor:pointer; font-size:12px; font-weight:600; line-height:44px; color:var(--text-dim); transition:all .2s; box-sizing:border-box; user-select:none; flex-shrink:0; flex-grow:0; }
 .ch-cell.done { background:var(--accent); border-color:var(--accent); color:var(--bg); }
 .ch-footer { padding:11px 14px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.05); }
@@ -6459,7 +6459,7 @@ function openChallengeSheet(id) {
         <!-- Сетка ячеек -->
         <div style="padding-top:14px;">
           <div style="font-size:12px;font-weight:600;color:var(--text-dim);letter-spacing:.05em;margin-bottom:10px;">ЯЧЕЙКИ</div>
-          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;"><div class="ch-grid" id="ch-sheet-grid-${id}">${cellsHtml}</div></div>
+          <div class="ch-grid" id="ch-sheet-grid-${id}">${cellsHtml}</div>
         </div>
       </div>
     </div>`;
