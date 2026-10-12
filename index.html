@@ -1449,7 +1449,6 @@ let _sbStateLoaded = false; // guard: don't overwrite DB before loading from it
 async function sbInit() {
   const { data: { session } } = await _sb.auth.getSession();
   _sbUser = session?.user || null;
-  alert('sbInit: _sbUser=' + (_sbUser ? _sbUser.email : 'null'));
   _sb.auth.onAuthStateChange((_event, session) => {
     _sbUser = session?.user || null;
     sbUpdateUI();
@@ -1463,11 +1462,11 @@ async function sbLoadState() {
   if (!_sbUser) return;
   try {
     const { data, error } = await _sb.from('user_state').select('state').eq('user_id', _sbUser.id).single();
-    if (error && error.code !== 'PGRST116') { alert('sbLoadState error: ' + error.message); return; }
+    if (error && error.code !== 'PGRST116') { console.warn('sbLoadState error', error); return; }
     if (data?.state && Object.keys(data.state).length > 0) {
       state = data.state;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      try { renderAll(); } catch(e) { alert('renderAll error: ' + e.message); }
+      try { render(); } catch(e) { console.warn('render error', e); }
       try { checkAutoRenew(); } catch(e) {}
     }
     // Preload transactions + CB key rate in parallel, then re-render
@@ -1478,7 +1477,7 @@ async function sbLoadState() {
     // Load snapshots independently
     sbLoadSnapshots();
     _sbStateLoaded = true; // safe to write to DB now
-  } catch(e) { alert('sbLoadState exception: ' + e.message); }
+  } catch(e) { console.warn('sbLoadState exception', e); }
 }
 
 // ── SNAPSHOTS SYNC ────────────────────────────────────────────
@@ -1491,10 +1490,9 @@ async function sbUpsertSnapshot(type, ym, amount) {
 }
 
 async function sbLoadSnapshots() {
-  if (!_sbUser) { alert('sbLoadSnapshots: нет _sbUser'); return; }
+  if (!_sbUser) return;
   const { data, error } = await _sb.from('snapshots').select('type,ym,amount').eq('user_id', _sbUser.id);
-  if (error) { alert('sbLoadSnapshots error: ' + error.message); return; }
-  alert('sbLoadSnapshots: data.length=' + (data?.length ?? 'null') + ', _history keys=' + Object.keys(state._history||{}).length);
+  if (error) { console.warn('sbLoadSnapshots error', error); return; }
   if (!data || !data.length) {
     // First time: migrate localStorage data to Supabase
     await sbMigrateSnapshots();
@@ -1518,10 +1516,9 @@ async function sbMigrateSnapshots() {
   for (const [ym, amount] of Object.entries(state._incomeHistory || {})) {
     rows.push({ user_id: _sbUser.id, type: 'income', ym, amount });
   }
-  if (!rows.length) { alert('Migrate: нет данных (_history пуст)'); return; }
+  if (!rows.length) return;
   const { error } = await _sb.from('snapshots').upsert(rows, { onConflict: 'user_id,type,ym' });
-  if (error) alert('Migrate error: ' + (error.message || JSON.stringify(error)));
-  else alert('Migrate OK: ' + rows.length + ' строк. Проверь таблицу.');
+  if (error) console.warn('Migrate error', error);
 }
 
 async function sbSaveState() {
