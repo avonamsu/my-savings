@@ -3857,9 +3857,15 @@ function _buildHistorySheetContent(savingId, rows) {
   }
 
   let aprStr = '—';
-  if (principal > 0 && rows.length > 0) {
-    const firstDate = new Date(rows[rows.length - 1].date);
-    const days = Math.max(1, (Date.now() - firstDate) / 86400000);
+  if (s.isSavingsAccount && s.rate) {
+    // For savings accounts, show the actual rate
+    aprStr = '+' + Number(s.rate).toFixed(1) + '% годовых';
+  } else if (principal > 0 && rows.length > 0) {
+    const firstDateStr = rows[rows.length - 1].date.slice(0, 10);
+    const todayStr = new Date().toLocaleDateString('sv');
+    const firstDate = new Date(firstDateStr + 'T12:00:00');
+    const today = new Date(todayStr + 'T12:00:00');
+    const days = Math.max(1, (today - firstDate) / 86400000);
     const annualized = (realReturn / principal) * (365 / days) * 100;
     if (isFinite(annualized) && annualized > -999) aprStr = (annualized > 0 ? '+' : '') + annualized.toFixed(1) + '% годовых';
   }
