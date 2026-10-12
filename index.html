@@ -1464,15 +1464,19 @@ async function sbSaveState() {
   if (error) console.warn('sbSave error', error);
 }
 
-async function sbLogTransaction(savingId, type, amount, source) {
+async function sbLogTransaction(savingId, type, amount, { date, note, source } = {}) {
   if (!_sbUser) return;
-  await _sb.from('transactions').insert({
+  const row = {
     user_id: _sbUser.id,
     saving_id: savingId,
     type,
     amount,
+    date: date || new Date().toISOString().slice(0, 10),
+    note: note || null,
     source: source || null
-  });
+  };
+  const { error } = await _sb.from('transactions').insert(row);
+  if (error) console.warn('sbLogTransaction error', error);
 }
 
 async function sbSignInWithEmail(email) {
@@ -2552,13 +2556,11 @@ function saveFixedIncome() {
   state.fixedDepositIncome.push({
     id: uid(), savingId: _fixIncomeEditId, amount, year, createdAt: today()
   });
-  // Record interest in saving's history
+  // Record interest in Supabase transactions
   const s = state.savings.find(x => x.id === _fixIncomeEditId);
   if (s) {
-    if (!s.history) s.history = [];
     const closeDate = s.dateEnd && s.dateEnd <= today() ? s.dateEnd : today();
-    s.history.push({ date: closeDate, type: 'interest', amount, note: `Доход за ${year} г.` });
-    s.history.sort((a, b) => new Date(a.date) - new Date(b.date));
+    sbLogTransaction(_fixIncomeEditId, 'interest', amount, { date: closeDate, note: `Доход за ${year} г.` });
   }
   save();
   closeFixIncomeModal();
@@ -2946,46 +2948,90 @@ function showSavingsMenu(e, id, showFix) {
 }
 
 // ── HISTORY SHEET ─────────────────────────────────────────
-function openHistorySheet(id) {
-  const s = state.savings.find(x => x.id === id);
-  if (!s) return;
-  const history = s.history || [];
+const typeLabel = {init:'Открытие', deposit:'Пополнение', withdrawal:'Снятие', interest:'Проценты'};
+const typeColor = {init:'var(--text-dim)', deposit:'var(--accent)', withdrawal:'var(--danger)', interest:'#4CAF50'};
+const typeSign  = {init:'', deposit:'+', withdrawal:'−', interest:'+'};
 
-  // Compute stats
-  const principal = history.filter(h => h.type === 'deposit' || h.type === 'init').reduce((sum, h) => sum + h.amount, 0);
-  const withdrawals = history.filter(h => h.type === 'withdrawal').reduce((sum, h) => sum + h.amount, 0);
-  const interest = history.filter(h => h.type === 'interest').reduce((sum, h) => sum + h.amount, 0);
+function _buildHistorySheetContent(savingId, rows) {
+  const s = state.savings.find(x => x.id === savingId);
+  if (!s) return;
+  const el = document.getElementById('history-sheet-body');
+  const statsEl = document.getElementById('history-sheet-stats');
+  if (!el) return;
+
+  const principal = rows.filter(h => h.type === 'deposit' || h.type === 'init').reduce((sum, h) => sum + Number(h.amount), 0);
+  const withdrawals = rows.filter(h => h.type === 'withdrawal').reduce((sum, h) => sum + Number(h.amount), 0);
+  const interest = rows.filter(h => h.type === 'interest').reduce((sum, h) => sum + Number(h.amount), 0);
   const currentAmt = getSavingCurrentAmountLocal(s);
   const realReturn = interest > 0 ? interest : (currentAmt - principal + withdrawals);
 
-  // Real APY: weighted average
   let aprStr = '—';
-  if (principal > 0 && history.length > 0) {
-    const firstDate = new Date(history[0].date);
+  if (principal > 0 && rows.length > 0) {
+    const firstDate = new Date(rows[rows.length - 1].date);
     const days = Math.max(1, (Date.now() - firstDate) / 86400000);
-    const totalReturn = realReturn / principal;
-    const annualized = totalReturn * (365 / days) * 100;
+    const annualized = (realReturn / principal) * (365 / days) * 100;
     if (isFinite(annualized) && annualized > -999) aprStr = (annualized > 0 ? '+' : '') + annualized.toFixed(1) + '% годовых';
   }
 
-  const typeLabel = {init:'Открытие', deposit:'Пополнение', withdrawal:'Снятие', interest:'Проценты'};
-  const typeColor = {init:'var(--text-dim)', deposit:'var(--accent)', withdrawal:'var(--danger)', interest:'#4CAF50'};
-  const typeSign  = {init:'', deposit:'+', withdrawal:'−', interest:'+'};
+  if (statsEl) {
+    statsEl.style.display = principal > 0 ? '' : 'none';
+    statsEl.innerHTML = `
+      <div style="flex:1;padding:12px 16px;border-right:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ВЛОЖЕНО</div>
+        <div style="font-size:15px;font-weight:700;">${fmt(principal)} ₽</div>
+      </div>
+      <div style="flex:1;padding:12px 16px;border-right:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ЗАРАБОТАНО</div>
+        <div style="font-size:15px;font-weight:700;color:${realReturn>=0?'#4CAF50':'var(--danger)'};">${realReturn>=0?'+':''}${fmt(Math.round(realReturn))} ₽</div>
+      </div>
+      <div style="flex:1;padding:12px 16px;">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ДОХОДНОСТЬ</div>
+        <div style="font-size:15px;font-weight:700;color:var(--accent);">${aprStr}</div>
+      </div>`;
+  }
 
-  const historyHTML = history.length === 0
-    ? `<div style="text-align:center;color:var(--text-dim);font-size:14px;padding:24px 0;">Операций пока нет</div>`
-    : [...history].reverse().map(h => `
+  el.innerHTML = rows.length === 0
+    ? `<div style="text-align:center;color:var(--text-dim);font-size:14px;padding:32px 0;">Операций пока нет</div>`
+    : rows.map(h => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
         <div>
           <div style="font-size:13px;font-weight:600;color:${typeColor[h.type]||'var(--text)'};">${typeLabel[h.type]||h.type}</div>
           <div style="font-size:11px;color:var(--text-dim);margin-top:1px;">${new Date(h.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})}${h.note?' · '+h.note:''}</div>
         </div>
-        <div style="font-size:14px;font-weight:700;color:${typeColor[h.type]||'var(--text)'};">${typeSign[h.type]||''}${fmt(h.amount)} ${s.currency||'₽'}</div>
+        <div style="font-size:14px;font-weight:700;color:${typeColor[h.type]||'var(--text)'};">${typeSign[h.type]||''}${fmt(Number(h.amount))} ${s.currency||'₽'}</div>
       </div>`).join('');
+}
+
+async function openHistorySheet(id) {
+  const s = state.savings.find(x => x.id === id);
+  if (!s) return;
 
   const sheet = document.createElement('div');
   sheet.id = 'history-sheet-overlay';
   sheet.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;';
+
+  if (!_sbUser) {
+    sheet.innerHTML = `
+      <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding-bottom:env(safe-area-inset-bottom);">
+        <div style="padding:16px 20px 20px;">
+          <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 16px;"></div>
+          <div style="font-size:17px;font-weight:700;margin-bottom:4px;">${s.icon} ${s.name}</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:24px;">История операций</div>
+          <div style="text-align:center;padding:24px 0;">
+            <div style="font-size:36px;margin-bottom:12px;">🔒</div>
+            <div style="font-size:15px;font-weight:600;margin-bottom:8px;">Требуется авторизация</div>
+            <div style="font-size:13px;color:var(--text-dim);margin-bottom:20px;line-height:1.5;">История операций хранится в облаке.<br>Войди в аккаунт чтобы видеть и вести историю.</div>
+            <button onclick="document.getElementById('history-sheet-overlay').remove();openAuthModal()" style="background:var(--accent);color:var(--bg);border:none;border-radius:12px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;">Войти в аккаунт</button>
+          </div>
+          <button onclick="document.getElementById('history-sheet-overlay').remove()" style="width:100%;margin-top:12px;padding:13px;background:var(--surface2);border:none;border-radius:12px;color:var(--text);font-size:15px;cursor:pointer;">Закрыть</button>
+        </div>
+      </div>`;
+    sheet.onclick = e => { if (e.target === sheet) sheet.remove(); };
+    document.body.appendChild(sheet);
+    return;
+  }
+
+  // Logged in — show sheet with loading state
   sheet.innerHTML = `
     <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:85dvh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);">
       <div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
@@ -2993,28 +3039,14 @@ function openHistorySheet(id) {
         <div style="font-size:17px;font-weight:700;">${s.icon} ${s.name}</div>
         <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">История операций</div>
       </div>
-      ${principal > 0 ? `
-      <div style="display:flex;gap:0;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.06);">
-        <div style="flex:1;padding:12px 16px;border-right:1px solid rgba(255,255,255,0.06);">
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ВЛОЖЕНО</div>
-          <div style="font-size:15px;font-weight:700;">${fmt(principal)} ₽</div>
-        </div>
-        <div style="flex:1;padding:12px 16px;border-right:1px solid rgba(255,255,255,0.06);">
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ЗАРАБОТАНО</div>
-          <div style="font-size:15px;font-weight:700;color:${realReturn>=0?'#4CAF50':'var(--danger)'};">${realReturn>=0?'+':''}${fmt(Math.round(realReturn))} ₽</div>
-        </div>
-        <div style="flex:1;padding:12px 16px;">
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;">ДОХОДНОСТЬ</div>
-          <div style="font-size:15px;font-weight:700;color:var(--accent);">${aprStr}</div>
-        </div>
-      </div>` : ''}
+      <div id="history-sheet-stats" style="display:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;"></div>
       <div style="overflow-y:auto;flex:1;padding:0 20px;">
-        <div style="padding-bottom:8px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0 4px;">
-            <div style="font-size:12px;font-weight:600;color:var(--text-dim);letter-spacing:.05em;">ОПЕРАЦИИ</div>
-            <button onclick="openAddHistoryEntry('${id}')" style="background:none;border:1px solid rgba(78,205,196,0.4);border-radius:8px;padding:4px 10px;color:var(--accent);font-size:12px;cursor:pointer;font-weight:600;">+ Добавить</button>
-          </div>
-          ${historyHTML}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0 4px;flex-shrink:0;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-dim);letter-spacing:.05em;">ОПЕРАЦИИ</div>
+          <button onclick="openAddHistoryEntry('${id}')" style="background:none;border:1px solid rgba(78,205,196,0.4);border-radius:8px;padding:4px 10px;color:var(--accent);font-size:12px;cursor:pointer;font-weight:600;">+ Добавить</button>
+        </div>
+        <div id="history-sheet-body" style="padding-bottom:8px;">
+          <div style="text-align:center;color:var(--text-dim);font-size:13px;padding:24px 0;">Загрузка...</div>
         </div>
       </div>
       <div style="padding:12px 20px;flex-shrink:0;">
@@ -3023,6 +3055,20 @@ function openHistorySheet(id) {
     </div>`;
   sheet.onclick = e => { if (e.target === sheet) sheet.remove(); };
   document.body.appendChild(sheet);
+
+  // Fetch from Supabase
+  const { data, error } = await _sb.from('transactions')
+    .select('*')
+    .eq('user_id', _sbUser.id)
+    .eq('saving_id', id)
+    .order('date', { ascending: false });
+
+  if (error) {
+    const el = document.getElementById('history-sheet-body');
+    if (el) el.innerHTML = `<div style="text-align:center;color:var(--danger);font-size:13px;padding:24px 0;">Ошибка загрузки</div>`;
+    return;
+  }
+  _buildHistorySheetContent(id, data || []);
 }
 
 function openAddHistoryEntry(savingId) {
@@ -3030,14 +3076,14 @@ function openAddHistoryEntry(savingId) {
   if (!s) return;
   const overlay = document.createElement('div');
   overlay.id = 'add-history-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
   overlay.innerHTML = `
-    <div style="background:var(--surface);border-radius:20px;padding:24px;width:calc(100%-48px);max-width:360px;">
+    <div style="background:var(--surface);border-radius:20px;padding:24px;width:calc(100% - 48px);max-width:360px;">
       <div style="font-size:16px;font-weight:700;margin-bottom:16px;">Добавить операцию</div>
-      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
         ${['deposit','interest','withdrawal'].map(t => {
           const labels = {deposit:'Пополнение', interest:'Проценты', withdrawal:'Снятие'};
-          return `<button onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.style.background='var(--surface2)');this.style.background='var(--accent)';this.style.color='var(--bg)';document.getElementById('ah-type').value='${t}'"
+          return `<button onclick="this.parentNode.querySelectorAll('button').forEach(b=>{b.style.background='var(--surface2)';b.style.color='var(--text)'});this.style.background='var(--accent)';this.style.color='var(--bg)';document.getElementById('ah-type').value='${t}'"
             style="flex:1;padding:7px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">${labels[t]}</button>`;
         }).join('')}
       </div>
@@ -3055,25 +3101,21 @@ function openAddHistoryEntry(savingId) {
     </div>`;
   overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
   document.body.appendChild(overlay);
-  // Pre-select deposit
   overlay.querySelectorAll('div > button')[0]?.click();
   setTimeout(() => document.getElementById('ah-amount')?.focus(), 100);
 }
 
-function saveHistoryEntry(savingId) {
-  const s = state.savings.find(x => x.id === savingId);
-  if (!s) return;
+async function saveHistoryEntry(savingId) {
   const amount = parseFloat(document.getElementById('ah-amount')?.value);
   const type = document.getElementById('ah-type')?.value || 'deposit';
   const date = document.getElementById('ah-date')?.value || new Date().toISOString().slice(0,10);
   const note = document.getElementById('ah-note')?.value?.trim() || '';
   if (!amount || amount <= 0) { alert('Введи сумму'); return; }
-  if (!s.history) s.history = [];
-  s.history.push({ date, type, amount, ...(note ? {note} : {}) });
-  s.history.sort((a,b) => new Date(a.date) - new Date(b.date));
-  save();
+  const { error } = await _sb.from('transactions').insert({
+    user_id: _sbUser.id, saving_id: savingId, type, amount, date, note: note || null
+  });
+  if (error) { alert('Ошибка сохранения'); return; }
   document.getElementById('add-history-overlay')?.remove();
-  // Reopen history sheet
   document.getElementById('history-sheet-overlay')?.remove();
   openHistorySheet(savingId);
 }
@@ -3949,17 +3991,17 @@ function saveItem(){
     const item={id,name,icon,amount,isDeposit,isSavingsAccount,currency,included,excluded:!included};
     if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
     if(isSavingsAccount){item.rate=parseFloat(document.getElementById('sa-rate').value)||0;item.dateStart=document.getElementById('sa-date-start').value;item.accrual=document.getElementById('sa-accrual')?.value||'daily';}
-    // History tracking
+    // Log transaction to Supabase (history stored in DB, not in JSON)
     const prevItem = editingId ? state.savings.find(x=>x.id===editingId) : null;
     if (prevItem) {
-      item.history = prevItem.history || [];
       const prevAmt = Number(prevItem.amount);
       const diff = amount - prevAmt;
       if (Math.abs(diff) > 0.01) {
-        item.history.push({ date: new Date().toISOString().slice(0,10), type: diff > 0 ? 'deposit' : 'withdrawal', amount: Math.abs(diff), note: 'Изменено вручную' });
+        sbLogTransaction(id, diff > 0 ? 'deposit' : 'withdrawal', Math.abs(diff), { note: 'Изменено вручную' });
       }
     } else {
-      item.history = [{ date: (isDeposit && item.dateStart) ? item.dateStart : new Date().toISOString().slice(0,10), type: 'init', amount }];
+      const initDate = (isDeposit && item.dateStart) ? item.dateStart : new Date().toISOString().slice(0,10);
+      sbLogTransaction(id, 'init', amount, { date: initDate });
     }
     if(_savingIdx>=0) state.savings.splice(_savingIdx,0,item); else state.savings.push(item);
   } else if(modalMode==='income'){
