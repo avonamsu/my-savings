@@ -4042,7 +4042,7 @@ async function accrueInterestIfNeeded(s, txs) {
   const lastInterestTx = txs.filter(t => t.type === 'interest').sort((a,b) => b.date.localeCompare(a.date))[0];
   const startFrom = lastInterestTx
     ? new Date(new Date(lastInterestTx.date).getTime() + 86400000) // day after last interest
-    : new Date(s.dateStart); // from account opening
+    : new Date(new Date(s.dateStart).getTime() + 86400000); // day after account opening
 
   startFrom.setHours(0,0,0,0);
   console.log('[accrue] startFrom:', startFrom.toISOString(), '| today:', today.toISOString(), '| lastInterestTx:', lastInterestTx?.date);
