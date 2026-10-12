@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012216000">
+  <meta name="version" content="20261012217000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -660,7 +660,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- INCOME PAGE -->
 <div class="page" id="page-income">
-  <div class="hero">
+  <div class="hero" onclick="openIncomeBreakdownSheet()" style="cursor:pointer;">
     <div class="hero-label">Пассивный доход в месяц</div>
     <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
@@ -676,13 +676,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
       </div>
     </div>
-  </div>
-  <div id="income-breakdown" class="chart-wrap" style="display:none;">
-    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleIncomeBreakdown()">
-      <span class="chart-title">📊 РАЗБИВКА ПО ТИПАМ</span>
-      <span id="income-breakdown-arrow" style="font-size:11px;color:var(--text-dim);transition:transform .2s;display:inline-block;">▾</span>
-    </div>
-    <div id="income-breakdown-list" style="margin-top:10px;"></div>
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:-8px;">
     <span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);text-transform:uppercase;">Источники</span>
@@ -3391,13 +3384,60 @@ document.addEventListener('click', e => {
   if (menu && !menu.parentElement.contains(e.target)) menu.style.display = 'none';
 });
 
-function toggleIncomeBreakdown() {
-  const isCollapsed = localStorage.getItem('income_breakdown_collapsed') === '1';
-  localStorage.setItem('income_breakdown_collapsed', isCollapsed ? '0' : '1');
-  const listEl = document.getElementById('income-breakdown-list');
-  const arrow = document.getElementById('income-breakdown-arrow');
-  if (listEl) listEl.style.display = isCollapsed ? '' : 'none';
-  if (arrow) arrow.style.transform = isCollapsed ? '' : 'rotate(-90deg)';
+function toggleIncomeBreakdown() {}
+
+function openIncomeBreakdownSheet() {
+  document.getElementById('income-breakdown-sheet')?.remove();
+  const total = calcTotalIncome();
+  const totalYearly = total * 12;
+  const autoItems = (state.savings||[]).filter(s => !s.excluded && (s.isDeposit||s.isSavingsAccount) && (calcSavingMonthlyIncome(s) > 0 || s.incomeExcluded));
+  const manualItems = (state.income||[]).filter(x => !x.savingRef || x.calcMode === 'fixed' || !state.savings.find(s=>s.id===x.savingRef));
+  const groups = {};
+  autoItems.filter(s=>!s.incomeExcluded).forEach(s => {
+    const key = s.isDeposit ? '💰 Вклады' : '🏦 Накопит. счета';
+    groups[key] = (groups[key]||0) + calcSavingMonthlyIncome(s);
+  });
+  manualItems.filter(x=>!x.incomeExcluded).forEach(x => {
+    const key = x.icon==='📊'?'📊 Дивиденды':x.icon==='🏠'?'🏠 Аренда':x.icon==='💱'?'💱 Валюта':x.icon==='💸'?'💸 Купоны':'✨ Другое';
+    groups[key] = (groups[key]||0) + calcIncomeAmountRub(x);
+  });
+  const sortedGroups = Object.entries(groups).sort(([,a],[,b])=>b-a);
+  const rowsHtml = sortedGroups.map(([name,amt], i) => {
+    const pct = total>0 ? Math.round(amt/total*100) : 0;
+    const isLast = i === sortedGroups.length-1;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;${isLast?'':'border-bottom:1px solid rgba(255,255,255,0.06);'}">
+      <span style="font-size:14px;">${name}</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:60px;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--accent);border-radius:2px;"></div></div>
+        <span style="font-size:14px;font-weight:600;color:var(--accent);min-width:80px;text-align:right;">${fmt(Math.round(amt))} ₽</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const sheet = document.createElement('div');
+  sheet.id = 'income-breakdown-sheet';
+  sheet.className = 'modal open';
+  sheet.innerHTML = `<div class="modal-box" style="max-height:85vh;overflow-y:auto;">
+    <div style="padding:20px 20px 8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <span style="font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);text-transform:uppercase;">Разбивка по типам</span>
+        <button onclick="document.getElementById('income-breakdown-sheet').remove()" style="background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;line-height:1;padding:0;">✕</button>
+      </div>
+      <div style="background:var(--surface2);border-radius:14px;padding:4px 16px;margin-bottom:16px;">
+        ${rowsHtml || '<div style="padding:16px 0;text-align:center;color:var(--text-dim);font-size:13px;">Нет данных</div>'}
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:0 4px 16px;">
+        <span style="font-size:13px;color:var(--text-dim);">Итого в месяц</span>
+        <span style="font-size:15px;font-weight:700;color:var(--accent);">${fmt(Math.round(total))} ₽</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:0 4px 20px;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">
+        <span style="font-size:13px;color:var(--text-dim);">В год</span>
+        <span style="font-size:13px;font-weight:600;color:var(--text);">${fmt(Math.round(totalYearly))} ₽</span>
+      </div>
+    </div>
+  </div>`;
+  sheet.onclick = e => { if(e.target===sheet) sheet.remove(); };
+  document.body.appendChild(sheet);
 }
 
 function toggleGoalsGroup(key) {
@@ -4357,38 +4397,7 @@ function renderIncome() {
   // Ручные: без savingRef, с несуществующим savingRef, или с fixed calcMode (ручная сумма)
   const manualItems = (state.income||[]).filter(x => !x.savingRef || x.calcMode === 'fixed' || !state.savings.find(s=>s.id===x.savingRef));
 
-  const breakdownEl = document.getElementById('income-breakdown');
-  const breakdownList = document.getElementById('income-breakdown-list');
   const totalItems = autoItems.length + manualItems.length;
-  if (totalItems > 1 && breakdownEl && breakdownList) {
-    const groups = {};
-    autoItems.forEach(s => {
-      const key = s.isDeposit ? '💰 Вклады' : '🏦 Накопит. счета';
-      groups[key] = (groups[key]||0) + calcSavingMonthlyIncome(s);
-    });
-    manualItems.forEach(x => {
-      const key = x.icon==='📊' ? '📊 Дивиденды' : x.icon==='🏠' ? '🏠 Аренда' : x.icon==='💱' ? '💱 Валюта' : x.icon==='💸' ? '💸 Купоны' : '✨ Другое';
-      groups[key] = (groups[key]||0) + calcIncomeAmountRub(x);
-    });
-    breakdownEl.style.display = 'block';
-    const isCollapsed = localStorage.getItem('income_breakdown_collapsed') === '1';
-    const listEl = document.getElementById('income-breakdown-list');
-    const arrow = document.getElementById('income-breakdown-arrow');
-    if (listEl) listEl.style.display = isCollapsed ? 'none' : '';
-    if (arrow) arrow.style.transform = isCollapsed ? 'rotate(-90deg)' : '';
-    const sortedGroups = Object.entries(groups).sort(([,a],[,b])=>b-a);
-    breakdownList.innerHTML = sortedGroups.map(([name,amt], i) => {
-      const pct = total>0 ? Math.round(amt/total*100) : 0;
-      const isLast = i === sortedGroups.length - 1;
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;${isLast?'':'border-bottom:1px solid rgba(255,255,255,0.05);'}">
-        <span style="font-size:13px;">${name}</span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:50px;height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--accent);"></div></div>
-          <span style="font-size:13px;font-weight:600;color:var(--accent);min-width:65px;text-align:right;">${fmt(Math.round(amt))} ₽</span>
-        </div>
-      </div>`;
-    }).join('');
-  } else if(breakdownEl) breakdownEl.style.display='none';
 
   const query = (document.getElementById('income-search')?.value||'').toLowerCase();
 
