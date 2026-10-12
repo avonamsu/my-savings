@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012227000">
+  <meta name="version" content="20261012228000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -660,7 +660,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- INCOME PAGE -->
 <div class="page" id="page-income">
-  <div class="hero" style="display:flex;flex-direction:column;">
+  <div class="hero" id="income-hero" style="display:flex;flex-direction:column;opacity:0;transition:opacity 0.25s ease;">
     <div class="hero-label">Пассивный доход в месяц</div>
     <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:16px;">
@@ -679,7 +679,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <button onclick="clearPageSearch('income')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;">✕</button>
     </div>
   </div>
-  <div id="income-list">
+  <div id="income-list" style="opacity:0;transition:opacity 0.25s ease;">
     <div class="empty"><div class="empty-icon">📊</div><p>Добавь доход от инвестиций, вклада или другой источник</p></div>
   </div>
   <button class="add-btn" onclick="editingId=null;openModal('income')">＋ Добавить источник дохода</button>
@@ -1495,6 +1495,11 @@ async function sbLoadState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       try { render(); } catch(e) { console.warn('render error', e); }
       try { checkAutoRenew(); } catch(e) {}
+      // Reveal income page now that we have fresh data from Supabase
+      const incomeHero = document.getElementById('income-hero');
+      if (incomeHero) incomeHero.style.opacity = '1';
+      const incomeList = document.getElementById('income-list');
+      if (incomeList) incomeList.style.opacity = '1';
     }
     // Preload transactions + CB key rate in parallel, then re-render
     Promise.all([preloadTxCache(), loadCbKeyRate()]).then(() => {
@@ -7483,6 +7488,10 @@ setTimeout(() => {
   if (sl && sl.style.opacity === '0') sl.style.opacity = '1';
   const hero = document.getElementById('savings-hero');
   if (hero && hero.style.opacity === '0') hero.style.opacity = '1';
+  const il = document.getElementById('income-list');
+  if (il && il.style.opacity === '0') il.style.opacity = '1';
+  const ih = document.getElementById('income-hero');
+  if (ih && ih.style.opacity === '0') ih.style.opacity = '1';
 }, 5000);
 fetchRates().then(() => { loadFxBuyRates(); recordSnapshot(); drawChart(); recordIncomeSnapshot(); drawIncomeChart(); fetchCurrentInflation(); });
 loadCbKeyRate().then(() => renderDepositTax());
