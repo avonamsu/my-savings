@@ -2415,10 +2415,11 @@ function getWidgetSettings() {
 
 function saveWidgetSettings() {
   const s = getWidgetSettings();
-  // read toggles from rendered list
+  // read toggles from rendered list — only update keys whose checkbox exists in DOM
   DEFAULT_ORDER.forEach(key => {
     const el = document.getElementById('wt-'+key);
     if (el) s[key] = el.checked;
+    // если чекбокса нет в DOM — оставляем значение из localStorage без изменений
   });
   // Читаем выбранные копилки/челленджи из чекбоксов
   const piggyChecks = document.querySelectorAll('.piggy-picker-check:checked');
@@ -2429,6 +2430,7 @@ function saveWidgetSettings() {
     s.piggyIds = [];
   }
   localStorage.setItem('home_widgets', JSON.stringify(s));
+  save(); // sync widget settings to Supabase so they survive page reload
   renderHomeWidgets();
 }
 
@@ -2442,6 +2444,7 @@ function moveWidget(key, dir) {
   [order[i], order[j]] = [order[j], order[i]];
   s.order = order;
   localStorage.setItem('home_widgets', JSON.stringify(s));
+  save(); // sync widget order to Supabase
   renderSettingsList(s);
   renderHomeWidgets();
 }
