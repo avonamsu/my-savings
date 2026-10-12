@@ -2910,12 +2910,12 @@ function renderDepositTax() {
   // Status line
   let statusHtml = '';
   if (state === 0) {
-    statusHtml = '<div style="font-size:12px;color:var(--text-dim);">До порога осталось <strong style="color:var(--text);">' + fmt(Math.round(remaining)) + ' ₽</strong></div>';
+    statusHtml = '<div style="font-size:12px;color:var(--text-dim);margin-top:10px;">До порога осталось <strong style="color:var(--text);">' + fmt(Math.round(remaining)) + ' ₽</strong></div>';
   } else if (state === 1) {
-    statusHtml = '<div style="font-size:12px;color:var(--warn);">⚠️ Осталось <strong>' + fmt(Math.round(remaining)) + ' ₽</strong> до налога — скоро придётся платить</div>';
+    statusHtml = '<div style="font-size:12px;color:var(--warn);margin-top:10px;">⚠️ Осталось <strong>' + fmt(Math.round(remaining)) + ' ₽</strong> до налога — скоро придётся платить</div>';
   } else {
     const taxRate = t.taxBase > 5000000 ? 15 : 13;
-    statusHtml = '<div style="font-size:12px;color:var(--danger);">🔴 Налог к уплате: <strong>' + fmt(t.tax) + ' ₽</strong> (база ' + fmt(Math.round(t.taxBase)) + ' ₽ × ' + taxRate + '%)</div>';
+    statusHtml = '<div style="font-size:12px;color:var(--danger);margin-top:10px;">🔴 Налог к уплате: <strong>' + fmt(t.tax) + ' ₽</strong> (база ' + fmt(Math.round(t.taxBase)) + ' ₽ × ' + taxRate + '%)</div>';
   }
 
   const sourceLabel = t.hasTxData
