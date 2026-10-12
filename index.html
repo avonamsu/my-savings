@@ -4992,7 +4992,7 @@ function saveItem(){
     if(isSavingsAccount){item.rate=parseFloat(document.getElementById('sa-rate').value)||0;item.dateStart=document.getElementById('sa-date-start').value;item.accrual=document.getElementById('sa-accrual')?.value||'daily';}
     // Log transaction to Supabase — только при создании нового счёта
     if (!prevItem) {
-      const initDate = (isDeposit && item.dateStart) ? item.dateStart : new Date().toISOString().slice(0,10);
+      const initDate = item.dateStart || new Date().toISOString().slice(0,10);
       sbLogTransaction(id, 'deposit', amount, { date: initDate, note: 'Открытие счёта' });
     }
     // При редактировании — сумма меняется только через пополнение/снятие, не через форму
