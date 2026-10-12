@@ -1105,6 +1105,19 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <span class="toggle-label">Капитализация (% на %)</span>
           <label class="toggle"><input type="checkbox" id="s-compound" onchange="updateDepositPreview()"><span class="toggle-slider"></span></label>
         </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Пополняемый вклад</span>
+          <label class="toggle"><input type="checkbox" id="s-refillable" onchange="document.getElementById('s-refill-until-row').style.display=this.checked?'':'none'"><span class="toggle-slider"></span></label>
+        </div>
+        <div id="s-refill-until-row" style="display:none;" class="field">
+          <label>ПОПОЛНЕНИЕ ДО</label>
+          <input type="date" id="s-refill-until" placeholder="Дата окончания периода пополнения">
+          <div class="field-hint info">После этой даты пополнение недоступно</div>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Автопролонгация</span>
+          <label class="toggle"><input type="checkbox" id="s-autorenew"><span class="toggle-slider"></span></label>
+        </div>
         <div class="calc-preview" id="deposit-preview" style="display:none;"></div>
         <div class="toggle-row">
           <span class="toggle-label">Учитывать в накоплениях</span>
@@ -1451,6 +1464,7 @@ async function sbLoadState() {
     state = data.state;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     renderAll();
+    checkAutoRenew();
   }
 }
 
@@ -2947,11 +2961,19 @@ function showSavingsMenu(e, id, showFix) {
   const isSA = s?.isSavingsAccount;
   const isCashOrOther = !s?.isDeposit && !s?.isSavingsAccount && !['📈','🏠','₿'].includes(s?.icon);
   const hasDepositWithdraw = isSA || isCashOrOther;
-  const hasActionsAboveSep = hasDepositWithdraw || showFix;
+  const canRefill = s?.isDeposit && s?.refillable && (!s?.refillUntil || s.refillUntil >= today());
+  const canEarlyClose = s?.isDeposit && s?.dateStart && (!s?.dateEnd || s.dateEnd > today());
+  const hasActionsAboveSep = hasDepositWithdraw || canRefill || canEarlyClose || showFix;
   const items = [
     ...(hasDepositWithdraw ? [
       {icon:'➕', label:'Пополнить', fn:()=>openDepositWithdrawModal(id,'deposit')},
       {icon:'➖', label:'Снять', fn:()=>openDepositWithdrawModal(id,'withdrawal')},
+    ] : []),
+    ...(canRefill ? [
+      {icon:'➕', label:'Пополнить', fn:()=>openDepositWithdrawModal(id,'deposit')},
+    ] : []),
+    ...(canEarlyClose ? [
+      {icon:'🔓', label:'Закрыть досрочно', fn:()=>openEarlyCloseModal(id)},
     ] : []),
     ...(showFix ? [{icon:'💸', label:'Зафиксировать доход', fn:()=>openFixIncomeModal(id)}] : []),
     {icon:'📋', label:'История операций', fn:()=>openHistorySheet(id)},
@@ -3014,9 +3036,156 @@ async function confirmDepositWithdraw(savingId, type) {
   const signed = type === 'deposit' ? amount : -amount;
   s.amount = Math.max(0, (parseFloat(s.amount)||0) + signed);
   save();
-  // Log to Supabase
   await sbLogTransaction(savingId, type, amount, { date });
   document.getElementById('dw-overlay')?.remove();
+  renderSavings();
+}
+
+// ── EARLY CLOSE DEPOSIT ───────────────────────────────────
+function openEarlyCloseModal(savingId) {
+  const s = state.savings.find(x => x.id === savingId);
+  if (!s) return;
+  const closeDate = today();
+  const daysHeld = s.dateStart ? Math.max(1, Math.round((new Date(closeDate) - new Date(s.dateStart)) / 86400000)) : 1;
+  const earlyInterest = Number(s.amount) * 0.0001 * daysHeld / 365; // 0.01% до востребования
+
+  const overlay = document.createElement('div');
+  overlay.id = 'ec-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;padding:24px;width:calc(100% - 48px);max-width:360px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">Досрочное закрытие</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">${s.icon} ${s.name}</div>
+      <div style="background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.2);border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--text-dim);line-height:1.5;">
+        ⚠️ При досрочном закрытии проценты пересчитываются по сниженной ставке
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>ДАТА ЗАКРЫТИЯ</label>
+        <input type="date" id="ec-date" value="${closeDate}" max="${closeDate}"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;box-sizing:border-box;"
+          oninput="updateEarlyClosePreview('${savingId}')">
+      </div>
+      <div class="field" style="margin-bottom:16px;">
+        <label>СТАВКА ДО ВОСТРЕБОВАНИЯ (%)</label>
+        <input type="number" id="ec-rate" value="0.01" step="0.01" inputmode="decimal"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;box-sizing:border-box;"
+          oninput="updateEarlyClosePreview('${savingId}')">
+      </div>
+      <div id="ec-preview" style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('ec-overlay').remove()" style="flex:1;padding:12px;background:var(--surface2);border:none;border-radius:10px;color:var(--text);font-size:14px;cursor:pointer;">Отмена</button>
+        <button onclick="confirmEarlyClose('${savingId}')" style="flex:2;padding:12px;background:var(--danger);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Закрыть вклад</button>
+      </div>
+    </div>`;
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+  updateEarlyClosePreview(savingId);
+}
+
+function updateEarlyClosePreview(savingId) {
+  const s = state.savings.find(x => x.id === savingId);
+  const el = document.getElementById('ec-preview');
+  if (!s || !el) return;
+  const closeDate = document.getElementById('ec-date')?.value || today();
+  const rate = parseFloat(document.getElementById('ec-rate')?.value) || 0.01;
+  const days = s.dateStart ? Math.max(1, Math.round((new Date(closeDate) - new Date(s.dateStart)) / 86400000)) : 1;
+  const interest = Number(s.amount) * (rate / 100) * days / 365;
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+      <span style="color:var(--text-dim);">Дней во вкладе</span><span style="font-weight:600;">${days} дн.</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+      <span style="color:var(--text-dim);">Проценты (${rate}%)</span><span style="font-weight:600;color:#4CAF50;">+${fmt(Math.round(interest))} ₽</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.08);padding-top:8px;margin-top:4px;">
+      <span style="color:var(--text-dim);">Получите на руки</span><span style="font-weight:700;font-size:15px;">${fmt(Math.round(Number(s.amount) + interest))} ₽</span>
+    </div>`;
+}
+
+async function confirmEarlyClose(savingId) {
+  const s = state.savings.find(x => x.id === savingId);
+  if (!s) return;
+  const closeDate = document.getElementById('ec-date')?.value || today();
+  const rate = parseFloat(document.getElementById('ec-rate')?.value) || 0.01;
+  const days = s.dateStart ? Math.max(1, Math.round((new Date(closeDate) - new Date(s.dateStart)) / 86400000)) : 1;
+  const interest = Math.round(Number(s.amount) * (rate / 100) * days / 365);
+  // Фиксируем проценты и закрываем вклад
+  if (interest > 0) await sbLogTransaction(savingId, 'interest', interest, { date: closeDate, note: `Досрочное закрытие, ${rate}% годовых` });
+  s.dateEnd = closeDate;
+  s.earlyClosed = true;
+  save();
+  document.getElementById('ec-overlay')?.remove();
+  renderSavings();
+}
+
+// ── AUTO-RENEW CHECK ──────────────────────────────────────
+function checkAutoRenew() {
+  const expired = state.savings.filter(s =>
+    s.isDeposit && s.autorenew && s.dateEnd && s.dateEnd < today() && !s.earlyClosed && !s._renewPending
+  );
+  expired.forEach(s => {
+    s._renewPending = true;
+    openAutoRenewModal(s.id);
+  });
+}
+
+function openAutoRenewModal(savingId) {
+  const s = state.savings.find(x => x.id === savingId);
+  if (!s) return;
+  // Вычисляем срок в месяцах
+  const months = s.dateStart && s.dateEnd
+    ? Math.round((new Date(s.dateEnd) - new Date(s.dateStart)) / (30.44 * 86400000))
+    : 12;
+  const overlay = document.createElement('div');
+  overlay.id = 'ar-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;padding:24px;width:calc(100% - 48px);max-width:360px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">🔄 Вклад завершён</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">${s.icon} ${s.name} — продлить?</div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>НОВАЯ СТАВКА (%)</label>
+        <input type="number" id="ar-rate" value="${s.rate||0}" step="0.1" inputmode="decimal"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;box-sizing:border-box;">
+      </div>
+      <div class="field" style="margin-bottom:16px;">
+        <label>СРОК (МЕСЯЦЕВ)</label>
+        <input type="number" id="ar-months" value="${months}" min="1" inputmode="numeric"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;box-sizing:border-box;">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="dismissAutoRenew('${savingId}')" style="flex:1;padding:12px;background:var(--surface2);border:none;border-radius:10px;color:var(--text);font-size:14px;cursor:pointer;">Не продлевать</button>
+        <button onclick="confirmAutoRenew('${savingId}')" style="flex:2;padding:12px;background:var(--accent);border:none;border-radius:10px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">Продлить</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function dismissAutoRenew(savingId) {
+  const s = state.savings.find(x => x.id === savingId);
+  if (s) { s.autorenew = false; s._renewPending = false; save(); }
+  document.getElementById('ar-overlay')?.remove();
+  renderSavings();
+}
+
+async function confirmAutoRenew(savingId) {
+  const s = state.savings.find(x => x.id === savingId);
+  if (!s) return;
+  const newRate = parseFloat(document.getElementById('ar-rate')?.value) || s.rate;
+  const months = parseInt(document.getElementById('ar-months')?.value) || 12;
+  const oldEnd = s.dateEnd;
+  // Фиксируем доход за прошлый период
+  const interest = calcDeposit(s).currentAmount - Number(s.amount);
+  if (interest > 0) await sbLogTransaction(savingId, 'interest', Math.round(interest), { date: oldEnd, note: 'Доход за период' });
+  // Продлеваем
+  s.dateStart = oldEnd;
+  const newEnd = new Date(oldEnd);
+  newEnd.setMonth(newEnd.getMonth() + months);
+  s.dateEnd = newEnd.toISOString().slice(0, 10);
+  s.rate = newRate;
+  s._renewPending = false;
+  save();
+  document.getElementById('ar-overlay')?.remove();
   renderSavings();
 }
 
@@ -3959,7 +4128,16 @@ function openEdit(list,id) {
     onSavingTypeChange();
     const amtEl=document.getElementById('s-amount');if(amtEl){amtEl.value=x.amount;amtEl._rawValue=String(x.amount);formatAmountInput(amtEl);}
     const siEl=document.getElementById('s-included');if(siEl)siEl.checked=(x.included!==false&&!x.excluded);
-    if(x.isDeposit){document.getElementById('s-rate').value=x.rate||'';document.getElementById('s-date-start').value=x.dateStart||'';document.getElementById('s-date-end').value=x.dateEnd||'';document.getElementById('s-compound').checked=!!x.compound;updateDepositPreview();}
+    if(x.isDeposit){
+      document.getElementById('s-rate').value=x.rate||'';
+      document.getElementById('s-date-start').value=x.dateStart||'';
+      document.getElementById('s-date-end').value=x.dateEnd||'';
+      document.getElementById('s-compound').checked=!!x.compound;
+      const refEl=document.getElementById('s-refillable');if(refEl){refEl.checked=!!x.refillable;document.getElementById('s-refill-until-row').style.display=x.refillable?'':'none';}
+      const refUntilEl=document.getElementById('s-refill-until');if(refUntilEl)refUntilEl.value=x.refillUntil||'';
+      const arEl=document.getElementById('s-autorenew');if(arEl)arEl.checked=!!x.autorenew;
+      updateDepositPreview();
+    }
     if(x.isSavingsAccount){document.getElementById('sa-rate').value=x.rate||'';document.getElementById('sa-date-start').value=x.dateStart||'';const saAccr=document.getElementById('sa-accrual');if(saAccr)saAccr.value=x.accrual||'daily';const saInc=document.getElementById('sa-included');if(saInc)saInc.checked=(x.included!==false&&!x.excluded);updateSavingsAccountPreview();}
   } else if(list==='income'){
     const x=state.income.find(i=>i.id===id);if(!x)return;
@@ -4021,7 +4199,7 @@ function saveItem(){
     const currency=document.getElementById('s-currency').value;
     const included=(isSavingsAccount?document.getElementById('sa-included'):document.getElementById('s-included'))?.checked!==false;
     const item={id,name,icon,amount,isDeposit,isSavingsAccount,currency,included,excluded:!included};
-    if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
+    if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;item.refillable=document.getElementById('s-refillable').checked;item.refillUntil=item.refillable?(document.getElementById('s-refill-until').value||''):'';item.autorenew=document.getElementById('s-autorenew').checked;}
     if(isSavingsAccount){item.rate=parseFloat(document.getElementById('sa-rate').value)||0;item.dateStart=document.getElementById('sa-date-start').value;item.accrual=document.getElementById('sa-accrual')?.value||'daily';}
     // Log transaction to Supabase — только при создании нового счёта
     if (!prevItem) {
