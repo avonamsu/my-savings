@@ -6205,7 +6205,7 @@ function generateCells(goal, days, mode) {
   return cells;
 }
 
-function toggleCell(challengeId, cellIdx) {
+async function toggleCell(challengeId, cellIdx) {
   const ch = state.challenges.find(c => c.id === challengeId);
   if (!ch) return;
   const wasDone = ch.cells[cellIdx].done;
@@ -6222,18 +6222,49 @@ function toggleCell(challengeId, cellIdx) {
   const linkedSaving = ch.linkedSavingId ? (state.savings||[]).find(s=>s.id===ch.linkedSavingId) : null;
   if (linkedSaving) {
     const cellAmount = ch.cells[cellIdx].amt || 0;
+    const dateStr = today();
     if (!wasDone) {
       // Cell just checked — add to account
-      if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на ${fmt(cellAmount)} ₽?`)) {
+      if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на ${fmtInt(cellAmount)} ₽?`)) {
         linkedSaving.amount = (parseFloat(linkedSaving.amount)||0) + cellAmount;
-        if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
+        if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = dateStr;
         // для вклада dateStart не трогаем — пополняемый вклад считает % от новой суммы с исходной даты
+        save();
+        await sbLogTransaction(linkedSaving.id, 'deposit', cellAmount, { date: dateStr, note: 'Пополнение из челленджа' });
+        if (_sbUser && linkedSaving.isSavingsAccount) {
+          const nextDay = new Date(dateStr + 'T12:00:00');
+          nextDay.setDate(nextDay.getDate() + 1);
+          const nextDayStr = nextDay.toLocaleDateString('sv');
+          await _sb.from('transactions').delete()
+            .eq('user_id', _sbUser.id).eq('saving_id', linkedSaving.id).eq('type', 'interest').gte('date', nextDayStr);
+          delete _txCache[linkedSaving.id];
+        }
+        renderSavings();
+      } else {
+        // отменили — откатываем изменение ячейки
+        ch.cells[cellIdx].done = wasDone;
+        ch.streak = Math.max(0, (ch.streak||1) - 1);
+        ch.lastChecked = null;
       }
     } else {
       // Cell just unchecked — subtract from account
-      if (confirm(`💳 Вычесть ${fmt(cellAmount)} ₽ из счёта «${linkedSaving.name}»?`)) {
+      if (confirm(`💳 Вычесть ${fmtInt(cellAmount)} ₽ из счёта «${linkedSaving.name}»?`)) {
         linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) - cellAmount);
-        if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
+        if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = dateStr;
+        save();
+        await sbLogTransaction(linkedSaving.id, 'withdrawal', cellAmount, { date: dateStr, note: 'Вычет из челленджа' });
+        if (_sbUser && linkedSaving.isSavingsAccount) {
+          const nextDay = new Date(dateStr + 'T12:00:00');
+          nextDay.setDate(nextDay.getDate() + 1);
+          const nextDayStr = nextDay.toLocaleDateString('sv');
+          await _sb.from('transactions').delete()
+            .eq('user_id', _sbUser.id).eq('saving_id', linkedSaving.id).eq('type', 'interest').gte('date', nextDayStr);
+          delete _txCache[linkedSaving.id];
+        }
+        renderSavings();
+      } else {
+        // отменили — откатываем
+        ch.cells[cellIdx].done = wasDone;
       }
     }
   }
