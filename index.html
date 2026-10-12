@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012231000">
+  <meta name="version" content="20261012232000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -6363,12 +6363,8 @@ function openPiggySheet(id) {
           ${done ? `<div style="margin-top:10px;text-align:center;font-size:15px;font-weight:700;color:${color};">🎉 Цель достигнута!</div>` : ''}
         </div>
         <!-- Кнопки действий -->
-        ${!done ? `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 0 12px;border-bottom:1px solid rgba(255,255,255,0.08);">
-          <button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyDeposit('${id}','add')" style="padding:15px;background:${color};border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.01em;">＋ Пополнить</button>
-          <button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyDeposit('${id}','sub')" style="padding:15px;background:var(--surface2);border:1px solid rgba(255,255,255,0.12);border-radius:14px;color:var(--text);font-size:15px;font-weight:700;cursor:pointer;">－ Снять</button>
-        </div>` : ''}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+          ${!done ? `<button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyDeposit('${id}','add')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;">💰 Пополнить/снять</button>` : ''}
           <button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyEdit('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;">✏️ Изменить</button>
           ${!done ? `<button onclick="document.getElementById('piggy-sheet-overlay').remove();completePiggyBank('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;">✅ Завершить</button>` : ''}
           <button onclick="document.getElementById('piggy-sheet-overlay').remove();deletePiggyBank('${id}')" style="padding:13px;background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.15);border-radius:12px;color:var(--danger);font-size:14px;font-weight:600;cursor:pointer;">🗑 Удалить</button>
