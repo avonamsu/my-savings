@@ -1229,7 +1229,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <label id="g-amount-label">СУММА В МЕСЯЦ (₽)</label>
         <div style="display:flex;gap:8px;">
           <input type="number" id="g-amount" placeholder="0" inputmode="decimal" style="flex:1;" oninput="updateGoalCurrencyPreview()">
-          <select id="g-sub-currency" style="display:none;width:auto;flex-shrink:0;" onchange="updateGoalCurrencyPreview()">
+          <select id="g-sub-currency" style="display:none;width:auto;flex-shrink:0;" onchange="updateGoalAmountLabel()">
             <option value="RUB">₽ RUB</option>
             <option value="USD">$ USD</option>
             <option value="EUR">€ EUR</option>
@@ -4815,7 +4815,7 @@ function updateGoalAmountLabel() {
   const cur = document.getElementById('g-sub-currency')?.value || 'RUB';
   const curSym = CURRENCY_SYMBOLS?.[cur] || cur;
   if (!label) return;
-  if (type !== 'subscription') { label.textContent = 'СУММА В МЕСЯЦ (₽)'; if(preview) preview.style.display='none'; return; }
+  if (type !== 'subscription') { label.textContent = 'СУММА В МЕСЯЦ (₽)'; if(preview) preview.style.display='none'; updateGoalCurrencyPreview(); return; }
   const periodNames = {1:'в месяц', 2:'в 2 мес', 3:'в квартал', 6:'в полгода', 12:'в год'};
   const pname = periodNames[period] || `в ${period} мес`;
   label.textContent = `СУММА ${pname.toUpperCase()} (${cur === 'RUB' ? '₽' : curSym})`;
