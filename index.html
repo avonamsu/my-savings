@@ -6589,6 +6589,11 @@ function restoreBackup(event){
       if (!state.piggyBanks) state.piggyBanks = [];
       if (!state.challenges) state.challenges = [];
       save(); saveToIDB(); render(); drawChart(); checkNotifBanner();
+      // immediately sync restored data to Supabase (bypass debounce)
+      sbSaveState().then(() => {
+        // re-migrate snapshots from restored data
+        if (_sbUser) sbMigrateSnapshots();
+      });
       alert('✅ Данные восстановлены!');
     } catch(e){ alert('Не удалось прочитать файл.'); }
   };
