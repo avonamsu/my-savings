@@ -4740,7 +4740,7 @@ function renderGoals() {
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
         <span style="font-size:10px;background:rgba(255,255,255,0.07);border-radius:8px;padding:3px 8px;color:var(--text-dim);">${fmt(Math.round(subMonthlyTotal))} ₽/мес</span>
         <span style="font-size:10px;background:rgba(255,255,255,0.07);border-radius:8px;padding:3px 8px;color:var(--text-dim);">${fmt(Math.round(subYearlyTotal))} ₽/год</span>
-        ${coveredSubCount < subItems.length ? `<span style="font-size:10px;background:rgba(255,176,71,0.12);border-radius:8px;padding:3px 8px;color:#FFB347;">${coveredSubCount}/${subItems.length} покрыто</span>` : `<span style="font-size:10px;background:rgba(78,205,196,0.12);border-radius:8px;padding:3px 8px;color:#4ECDC4;">все покрыты ✓</span>`}
+        ${coveredSubCount < subItems.length ? `<span style="font-size:10px;background:rgba(255,176,71,0.12);border-radius:8px;padding:3px 8px;color:#FFB347;">${coveredSubCount}/${subItems.length} покрыто</span>` : ''}
       </div>
     </div>`;
     html += `<div id="gb-subscriptions" style="${isColSub?'display:none;':''}"><div class="card">${subItems.map(renderSubItem).join('')}</div></div>`;
@@ -4757,7 +4757,7 @@ function renderGoals() {
       </div>
       ${coveredCount < regularItems.length
         ? `<span style="font-size:10px;background:rgba(255,176,71,0.12);border-radius:8px;padding:3px 8px;color:#FFB347;">${coveredCount}/${regularItems.length} покрыто</span>`
-        : `<span style="font-size:10px;background:rgba(78,205,196,0.12);border-radius:8px;padding:3px 8px;color:#4ECDC4;">все покрыты ✓</span>`}
+        : ''}
     </div>`;
     html += `<div id="gb-goals" style="${isCol?'display:none;':''}"><div class="card" id="goals-list-inner">${regularItems.map(renderGoalItem).join('')}</div></div>`;
   }
