@@ -7304,6 +7304,18 @@ function showToast(msg) {
   t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
 }
 
+// ── AUTO-UPDATE CHECK ──────────────────────────────────────
+(function() {
+  const CURRENT_VERSION = '20261012190000';
+  fetch(location.href + '?_v=' + Date.now(), { cache: 'no-store' })
+    .then(r => r.text())
+    .then(html => {
+      const m = html.match(/<meta name="version" content="(\d+)"/);
+      if (m && m[1] !== CURRENT_VERSION) location.reload(true);
+    })
+    .catch(() => {});
+})();
+
 // ── INIT ──────────────────────────────────────────────────
 load();
 if (!state.challenges) state.challenges = [];
