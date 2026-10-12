@@ -4051,32 +4051,37 @@ async function accrueInterestIfNeeded(s, txs) {
   console.log('[accrue] startFromStr:', startFromStr, '| todayStr:', todayStr, '| lastInterestTx:', lastInterestTx?.date);
   if (startFromStr > todayStr) { console.log('[accrue] nothing to accrue yet'); return; }
 
-  // Build balance timeline including already-accrued interest (for compounding), ascending
-  const cashTxs = [...txs].sort((a,b) => a.date.localeCompare(b.date));
-  const timeline = _buildBalanceTimeline(cashTxs, s.dateStart, true); // include interest for compounding
-  const timelineMap = {};
-  for (const {date, balance} of timeline) timelineMap[date.toISOString().slice(0,10)] = balance;
+  // Build cash-flow map by date (deposit/withdrawal only), ascending
+  const cashByDate = {};
+  for (const tx of txs) {
+    if (tx.type !== 'deposit' && tx.type !== 'withdrawal') continue;
+    const d = tx.date.slice(0, 10);
+    if (!cashByDate[d]) cashByDate[d] = 0;
+    cashByDate[d] += (tx.type === 'withdrawal' ? -1 : 1) * Number(tx.amount);
+  }
 
-  // Calculate interest for each missing day
-  const newRows = [];
-  const toLocalDateStr = (d) => d.toLocaleDateString('sv'); // 'sv' locale gives YYYY-MM-DD
-  let cur = new Date(startFromStr + 'T12:00:00');
-  while (toLocalDateStr(cur) <= todayStr) {
-    const key = toLocalDateStr(cur);
-    // Find balance: exact day or last known
-    let bal = timelineMap[key];
-    if (bal === undefined) {
-      // Use closest prior day's balance
-      let d = new Date(cur);
-      for (let i = 0; i < 365; i++) {
-        d.setDate(d.getDate() - 1);
-        const k = d.toISOString().slice(0,10);
-        if (timelineMap[k] !== undefined) { bal = timelineMap[k]; break; }
-      }
+  // Walk from account opening to startFrom-1 to get starting balance (cash only)
+  let balance = 0;
+  {
+    const d = new Date(s.dateStart + 'T12:00:00');
+    const stopStr = startFromStr;
+    while (d.toLocaleDateString('sv') < stopStr) {
+      const k = d.toLocaleDateString('sv');
+      if (cashByDate[k]) balance += cashByDate[k];
+      d.setDate(d.getDate() + 1);
     }
-    if (bal > 0) {
-      const interest = bal * rate / 365;
-      newRows.push({ user_id: _sbUser.id, saving_id: s.id, type: 'interest', amount: Math.round(interest * 100) / 100, date: key, note: null, source: null });
+  }
+
+  // Now walk forward, applying cash changes + compounding interest day by day
+  const newRows = [];
+  let cur = new Date(startFromStr + 'T12:00:00');
+  while (cur.toLocaleDateString('sv') <= todayStr) {
+    const key = cur.toLocaleDateString('sv');
+    if (cashByDate[key]) balance += cashByDate[key];
+    if (balance > 0) {
+      const interest = Math.round(balance * rate / 365 * 100) / 100;
+      newRows.push({ user_id: _sbUser.id, saving_id: s.id, type: 'interest', amount: interest, date: key, note: null, source: null });
+      balance += interest; // compound: add interest to balance for next day
     }
     cur.setDate(cur.getDate() + 1);
   }
