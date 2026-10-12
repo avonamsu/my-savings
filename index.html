@@ -2897,6 +2897,8 @@ function renderDepositTax() {
   const t = calcDepositTax();
   if (t.totalYearlyIncome <= 0) { el.style.display = 'none'; return; }
   el.style.display = '';
+  el.style.cursor = 'pointer';
+  el.onclick = () => openTaxDetailSheet();
 
   const pct = Math.min(100, Math.round(t.totalYearlyIncome / t.taxFreeAmount * 100));
   const remaining = Math.max(0, t.taxFreeAmount - t.totalYearlyIncome);
@@ -2942,7 +2944,164 @@ function renderDepositTax() {
     '</div>',
     // Status
     statusHtml,
+    // Hint to open detail
+    '<div style="margin-top:10px;font-size:11px;color:var(--text-dim);text-align:center;opacity:.6;">Нажми для подробностей ›</div>',
   ].join('');
+}
+
+function openTaxDetailSheet() {
+  const t = calcDepositTax();
+  const currentYear = t.currentYear;
+  const yearStart = new Date(currentYear, 0, 1);
+
+  // Build per-account breakdown
+  const rubAccounts = state.savings.filter(s =>
+    (!s.currency || s.currency === 'RUB') && s.rate &&
+    (s.isDeposit || s.isSavingsAccount)
+  );
+
+  const rows = rubAccounts.map(s => {
+    const cached = _txCache[s.id];
+    const rate = (s.rate || 0) / 100;
+    const accrual = s.accrual || 'daily';
+    let income = 0;
+    let source = 'estimate';
+    let txRows = [];
+
+    if (s.isDeposit) {
+      if (cached) {
+        const yearTxs = cached.txs.filter(tx =>
+          tx.type === 'interest' && tx.date && tx.date.slice(0,4) === String(currentYear)
+        );
+        income = yearTxs.reduce((sum, tx) => sum + Number(tx.amount), 0);
+        txRows = yearTxs;
+        source = 'tx';
+      } else {
+        // estimate
+        if (s.dateStart && s.dateEnd) {
+          const start = new Date(s.dateStart), end = new Date(s.dateEnd);
+          const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
+          let cur = new Date(Math.max(start.getTime(), yearStart.getTime()));
+          const depEnd = new Date(Math.min(end.getTime(), yearEnd.getTime()));
+          let months = 0;
+          while (cur <= depEnd) { months++; cur.setMonth(cur.getMonth() + 1); }
+          income = (s.amount || 0) * rate / 12 * months;
+        }
+      }
+    } else if (s.isSavingsAccount && s.dateStart) {
+      if (cached && cached.txs.length > 0) {
+        const timeline = _buildBalanceTimeline(cached.txs, s.dateStart);
+        const yearTimeline = timeline.filter(p => p.date >= yearStart && p.date <= new Date());
+        if (accrual === 'daily') {
+          for (const { balance } of yearTimeline) { if (balance > 0) income += balance * rate / 365; }
+        } else {
+          const months = {};
+          for (const { date, balance } of yearTimeline) {
+            const key = date.toISOString().slice(0, 7);
+            if (months[key] === undefined || balance < months[key]) months[key] = balance;
+          }
+          for (const minBal of Object.values(months)) { if (minBal > 0) income += minBal * rate / 12; }
+        }
+        source = 'calc';
+      } else {
+        const start = new Date(s.dateStart);
+        const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
+        const periodStart = new Date(Math.max(start.getTime(), yearStart.getTime()));
+        const periodEnd = new Date(Math.min(new Date().getTime(), yearEnd.getTime()));
+        if (periodStart <= periodEnd) {
+          income = (s.amount || 0) * rate * Math.round((periodEnd - periodStart) / 86400000) / 365;
+        }
+      }
+    }
+
+    return { s, income: Math.round(income), source, txRows };
+  }).filter(r => r.income > 0).sort((a, b) => b.income - a.income);
+
+  // Build HTML for per-account rows
+  const sourceTag = src =>
+    src === 'tx'   ? '<span style="font-size:10px;padding:1px 5px;background:rgba(78,205,196,0.12);color:var(--accent);border-radius:4px;border:1px solid rgba(78,205,196,0.25);">зафикс.</span>' :
+    src === 'calc' ? '<span style="font-size:10px;padding:1px 5px;background:rgba(255,255,255,0.06);color:var(--text-dim);border-radius:4px;border:1px solid rgba(255,255,255,0.1);">расчёт</span>' :
+                     '<span style="font-size:10px;padding:1px 5px;background:rgba(255,255,255,0.06);color:var(--text-dim);border-radius:4px;border:1px solid rgba(255,255,255,0.1);">оценка</span>';
+
+  const accountRows = rows.map(({ s, income, source, txRows }) => {
+    const txDetail = txRows.length > 0
+      ? txRows.map(tx => `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-top:3px;padding-left:8px;border-left:2px solid rgba(255,255,255,0.08);">
+          <span>${tx.date} ${tx.note ? '· ' + tx.note : ''}</span>
+          <span>+${fmt(Math.round(tx.amount))} ₽</span>
+        </div>`).join('')
+      : '';
+    return `<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+          <span style="font-size:18px;flex-shrink:0;">${s.icon}</span>
+          <div style="min-width:0;">
+            <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+            <div style="font-size:11px;color:var(--text-dim);">${s.rate}% · ${s.isDeposit ? 'вклад' : 'накоп. счёт'}</div>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+          <div style="font-size:14px;font-weight:700;">+${fmt(income)} ₽</div>
+          <div style="margin-top:2px;">${sourceTag(source)}</div>
+        </div>
+      </div>
+      ${txDetail}
+    </div>`;
+  }).join('');
+
+  // Tax summary block
+  const taxRate = t.taxBase > 5000000 ? 15 : 13;
+  const pct = Math.min(100, Math.round(t.totalYearlyIncome / t.taxFreeAmount * 100));
+  const barColor = t.taxBase > 0 ? 'var(--danger)' : pct >= 70 ? 'var(--warn)' : 'var(--accent)';
+
+  const taxSummary = `
+    <div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:4px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+        <span style="color:var(--text-dim);">Доход с процентов ${currentYear}</span>
+        <span style="font-weight:700;">${fmt(Math.round(t.totalYearlyIncome))} ₽</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;">
+        <span style="color:var(--text-dim);">Необлагаемый порог <span style="opacity:.7;">(ЦБ ${t.cbRate}% × 1 млн)</span></span>
+        <span>${fmt(Math.round(t.taxFreeAmount))} ₽</span>
+      </div>
+      <div style="height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-bottom:10px;">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;"></div>
+      </div>
+      ${t.taxBase > 0
+        ? `<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--danger);">
+            <span>НДФЛ к уплате (${taxRate}%)</span>
+            <span>${fmt(t.tax)} ₽</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">База: ${fmt(Math.round(t.taxBase))} ₽ (превышение порога)</div>`
+        : `<div style="font-size:12px;color:var(--text-dim);">До порога осталось <strong style="color:var(--text);">${fmt(Math.round(Math.max(0, t.taxFreeAmount - t.totalYearlyIncome)))} ₽</strong> — налог пока не возникает</div>`
+      }
+    </div>`;
+
+  const sheet = document.createElement('div');
+  sheet.id = 'tax-detail-sheet';
+  sheet.style.cssText = 'position:fixed;inset:0;z-index:600;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);';
+  const close = `document.getElementById('tax-detail-sheet').remove()`;
+  sheet.innerHTML = `
+    <div onclick="${close}" style="flex:1;"></div>
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom);max-height:85vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.5);">
+      <div style="display:flex;justify-content:center;align-items:center;padding:12px 20px 4px;position:relative;">
+        <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;"></div>
+        <button onclick="${close}" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;line-height:1;padding:4px 8px;">×</button>
+      </div>
+      <div style="padding:4px 20px 20px;">
+        <div style="font-size:17px;font-weight:800;margin-bottom:2px;">💸 НДФЛ с процентов</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">${currentYear} год · ставка ЦБ на 1 января: ${t.cbRate}%</div>
+        ${taxSummary}
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);margin:16px 0 4px;">НАЧИСЛЕНИЯ ПО СЧЕТАМ</div>
+        ${accountRows || '<div style="color:var(--text-dim);font-size:13px;padding:16px 0;text-align:center;">Нет данных</div>'}
+        <div style="font-size:11px;color:var(--text-dim);margin-top:16px;line-height:1.5;opacity:.7;">
+          <strong>зафикс.</strong> — вручную зафиксированный доход при закрытии вклада<br>
+          <strong>расчёт</strong> — рассчитано по истории пополнений<br>
+          <strong>оценка</strong> — приблизительно по параметрам счёта
+        </div>
+      </div>
+    </div>`;
+  sheet.onclick = e => { if (e.target === sheet) sheet.remove(); };
+  document.body.appendChild(sheet);
 }
 
 
