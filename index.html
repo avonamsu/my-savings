@@ -2961,7 +2961,9 @@ function showSavingsMenu(e, id, showFix) {
   const isCashOrOther = !s?.isDeposit && !s?.isSavingsAccount;
   const hasDepositWithdraw = isSA || isCashOrOther;
   const canRefill = s?.isDeposit && s?.refillable && (!s?.refillUntil || s.refillUntil >= today());
-  const canEarlyClose = s?.isDeposit && s?.dateStart && (!s?.dateEnd || s.dateEnd > today());
+  const canEarlyClose = s?.isDeposit && s?.dateStart && (!s?.dateEnd || s.dateEnd > today()) && !s?.earlyClosed;
+  // Можно переводить С счёта: накоп/наличные/прочие (не вклады), или вклад с досрочным закрытием
+  const canTransferFrom = hasDepositWithdraw;
   const hasActionsAboveSep = hasDepositWithdraw || canRefill || canEarlyClose || showFix;
   const items = [
     ...(hasDepositWithdraw ? [
@@ -2970,6 +2972,9 @@ function showSavingsMenu(e, id, showFix) {
     ] : []),
     ...(canRefill ? [
       {icon:'➕', label:'Пополнить', fn:()=>openDepositWithdrawModal(id,'deposit')},
+    ] : []),
+    ...(canTransferFrom ? [
+      {icon:'↔️', label:'Перевести', fn:()=>openTransferModal(id)},
     ] : []),
     ...(canEarlyClose ? [
       {icon:'🔓', label:'Закрыть досрочно', fn:()=>openEarlyCloseModal(id)},
@@ -3037,6 +3042,173 @@ async function confirmDepositWithdraw(savingId, type) {
   save();
   await sbLogTransaction(savingId, type, amount, { date });
   document.getElementById('dw-overlay')?.remove();
+  renderSavings();
+}
+
+// ── TRANSFER BETWEEN ACCOUNTS ────────────────────────────
+function canTransferTo(s) {
+  if (!s) return false;
+  if (s.earlyClosed) return false;
+  // Вклад: только пополняемый и в период пополнения
+  if (s.isDeposit) return s.refillable && (!s.refillUntil || s.refillUntil >= today());
+  // Всё остальное — можно
+  return true;
+}
+
+function openTransferModal(fromId) {
+  const from = state.savings.find(x => x.id === fromId);
+  if (!from) return;
+  const targets = state.savings.filter(x => x.id !== fromId && canTransferTo(x));
+  if (!targets.length) {
+    alert('Нет доступных счетов для перевода');
+    return;
+  }
+  const fromCur = from.currency || 'RUB';
+  const fromBal = getSavingCurrentAmountLocal(from);
+
+  const optionsHtml = targets.map(t => {
+    const tCur = t.currency || 'RUB';
+    const label = `${t.icon} ${t.name}${tCur !== 'RUB' ? ' · ' + tCur : ''}`;
+    return `<option value="${t.id}" data-cur="${tCur}">${label}</option>`;
+  }).join('');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'tr-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;padding:24px;width:calc(100% - 48px);max-width:360px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">↔️ Перевод</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">
+        С: ${from.icon} ${from.name} · <span style="color:var(--accent);">${fmt2(fromBal)} ${currSym(fromCur)}</span>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>НА СЧЁТ</label>
+        <select id="tr-to" onchange="updateTransferConversion('${fromId}')"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;box-sizing:border-box;appearance:none;">
+          ${optionsHtml}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>СУММА (${currSym(fromCur)})</label>
+        <input type="number" id="tr-amount" inputmode="decimal" placeholder="0"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;box-sizing:border-box;"
+          oninput="updateTransferConversion('${fromId}')">
+      </div>
+      <div id="tr-conversion" style="display:none;background:var(--surface2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--text-dim);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Получит</span>
+          <div style="text-align:right;">
+            <span id="tr-converted" style="font-weight:600;color:var(--text);"></span>
+            <button onclick="toggleTransferManual()" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;margin-left:6px;">изменить</button>
+          </div>
+        </div>
+        <div id="tr-manual-row" style="display:none;margin-top:8px;">
+          <input type="number" id="tr-amount-to" inputmode="decimal" placeholder="Сумма зачисления"
+            style="width:100%;background:var(--surface);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 10px;color:var(--text);font-size:14px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:16px;">
+        <label>ДАТА</label>
+        <input type="date" id="tr-date" value="${today()}"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;box-sizing:border-box;">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('tr-overlay').remove()" style="flex:1;padding:12px;background:var(--surface2);border:none;border-radius:10px;color:var(--text);font-size:14px;cursor:pointer;">Отмена</button>
+        <button onclick="confirmTransfer('${fromId}')" style="flex:2;padding:12px;background:var(--accent);border:none;border-radius:10px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">Перевести</button>
+      </div>
+    </div>`;
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+  updateTransferConversion(fromId);
+}
+
+function updateTransferConversion(fromId) {
+  const from = state.savings.find(x => x.id === fromId);
+  const toId = document.getElementById('tr-to')?.value;
+  const to = state.savings.find(x => x.id === toId);
+  const convEl = document.getElementById('tr-conversion');
+  const convText = document.getElementById('tr-converted');
+  if (!from || !to || !convEl || !convText) return;
+
+  const fromCur = from.currency || 'RUB';
+  const toCur = to.currency || 'RUB';
+  const amount = parseFloat(document.getElementById('tr-amount')?.value) || 0;
+
+  if (fromCur === toCur || amount <= 0) {
+    convEl.style.display = 'none';
+    return;
+  }
+
+  // Конвертация через рубли
+  const rates = state.rates || {};
+  const toRubRate = fromCur === 'RUB' ? 1 : (rates[fromCur] || 1);
+  const fromRubRate = toCur === 'RUB' ? 1 : (rates[toCur] || 1);
+  const converted = amount * toRubRate / fromRubRate;
+
+  convEl.style.display = 'block';
+  convText.textContent = `${fmt2(converted)} ${currSym(toCur)}`;
+  // Сбрасываем ручное поле если оно было пустым
+  const manualInput = document.getElementById('tr-amount-to');
+  if (manualInput && !manualInput.value) manualInput.value = fmt2(converted).replace(/\s/g,'');
+}
+
+function toggleTransferManual() {
+  const row = document.getElementById('tr-manual-row');
+  if (row) row.style.display = row.style.display === 'none' ? 'block' : 'none';
+}
+
+async function confirmTransfer(fromId) {
+  const from = state.savings.find(x => x.id === fromId);
+  const toId = document.getElementById('tr-to')?.value;
+  const to = state.savings.find(x => x.id === toId);
+  if (!from || !to) return;
+
+  const rawFrom = document.getElementById('tr-amount')?.value?.replace(/\s/g,'').replace(',','.');
+  const amountFrom = parseFloat(rawFrom);
+  if (!amountFrom || amountFrom <= 0) { alert('Введи сумму'); return; }
+
+  const balFrom = getSavingCurrentAmountLocal(from);
+  if (amountFrom > balFrom) {
+    alert(`Недостаточно средств. Баланс: ${fmt2(balFrom)} ${currSym(from.currency||'RUB')}`);
+    return;
+  }
+
+  const fromCur = from.currency || 'RUB';
+  const toCur = to.currency || 'RUB';
+  let amountTo;
+  if (fromCur === toCur) {
+    amountTo = amountFrom;
+  } else {
+    // Пробуем взять ручное значение, иначе считаем через курс
+    const manualRow = document.getElementById('tr-manual-row');
+    const manualVal = manualRow?.style.display !== 'none'
+      ? parseFloat(document.getElementById('tr-amount-to')?.value?.replace(/\s/g,'').replace(',','.'))
+      : null;
+    if (manualVal && manualVal > 0) {
+      amountTo = manualVal;
+    } else {
+      const rates = state.rates || {};
+      const toRubRate = fromCur === 'RUB' ? 1 : (rates[fromCur] || 1);
+      const fromRubRate = toCur === 'RUB' ? 1 : (rates[toCur] || 1);
+      amountTo = amountFrom * toRubRate / fromRubRate;
+    }
+  }
+
+  const date = document.getElementById('tr-date')?.value || today();
+  const transferId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+  // Обновляем локальные балансы
+  from.amount = Math.max(0, (parseFloat(from.amount)||0) - amountFrom);
+  to.amount = (parseFloat(to.amount)||0) + amountTo;
+  save();
+
+  // Логируем обе стороны с одним transfer_id
+  await Promise.all([
+    sbLogTransaction(fromId, 'withdrawal', amountFrom, { date, note: `Перевод → ${to.icon} ${to.name}`, source: transferId }),
+    sbLogTransaction(toId,   'deposit',    amountTo,   { date, note: `Перевод ← ${from.icon} ${from.name}`, source: transferId }),
+  ]);
+
+  document.getElementById('tr-overlay')?.remove();
   renderSavings();
 }
 
