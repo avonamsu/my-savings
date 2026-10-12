@@ -2868,15 +2868,17 @@ function renderSavingCard(x, grandTotal) {
   if(cur!=='RUB' && !isCash) badges+=` <span class="badge badge-cur">${(CURRENCY_FLAGS[cur]||"")} ${cur}</span>`;
   const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
   const subAmt = cur!=='RUB'?`≈ ${fmt(rubAmt)} ₽`:'';
-  const cashIcon = isCash ? `<div style="font-size:26px;line-height:1;flex-shrink:0;width:36px;text-align:center;">${CURRENCY_FLAGS[cur]||'💵'}</div>` : '';
+  const cashFlag = isCash ? `<div style="font-size:26px;line-height:1;flex-shrink:0;width:36px;text-align:center;">${CURRENCY_FLAGS[cur]||'💵'}</div>` : '';
+  const cashBadge = isCash ? `<span class="badge badge-cur">${cur}</span>` : '';
 
   return `<div class="card-item savings-card-item${(x.excluded||x.included===false)?' excluded':''}" data-id="${x.id}">
     <div class="card-item-inner" onclick="openAccountSheet('${x.id}')" style="cursor:pointer;">
       <button class="excl-btn" onclick="event.stopPropagation();toggleExclude('${x.id}')">${x.excluded?'🔘':'⚫'}</button>
-      ${cashIcon}
+      ${cashFlag}
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
         ${rateBadge ? `<div style="margin-top:3px;">${rateBadge}</div>` : ''}
+        ${cashBadge ? `<div style="margin-top:3px;">${cashBadge}</div>` : ''}
       </div>
       <div class="card-amount">${mainAmt}${subAmt?`<span class="sub-amount">${subAmt}</span>`:''}</div>
       <button class="card-menu-btn" onclick="event.stopPropagation();showSavingsMenu(event,'${x.id}')">⋯</button>
