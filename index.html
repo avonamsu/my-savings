@@ -2846,7 +2846,7 @@ function renderSavingCard(x, grandTotal) {
   const pctOfTotal = grandTotal>0 ? Math.round(rubAmt/grandTotal*100) : 0;
   let badges='', sub='';
   const isCash = !x.isDeposit && !x.isSavingsAccount && x.icon === '💵';
-  const showIcon = !x.isDeposit && !x.isSavingsAccount && !isCash;
+  const showIcon = false;
 
   let showFixBtn = false;
   if (x.isDeposit&&x.rate&&x.dateStart&&x.dateEnd) {
