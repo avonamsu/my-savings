@@ -1465,6 +1465,8 @@ async function sbLoadState() {
     if (error && error.code !== 'PGRST116') { console.warn('sbLoadState error', error); return; }
     if (data?.state && Object.keys(data.state).length > 0) {
       state = data.state;
+      // restore UI settings (home widgets etc) from synced state
+      if (state._ui) { try { restoreUIState(state._ui); } catch(e) {} }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       try { render(); } catch(e) { console.warn('render error', e); }
       try { checkAutoRenew(); } catch(e) {}
@@ -1863,6 +1865,9 @@ const STORAGE_KEY = 'fin_v3';
 const OLD_KEYS = ['fin_state', 'fin_state_v2'];
 let _idbSaveTimer = null;
 function save() {
+  // include UI state in saved state so it syncs to Supabase
+  const ui = collectUIState();
+  if (ui && Object.keys(ui).length > 0) state._ui = ui;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   clearTimeout(_idbSaveTimer);
   _idbSaveTimer = setTimeout(saveToIDB, 1000);
