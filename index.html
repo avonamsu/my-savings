@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012214500">
+  <meta name="version" content="20261012215000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -669,17 +669,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:-8px;">
     <span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);text-transform:uppercase;">Источники</span>
-    <div style="display:flex;align-items:center;gap:6px;">
-      <button onclick="togglePageSearch('income')" id="income-search-btn" style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 9px;display:flex;align-items:center;gap:4px;">🔍 Поиск</button>
-      <div style="position:relative;">
-        <button onclick="document.getElementById('income-sort-menu').style.display=document.getElementById('income-sort-menu').style.display==='block'?'none':'block'" style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 9px;display:flex;align-items:center;gap:3px;white-space:nowrap;"><span id="income-sort-label">По типу</span> ▾</button>
-        <div id="income-sort-menu" style="display:none;position:absolute;right:0;top:28px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;z-index:200;min-width:140px;box-shadow:0 4px 20px rgba(0,0,0,0.4);overflow:hidden;">
-          <div onclick="setIncomeSort('type')" id="isort-type" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--accent);">✓ По типу</div>
-          <div onclick="setIncomeSort('amount')" id="isort-amount" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--text-dim);">По сумме ↓</div>
-          <div onclick="setIncomeSort('name')" id="isort-name" style="padding:10px 14px;font-size:13px;cursor:pointer;color:var(--text-dim);">По алфавиту</div>
-        </div>
-      </div>
-    </div>
+    <button onclick="togglePageSearch('income')" id="income-search-btn" style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 9px;display:flex;align-items:center;gap:4px;">🔍 Поиск</button>
   </div>
   <div id="income-search-bar" style="display:none;margin-bottom:-8px;">
     <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(78,205,196,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
@@ -3387,24 +3377,7 @@ function setSavingsSort(val) {
 document.addEventListener('click', e => {
   const menu = document.getElementById('savings-sort-menu');
   if (menu && !menu.parentElement.contains(e.target)) menu.style.display = 'none';
-  const imenu = document.getElementById('income-sort-menu');
-  if (imenu && !imenu.parentElement.contains(e.target)) imenu.style.display = 'none';
 });
-
-window._incomeSort = 'type';
-function setIncomeSort(val) {
-  window._incomeSort = val;
-  const menu = document.getElementById('income-sort-menu');
-  if (menu) menu.style.display = 'none';
-  const labels = {type:'По типу', amount:'По сумме ↓', name:'По алфавиту'};
-  ['type','amount','name'].forEach(k => {
-    const el = document.getElementById('isort-'+k);
-    if (el) { el.style.color = k===val ? 'var(--accent)' : 'var(--text-dim)'; el.textContent = (k===val?'✓ ':'')+labels[k]; }
-  });
-  const lbl = document.getElementById('income-sort-label');
-  if (lbl) lbl.textContent = labels[val];
-  renderIncome();
-}
 
 function toggleIncomeBreakdown() {}
 
@@ -4443,71 +4416,22 @@ function renderIncome() {
   const totalItems = autoItems.length + manualItems.length;
 
   const query = (document.getElementById('income-search')?.value||'').toLowerCase();
-  const sortBy = window._incomeSort || 'type';
 
   const el = document.getElementById('income-list');
   if (totalItems === 0) { el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><p>Доход появится автоматически когда добавишь вклад или накопительный счёт</p></div>`; return; }
 
   const COLORS_MANUAL = {'📊':'#64B5F6','🏠':'#FFB347','💸':'#7B68EE','💱':'#5BC8AF','✨':'#FF6B9D'};
 
-  // For non-type sort: merge auto and manual items, then sort
-  if (sortBy !== 'type') {
-    const allItems = [
-      ...autoItems.filter(s => !query || s.name.toLowerCase().includes(query)).map(s => ({...s, _isAuto:true})),
-      ...manualItems.filter(x => !query || x.name.toLowerCase().includes(query)).map(x => ({...x, _isAuto:false}))
-    ];
-    if (sortBy === 'amount') {
-      allItems.sort((a,b) => {
-        const amtA = a._isAuto ? (a.incomeExcluded?0:calcSavingMonthlyIncome(a)) : (a.incomeExcluded?0:calcIncomeAmountRub(a));
-        const amtB = b._isAuto ? (b.incomeExcluded?0:calcSavingMonthlyIncome(b)) : (b.incomeExcluded?0:calcIncomeAmountRub(b));
-        return amtB - amtA;
-      });
-    } else if (sortBy === 'name') {
-      allItems.sort((a,b) => a.name.localeCompare(b.name, 'ru'));
-    }
-    const html = allItems.map(item => {
-      if (item._isAuto) {
-        const s = item;
-        const excl = !!s.incomeExcluded;
-        const amt = excl ? 0 : calcSavingMonthlyIncome(s);
-        const icon = s.isDeposit ? '💰' : '🏦';
-        const color = s.isDeposit ? '#4ECDC4' : '#5BC8AF';
-        const ratePct = s.rate ? Number(s.rate).toFixed(1)+'% год.' : '';
-        const sub = ratePct ? `авто · ${ratePct}` : 'авто';
-        const opacity = excl ? 'opacity:0.45;' : '';
-        return `<div class="card-item savings-card-item" style="${opacity}">
-          <div class="card-item-inner">
-            <label class="toggle" style="flex-shrink:0;margin-right:8px;" title="Учитывать в доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('saving','${s.id}')"><span class="toggle-slider"></span></label>
-            <div class="card-icon" style="background:${color}22;">${icon}</div>
-            <div class="card-info"><div class="card-name">${s.name}</div><div class="card-sub">${sub}</div></div>
-            <div class="card-amount" style="color:${color};">${excl ? '<span style="color:var(--text-dim);font-size:12px;">не учит.</span>' : '+'+fmt(Math.round(amt))+' ₽'}</div>
-          </div>
-        </div>`;
-      } else {
-        const x = item;
-        const excl = !!x.incomeExcluded;
-        const amt = excl ? 0 : calcIncomeAmountRub(x);
-        const color = COLORS_MANUAL[x.icon] || '#4ECDC4';
-        const opacity = excl ? 'opacity:0.45;' : '';
-        return `<div class="card-item savings-card-item" data-id="${x.id}" style="${opacity}">
-          <div class="card-item-inner">
-            <label class="toggle" style="flex-shrink:0;margin-right:8px;" title="Учитывать в доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('manual','${x.id}')"><span class="toggle-slider"></span></label>
-            <div class="card-icon" style="background:${color}22;">${x.icon||'✨'}</div>
-            <div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">в месяц</div></div>
-            <div class="card-amount" style="color:${color};">${excl ? '<span style="color:var(--text-dim);font-size:12px;">не учит.</span>' : '+'+fmt(Math.round(amt))+' ₽'}</div>
-            <button class="card-menu-btn" onclick="showCtxMenu(event,[{icon:'✏️',label:'Редактировать',fn:()=>openEdit('income','${x.id}')},{icon:'🗑',label:'Удалить',danger:true,fn:()=>deleteItem('income','${x.id}')}])">⋯</button>
-          </div>
-        </div>`;
-      }
-    }).join('');
-    if (!html) { el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`; return; }
-    el.innerHTML = `<div class="group-block">${html}</div>`;
-    return;
-  }
+  // Sort: enabled first, disabled last; within each group — alphabetical
+  const sortAlphaIncome = arr => [...arr].sort((a,b) => {
+    const aExcl = a.incomeExcluded ? 1 : 0;
+    const bExcl = b.incomeExcluded ? 1 : 0;
+    if (aExcl !== bExcl) return aExcl - bExcl;
+    return a.name.localeCompare(b.name, 'ru');
+  });
 
-  // Default: По типу — auto first, then manual
   // Авто-строки из savings
-  const autoHtml = autoItems
+  const autoHtml = sortAlphaIncome(autoItems)
     .filter(s => !query || s.name.toLowerCase().includes(query))
     .map(s => {
       const excl = !!s.incomeExcluded;
@@ -4528,7 +4452,7 @@ function renderIncome() {
     }).join('');
 
   // Ручные строки
-  const manualHtml = manualItems
+  const manualHtml = sortAlphaIncome(manualItems)
     .filter(x => !query || x.name.toLowerCase().includes(query))
     .map(x => {
       const excl = !!x.incomeExcluded;
