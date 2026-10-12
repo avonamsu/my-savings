@@ -2273,6 +2273,26 @@ function calcSavingMonthlyIncome(s) {
 }
 
 // Суммарный доход: авто из savings + ручные из state.income (без savingRef на существующий счёт)
+function calcGoalsCoverage() {
+  const totalIncome = calcTotalIncome();
+  if (!state.goals || !state.goals.length) return { pct: 0, coveredCount: 0, total: 0 };
+  let remaining = totalIncome, coveredSum = 0;
+  const ordered = [
+    ...state.goals.filter(g => g.type === 'subscription'),
+    ...state.goals.filter(g => g.type !== 'subscription')
+  ];
+  const items = ordered.map(g => {
+    const cost = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
+    const covered = remaining >= cost;
+    if (covered) { remaining -= cost; coveredSum += cost; }
+    return { covered };
+  });
+  const totalGoals = ordered.reduce((s, g) => s + (getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount)), 0);
+  const coveredCount = items.filter(x => x.covered).length;
+  const pct = totalGoals ? Math.min(100, Math.round(coveredSum / totalGoals * 100)) : 0;
+  return { pct, coveredCount, total: state.goals.length };
+}
+
 function calcTotalIncome() {
   const autoIncome = (state.savings||[]).reduce((s,x) => s + calcSavingMonthlyIncome(x), 0);
   // Ручные — без savingRef, с несуществующим savingRef, или с fixed calcMode (ручная сумма)
@@ -2299,8 +2319,7 @@ function render() { renderHome(); renderSavings(); renderIncome(); renderGoals()
 function renderHome() {
   const totalRubVal = state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
   const totalInc = calcTotalIncome();
-  const totalGoalsAmt = state.goals.reduce((s,x)=>s+Number(x.amount),0);
-  const goalsPct = totalGoalsAmt ? Math.min(100,Math.round(totalInc/totalGoalsAmt*100)) : 0;
+  const goalsPct = calcGoalsCoverage().pct;
 
   document.getElementById('home-total').innerHTML = `${fmt(totalRubVal)} <span>₽</span>`;
   const n = state.savings.length;
