@@ -3454,11 +3454,12 @@ function openAccountSheet(id) {
         ${_sheetStat('ЗА МЕСЯЦ', '≈'+fmt(Math.round(sa.dailyIncome*30)), currSym(cur))}
       </div>`;
     }
-    const cols = canTransfer ? 3 : 2;
+    const cols = canTransfer ? 4 : 3;
     actions = `<div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;">
       ${_sheetBtn(`openDepositWithdrawModal('${id}','deposit')`, '➕', 'Пополнить', true)}
       ${_sheetBtn(`openDepositWithdrawModal('${id}','withdrawal')`, '➖', 'Снять', false)}
       ${canTransfer ? _sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false) : ''}
+      ${_sheetBtn(`openHistorySheet('${id}')`, '📋', 'История', false)}
     </div>`;
 
   } else if (s.isDeposit) {
