@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012225000">
+  <meta name="version" content="20261012226000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -5682,7 +5682,7 @@ function drawIncomeChart() {
   if (!state._incomeHistory) state._incomeHistory = {};
   // Also add current month
   const ym = new Date().toISOString().slice(0,7);
-  const currentTotal = Math.round(state.income.reduce((s,x) => s + calcIncomeAmountRub(x), 0));
+  const currentTotal = Math.round(calcTotalIncome());
   if (currentTotal > 0) state._incomeHistory[ym] = currentTotal;
 
   const entries = Object.entries(state._incomeHistory)
