@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012215000">
+  <meta name="version" content="20261012216000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -4410,10 +4410,10 @@ function renderIncome() {
       const opacity = excl ? 'opacity:0.45;' : '';
       return `<div class="card-item savings-card-item" style="border-left:3px solid ${color};${opacity}">
         <div class="card-item-inner">
+          <label class="toggle" style="flex-shrink:0;margin-right:8px;" title="Учитывать в доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('saving','${s.id}')"><span class="toggle-slider"></span></label>
           <div class="card-icon" style="background:${color}22;">${icon}</div>
           <div class="card-info"><div class="card-name">${s.name}</div><div class="card-sub">${sub}</div></div>
           <div class="card-amount" style="color:${color};">${excl ? '<span style="color:var(--text-dim);font-size:12px;">не учит.</span>' : '+'+fmt(Math.round(amt))+' ₽'}</div>
-          <label class="toggle" style="flex-shrink:0;margin-left:8px;" title="Учитывать в доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('saving','${s.id}')"><span class="toggle-slider"></span></label>
         </div>
       </div>`;
     }).join('');
@@ -4428,10 +4428,10 @@ function renderIncome() {
       const opacity = excl ? 'opacity:0.45;' : '';
       return `<div class="card-item savings-card-item" data-id="${x.id}" style="border-left:3px solid ${color};${opacity}">
         <div class="card-item-inner">
+          <label class="toggle" style="flex-shrink:0;margin-right:8px;" title="Учитывать в доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('manual','${x.id}')"><span class="toggle-slider"></span></label>
           <div class="card-icon" style="background:${color}22;">${x.icon||'✨'}</div>
           <div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">в месяц</div></div>
           <div class="card-amount" style="color:${color};">${excl ? '<span style="color:var(--text-dim);font-size:12px;">не учит.</span>' : '+'+fmt(Math.round(amt))+' ₽'}</div>
-          <label class="toggle" style="flex-shrink:0;margin-left:8px;" title="Учитывать в доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('manual','${x.id}')"><span class="toggle-slider"></span></label>
           <button class="card-menu-btn" onclick="showCtxMenu(event,[{icon:'✏️',label:'Редактировать',fn:()=>openEdit('income','${x.id}')},{icon:'🗑',label:'Удалить',danger:true,fn:()=>deleteItem('income','${x.id}')}])">⋯</button>
         </div>
       </div>`;
