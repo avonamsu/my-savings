@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012214000">
+  <meta name="version" content="20261012215000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3447,7 +3447,7 @@ function renderSavingCard(x, grandTotal) {
 
   return `<div class="card-item savings-card-item${(x.excluded||x.included===false)?' excluded':''}" data-id="${x.id}">
     <div class="card-item-inner" onclick="openAccountSheet('${x.id}')" style="cursor:pointer;">
-      <button class="excl-btn" onclick="event.stopPropagation();toggleExclude('${x.id}')">${x.excluded?'🔘':'⚫'}</button>
+      <label class="toggle" style="flex-shrink:0;margin-right:8px;" onclick="event.stopPropagation()" title="Учитывать в накоплениях"><input type="checkbox" ${(x.excluded||x.included===false)?'':'checked'} onchange="toggleExclude('${x.id}')"><span class="toggle-slider"></span></label>
       ${cashFlag}
       <div class="card-info">
         <div class="card-name">${x.name} ${badges}</div>
