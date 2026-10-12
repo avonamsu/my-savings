@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012230000">
+  <meta name="version" content="20261012231000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2680,16 +2680,16 @@ function renderPiggyWidget(piggyId, container) {
     const saved = pg.saved||0;
     const pct = Math.min(100,Math.round(saved/pg.goal*100));
     const color = pg.color||'#4ECDC4';
-    container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">${pg.emoji||'🐷'} ${pg.name}</span></div>
-      <div class="home-piggy-widget">
+    container.innerHTML = `<div class="widget-section-header" style="cursor:pointer;" onclick="showPage('challenge');setTimeout(()=>openPiggySheet('${pg.id}'),350)"><span class="widget-section-label">${pg.emoji||'🐷'} ${pg.name}</span></div>
+      <div class="home-piggy-widget" style="cursor:pointer;" onclick="if(!event.target.closest('button')){showPage('challenge');setTimeout(()=>openPiggySheet('${pg.id}'),350)}">
         <div class="home-piggy-header">
           <div>
             <div style="font-size:15px;font-weight:700;">${fmtInt(saved)} <span style="font-size:12px;color:var(--text-dim);">из ${fmtInt(pg.goal)} ₽</span></div>
             <div style="font-size:12px;color:${color};margin-top:2px;">${pct}% накоплено</div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button onclick="openPiggyDeposit('${pg.id}','add')" style="background:${color};border:none;border-radius:8px;color:var(--bg);font-size:20px;font-weight:700;width:44px;height:44px;cursor:pointer;">＋</button>
-            <button onclick="openPiggyDeposit('${pg.id}','sub')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-dim);font-size:20px;width:44px;height:44px;cursor:pointer;">－</button>
+            <button onclick="event.stopPropagation();openPiggyDeposit('${pg.id}','add')" style="background:${color};border:none;border-radius:8px;color:var(--bg);font-size:20px;font-weight:700;width:44px;height:44px;cursor:pointer;">＋</button>
+            <button onclick="event.stopPropagation();openPiggyDeposit('${pg.id}','sub')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-dim);font-size:20px;width:44px;height:44px;cursor:pointer;">－</button>
           </div>
         </div>
         <div style="padding:0 14px 14px;">
@@ -2735,8 +2735,8 @@ function renderPiggyWidget(piggyId, container) {
     }).join('');
     const remaining = undoneCells.length - showCells.length;
 
-    container.innerHTML = `<div class="widget-section-header"><span class="widget-section-label">${ch.emoji||'🎯'} ${ch.name}</span></div>
-      <div class="home-piggy-widget">
+    container.innerHTML = `<div class="widget-section-header" style="cursor:pointer;" onclick="showPage('challenge');setTimeout(()=>openChallengeSheet('${ch.id}'),350)"><span class="widget-section-label">${ch.emoji||'🎯'} ${ch.name}</span></div>
+      <div class="home-piggy-widget" onclick="if(!event.target.closest('button')){showPage('challenge');setTimeout(()=>openChallengeSheet('${ch.id}'),350)}">
         <div class="home-piggy-header">
           <div>
             <div style="font-size:15px;font-weight:700;">${fmtInt(totalDone)} <span style="font-size:12px;color:var(--text-dim);">из ${fmtInt(totalGoal)} ₽</span></div>
@@ -2749,7 +2749,7 @@ function renderPiggyWidget(piggyId, container) {
           </div>
         </div>
         <div class="home-piggy-cells">${cellsHtml}</div>
-      ${remaining>0?`<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:0 14px 12px;">+${remaining} ещё — <span style="color:var(--accent);cursor:pointer" onclick="navigateToItem('challenge','${ch.id}')">открыть →</span></div>`:''}
+      ${remaining>0?`<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:0 14px 12px;">+${remaining} ещё — <span style="color:var(--accent);cursor:pointer" onclick="event.stopPropagation();showPage('challenge');setTimeout(()=>openChallengeSheet('${ch.id}'),350)">открыть →</span></div>`:''}
     </div>`;
   }
 }
