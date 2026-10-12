@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261013010000">
+  <meta name="version" content="20261013020000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -448,7 +448,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <button class="active" onclick="showPage('home')" id="nav-home"><span class="ni">🏠</span>Главная</button>
   <button onclick="showPage('savings')" id="nav-savings"><span class="ni">💰</span>Счета</button>
   <button onclick="showPage('income')" id="nav-income"><span class="ni">📈</span>Доход</button>
-  <button onclick="showPage('goals')" id="nav-goals"><span class="ni">🎯</span>Цели</button>
+  <button onclick="showPage('goals')" id="nav-goals"><span class="ni">🎯</span>Цели<span id="goals-badge" style="display:none;position:absolute;top:4px;right:6px;width:8px;height:8px;border-radius:50%;background:#FF6B6B;"></span></button>
   <button onclick="showPage('challenge')" id="nav-challenge"><span class="ni">🪙</span>Копилка</button>
 </nav>
 
@@ -3619,11 +3619,25 @@ function showCtxMenu(e, items) {
 }
 function closeCtxMenu() { if (_ctxCleanup) _ctxCleanup(); }
 function showGoalMenu(e, id) {
+  const goal = state.goals.find(g=>g.id===id);
+  const isPinned = goal?.pinned;
   const items = [
+    {icon: isPinned?'⭐':'☆', label: isPinned?'Снять приоритет':'Сделать приоритетной', fn:()=>toggleGoalPin(id)},
     {icon:'✏️', label:'Редактировать', fn:()=>openEdit('goals',id)},
     {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('goals',id)}
   ];
   showCtxMenu(e, items);
+}
+
+function toggleGoalPin(id) {
+  const g = state.goals.find(x=>x.id===id);
+  if (!g) return;
+  // Unpin all others first — only one pinned goal at a time
+  state.goals.forEach(x => { if (x.id !== id) x.pinned = false; });
+  g.pinned = !g.pinned;
+  save();
+  renderGoals();
+  haptic('light');
 }
 
 function showChallengeMenu(e, id, canComplete) {
@@ -4579,9 +4593,10 @@ function renderGoals() {
     return;
   }
 
-  // Calculate coverage (all goals together for the progress bar)
+  // Calculate coverage (pinned goal goes first, rest follow original order)
   let remaining = totalIncome, coveredSum = 0;
-  const items = state.goals.map(g => {
+  const goalsForCalc = [...state.goals].sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0));
+  const items = goalsForCalc.map(g => {
     const cost = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
     const covered = remaining >= cost;
     const partial = !covered && remaining > 0 ? remaining / cost : 0;
@@ -4640,7 +4655,10 @@ function renderGoals() {
         <div class="drag-handle">⠿</div>
         <div style="font-size:20px;min-width:32px;text-align:center;line-height:1;">${emoji}</div>
         <div class="goal-info" style="flex:1;min-width:0;">
-          <div class="goal-name" style="font-size:14px;">${g.name}</div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div class="goal-name" style="font-size:14px;">${g.name}</div>
+            ${g.pinned ? `<span title="Приоритетная цель" style="font-size:13px;line-height:1;">⭐</span>` : ''}
+          </div>
           ${!g.covered && g.partial > 0 ? `<div class="goal-progress-bar" style="margin-top:4px;"><div class="goal-progress-fill" style="width:${partialPct}%;background:${color};"></div></div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${partialPct}% · не хватает <span style="color:#FFB347;">${fmt(Math.round(Number(g.amount)*(1-g.partial)))} ₽/мес</span></div>` : ''}
           ${!g.covered && !g.partial ? `<div style="font-size:10px;color:#FFB347;margin-top:2px;">не хватает ${fmt(Number(g.amount))} ₽/мес</div>` : ''}
         </div>
@@ -4666,7 +4684,10 @@ function renderGoals() {
         <div class="drag-handle">⠿</div>
         <div style="font-size:20px;min-width:32px;text-align:center;line-height:1;">${emoji}</div>
         <div class="goal-info" style="flex:1;min-width:0;">
-          <div class="goal-name" style="font-size:14px;">${g.name}</div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div class="goal-name" style="font-size:14px;">${g.name}</div>
+            ${g.pinned ? `<span title="Приоритетная цель" style="font-size:13px;line-height:1;">⭐</span>` : ''}
+          </div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;">
             <span style="font-size:10px;background:rgba(255,255,255,0.07);border-radius:6px;padding:2px 6px;color:var(--text-dim);">🔄 ${periodLabel}</span>
             ${soon ? `<span style="font-size:10px;color:#FFB347;font-weight:600;">${daysStr}</span>` : (d !== null ? `<span style="font-size:10px;color:var(--text-dim);">${daysStr}</span>` : '')}
@@ -5109,6 +5130,15 @@ function showPage(name) {
   if(name==='savings') setTimeout(drawChart, 50);
   if(name==='income') setTimeout(drawIncomeChart, 50);
   if(name==='challenge') renderChallengesPage();
+  if(name==='goals') {
+    // Show banner for newly covered goals, clear badge
+    const prevMap = JSON.parse(localStorage.getItem('goals_covered_prev') || '{}');
+    const current = getGoalsCoverageMap();
+    const newlyCovered = state.goals.filter(g => current[g.id] && !prevMap[g.id]);
+    localStorage.setItem('goals_covered_prev', JSON.stringify(current));
+    updateGoalsBadge(false);
+    if (newlyCovered.length) setTimeout(() => showGoalsCoveredBanner(newlyCovered), 300);
+  }
   updateFab(name);
 }
 
@@ -5517,9 +5547,10 @@ function saveItem(){
     const subPeriod=gType==='subscription'?getSubPeriodValue():null;
     const subDate=gType==='subscription'?document.getElementById('g-sub-date')?.value||null:null;
     const note=gType==='subscription'?(document.getElementById('g-note')?.value?.trim()||null):null;
-    const _g={id,name,amount,emoji,color,type:gType,subPeriod,subDate,note};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
+    const prevGoal = editingId ? state.goals.find(x=>x.id===editingId) : null;
+    const _g={id,name,amount,emoji,color,type:gType,subPeriod,subDate,note,pinned:prevGoal?.pinned||false};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
   }
-  editingId=null;trackDailyAdd();save();render();closeModal();checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();haptic("success");
+  editingId=null;trackDailyAdd();save();render();closeModal();checkNotifBanner();checkGoalsCoveredNotif();checkBackupReminder();recordIncomeSnapshot();haptic("success");
 }
 
 function deleteItem(list,id){
@@ -7321,6 +7352,60 @@ function checkNotifBanner(){
   else if(Notification.permission!=='denied')banner.style.display='';
 }
 
+// ── GOALS COVERAGE NOTIFICATIONS ─────────────────────────
+function getGoalsCoverageMap() {
+  const totalIncome = calcTotalIncome();
+  let remaining = totalIncome;
+  const goalsForCalc = [...state.goals].sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0));
+  const map = {};
+  goalsForCalc.forEach(g => {
+    const cost = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
+    const covered = remaining >= cost;
+    if (covered) remaining -= cost;
+    else if (remaining > 0) remaining = 0;
+    map[g.id] = covered;
+  });
+  return map;
+}
+
+function checkGoalsCoveredNotif() {
+  if (!state.goals.length) { updateGoalsBadge(false); return; }
+  const current = getGoalsCoverageMap();
+  const prev = JSON.parse(localStorage.getItem('goals_covered_prev') || '{}');
+  const newlyCovered = state.goals.filter(g => current[g.id] && !prev[g.id]);
+  // Update stored map
+  localStorage.setItem('goals_covered_prev', JSON.stringify(current));
+  if (!newlyCovered.length) return;
+  // Show badge
+  updateGoalsBadge(true);
+  // Show banner if goals page is open
+  const onGoalsPage = document.getElementById('page-goals')?.classList.contains('active');
+  if (onGoalsPage) {
+    showGoalsCoveredBanner(newlyCovered);
+    updateGoalsBadge(false);
+  }
+}
+
+function updateGoalsBadge(show) {
+  const badge = document.getElementById('goals-badge');
+  if (badge) badge.style.display = show ? '' : 'none';
+}
+
+function showGoalsCoveredBanner(goals) {
+  // Remove existing
+  const existing = document.getElementById('goals-covered-banner');
+  if (existing) existing.remove();
+  const names = goals.map(g => g.name).join(', ');
+  const banner = document.createElement('div');
+  banner.id = 'goals-covered-banner';
+  banner.style.cssText = 'margin-bottom:10px;padding:10px 14px;background:rgba(78,205,196,0.15);border:1px solid rgba(78,205,196,0.3);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;animation:fadeIn .3s ease;';
+  banner.innerHTML = `<div style="font-size:13px;color:#4ECDC4;">🎉 Доход теперь покрывает: <b>${names}</b></div><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:0;line-height:1;">×</button>`;
+  const list = document.getElementById('goals-list');
+  if (list) list.parentElement.insertBefore(banner, list);
+  // Auto-remove after 5s
+  setTimeout(() => { if (banner.parentElement) banner.remove(); }, 5000);
+}
+
 // ── INDEXEDDB BACKUP ─────────────────────────────────────
 const IDB_NAME = 'MySavingsDB', IDB_STORE = 'state', IDB_VER = 1;
 
@@ -7468,7 +7553,7 @@ function restoreBackup(event){
       if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
       if (!state.piggyBanks) state.piggyBanks = [];
       if (!state.challenges) state.challenges = [];
-      save(); saveToIDB(); render(); drawChart(); checkNotifBanner();
+      save(); saveToIDB(); render(); drawChart(); checkNotifBanner(); checkGoalsCoveredNotif();
       // immediately sync restored data to Supabase (bypass debounce), then confirm
       sbSaveState().then(() => {
         if (_sbUser) sbMigrateSnapshots();
@@ -7737,7 +7822,7 @@ async function gdriveLoad(silent = false) {
     if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
     if (!state.piggyBanks) state.piggyBanks = [];
     if (!state.challenges) state.challenges = [];
-    save(); saveToIDB(); render(); drawChart(); checkNotifBanner();
+    save(); saveToIDB(); render(); drawChart(); checkNotifBanner(); checkGoalsCoveredNotif();
     // Запоминаем момент загрузки как "синхронизированы" — чтобы не предлагать загрузить снова
     localStorage.setItem('gdrive_last_save_ts', Date.now().toString());
     haptic('success');
@@ -8016,6 +8101,7 @@ loadCbKeyRate().then(() => renderDepositTax());
 
 initNotifications();
 checkNotifBanner();
+checkGoalsCoveredNotif();
 checkBackupReminder();
 updateBackupDateDisplay();
 gdriveInit();
