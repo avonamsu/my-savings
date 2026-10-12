@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012212000">
+  <meta name="version" content="20261012213000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2206,7 +2206,7 @@ function calcIncomeAmountRub(item) {
 
 // Доход от вклада/накопительного счета в месяц (авто-расчёт)
 function calcSavingMonthlyIncome(s) {
-  if (s.excluded) return 0;
+  if (s.excluded || s.incomeExcluded) return 0;
   if (s.isDeposit && s.rate && s.dateStart && s.dateEnd)
     return toRub(calcDeposit(s).monthlyIncome, s.currency||'RUB');
   if (s.isSavingsAccount && s.rate) {
@@ -2222,8 +2222,19 @@ function calcTotalIncome() {
   // Ручные — без savingRef, с несуществующим savingRef, или с fixed calcMode (ручная сумма)
   const manualIncome = (state.income||[])
     .filter(x => !x.savingRef || x.calcMode === 'fixed' || !state.savings.find(s=>s.id===x.savingRef))
+    .filter(x => !x.incomeExcluded)
     .reduce((s,x) => s + calcIncomeAmountRub(x), 0);
   return autoIncome + manualIncome;
+}
+
+function toggleIncomeExcluded(type, id) {
+  if (type === 'saving') {
+    const s = (state.savings||[]).find(x=>x.id===id);
+    if (s) { s.incomeExcluded = !s.incomeExcluded; save(); renderIncome(); renderHome(); renderGoals(); }
+  } else {
+    const x = (state.income||[]).find(x=>x.id===id);
+    if (x) { x.incomeExcluded = !x.incomeExcluded; save(); renderIncome(); renderHome(); renderGoals(); }
+  }
 }
 
 // ── RENDER ────────────────────────────────────────────────
@@ -4341,8 +4352,8 @@ function renderIncome() {
   if(yieldEl) yieldEl.textContent = yieldPct > 0 ? yieldPct.toFixed(1)+'% год.' : '—';
   if(realEl) { realEl.textContent = yieldPct > 0 ? (realYield>=0?'+':'')+realYield.toFixed(1)+'% год.' : '—'; realEl.style.color = realYield>=0?'var(--accent)':'var(--danger)'; }
 
-  // Авто-строки: все вклады и накопительные счета
-  const autoItems = (state.savings||[]).filter(s => !s.excluded && (s.isDeposit||s.isSavingsAccount) && calcSavingMonthlyIncome(s) > 0);
+  // Авто-строки: все вклады и накопительные счета (включая отключённые от дохода — показываем, но зачёркнуто)
+  const autoItems = (state.savings||[]).filter(s => !s.excluded && (s.isDeposit||s.isSavingsAccount) && (calcSavingMonthlyIncome(s) > 0 || s.incomeExcluded));
   // Ручные: без savingRef, с несуществующим savingRef, или с fixed calcMode (ручная сумма)
   const manualItems = (state.income||[]).filter(x => !x.savingRef || x.calcMode === 'fixed' || !state.savings.find(s=>s.id===x.savingRef));
 
@@ -4390,17 +4401,20 @@ function renderIncome() {
   const autoHtml = autoItems
     .filter(s => !query || s.name.toLowerCase().includes(query))
     .map(s => {
-      const amt = calcSavingMonthlyIncome(s);
+      const excl = !!s.incomeExcluded;
+      const amt = excl ? 0 : calcSavingMonthlyIncome(s);
       const icon = s.isDeposit ? '💰' : '🏦';
       const color = s.isDeposit ? '#4ECDC4' : '#5BC8AF';
       const ratePct = s.rate ? Number(s.rate).toFixed(1)+'% год.' : '';
       const sub = ratePct ? `авто · ${ratePct}` : 'авто';
-      return `<div class="card-item savings-card-item" style="border-left:3px solid ${color};">
+      const opacity = excl ? 'opacity:0.4;' : '';
+      const menuItems = `[{icon:'${excl?'✅':'🚫'}',label:'${excl?'Учитывать в доходе':'Не учитывать в доходе'}',fn:()=>toggleIncomeExcluded('saving','${s.id}')},{icon:'→',label:'Открыть счёт',fn:()=>navigate('savings')}]`;
+      return `<div class="card-item savings-card-item" style="border-left:3px solid ${color};${opacity}">
         <div class="card-item-inner">
           <div class="card-icon" style="background:${color}22;">${icon}</div>
-          <div class="card-info"><div class="card-name">${s.name}</div><div class="card-sub">${sub}</div></div>
-          <div class="card-amount" style="color:${color};">+${fmt(Math.round(amt))} ₽</div>
-          <button class="card-menu-btn" onclick="navigate('savings')" title="Открыть счёт">→</button>
+          <div class="card-info"><div class="card-name">${s.name}</div><div class="card-sub">${excl ? 'не учитывается' : sub}</div></div>
+          <div class="card-amount" style="color:${color};">${excl ? '—' : '+'+fmt(Math.round(amt))+' ₽'}</div>
+          <button class="card-menu-btn" onclick="showCtxMenu(event,${menuItems})">⋯</button>
         </div>
       </div>`;
     }).join('');
@@ -4409,14 +4423,17 @@ function renderIncome() {
   const manualHtml = manualItems
     .filter(x => !query || x.name.toLowerCase().includes(query))
     .map(x => {
-      const amt = calcIncomeAmountRub(x);
+      const excl = !!x.incomeExcluded;
+      const amt = excl ? 0 : calcIncomeAmountRub(x);
       const color = COLORS_MANUAL[x.icon] || '#4ECDC4';
-      return `<div class="card-item savings-card-item" data-id="${x.id}" style="border-left:3px solid ${color};">
+      const opacity = excl ? 'opacity:0.4;' : '';
+      const menuItems = `[{icon:'${excl?'✅':'🚫'}',label:'${excl?'Учитывать в доходе':'Не учитывать в доходе'}',fn:()=>toggleIncomeExcluded('manual','${x.id}')},{icon:'✏️',label:'Редактировать',fn:()=>openEdit('income','${x.id}')},{icon:'🗑',label:'Удалить',danger:true,fn:()=>deleteItem('income','${x.id}')}]`;
+      return `<div class="card-item savings-card-item" data-id="${x.id}" style="border-left:3px solid ${color};${opacity}">
         <div class="card-item-inner">
           <div class="card-icon" style="background:${color}22;">${x.icon||'✨'}</div>
-          <div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">в месяц</div></div>
-          <div class="card-amount" style="color:${color};">+${fmt(Math.round(amt))} ₽</div>
-          <button class="card-menu-btn" onclick="showCtxMenu(event,[{icon:'✏️',label:'Редактировать',fn:()=>openEdit('income','${x.id}')},{icon:'🗑',label:'Удалить',danger:true,fn:()=>deleteItem('income','${x.id}')}])">⋯</button>
+          <div class="card-info"><div class="card-name">${x.name}</div><div class="card-sub">${excl ? 'не учитывается' : 'в месяц'}</div></div>
+          <div class="card-amount" style="color:${color};">${excl ? '—' : '+'+fmt(Math.round(amt))+' ₽'}</div>
+          <button class="card-menu-btn" onclick="showCtxMenu(event,${menuItems})">⋯</button>
         </div>
       </div>`;
     }).join('');
