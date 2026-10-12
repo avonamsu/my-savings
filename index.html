@@ -2857,7 +2857,6 @@ function renderSavingCard(x, grandTotal) {
       sub += ' · <span style="color:#4CAF50;font-size:11px;">💸 зафиксируй доход</span>';
     } else {
       badges+=`<span class="badge badge-cap">${x.rate}%</span>`;
-      if(x.compound) badges+=` <span class="badge badge-cap">капит.</span>`;
       showFixBtn = daysLeft <= 14;
       if (daysLeft <= 0) {
         sub=`${fmt(yearlyIncome)} ₽/год · <span style="color:#4CAF50;font-size:11px;">💸 зафиксируй доход</span>`;
