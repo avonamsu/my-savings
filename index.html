@@ -2388,6 +2388,15 @@ function getWidgetSettings() {
     if (raw) {
       const s = JSON.parse(raw);
       if (!s.order) s.order = DEFAULT_ORDER.slice();
+      // Миграция: добавляем новые виджеты в order если их там нет
+      DEFAULT_ORDER.forEach(key => {
+        if (!s.order.includes(key)) {
+          const afterKey = key === 'subscriptions' ? 'deposit' : null;
+          const idx = afterKey ? s.order.indexOf(afterKey) : -1;
+          if (idx >= 0) s.order.splice(idx + 1, 0, key);
+          else s.order.push(key);
+        }
+      });
       // Миграция: piggyId (строка) → piggyIds (массив)
       if (s.piggyId !== undefined && !s.piggyIds) {
         s.piggyIds = s.piggyId ? [s.piggyId] : [];
