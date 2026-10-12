@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012205000">
+  <meta name="version" content="20261012206000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -6290,20 +6290,18 @@ async function toggleCell(challengeId, cellIdx) {
     } else { ch.streak = 1; }
     ch.lastChecked = t;
   }
-  // Update linked saving account
+  // Ячейка уже изменила состояние выше. Теперь отдельно спрашиваем про счёт.
   const linkedSaving = ch.linkedSavingId ? (state.savings||[]).find(s=>s.id===ch.linkedSavingId) : null;
   if (linkedSaving) {
     const cellAmount = ch.cells[cellIdx].amt || 0;
     const dateStr = today();
     if (!wasDone) {
-      // Cell just checked — add to account
+      // Ячейка отмечена — предлагаем пополнить счёт
       if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на ${fmtInt(cellAmount)} ₽?`)) {
         linkedSaving.amount = (parseFloat(linkedSaving.amount)||0) + cellAmount;
         if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = dateStr;
-        // для вклада dateStart не трогаем — пополняемый вклад считает % от новой суммы с исходной даты
         save();
         if (_sbUser && linkedSaving.isSavingsAccount) {
-          // Delete future interest txs before logging deposit, then do a single cache refresh
           const nextDay = new Date(dateStr + 'T12:00:00');
           nextDay.setDate(nextDay.getDate() + 1);
           const nextDayStr = nextDay.toLocaleDateString('sv');
@@ -6311,18 +6309,14 @@ async function toggleCell(challengeId, cellIdx) {
             .eq('user_id', _sbUser.id).eq('saving_id', linkedSaving.id).eq('type', 'interest').gte('date', nextDayStr);
         }
         await sbLogTransaction(linkedSaving.id, 'deposit', cellAmount, { date: dateStr, note: 'Пополнение из челленджа' });
-        // sbLogTransaction already does fetchTxCached + renderSavings + renderHome internally
-      } else {
-        // отменили пополнение счёта — ячейка остаётся отмеченной, только счёт не пополняем
-        save();
       }
+      // Отказ от пополнения — счёт не трогаем, ячейка уже отмечена
     } else {
-      // Cell just unchecked — find and delete the original deposit transaction
+      // Ячейка снята — предлагаем откатить пополнение счёта
       if (confirm(`💳 Отменить пополнение счёта «${linkedSaving.name}» на ${fmtInt(cellAmount)} ₽?`)) {
         linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) - cellAmount);
         if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = dateStr;
         save();
-        // удаляем оригинальную транзакцию пополнения из челленджа (последнюю с таким amount и note)
         if (_sbUser) {
           const cached = _txCache[linkedSaving.id];
           const origTx = cached && cached.txs.slice().reverse().find(tx =>
@@ -6332,7 +6326,6 @@ async function toggleCell(challengeId, cellIdx) {
             await _sb.from('transactions').delete()
               .eq('user_id', _sbUser.id).eq('id', origTx.id);
           } else {
-            // транзакция не найдена в кэше — логируем withdrawal как запасной вариант
             await sbLogTransaction(linkedSaving.id, 'withdrawal', cellAmount, { date: dateStr, note: 'Отмена пополнения из челленджа' });
           }
           if (linkedSaving.isSavingsAccount) {
@@ -6345,10 +6338,8 @@ async function toggleCell(challengeId, cellIdx) {
           delete _txCache[linkedSaving.id];
           fetchTxCached(linkedSaving.id).then(() => { renderSavings(); renderHome(); });
         }
-      } else {
-        // отменили диалог отмены пополнения — ячейка снимается, но счёт не трогаем
-        save();
       }
+      // Отказ от отката — счёт не трогаем, ячейка уже снята
     }
   }
 
