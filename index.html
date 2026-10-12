@@ -4217,6 +4217,23 @@ async function openHistorySheet(id) {
     renderSavings();
   }
 
+  // Auto-create opening transaction for existing accounts that have none
+  if (_sbUser && s && txs.length === 0) {
+    const openDate = s.dateStart || today();
+    const openAmount = Number(s.amount) || 0;
+    if (openAmount > 0) {
+      await sbLogTransaction(id, 'deposit', openAmount, { date: openDate, note: 'Открытие счёта' });
+      // Reload after inserting
+      const { data: fresh } = await _sb.from('transactions')
+        .select('*').eq('user_id', _sbUser.id).eq('saving_id', id).order('date', { ascending: false }).order('created_at', { ascending: false });
+      if (fresh) {
+        txs = fresh;
+        _txCache[id] = { txs: [...fresh].reverse(), loadedAt: Date.now() };
+        renderSavings();
+      }
+    }
+  }
+
   // Accrue missing daily interest for savings accounts, then reload
   if (s?.isSavingsAccount && s.rate && s.dateStart) {
     await accrueInterestIfNeeded(s, txs);
