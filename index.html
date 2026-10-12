@@ -1467,12 +1467,14 @@ async function sbLoadState() {
     renderAll();
     checkAutoRenew();
   }
-  // Preload transactions + CB key rate + snapshots in parallel, then re-render
-  Promise.all([preloadTxCache(), loadCbKeyRate(), sbLoadSnapshots()]).then(() => {
+  // Preload transactions + CB key rate in parallel, then re-render
+  Promise.all([preloadTxCache(), loadCbKeyRate()]).then(() => {
     renderSavings(); drawChart(); drawIncomeChart();
     // Record current month snapshot now that user is logged in
     recordSnapshot(); recordIncomeSnapshot();
   });
+  // Load snapshots independently
+  sbLoadSnapshots();
 }
 
 // ── SNAPSHOTS SYNC ────────────────────────────────────────────
