@@ -2073,7 +2073,7 @@ function calcDeposit(s) {
     // For deposits, interest accrues on the balance at each point in time
     // Non-compound: sum(amount_i × rate × days_i / 365) for each segment
     // Compound: for each segment, compound on running principal
-    const endDate = expired ? end : clampedNow;
+    const endDate = new Date(expired ? end : clampedNow);
     endDate.setHours(0,0,0,0);
 
     // Build balance change events sorted by date
