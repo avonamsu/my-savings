@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012196000">
+  <meta name="version" content="20261012197000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -6317,8 +6317,8 @@ async function toggleCell(challengeId, cellIdx) {
               .eq('user_id', _sbUser.id).eq('saving_id', linkedSaving.id).eq('type', 'interest').gte('date', nextDayStr);
           }
           delete _txCache[linkedSaving.id];
+          fetchTxCached(linkedSaving.id).then(() => { renderSavings(); renderHome(); });
         }
-        renderSavings();
       } else {
         // отменили — откатываем
         ch.cells[cellIdx].done = wasDone;
@@ -7319,7 +7319,7 @@ function showToast(msg) {
 
 // ── AUTO-UPDATE CHECK ──────────────────────────────────────
 (function() {
-  const CURRENT_VERSION = '20261012196000';
+  const CURRENT_VERSION = '20261012197000';
   fetch(location.href + '?_v=' + Date.now(), { cache: 'no-store' })
     .then(r => r.text())
     .then(html => {
