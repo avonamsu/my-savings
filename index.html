@@ -2947,14 +2947,15 @@ function showSavingsMenu(e, id, showFix) {
   const isSA = s?.isSavingsAccount;
   const isCashOrOther = !s?.isDeposit && !s?.isSavingsAccount && !['📈','🏠','₿'].includes(s?.icon);
   const hasDepositWithdraw = isSA || isCashOrOther;
+  const hasActionsAboveSep = hasDepositWithdraw || showFix;
   const items = [
     ...(hasDepositWithdraw ? [
       {icon:'➕', label:'Пополнить', fn:()=>openDepositWithdrawModal(id,'deposit')},
       {icon:'➖', label:'Снять', fn:()=>openDepositWithdrawModal(id,'withdrawal')},
     ] : []),
-    {icon:'📋', label:'История операций', fn:()=>openHistorySheet(id)},
     ...(showFix ? [{icon:'💸', label:'Зафиксировать доход', fn:()=>openFixIncomeModal(id)}] : []),
-    ...(hasDepositWithdraw || showFix ? [{separator: true}] : []),
+    {icon:'📋', label:'История операций', fn:()=>openHistorySheet(id)},
+    ...(hasActionsAboveSep ? [{separator: true}] : []),
     {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
     {icon:'⧉', label:'Дублировать', fn:()=>duplicateSaving(id)},
     {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('savings',id)}
