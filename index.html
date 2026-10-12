@@ -2389,14 +2389,18 @@ function getWidgetSettings() {
       const s = JSON.parse(raw);
       if (!s.order) s.order = DEFAULT_ORDER.slice();
       // Миграция: добавляем новые виджеты в order если их там нет
+      let migrated = false;
       DEFAULT_ORDER.forEach(key => {
         if (!s.order.includes(key)) {
           const afterKey = key === 'subscriptions' ? 'deposit' : null;
           const idx = afterKey ? s.order.indexOf(afterKey) : -1;
           if (idx >= 0) s.order.splice(idx + 1, 0, key);
           else s.order.push(key);
+          if (s[key] === undefined) s[key] = false;
+          migrated = true;
         }
       });
+      if (migrated) localStorage.setItem('home_widgets', JSON.stringify(s));
       // Миграция: piggyId (строка) → piggyIds (массив)
       if (s.piggyId !== undefined && !s.piggyIds) {
         s.piggyIds = s.piggyId ? [s.piggyId] : [];
@@ -2745,13 +2749,13 @@ function renderNextSubscriptionsWidget() {
     return;
   }
 
-  // Для каждой подписки найдём ближайшую дату в текущем или следующем месяце
+  // subDate хранится как YYYY-MM-DD — извлекаем день месяца и ищем ближайшую дату
   const withDays = subs.map(g => {
-    const day = parseInt(g.subDate) || 1;
+    const parts = g.subDate.split('-');
+    const day = parseInt(parts[2]) || parseInt(parts[0]) || 1; // YYYY-MM-DD или просто число
     let next = new Date(currentYear, currentMonth, day);
     next.setHours(0,0,0,0);
     if (next.getTime() < today) {
-      // уже прошло — берём следующий месяц
       next = new Date(currentYear, currentMonth + 1, day);
       next.setHours(0,0,0,0);
     }
