@@ -6505,24 +6505,9 @@ function updateBackupDateDisplay(){
 }
 
 function checkBackupReminder(){
+  // Данные синхронизируются через Supabase — напоминание о резервной копии больше не нужно
   const banner = document.getElementById('backup-banner');
-  if (!banner) return;
-  if (!state.savings.length && !state.income.length && !state.goals.length){ banner.style.display='none'; return; }
-  const lastHash = localStorage.getItem('last_backup_state_hash');
-  if (lastHash === stateHash()){ banner.style.display='none'; return; }
-  const lastBackup = localStorage.getItem('last_backup_date');
-  if (lastBackup && Math.round((new Date(today())-new Date(lastBackup))/86400000)<7){ banner.style.display='none'; return; }
-  banner.style.display='';
-  // Push notification reminder
-  if ('Notification' in window && Notification.permission === 'granted') {
-    const notifKey = 'backup_notif_' + today();
-    if (!localStorage.getItem(notifKey)) {
-      new Notification('💾 Пора создать резервную копию', {
-        body: 'Данные менялись, но копия не создавалась 7+ дней'
-      });
-      localStorage.setItem(notifKey, '1');
-    }
-  }
+  if (banner) banner.style.display='none';
 }
 
 function collectUIState() {
