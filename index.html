@@ -4040,11 +4040,14 @@ async function accrueInterestIfNeeded(s, txs) {
 
   // Find last accrued interest date
   const lastInterestTx = txs.filter(t => t.type === 'interest').sort((a,b) => b.date.localeCompare(a.date))[0];
-  const startFrom = lastInterestTx
-    ? new Date(new Date(lastInterestTx.date).getTime() + 86400000) // day after last interest
-    : new Date(new Date(s.dateStart).getTime() + 86400000); // day after account opening
+  const _addDay = (dateStr) => {
+    const d = new Date(dateStr + 'T12:00:00'); // noon to avoid DST issues
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  };
+  const startFromStr = lastInterestTx ? _addDay(lastInterestTx.date) : _addDay(s.dateStart);
+  const startFrom = new Date(startFromStr + 'T00:00:00');
 
-  startFrom.setHours(0,0,0,0);
   console.log('[accrue] startFrom:', startFrom.toISOString(), '| today:', today.toISOString(), '| lastInterestTx:', lastInterestTx?.date);
   if (startFrom > today) { console.log('[accrue] nothing to accrue yet'); return; }
 
@@ -4056,9 +4059,10 @@ async function accrueInterestIfNeeded(s, txs) {
 
   // Calculate interest for each missing day
   const newRows = [];
-  let cur = new Date(startFrom);
+  const toLocalDateStr = (d) => d.toLocaleDateString('sv'); // 'sv' locale gives YYYY-MM-DD
+  let cur = new Date(startFromStr + 'T12:00:00');
   while (cur <= today) {
-    const key = cur.toISOString().slice(0,10);
+    const key = toLocalDateStr(cur);
     // Find balance: exact day or last known
     let bal = timelineMap[key];
     if (bal === undefined) {
