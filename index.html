@@ -2863,7 +2863,7 @@ function renderSavingCard(x, grandTotal) {
     }
   }
   if (x.rate && (x.isDeposit || x.isSavingsAccount)) {
-    sub = `<span style="font-size:12px;color:var(--accent);font-weight:600;">${x.rate}% годовых</span>`;
+    badges += `<span class="badge badge-cap">${x.rate}%</span>`;
   }
   if(cur!=='RUB' && !isCash) badges+=` <span class="badge badge-cur">${(CURRENCY_FLAGS[cur]||"")} ${cur}</span>`;
   const mainAmt = cur==='RUB'?`${fmt(localAmt)} ₽`:`${fmt2(localAmt)} ${currSym(cur)}`;
