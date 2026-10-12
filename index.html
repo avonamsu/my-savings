@@ -2937,14 +2937,77 @@ function showChallengeMenu(e, id, canComplete) {
 }
 
 function showSavingsMenu(e, id, showFix) {
+  const s = state.savings.find(x => x.id === id);
+  const isSA = s?.isSavingsAccount;
   const items = [
     {icon:'✏️', label:'Редактировать', fn:()=>openEdit('savings',id)},
+    ...(isSA ? [
+      {icon:'➕', label:'Пополнить', fn:()=>openDepositWithdrawModal(id,'deposit')},
+      {icon:'➖', label:'Снять', fn:()=>openDepositWithdrawModal(id,'withdrawal')},
+    ] : []),
     {icon:'📋', label:'История операций', fn:()=>openHistorySheet(id)},
     {icon:'⧉', label:'Дублировать', fn:()=>duplicateSaving(id)},
     ...(showFix ? [{icon:'💸', label:'Зафиксировать доход', fn:()=>openFixIncomeModal(id)}] : []),
     {icon:'🗑', label:'Удалить', danger:true, fn:()=>deleteItem('savings',id)}
   ];
   showCtxMenu(e, items);
+}
+
+function openDepositWithdrawModal(savingId, type) {
+  const s = state.savings.find(x => x.id === savingId);
+  if (!s) return;
+  const isDeposit = type === 'deposit';
+  const title = isDeposit ? 'Пополнение' : 'Снятие';
+  const accentColor = isDeposit ? 'var(--accent)' : 'var(--danger)';
+  const overlay = document.createElement('div');
+  overlay.id = 'dw-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;padding:24px;width:calc(100% - 48px);max-width:360px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${title}</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">${s.icon} ${s.name}</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">ТЕКУЩИЙ БАЛАНС</div>
+      <div style="font-size:22px;font-weight:700;margin-bottom:16px;">${fmt(getSavingCurrentAmountLocal(s))} ${s.currency||'₽'}</div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>СУММА</label>
+        <input type="text" id="dw-amount" placeholder="0" inputmode="decimal"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:18px;font-weight:700;box-sizing:border-box;"
+          oninput="formatAmountInput(this)">
+      </div>
+      <div class="field" style="margin-bottom:16px;">
+        <label>ДАТА</label>
+        <input type="date" id="dw-date" value="${new Date().toISOString().slice(0,10)}"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;box-sizing:border-box;">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('dw-overlay').remove()" style="flex:1;padding:12px;background:var(--surface2);border:none;border-radius:10px;color:var(--text);font-size:14px;cursor:pointer;">Отмена</button>
+        <button onclick="confirmDepositWithdraw('${savingId}','${type}')" style="flex:2;padding:12px;background:${accentColor};border:none;border-radius:10px;color:${isDeposit?'var(--bg)':'#fff'};font-size:14px;font-weight:700;cursor:pointer;">${title}</button>
+      </div>
+    </div>`;
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('dw-amount')?.focus(), 100);
+}
+
+async function confirmDepositWithdraw(savingId, type) {
+  const s = state.savings.find(x => x.id === savingId);
+  if (!s) return;
+  const rawVal = document.getElementById('dw-amount')?.value?.replace(/\s/g,'').replace(',','.');
+  const amount = parseFloat(rawVal);
+  const date = document.getElementById('dw-date')?.value || new Date().toISOString().slice(0,10);
+  if (!amount || amount <= 0) { alert('Введи сумму'); return; }
+  if (type === 'withdrawal') {
+    const balance = getSavingCurrentAmountLocal(s);
+    if (amount > balance) { alert(`Недостаточно средств. Баланс: ${fmt(balance)} ${s.currency||'₽'}`); return; }
+  }
+  // Update s.amount to keep local balance in sync
+  const signed = type === 'deposit' ? amount : -amount;
+  s.amount = Math.max(0, (parseFloat(s.amount)||0) + signed);
+  save();
+  // Log to Supabase
+  await sbLogTransaction(savingId, type, amount, { date });
+  document.getElementById('dw-overlay')?.remove();
+  renderSavings();
 }
 
 // ── HISTORY SHEET ─────────────────────────────────────────
@@ -3705,6 +3768,9 @@ function onSavingTypeChange() {
   document.getElementById('deposit-fields').style.display=isDeposit?'':'none';
   document.getElementById('savings-account-fields').style.display=isSavingsAccount?'':'none';
   if(isDeposit||isSavingsAccount) document.getElementById('s-currency').value='RUB';
+  // Для накопительного счёта при редактировании скрываем поле суммы — баланс из транзакций
+  const amountRow = document.getElementById('s-amount')?.closest('.field-row');
+  if (amountRow) amountRow.style.display = (isSavingsAccount && editingId) ? 'none' : '';
   updateDepositPreview();
   if(isSavingsAccount) updateSavingsAccountPreview();
 }
@@ -3932,28 +3998,25 @@ function saveItem(){
   if(modalMode==='savings'){
     if(!validateSavingsForm()) return;
     const name=document.getElementById('s-name').value.trim();
-    const amount=getSavingAmountValue();
-    if(!name||!amount||amount<=0)return;
     const sel=document.getElementById('s-icon');
     const opt=sel.options[sel.selectedIndex];
     const icon=sel.value,isDeposit=opt.dataset.deposit==='1',isSavingsAccount=opt.dataset.savingsAccount==='1';
+    // Для накопительного счёта при редактировании — сумма берётся из текущего состояния (не из поля)
+    const prevItem = editingId ? state.savings.find(x=>x.id===editingId) : null;
+    const amount = (isSavingsAccount && editingId) ? (Number(prevItem?.amount)||0) : getSavingAmountValue();
+    if(!name||(!isSavingsAccount&&(!amount||amount<=0)))return;
+    if(!name)return;
     const currency=document.getElementById('s-currency').value;
     const included=(isSavingsAccount?document.getElementById('sa-included'):document.getElementById('s-included'))?.checked!==false;
     const item={id,name,icon,amount,isDeposit,isSavingsAccount,currency,included,excluded:!included};
     if(isDeposit){item.rate=parseFloat(document.getElementById('s-rate').value)||0;item.dateStart=document.getElementById('s-date-start').value;item.dateEnd=document.getElementById('s-date-end').value;item.compound=document.getElementById('s-compound').checked;}
     if(isSavingsAccount){item.rate=parseFloat(document.getElementById('sa-rate').value)||0;item.dateStart=document.getElementById('sa-date-start').value;item.accrual=document.getElementById('sa-accrual')?.value||'daily';}
-    // Log transaction to Supabase (history stored in DB, not in JSON)
-    const prevItem = editingId ? state.savings.find(x=>x.id===editingId) : null;
-    if (prevItem) {
-      const prevAmt = Number(prevItem.amount);
-      const diff = amount - prevAmt;
-      if (Math.abs(diff) > 0.01) {
-        sbLogTransaction(id, diff > 0 ? 'deposit' : 'withdrawal', Math.abs(diff), { note: 'Изменено вручную' });
-      }
-    } else {
+    // Log transaction to Supabase — только при создании нового
+    if (!prevItem) {
       const initDate = (isDeposit && item.dateStart) ? item.dateStart : new Date().toISOString().slice(0,10);
       sbLogTransaction(id, 'init', amount, { date: initDate });
     }
+    // Накопительный при редактировании — сумма в поле не менялась, транзакция не нужна
     if(_savingIdx>=0) state.savings.splice(_savingIdx,0,item); else state.savings.push(item);
   } else if(modalMode==='income'){
     if (!validateIncomeForm()) return;
