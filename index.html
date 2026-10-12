@@ -462,7 +462,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
 <!-- AUTH MODAL -->
-<div id="auth-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;backdrop-filter:blur(6px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeAuthModal()">
+<div id="auth-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;backdrop-filter:blur(6px);align-items:center;justify-content:center;">
   <div style="background:var(--surface);border-radius:20px;padding:28px 24px;width:calc(100% - 48px);max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
     <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px;">Вход в аккаунт</div>
     <div style="font-size:13px;color:var(--text-dim);margin-bottom:20px;">Синхронизация данных между устройствами</div>
@@ -472,7 +472,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <button id="auth-modal-btn" class="btn-primary" style="width:100%;font-size:14px;padding:13px;" onclick="authModalSignIn()">✉️ Отправить ссылку для входа</button>
     <div id="auth-modal-sent" style="display:none;font-size:13px;color:var(--accent);background:var(--accent-dim);border-radius:10px;padding:10px 12px;margin-top:12px;"></div>
     <div id="auth-modal-error" style="display:none;font-size:13px;color:var(--danger);margin-top:10px;"></div>
-    <button onclick="closeAuthModal()" style="width:100%;margin-top:12px;padding:10px;background:none;border:none;color:var(--text-dim);font-size:13px;cursor:pointer;">Отмена</button>
   </div>
 </div>
 <div class="sidebar" id="sidebar">
@@ -1458,6 +1457,7 @@ async function sbInit() {
     else { sbUnsubscribeRealtime(); }
   });
   if (_sbUser) { await sbLoadState(); sbSubscribeRealtime(); }
+  else { openAuthModal(); }
   sbUpdateUI();
 }
 
