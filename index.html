@@ -1225,8 +1225,23 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <input type="text" id="g-name" placeholder="Например: Коммунальные услуги">
         <div class="field-hint error" id="g-name-err" style="display:none;">Введи название</div>
       </div>
-      <div class="field"><label id="g-amount-label">СУММА В МЕСЯЦ (₽)</label>
-        <input type="number" id="g-amount" placeholder="0" inputmode="decimal">
+      <div class="field">
+        <label id="g-amount-label">СУММА В МЕСЯЦ (₽)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="number" id="g-amount" placeholder="0" inputmode="decimal" style="flex:1;" oninput="updateGoalCurrencyPreview()">
+          <select id="g-sub-currency" style="display:none;width:auto;flex-shrink:0;" onchange="updateGoalCurrencyPreview()">
+            <option value="RUB">₽ RUB</option>
+            <option value="USD">$ USD</option>
+            <option value="EUR">€ EUR</option>
+            <option value="CNY">¥ CNY</option>
+            <option value="GBP">£ GBP</option>
+            <option value="CHF">₣ CHF</option>
+            <option value="AED">د AED</option>
+            <option value="TRY">₺ TRY</option>
+            <option value="KZT">₸ KZT</option>
+          </select>
+        </div>
+        <div class="calc-preview" id="g-currency-preview" style="display:none;margin-top:6px;"></div>
         <div class="field-hint error" id="g-amount-err" style="display:none;">Введи сумму больше 0</div>
       </div>
       <div id="g-subscription-fields" style="display:none;">
@@ -4681,7 +4696,10 @@ function renderGoals() {
           ${g.note ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;font-style:italic;">${g.note}</div>` : ''}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:fit-content;">
-          <div style="font-size:13px;font-weight:600;color:var(--text);">${fmt(g.amount)} ₽</div>
+          ${g.subCurrency && g.subCurrency !== 'RUB' && g.subAmountOrig
+            ? `<div style="font-size:13px;font-weight:600;color:var(--text);">${fmt2(g.subAmountOrig)} ${CURRENCY_SYMBOLS?.[g.subCurrency]||g.subCurrency}</div>
+               <div style="font-size:10px;color:var(--text-dim);">≈ ${fmt(Math.round(g.amount))} ₽</div>`
+            : `<div style="font-size:13px;font-weight:600;color:var(--text);">${fmt(g.amount)} ₽</div>`}
           ${g.subPeriod && g.subPeriod > 1 ? `<div style="font-size:10px;color:var(--text-dim);">${fmt(Math.round(monthlyAmt))} ₽/мес</div>` : ''}
           ${g.covered ? `<div style="font-size:11px;color:#4ECDC4;font-weight:600;">✓ покрыта</div>` : `<div style="font-size:11px;color:#FFB347;">не покрыта</div>`}
         </div>
@@ -4767,7 +4785,13 @@ function selectGoalType(type) {
   if(subFields) subFields.style.display = type === 'subscription' ? '' : 'none';
   const noteField = document.getElementById('g-note-field');
   if(noteField) noteField.style.display = type === 'subscription' ? '' : 'none';
+  const curSel = document.getElementById('g-sub-currency');
+  if(curSel) {
+    curSel.style.display = type === 'subscription' ? '' : 'none';
+    if(type !== 'subscription') curSel.value = 'RUB';
+  }
   updateGoalAmountLabel();
+  updateGoalCurrencyPreview();
 }
 
 function getSubPeriodValue() {
@@ -4788,17 +4812,36 @@ function updateGoalAmountLabel() {
   const period = getSubPeriodValue();
   const label = document.getElementById('g-amount-label');
   const preview = document.getElementById('g-sub-preview');
+  const cur = document.getElementById('g-sub-currency')?.value || 'RUB';
+  const curSym = CURRENCY_SYMBOLS?.[cur] || cur;
   if (!label) return;
   if (type !== 'subscription') { label.textContent = 'СУММА В МЕСЯЦ (₽)'; if(preview) preview.style.display='none'; return; }
   const periodNames = {1:'в месяц', 2:'в 2 мес', 3:'в квартал', 6:'в полгода', 12:'в год'};
   const pname = periodNames[period] || `в ${period} мес`;
-  label.textContent = 'СУММА ' + pname.toUpperCase() + ' (₽)';
+  label.textContent = `СУММА ${pname.toUpperCase()} (${cur === 'RUB' ? '₽' : curSym})`;
   const amount = parseFloat(document.getElementById('g-amount')?.value) || 0;
   if (amount > 0 && period > 1 && preview) {
     const monthly = amount / period;
+    const monthlyRub = cur === 'RUB' ? monthly : toRub(monthly, cur);
     preview.style.display = '';
-    preview.textContent = 'В месяц: ' + fmt(Math.round(monthly)) + ' ₽';
+    preview.textContent = cur === 'RUB'
+      ? 'В месяц: ' + fmt(Math.round(monthly)) + ' ₽'
+      : `В месяц: ${fmt2(monthly)} ${curSym} ≈ ${fmt(Math.round(monthlyRub))} ₽`;
   } else if(preview) preview.style.display = 'none';
+  updateGoalCurrencyPreview();
+}
+
+function updateGoalCurrencyPreview() {
+  const cur = document.getElementById('g-sub-currency')?.value || 'RUB';
+  const preview = document.getElementById('g-currency-preview');
+  if (!preview) return;
+  if (cur === 'RUB') { preview.style.display = 'none'; return; }
+  const amount = parseFloat(document.getElementById('g-amount')?.value) || 0;
+  if (!amount) { preview.style.display = 'none'; return; }
+  const rubAmount = toRub(amount, cur);
+  const curSym = CURRENCY_SYMBOLS?.[cur] || cur;
+  preview.style.display = '';
+  preview.textContent = `${fmt2(amount)} ${curSym} ≈ ${fmt(Math.round(rubAmount))} ₽ по курсу ЦБ`;
 }
 
 function getGoalMonthlyAmount(g) {
@@ -5445,7 +5488,11 @@ function openEdit(list,id) {
     document.getElementById('g-amount').value=x.amount;
     if(x.emoji){const gEmoji=document.getElementById('g-emoji');if(gEmoji)gEmoji.value=x.emoji;document.querySelectorAll('[id^="gepb-"]').forEach(b=>b.classList.remove('selected'));const emap={'🎯':'target','🏠':'home','🛒':'cart','💊':'pill','📱':'phone','🚗':'car','✈️':'plane','💆':'spa','📚':'book','🎮':'game','🐾':'paw','⚡':'bolt','🎵':'music','☁️':'cloud','📺':'tv','🏋️':'gym'};const defE=document.getElementById('gepb-'+(emap[x.emoji]||''));if(defE)defE.classList.add('selected');else{const custom=document.getElementById('g-emoji-custom');if(custom)custom.value=x.emoji;}}
     if(x.color){const gColor=document.getElementById('g-color');if(gColor)gColor.value=x.color;document.querySelectorAll('[id^="gcpb-"]').forEach(b=>b.classList.remove('selected'));const defC=document.getElementById('gcpb-'+x.color.replace('#',''));if(defC)defC.classList.add('selected');}
-    if(x.type==='subscription'){selectGoalType('subscription');const sp=document.getElementById('g-sub-period');if(sp){const stdPeriods=[1,3,6,12];if(stdPeriods.includes(x.subPeriod||1)){sp.value=x.subPeriod||1;}else{sp.value='0';const cf=document.getElementById('g-sub-custom-field');if(cf)cf.style.display='';const sc=document.getElementById('g-sub-custom');if(sc)sc.value=x.subPeriod||1;}}const sd=document.getElementById('g-sub-date');if(sd)sd.value=x.subDate||'';const sn=document.getElementById('g-note');if(sn)sn.value=x.note||'';updateGoalAmountLabel();}
+    if(x.type==='subscription'){selectGoalType('subscription');const sp=document.getElementById('g-sub-period');if(sp){const stdPeriods=[1,3,6,12];if(stdPeriods.includes(x.subPeriod||1)){sp.value=x.subPeriod||1;}else{sp.value='0';const cf=document.getElementById('g-sub-custom-field');if(cf)cf.style.display='';const sc=document.getElementById('g-sub-custom');if(sc)sc.value=x.subPeriod||1;}}const sd=document.getElementById('g-sub-date');if(sd)sd.value=x.subDate||'';const sn=document.getElementById('g-note');if(sn)sn.value=x.note||'';
+    // Restore currency and original amount
+    const gCurSel=document.getElementById('g-sub-currency');if(gCurSel){gCurSel.value=x.subCurrency||'RUB';gCurSel.style.display='';}
+    const gAmtEl=document.getElementById('g-amount');if(gAmtEl&&x.subCurrency&&x.subCurrency!=='RUB'&&x.subAmountOrig){gAmtEl.value=x.subAmountOrig;}
+    updateGoalAmountLabel();}
   }
 }
 
@@ -5524,7 +5571,11 @@ function saveItem(){
     const subPeriod=gType==='subscription'?getSubPeriodValue():null;
     const subDate=gType==='subscription'?document.getElementById('g-sub-date')?.value||null:null;
     const note=gType==='subscription'?(document.getElementById('g-note')?.value?.trim()||null):null;
-    const _g={id,name,amount,emoji,color,type:gType,subPeriod,subDate,note};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
+    const subCurrency=gType==='subscription'?(document.getElementById('g-sub-currency')?.value||'RUB'):'RUB';
+    // Store original amount in foreign currency; amount field always in RUB for coverage calc
+    const amountRub = subCurrency !== 'RUB' ? toRub(amount, subCurrency) : amount;
+    const subAmountOrig = subCurrency !== 'RUB' ? amount : null;
+    const _g={id,name,amount:amountRub,emoji,color,type:gType,subPeriod,subDate,note,subCurrency,subAmountOrig};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
   }
   editingId=null;trackDailyAdd();save();render();closeModal();checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();haptic("success");
 }
