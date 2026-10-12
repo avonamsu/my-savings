@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261012229000">
+  <meta name="version" content="20261012230000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -4430,7 +4430,7 @@ function renderIncome() {
       const ratePct = s.rate ? Number(s.rate).toFixed(1)+'% год.' : '';
       const sub = ratePct ? `авто · ${ratePct}` : 'авто';
       const opacity = excl ? 'opacity:0.45;' : '';
-      return `<div class="card-item savings-card-item" style="border-left:3px solid ${color};${opacity}">
+      return `<div class="card-item savings-card-item" style="${opacity}">
         <div class="card-item-inner">
           <label class="toggle" style="flex-shrink:0;margin-right:8px;" title="Учитывать в доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('saving','${s.id}')"><span class="toggle-slider"></span></label>
           <div class="card-icon" style="background:${color}22;">${icon}</div>
@@ -4448,7 +4448,7 @@ function renderIncome() {
       const amt = excl ? 0 : calcIncomeAmountRub(x);
       const color = COLORS_MANUAL[x.icon] || '#4ECDC4';
       const opacity = excl ? 'opacity:0.45;' : '';
-      return `<div class="card-item savings-card-item" data-id="${x.id}" style="border-left:3px solid ${color};${opacity}">
+      return `<div class="card-item savings-card-item" data-id="${x.id}" style="${opacity}">
         <div class="card-item-inner">
           <label class="toggle" style="flex-shrink:0;margin-right:8px;" title="Учитывать в доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('manual','${x.id}')"><span class="toggle-slider"></span></label>
           <div class="card-icon" style="background:${color}22;">${x.icon||'✨'}</div>
