@@ -4035,8 +4035,8 @@ async function accrueInterestIfNeeded(s, txs) {
   if (!s.isSavingsAccount || !s.rate || !s.dateStart || !_sbUser) { console.log('[accrue] skipped early'); return; }
 
   const rate = Number(s.rate) / 100;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const todayStr = new Date().toLocaleDateString('sv'); // YYYY-MM-DD in local time
+  const today = new Date(todayStr + 'T12:00:00');
 
   // Find last accrued interest date
   const lastInterestTx = txs.filter(t => t.type === 'interest').sort((a,b) => b.date.localeCompare(a.date))[0];
@@ -4048,8 +4048,8 @@ async function accrueInterestIfNeeded(s, txs) {
   const startFromStr = lastInterestTx ? _addDay(lastInterestTx.date) : _addDay(s.dateStart);
   const startFrom = new Date(startFromStr + 'T00:00:00');
 
-  console.log('[accrue] startFrom:', startFrom.toISOString(), '| today:', today.toISOString(), '| lastInterestTx:', lastInterestTx?.date);
-  if (startFrom > today) { console.log('[accrue] nothing to accrue yet'); return; }
+  console.log('[accrue] startFromStr:', startFromStr, '| todayStr:', todayStr, '| lastInterestTx:', lastInterestTx?.date);
+  if (startFromStr > todayStr) { console.log('[accrue] nothing to accrue yet'); return; }
 
   // Build balance timeline including already-accrued interest (for compounding), ascending
   const cashTxs = [...txs].sort((a,b) => a.date.localeCompare(b.date));
@@ -4061,7 +4061,7 @@ async function accrueInterestIfNeeded(s, txs) {
   const newRows = [];
   const toLocalDateStr = (d) => d.toLocaleDateString('sv'); // 'sv' locale gives YYYY-MM-DD
   let cur = new Date(startFromStr + 'T12:00:00');
-  while (cur <= today) {
+  while (toLocalDateStr(cur) <= todayStr) {
     const key = toLocalDateStr(cur);
     // Find balance: exact day or last known
     let bal = timelineMap[key];
