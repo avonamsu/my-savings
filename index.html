@@ -3435,7 +3435,7 @@ function renderSavings() {
   const query = searchEl ? searchEl.value.toLowerCase() : '';
   const sortBy = window._savingsSort || 'type';
 
-  let items = state.savings.filter(x => !query || x.name.toLowerCase().includes(query));
+  let items = state.savings.filter(x => !x.earlyClosed && (!query || x.name.toLowerCase().includes(query)));
   if (sortBy === 'amount') items = [...items].sort((a,b) => getSavingCurrentAmountRub(b)-getSavingCurrentAmountRub(a));
 
   const el = document.getElementById('savings-list');
