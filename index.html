@@ -2051,7 +2051,7 @@ function _buildBalanceTimeline(txs, startDate, includeInterest = false) {
   let balance = 0;
   let cur = new Date(start);
   while (cur <= today) {
-    const key = cur.toISOString().slice(0,10);
+    const key = cur.toLocaleDateString('sv'); // YYYY-MM-DD in local time
     if (byDate[key] !== undefined) balance += byDate[key];
     timeline.push({ date: new Date(cur), balance });
     cur.setDate(cur.getDate() + 1);
