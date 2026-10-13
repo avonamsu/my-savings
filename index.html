@@ -4494,9 +4494,11 @@ function openAccountSheet(id) {
       </div>`;
     }
 
+    const isExpired = d && d.expired;
     const btns = [];
     if (canRefill) btns.push(_sheetBtn(`openDepositWithdrawModal('${id}','deposit')`, '➕', 'Пополнить', true));
-    if (canRefill && canTransfer) btns.push(_sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false));
+    if (isExpired) btns.push(_sheetBtn(`openDepositWithdrawModal('${id}','withdrawal')`, '➖', 'Снять', false));
+    if (canTransfer && (isExpired || canRefill)) btns.push(_sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false));
     if (canEarlyClose) btns.push(_sheetBtn(`openEarlyCloseModal('${id}')`, '🔓', 'Закрыть досрочно', false));
     if (showFix) btns.push(_sheetBtn(`openFixIncomeModal('${id}')`, '💸', 'Зафикс. доход', false));
     btns.push(_sheetBtn(`openHistorySheet('${id}')`, '📋', 'История операций', false));
