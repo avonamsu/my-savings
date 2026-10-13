@@ -4486,7 +4486,8 @@ function openAccountSheet(id) {
     const yearlyIncome = Math.round(Number(s.amount) * Number(s.rate) / 100);
     const canRefill = s.refillable && (!s.refillUntil || s.refillUntil >= today());
     const canEarlyClose = s.dateStart && (!s.dateEnd || s.dateEnd > today()) && !s.earlyClosed;
-    const showFix = d && (d.expired || daysLeft <= 14);
+    const alreadyFixed = (state.fixedDepositIncome || []).some(x => x.savingId === id);
+    const showFix = !alreadyFixed && d && (d.expired || daysLeft <= 14);
 
     if (d) {
       const pctDone = Math.round(d.daysPassed / d.daysTotal * 100);
