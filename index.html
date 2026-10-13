@@ -6639,7 +6639,6 @@ function savePiggyDeposit() {
     const action = signed > 0 ? `пополнить счёт «${linkedSaving.name}» на ${fmt(amount)} ₽` : `вычесть ${fmt(amount)} ₽ из счёта «${linkedSaving.name}»`;
     if (confirm(`💳 ${action.charAt(0).toUpperCase()+action.slice(1)}?`)) {
       linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) + signed);
-      if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = today();
       // для вклада dateStart не трогаем — пополняемый вклад считает % от новой суммы с исходной даты
     }
   }
@@ -7315,7 +7314,6 @@ async function toggleCell(challengeId, cellIdx) {
       // Ячейка отмечена — предлагаем пополнить счёт
       if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на ${fmtInt(cellAmount)} ₽?`)) {
         linkedSaving.amount = (parseFloat(linkedSaving.amount)||0) + cellAmount;
-        if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = dateStr;
         save();
         if (_sbUser && linkedSaving.isSavingsAccount) {
           const nextDay = new Date(dateStr + 'T12:00:00');
@@ -7331,7 +7329,6 @@ async function toggleCell(challengeId, cellIdx) {
       // Ячейка снята — предлагаем откатить пополнение счёта
       if (confirm(`💳 Отменить пополнение счёта «${linkedSaving.name}» на ${fmtInt(cellAmount)} ₽?`)) {
         linkedSaving.amount = Math.max(0, (parseFloat(linkedSaving.amount)||0) - cellAmount);
-        if (linkedSaving.isSavingsAccount && linkedSaving.rate) linkedSaving.dateStart = dateStr;
         save();
         if (_sbUser) {
           const cached = _txCache[linkedSaving.id];
