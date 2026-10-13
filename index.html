@@ -4226,6 +4226,23 @@ async function confirmEarlyClose(savingId) {
   renderSavings();
 }
 
+// ── CLOSE EXPIRED DEPOSIT ─────────────────────────────────
+async function closeExpiredDeposit(savingId) {
+  const s = state.savings.find(x => x.id === savingId);
+  if (!s) return;
+  const bal = Number(s.amount) || 0;
+  // Если есть остаток — предложим перевести или просто закрыть
+  if (bal > 0) {
+    const fmt = n => n.toLocaleString('ru-RU');
+    const confirmed = confirm(`Закрыть вклад «${s.name}»?\n\nОстаток ${fmt(bal)} ${s.currency || '₽'} останется в истории операций.\nДля перевода остатка сначала воспользуйтесь кнопкой «Перевести».`);
+    if (!confirmed) return;
+  }
+  s.earlyClosed = true;
+  document.getElementById('account-sheet-overlay')?.remove();
+  await save();
+  renderSavings();
+}
+
 // ── AUTO-RENEW CHECK ──────────────────────────────────────
 function checkAutoRenew() {
   // Auto-renew subscriptions with passed payment date
@@ -4497,9 +4514,9 @@ function openAccountSheet(id) {
     const isExpired = d && d.expired;
     const btns = [];
     if (canRefill) btns.push(_sheetBtn(`openDepositWithdrawModal('${id}','deposit')`, '➕', 'Пополнить', true));
-    if (isExpired) btns.push(_sheetBtn(`openDepositWithdrawModal('${id}','withdrawal')`, '➖', 'Снять', false));
     if (canTransfer && (isExpired || canRefill)) btns.push(_sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false));
     if (canEarlyClose) btns.push(_sheetBtn(`openEarlyCloseModal('${id}')`, '🔓', 'Закрыть досрочно', false));
+    if (isExpired && !s.earlyClosed) btns.push(_sheetBtn(`closeExpiredDeposit('${id}')`, '🔒', 'Закрыть вклад', false));
     if (showFix) btns.push(_sheetBtn(`openFixIncomeModal('${id}')`, '💸', 'Зафикс. доход', false));
     btns.push(_sheetBtn(`openHistorySheet('${id}')`, '📋', 'История операций', false));
     const cols = Math.min(btns.length, 4);
