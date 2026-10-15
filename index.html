@@ -2074,16 +2074,19 @@ function calcSavingsAccount(s) {
     const timeline = _buildBalanceTimeline(txs, s.dateStart);
 
     let earnedInterest = 0;
+    const todayStr = new Date().toLocaleDateString('sv'); // YYYY-MM-DD local
     if (accrual === 'daily') {
-      // Each day: balance × rate/365
-      for (const { balance } of timeline) {
+      // Each completed day (not today — bank accrues for finished days only)
+      for (const { date, balance } of timeline) {
+        if (date.toLocaleDateString('sv') >= todayStr) continue;
         if (balance > 0) earnedInterest += balance * rate / 365;
       }
     } else {
-      // Monthly: use minimum balance in each calendar month
+      // Monthly: use minimum balance in each completed calendar month
       const months = {};
       for (const { date, balance } of timeline) {
-        const key = date.toISOString().slice(0, 7); // YYYY-MM
+        if (date.toLocaleDateString('sv') >= todayStr) continue;
+        const key = date.toLocaleDateString('sv').slice(0, 7); // YYYY-MM
         if (months[key] === undefined || balance < months[key]) months[key] = balance;
       }
       for (const minBal of Object.values(months)) {
