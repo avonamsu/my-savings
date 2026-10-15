@@ -2071,7 +2071,12 @@ function calcSavingsAccount(s) {
   const cached = _txCache[s.id];
   if (cached && cached.txs.length > 0) {
     const txs = cached.txs;
-    const timeline = _buildBalanceTimeline(txs, s.dateStart);
+    // Use earliest transaction date as start if it's earlier than s.dateStart
+    // (guards against dateStart corruption from piggy bank/challenge code)
+    const firstTx = txs.find(tx => tx.type === 'init' || tx.type === 'deposit');
+    const firstTxDate = firstTx ? firstTx.date.slice(0, 10) : null;
+    const effectiveStart = firstTxDate && firstTxDate < s.dateStart ? firstTxDate : s.dateStart;
+    const timeline = _buildBalanceTimeline(txs, effectiveStart);
 
     let earnedInterest = 0;
     const todayStr = new Date().toLocaleDateString('sv'); // YYYY-MM-DD local
