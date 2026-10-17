@@ -2290,7 +2290,7 @@ function calcGoalsCoverage() {
     const covered = remaining >= cost;
     if (covered) { remaining -= cost; coveredSum += cost; coveredCount++; }
   });
-  const pct = totalGoals ? Math.min(100, Math.round(coveredSum / totalGoals * 100)) : 0;
+  const pct = totalGoals ? Math.min(100, Math.floor(coveredSum / totalGoals * 100)) : 0;
   return { pct, coveredCount, total: state.goals.length };
 }
 
@@ -4921,7 +4921,7 @@ function renderGoals() {
 
   const totalGoals = items.reduce((s,x) => s + x.cost, 0);
   const coveredCount = items.filter(g => g.covered).length;
-  const pct = totalGoals ? Math.min(100, Math.round(coveredSum/totalGoals*100)) : 0;
+  const pct = totalGoals ? Math.min(100, Math.floor(coveredSum/totalGoals*100)) : 0;
 
   const labelEl = document.getElementById('goals-label');
   if (labelEl) labelEl.textContent = `${coveredCount} из ${state.goals.length} ${plural(state.goals.length,'цели','целей','целей')} покрыт${coveredCount===1?'а':'ы'}`;
