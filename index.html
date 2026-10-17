@@ -3507,6 +3507,7 @@ function toggleSavingsGroup(key) {
   const collapsed = JSON.parse(localStorage.getItem('savings_groups_collapsed')||'{}');
   collapsed[key] = !collapsed[key];
   localStorage.setItem('savings_groups_collapsed', JSON.stringify(collapsed));
+  save(); // persist collapsed state to Supabase so it survives page reload
   const block = document.getElementById('grp-'+key);
   const header = block?.previousElementSibling;
   if (block) block.style.display = collapsed[key] ? 'none' : '';
@@ -7822,8 +7823,17 @@ function collectUIState() {
 
 function restoreUIState(ui) {
   if (!ui) return;
-  const lsKeys = ['home_widgets','savings_groups_collapsed','income_breakdown_collapsed','goals_groups_collapsed','last_page'];
-  lsKeys.forEach(k => { if (ui[k] !== undefined) { try { localStorage.setItem(k, JSON.stringify(ui[k])); } catch(e) {} } });
+  // For collapsed-group maps, merge with existing localStorage (don't overwrite local changes)
+  const mergeKeys = ['savings_groups_collapsed','income_breakdown_collapsed','goals_groups_collapsed'];
+  mergeKeys.forEach(k => {
+    if (ui[k] === undefined) return;
+    try {
+      const existing = JSON.parse(localStorage.getItem(k) || '{}');
+      localStorage.setItem(k, JSON.stringify({ ...ui[k], ...existing }));
+    } catch(e) {}
+  });
+  const plainKeys = ['home_widgets','last_page'];
+  plainKeys.forEach(k => { if (ui[k] !== undefined) { try { localStorage.setItem(k, JSON.stringify(ui[k])); } catch(e) {} } });
   if (ui._chCollapsed) window._chCollapsed = ui._chCollapsed;
 }
 
