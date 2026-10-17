@@ -4921,7 +4921,8 @@ function renderGoals() {
 
   const totalGoals = items.reduce((s,x) => s + x.cost, 0);
   const coveredCount = items.filter(g => g.covered).length;
-  const pct = totalGoals ? Math.min(100, Math.floor(coveredSum/totalGoals*100)) : 0;
+  // Use calcGoalsCoverage for pct to stay in sync with home screen
+  const pct = calcGoalsCoverage().pct;
 
   const labelEl = document.getElementById('goals-label');
   if (labelEl) labelEl.textContent = `${coveredCount} из ${state.goals.length} ${plural(state.goals.length,'цели','целей','целей')} покрыт${coveredCount===1?'а':'ы'}`;
