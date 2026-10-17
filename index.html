@@ -763,6 +763,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <div id="budget-balance" style="font-size:13px;font-weight:700;"></div>
       </div>
     </div>
+    <!-- Spending analysis block -->
+    <div id="budget-analysis" style="background:var(--surface2);border-radius:14px;padding:12px 14px;margin-bottom:16px;"></div>
     <!-- Tabs: Записи / Категории -->
     <div class="tab-switch" style="margin-bottom:12px;">
       <button class="active" id="budget-tab-entries" onclick="switchBudgetTab('entries')">Записи</button>
@@ -7605,6 +7607,7 @@ async function renderBudgetPage() {
   balEl.style.color = balance >= 0 ? '#4ECDC4' : '#FF6B6B';
 
   renderBudgetEntries(entries);
+  renderBudgetAnalysis(entries);
 }
 
 // Renders entries grouped by day
@@ -7652,6 +7655,128 @@ function renderBudgetEntries(entries) {
       ${rows}
     </div>`;
   }).join('');
+}
+
+// ── Budget spending analysis (50/30/20 bars) ──────────────────────────────
+
+// Default split: Основное 50%, Желания 30%, Накопления 20%
+const BUDGET_SPLIT = { 'Основное': 50, 'Желания': 30, 'Накопления': 20 };
+
+let _budgetIncomeEditing = false;
+
+// Renders the spending analysis block with income input and group progress bars
+function renderBudgetAnalysis(entries) {
+  const el = document.getElementById('budget-analysis');
+  if (!el) return;
+
+  budgetInit();
+
+  // Determine effective income: manual setting > sum of income entries
+  const fromEntries = entries.filter(e => e.type === 'income').reduce((s, e) => s + Number(e.amount), 0);
+  const manualIncome = state.budget.monthlyIncome || 0;
+  const income = manualIncome || fromEntries;
+
+  // Income header row
+  let incomeHtml;
+  if (_budgetIncomeEditing) {
+    incomeHtml = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:12px;color:var(--text-dim);white-space:nowrap;">Доход:</span>
+        <input id="budget-income-input" type="number" value="${manualIncome || ''}" placeholder="${fromEntries ? fmt(fromEntries) : '0'}"
+          style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;
+                 color:var(--text);font-size:13px;padding:5px 8px;min-width:0;">
+        <span style="font-size:12px;color:var(--text-dim);">₽/мес</span>
+        <button onclick="saveBudgetIncome()" style="background:rgba(78,205,196,0.2);border:none;border-radius:7px;color:#4ECDC4;font-size:13px;padding:5px 10px;cursor:pointer;">✓</button>
+        <button onclick="cancelBudgetIncome()" style="background:none;border:none;color:var(--text-dim);font-size:16px;padding:4px 6px;cursor:pointer;">✕</button>
+      </div>`;
+  } else if (income > 0) {
+    const sourceLabel = manualIncome
+      ? ''
+      : `<span style="font-size:10px;color:var(--text-dim);margin-left:4px;">из записей</span>`;
+    incomeHtml = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+        <span style="font-size:12px;color:var(--text-dim);">Доход:</span>
+        <span style="font-size:13px;font-weight:600;color:var(--text);">${fmt(income)} ₽/мес</span>
+        ${sourceLabel}
+        <button onclick="editBudgetIncome()" style="background:none;border:none;color:var(--text-dim);font-size:13px;padding:2px 4px;cursor:pointer;margin-left:2px;">✏️</button>
+      </div>`;
+  } else {
+    // No income yet — show compact input prompt
+    incomeHtml = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:12px;color:var(--text-dim);white-space:nowrap;">Доход:</span>
+        <input id="budget-income-input" type="number" placeholder="Введи сумму"
+          style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;
+                 color:var(--text);font-size:13px;padding:5px 8px;min-width:0;">
+        <span style="font-size:12px;color:var(--text-dim);">₽/мес</span>
+        <button onclick="saveBudgetIncome()" style="background:rgba(78,205,196,0.2);border:none;border-radius:7px;color:#4ECDC4;font-size:13px;padding:5px 10px;cursor:pointer;">✓</button>
+      </div>`;
+  }
+
+  // Progress bars — only when income is known
+  let barsHtml = '';
+  if (income > 0) {
+    // Sum expenses by group
+    const byGroup = {};
+    for (const e of entries.filter(e => e.type === 'expense')) {
+      if (e.group) byGroup[e.group] = (byGroup[e.group] || 0) + Number(e.amount);
+    }
+
+    barsHtml = Object.entries(BUDGET_SPLIT).map(([group, pct]) => {
+      const spent     = byGroup[group] || 0;
+      const limit     = income * pct / 100;
+      const factPct   = Math.min(Math.round(spent / income * 100), 100);
+      const overLimit = spent > limit * 1.05; // >5% over — show red
+      const barColor  = overLimit ? '#FF6B6B' : '#4ECDC4';
+      const limitFill = Math.min(pct, 100); // where the "recommended" mark sits
+
+      return `<div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;">
+          <span style="font-size:12px;color:var(--text-dim);">${group}</span>
+          <span style="font-size:11px;color:${overLimit ? '#FF6B6B' : 'var(--text-dim)'};">
+            ${fmt(spent)} <span style="opacity:.6;">/ ${pct}% (${fmt(limit)} ₽)</span>
+          </span>
+        </div>
+        <div style="position:relative;height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${factPct}%;background:${barColor};border-radius:3px;transition:width .3s;"></div>
+          <!-- recommended limit marker -->
+          <div style="position:absolute;top:0;left:${limitFill}%;width:1px;height:100%;background:rgba(255,255,255,0.25);"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  el.innerHTML = incomeHtml + barsHtml;
+
+  // Auto-focus income input if in edit/prompt mode
+  if (_budgetIncomeEditing || income === 0) {
+    setTimeout(() => {
+      const inp = document.getElementById('budget-income-input');
+      if (inp) inp.focus();
+    }, 50);
+  }
+}
+
+function editBudgetIncome() {
+  _budgetIncomeEditing = true;
+  // Re-render only the analysis block using cached entries
+  renderBudgetAnalysis(_budgetEntriesCache);
+}
+
+function cancelBudgetIncome() {
+  _budgetIncomeEditing = false;
+  renderBudgetAnalysis(_budgetEntriesCache);
+}
+
+function saveBudgetIncome() {
+  const inp = document.getElementById('budget-income-input');
+  if (!inp) return;
+  const val = parseFloat(inp.value.replace(',', '.'));
+  budgetInit();
+  state.budget.monthlyIncome = (val > 0) ? val : 0;
+  save();
+  _budgetIncomeEditing = false;
+  renderBudgetAnalysis(_budgetEntriesCache);
 }
 
 // Renders category management view
