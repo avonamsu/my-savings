@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018032000">
+  <meta name="version" content="20261018033000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1662,6 +1662,8 @@ async function sbLoadState() {
       renderSavings(); drawChart(); drawIncomeChart();
       recordSnapshot(); recordIncomeSnapshot();
     });
+    // Load budget entries if budget tab is active
+    if (_currentPage === 'budget') renderBudgetPage().catch(console.error);
     // Load snapshots independently
     sbLoadSnapshots();
     _sbStateLoaded = true; // safe to write to DB now
@@ -5584,7 +5586,7 @@ function showPage(name) {
   render();
   if(name==='savings') setTimeout(drawChart, 50);
   if(name==='income') setTimeout(drawIncomeChart, 50);
-  if(name==='budget') renderBudgetPage().catch(console.error);
+  if(name==='budget') { _budgetEntriesLoadedMonth = null; renderBudgetPage().catch(console.error); }
   if(name==='challenge') renderChallengesPage();
   updateFab(name);
 }
@@ -9070,6 +9072,7 @@ try {
 render();
 updateFab(_currentPage);
 if (_currentPage === 'challenge') renderChallengesPage();
+if (_currentPage === 'budget') renderBudgetPage().catch(console.error);
 const titleEl = document.getElementById('topbar-title');
 if (titleEl) titleEl.textContent = PAGE_TITLES[_currentPage] || 'Мои накопления';
 // Fallback: reveal savings list+hero after 5s in case Supabase/tx-cache load fails
