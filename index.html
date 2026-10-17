@@ -2033,6 +2033,9 @@ const fmt2 = n => Number(n).toLocaleString('ru-RU', {maximumFractionDigits:2});
 // Only counts init/deposit/withdrawal — not interest payouts (those are separate income events)
 // txs: sorted by date ascending
 // Returns array of {date (Date), balance}
+// Builds a day-by-day balance array [{date, balance}] from a transaction list.
+// Starts from startDate; each entry carries forward the balance from the previous day.
+// Interest transactions are excluded by default (set includeInterest=true to include them).
 function _buildBalanceTimeline(txs, startDate, includeInterest = false) {
   const start = new Date(startDate);
   start.setHours(0,0,0,0);
@@ -2059,6 +2062,11 @@ function _buildBalanceTimeline(txs, startDate, includeInterest = false) {
   return timeline;
 }
 
+// Calculates current amount and earned interest for a savings account.
+// If tx cache is available, builds a day-by-day balance timeline from transactions
+// and sums interest for each completed day (today excluded — bank hasn't accrued it yet).
+// Falls back to compound-interest formula on s.amount if no tx data.
+// Returns { currentAmount, earnedInterest, dailyIncome, daysPassed }
 function calcSavingsAccount(s) {
   const principal = Number(s.amount);
   const rate = Number(s.rate) / 100;
@@ -2130,6 +2138,9 @@ function updateSavingsAccountPreview() {
     <div style="display:flex;justify-content:space-between;margin-top:4px;"><span>В день</span><span>+${fmt(d.dailyIncome)} ₽</span></div>`;
 }
 
+// Calculates current amount, earned interest, and monthly income for a fixed-term deposit.
+// Uses tx cache if available (handles top-ups/partial withdrawals between segments).
+// Falls back to simple/compound formula on s.amount. Returns { currentAmount, earnedInterest, monthlyIncome }.
 function calcDeposit(s) {
   const rate=Number(s.rate)/100;
   // Parse dates as local midnight to avoid UTC timezone offset issues
@@ -2210,6 +2221,8 @@ function calcDeposit(s) {
   const earnedInterest=currentAmount-principal;
   return {currentAmount,monthlyIncome,daysTotal,daysPassed,expired,earnedInterest};
 }
+// Returns current balance in the account's own currency.
+// Routes to calcDeposit or calcSavingsAccount for interest-bearing accounts; falls back to s.amount.
 function getSavingCurrentAmountLocal(s) {
   if (s.isDeposit&&s.rate&&s.dateStart&&s.dateEnd) return calcDeposit(s).currentAmount;
   if (s.isSavingsAccount&&s.rate&&s.dateStart) return calcSavingsAccount(s).currentAmount;
@@ -2263,7 +2276,8 @@ function calcIncomeAmountRub(item) {
   return Number(item.amount)||0;
 }
 
-// Доход от вклада/накопительного счета в месяц (авто-расчёт)
+// Monthly income from a single saving in RUB. Returns 0 if excluded or no rate.
+// For deposits — uses calcDeposit.monthlyIncome; for savings accounts — rate/12 on current balance.
 function calcSavingMonthlyIncome(s) {
   if (s.excluded || s.incomeExcluded) return 0;
   if (s.isDeposit && s.rate && s.dateStart && s.dateEnd)
@@ -2275,7 +2289,10 @@ function calcSavingMonthlyIncome(s) {
   return 0;
 }
 
-// Суммарный доход: авто из savings + ручные из state.income (без savingRef на существующий счёт)
+// Single source of truth for goals coverage — used by both home screen and goals page.
+// Subscriptions are evaluated first, then regular goals (order matters: budget is sequential).
+// If income only partially covers a goal, remaining budget is exhausted and
+// all subsequent goals are also uncovered. Returns { pct, coveredCount, total }.
 function calcGoalsCoverage() {
   const totalIncome = calcTotalIncome();
   if (!state.goals || !state.goals.length) return { pct: 0, coveredCount: 0, total: 0 };
@@ -2289,13 +2306,16 @@ function calcGoalsCoverage() {
     const covered = remaining >= cost;
     const partial = !covered && remaining > 0 ? remaining / cost : 0;
     if (covered) { remaining -= cost; coveredSum += cost; coveredCount++; }
-    else if (partial > 0) remaining = 0;
+    else if (partial > 0) remaining = 0; // partial coverage exhausts remaining budget
   });
   const totalGoals = ordered.reduce((s, g) => s + (getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount)), 0);
   const pct = totalGoals ? Math.min(100, Math.floor(coveredSum / totalGoals * 100)) : 0;
   return { pct, coveredCount, total: state.goals.length };
 }
 
+// Total monthly income in RUB: auto-calculated from savings/deposits + manual income entries.
+// Manual entries are those with no savingRef, a ref to a deleted saving, or calcMode='fixed'.
+// Excluded items (incomeExcluded) are skipped.
 function calcTotalIncome() {
   const autoIncome = (state.savings||[]).reduce((s,x) => s + calcSavingMonthlyIncome(x), 0);
   // Ручные — без savingRef, с несуществующим savingRef, или с fixed calcMode (ручная сумма)
