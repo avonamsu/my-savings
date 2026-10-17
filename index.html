@@ -2279,17 +2279,19 @@ function calcSavingMonthlyIncome(s) {
 function calcGoalsCoverage() {
   const totalIncome = calcTotalIncome();
   if (!state.goals || !state.goals.length) return { pct: 0, coveredCount: 0, total: 0 };
-  let remaining = totalIncome, coveredSum = 0, totalGoals = 0, coveredCount = 0;
+  let remaining = totalIncome, coveredSum = 0, coveredCount = 0;
   const ordered = [
     ...state.goals.filter(g => g.type === 'subscription'),
     ...state.goals.filter(g => g.type !== 'subscription')
   ];
   ordered.forEach(g => {
     const cost = getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount);
-    totalGoals += cost;
     const covered = remaining >= cost;
+    const partial = !covered && remaining > 0 ? remaining / cost : 0;
     if (covered) { remaining -= cost; coveredSum += cost; coveredCount++; }
+    else if (partial > 0) remaining = 0;
   });
+  const totalGoals = ordered.reduce((s, g) => s + (getGoalMonthlyAmount ? getGoalMonthlyAmount(g) : Number(g.amount)), 0);
   const pct = totalGoals ? Math.min(100, Math.floor(coveredSum / totalGoals * 100)) : 0;
   return { pct, coveredCount, total: state.goals.length };
 }
