@@ -2333,7 +2333,7 @@ function renderHome() {
 
   // Urgent alert for expired/soon deposits
   const nowU = new Date(); nowU.setHours(0,0,0,0);
-  const urgentDeps = state.savings.filter(s=>s.isDeposit&&s.dateEnd).map(s=>{
+  const urgentDeps = state.savings.filter(s=>s.isDeposit&&s.dateEnd&&!s.earlyClosed).map(s=>{
     const end=new Date(s.dateEnd); end.setHours(0,0,0,0);
     return {...s, daysLeft:Math.round((end-nowU)/86400000)};
   }).filter(s=>s.daysLeft<=3);
