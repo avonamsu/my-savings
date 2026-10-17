@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018041500">
+  <meta name="version" content="20261018043000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -17,6 +17,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 :root {
@@ -747,6 +748,19 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <button onclick="budgetPrevMonth()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px 8px;">‹</button>
       <span id="budget-month-label" style="font-size:15px;font-weight:600;color:var(--text);"></span>
       <button onclick="budgetNextMonth()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px 8px;">›</button>
+    </div>
+    <!-- Export button row -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button onclick="exportBudgetExcel('month')"
+        style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
+               color:var(--text-dim);font-size:12px;font-weight:600;padding:8px;cursor:pointer;">
+        📥 Месяц в Excel
+      </button>
+      <button onclick="exportBudgetExcel('all')"
+        style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
+               color:var(--text-dim);font-size:12px;font-weight:600;padding:8px;cursor:pointer;">
+        📥 Всё в Excel
+      </button>
     </div>
     <!-- Loader: shown while data is being fetched -->
     <div id="budget-loader" style="text-align:center;padding:60px 0;color:var(--text-dim);font-size:14px;">Загрузка…</div>
@@ -7573,6 +7587,66 @@ function budgetInit() {
 
 // Which month is currently shown on the budget page (YYYY-MM string)
 let _budgetMonth = new Date().toLocaleDateString('sv').slice(0, 7);
+
+// Exports budget entries to Excel in the original format:
+// Sheet "Расходы": header row + col names + data rows (Категория|Тип|Сумма|Дата|Заметки)
+// Sheet "Доходы":  header row + col names + data rows (Категория|Tипы|Сумма|Дата|Заметки)
+async function exportBudgetExcel(mode) {
+  // Load data: current month or all entries
+  let entries;
+  if (mode === 'month') {
+    await loadBudgetEntries(_budgetMonth);
+    entries = _budgetEntriesCache.slice();
+  } else {
+    // Fetch all entries from Supabase without month filter
+    const btn = event.target;
+    btn.textContent = '⏳ Загрузка…';
+    btn.disabled = true;
+    const { data, error } = await _sb.from('budget_entries')
+      .select('*').order('date', { ascending: true });
+    btn.textContent = '📥 Всё в Excel';
+    btn.disabled = false;
+    if (error) { alert('Ошибка: ' + error.message); return; }
+    entries = data;
+  }
+
+  if (!entries || !entries.length) { alert('Нет данных для экспорта'); return; }
+
+  // Split by type
+  const expenses = entries.filter(e => e.type === 'expense');
+  const incomes  = entries.filter(e => e.type === 'income');
+
+  // Build rows for "Расходы" sheet: matches original format
+  // Row 0: title; Row 1: column names; Row 2+: data
+  const expRows = [
+    ['Расходы'],
+    ['Категория', 'Тип', 'Сумма', 'Дата', 'Заметки'],
+    ...expenses.map(e => [e.group || 'Основное', e.category, e.amount, e.date, e.note || ''])
+  ];
+
+  // Build rows for "Доходы" sheet
+  const incRows = [
+    ['Доходы'],
+    ['Категория', 'Tипы', 'Сумма', 'Дата', 'Заметки'],
+    ...incomes.map(e => [e.group || 'Доходы', e.category, e.amount, e.date, e.note || ''])
+  ];
+
+  // Create workbook with two sheets
+  const wb = XLSX.utils.book_new();
+  const wsExp = XLSX.utils.aoa_to_sheet(expRows);
+  const wsInc = XLSX.utils.aoa_to_sheet(incRows);
+
+  // Set column widths to match original (~Категория, Тип, Сумма, Дата, Заметки)
+  wsExp['!cols'] = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40}];
+  wsInc['!cols'] = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40}];
+
+  XLSX.utils.book_append_sheet(wb, wsExp, 'Расходы');
+  XLSX.utils.book_append_sheet(wb, wsInc, 'Доходы');
+
+  // File name: budget_YYYY-MM.xlsx or budget_all.xlsx
+  const suffix = mode === 'month' ? _budgetMonth : 'all';
+  XLSX.writeFile(wb, `budget_${suffix}.xlsx`);
+}
 
 function budgetPrevMonth() {
   const [y, m] = _budgetMonth.split('-').map(Number);
