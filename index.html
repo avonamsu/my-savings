@@ -7518,10 +7518,33 @@ const BUDGET_DEFAULT_CATEGORIES = {
   income: ['Зарплата','Кэшбэк','Подарок','Долг','Проценты по вкладу']
 };
 
+// In-memory cache for budget entries (loaded per month from Supabase)
+let _budgetEntriesCache = [];
+let _budgetEntriesLoadedMonth = null;
+
+// Load budget entries for a given month (YYYY-MM) from Supabase into cache
+async function loadBudgetEntries(month) {
+  if (!_sbUser) return;
+  if (_budgetEntriesLoadedMonth === month && _budgetEntriesCache.length >= 0) return;
+  const from = month + '-01';
+  const [y, m] = month.split('-').map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+  const to = month + '-' + String(lastDay).padStart(2, '0');
+  const { data, error } = await _sb.from('budget_entries')
+    .select('*')
+    .eq('user_id', _sbUser.id)
+    .gte('date', from)
+    .lte('date', to)
+    .order('date', { ascending: false });
+  if (!error) {
+    _budgetEntriesCache = data || [];
+    _budgetEntriesLoadedMonth = month;
+  }
+}
+
 // Initialise state.budget if it doesn't exist yet
 function budgetInit() {
   if (!state.budget) state.budget = {};
-  if (!state.budget.entries) state.budget.entries = [];
   if (!state.budget.categories) {
     // Store as { name, archived } objects
     const cats = { expense: {}, income: [] };
@@ -7540,12 +7563,14 @@ function budgetPrevMonth() {
   const [y, m] = _budgetMonth.split('-').map(Number);
   const d = new Date(y, m - 2, 1);
   _budgetMonth = d.toLocaleDateString('sv').slice(0, 7);
+  _budgetEntriesLoadedMonth = null; // force reload for new month
   renderBudgetPage();
 }
 function budgetNextMonth() {
   const [y, m] = _budgetMonth.split('-').map(Number);
   const d = new Date(y, m, 1);
   _budgetMonth = d.toLocaleDateString('sv').slice(0, 7);
+  _budgetEntriesLoadedMonth = null; // force reload for new month
   renderBudgetPage();
 }
 
@@ -7557,16 +7582,18 @@ function switchBudgetTab(tab) {
   if (tab === 'cats') renderBudgetCats();
 }
 
-// Renders the budget page (summary + entries list)
-function renderBudgetPage() {
+// Renders the budget page (summary + entries list); loads data from Supabase
+async function renderBudgetPage() {
   budgetInit();
   // Month label
   const [y, m] = _budgetMonth.split('-').map(Number);
   const label = new Date(y, m - 1, 1).toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
   document.getElementById('budget-month-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
 
-  // Filter entries for this month
-  const entries = (state.budget.entries || []).filter(e => e.date.slice(0, 7) === _budgetMonth);
+  // Load entries from Supabase (uses cache if already loaded for this month)
+  await loadBudgetEntries(_budgetMonth);
+  const entries = _budgetEntriesCache;
+
   const totalIncome  = entries.filter(e => e.type === 'income').reduce((s, e) => s + Number(e.amount), 0);
   const totalExpense = entries.filter(e => e.type === 'expense').reduce((s, e) => s + Number(e.amount), 0);
   const balance = totalIncome - totalExpense;
@@ -7741,11 +7768,12 @@ function budgetAddCatPrompt(type, group) {
 // ── Budget entry modal ─────────────────────────────────────
 
 let _budgetEditId = null;
+let _budgetModalType = 'expense'; // tracks current type selection in modal
 
 function openBudgetEntryModal(id) {
   budgetInit();
   _budgetEditId = id || null;
-  const entry = id ? (state.budget.entries || []).find(e => e.id === id) : null;
+  const entry = id ? _budgetEntriesCache.find(e => e.id === id) : null;
 
   const cats = state.budget.categories;
   // Build expense group options
@@ -7796,6 +7824,7 @@ function budgetModalUpdateCats(type, group, selected) {
 }
 
 function budgetModalSetType(type) {
+  _budgetModalType = type;
   const expBtn = document.getElementById('bm-type-expense');
   const incBtn = document.getElementById('bm-type-income');
   // Expense button: active = red tint, inactive = dim
@@ -7813,8 +7842,8 @@ function budgetModalSetGroup(group) {
   budgetModalUpdateCats('expense', group, '');
 }
 
-function saveBudgetEntry() {
-  const type   = document.getElementById('bm-type-expense').classList.contains('active') ? 'expense' : 'income';
+async function saveBudgetEntry() {
+  const type   = _budgetModalType;
   const group  = type === 'expense' ? document.getElementById('bm-group').value : null;
   const cat    = document.getElementById('bm-category').value;
   const amount = parseFloat(document.getElementById('bm-amount').value.replace(',', '.'));
@@ -7825,25 +7854,44 @@ function saveBudgetEntry() {
   if (!amount || isNaN(amount) || amount <= 0) { alert('Введи сумму'); return; }
   if (!date)        { alert('Выбери дату'); return; }
 
-  budgetInit();
-  if (_budgetEditId) {
-    const entry = state.budget.entries.find(e => e.id === _budgetEditId);
-    if (entry) { entry.type = type; entry.group = group; entry.category = cat; entry.amount = amount; entry.date = date; entry.note = note; }
-  } else {
-    state.budget.entries.push({ id: uid(), type, group, category: cat, amount, date, note });
-  }
-  save();
+  const entryId = _budgetEditId || uid();
+  const row = {
+    id: entryId,
+    user_id: _sbUser.id,
+    type,
+    group: group || null,
+    category: cat,
+    amount,
+    date,
+    note: note || null
+  };
+
+  const { error } = await _sb.from('budget_entries').upsert(row);
+  if (error) { alert('Ошибка сохранения: ' + error.message); return; }
+
+  // Update in-memory cache
+  const idx = _budgetEntriesCache.findIndex(e => e.id === entryId);
+  if (idx >= 0) _budgetEntriesCache[idx] = row;
+  else _budgetEntriesCache.push(row);
+
   closeBudgetEntryModal();
-  // Sync displayed month to entry's month
-  _budgetMonth = date.slice(0, 7);
+  // Sync displayed month to entry's month; force reload if month changed
+  const newMonth = date.slice(0, 7);
+  if (newMonth !== _budgetMonth) {
+    _budgetMonth = newMonth;
+    _budgetEntriesLoadedMonth = null;
+  }
   renderBudgetPage();
 }
 
-function deleteBudgetEntry() {
+async function deleteBudgetEntry() {
   if (!_budgetEditId) return;
   if (!confirm('Удалить запись?')) return;
-  state.budget.entries = state.budget.entries.filter(e => e.id !== _budgetEditId);
-  save();
+
+  const { error } = await _sb.from('budget_entries').delete().eq('id', _budgetEditId);
+  if (error) { alert('Ошибка удаления: ' + error.message); return; }
+
+  _budgetEntriesCache = _budgetEntriesCache.filter(e => e.id !== _budgetEditId);
   closeBudgetEntryModal();
   renderBudgetPage();
 }
