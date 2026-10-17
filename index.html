@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018043000">
+  <meta name="version" content="20261018045000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -749,18 +749,32 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <span id="budget-month-label" style="font-size:15px;font-weight:600;color:var(--text);"></span>
       <button onclick="budgetNextMonth()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px 8px;">›</button>
     </div>
-    <!-- Export button row -->
-    <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <button onclick="exportBudgetExcel('month')"
-        style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
-               color:var(--text-dim);font-size:12px;font-weight:600;padding:8px;cursor:pointer;">
-        📥 Месяц в Excel
+    <!-- Excel sync panel -->
+    <div class="chart-wrap" style="margin-bottom:12px;display:flex;flex-direction:column;gap:8px;">
+      <div class="section-title" style="margin-bottom:2px;">Excel-файл</div>
+      <!-- Download full export -->
+      <button id="btn-export-all" onclick="exportBudgetExcel()"
+        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
+               border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-weight:600;
+               padding:10px;cursor:pointer;text-align:left;">
+        📥 Скачать все записи
       </button>
-      <button onclick="exportBudgetExcel('all')"
-        style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
-               color:var(--text-dim);font-size:12px;font-weight:600;padding:8px;cursor:pointer;">
-        📥 Всё в Excel
-      </button>
+      <!-- Update existing file: user picks their xlsx, we append new rows -->
+      <label id="btn-update-file"
+        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
+               border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-weight:600;
+               padding:10px;cursor:pointer;display:block;box-sizing:border-box;">
+        🔄 Обновить мой файл
+        <input type="file" accept=".xlsx" style="display:none;" onchange="updateBudgetExcel(this)">
+      </label>
+      <!-- Import from file: upload xlsx → sync to DB -->
+      <label id="btn-import-file"
+        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
+               border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-weight:600;
+               padding:10px;cursor:pointer;display:block;box-sizing:border-box;">
+        📤 Загрузить из файла в приложение
+        <input type="file" accept=".xlsx" style="display:none;" onchange="importBudgetExcel(this)">
+      </label>
     </div>
     <!-- Loader: shown while data is being fetched -->
     <div id="budget-loader" style="text-align:center;padding:60px 0;color:var(--text-dim);font-size:14px;">Загрузка…</div>
@@ -7588,64 +7602,208 @@ function budgetInit() {
 // Which month is currently shown on the budget page (YYYY-MM string)
 let _budgetMonth = new Date().toLocaleDateString('sv').slice(0, 7);
 
-// Exports budget entries to Excel in the original format:
-// Sheet "Расходы": header row + col names + data rows (Категория|Тип|Сумма|Дата|Заметки)
-// Sheet "Доходы":  header row + col names + data rows (Категория|Tипы|Сумма|Дата|Заметки)
-async function exportBudgetExcel(mode) {
-  // Load data: current month or all entries
-  let entries;
-  if (mode === 'month') {
-    await loadBudgetEntries(_budgetMonth);
-    entries = _budgetEntriesCache.slice();
-  } else {
-    // Fetch all entries from Supabase without month filter
-    const btn = event.target;
-    btn.textContent = '⏳ Загрузка…';
-    btn.disabled = true;
-    const { data, error } = await _sb.from('budget_entries')
-      .select('*').order('date', { ascending: true });
-    btn.textContent = '📥 Всё в Excel';
-    btn.disabled = false;
-    if (error) { alert('Ошибка: ' + error.message); return; }
-    entries = data;
-  }
+// ── Excel helpers ─────────────────────────────────────────────────────────────
 
-  if (!entries || !entries.length) { alert('Нет данных для экспорта'); return; }
+// Fetches ALL entries from Supabase sorted by date
+async function _fetchAllBudgetEntries(btn, loadingText) {
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '⏳ ' + loadingText; btn.disabled = true; }
+  const { data, error } = await _sb.from('budget_entries')
+    .select('*').order('date', { ascending: true });
+  if (btn) { btn.innerHTML = orig; btn.disabled = false; }
+  if (error) throw new Error(error.message);
+  return data || [];
+}
 
-  // Split by type
-  const expenses = entries.filter(e => e.type === 'expense');
-  const incomes  = entries.filter(e => e.type === 'income');
-
-  // Build rows for "Расходы" sheet: matches original format
-  // Row 0: title; Row 1: column names; Row 2+: data
-  const expRows = [
-    ['Расходы'],
-    ['Категория', 'Тип', 'Сумма', 'Дата', 'Заметки'],
-    ...expenses.map(e => [e.group || 'Основное', e.category, e.amount, e.date, e.note || ''])
+// Converts DB entries → aoa rows for a sheet (Расходы or Доходы)
+function _budgetToRows(entries, type) {
+  const title   = type === 'expense' ? 'Расходы' : 'Доходы';
+  const typeCol = type === 'expense' ? 'Тип'     : 'Tипы';   // matches original spelling
+  const rows = [
+    [title],
+    ['Категория', typeCol, 'Сумма', 'Дата', 'Заметки'],
+    ...entries
+      .filter(e => e.type === type)
+      .map(e => [
+        e.group || (type === 'expense' ? 'Основное' : 'Доходы'),
+        e.category,
+        Number(e.amount),
+        e.date,          // YYYY-MM-DD string; Excel will display as text — fine for raw data
+        e.note || ''
+      ])
   ];
+  return rows;
+}
 
-  // Build rows for "Доходы" sheet
-  const incRows = [
-    ['Доходы'],
-    ['Категория', 'Tипы', 'Сумма', 'Дата', 'Заметки'],
-    ...incomes.map(e => [e.group || 'Доходы', e.category, e.amount, e.date, e.note || ''])
-  ];
-
-  // Create workbook with two sheets
-  const wb = XLSX.utils.book_new();
-  const wsExp = XLSX.utils.aoa_to_sheet(expRows);
-  const wsInc = XLSX.utils.aoa_to_sheet(incRows);
-
-  // Set column widths to match original (~Категория, Тип, Сумма, Дата, Заметки)
-  wsExp['!cols'] = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40}];
-  wsInc['!cols'] = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40}];
-
+// Builds a workbook from two row-arrays and triggers download
+function _downloadBudgetXlsx(expenses, incomes, filename) {
+  const wb    = XLSX.utils.book_new();
+  const cols  = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40}];
+  const wsExp = XLSX.utils.aoa_to_sheet(expenses);
+  const wsInc = XLSX.utils.aoa_to_sheet(incomes);
+  wsExp['!cols'] = cols; wsInc['!cols'] = cols;
   XLSX.utils.book_append_sheet(wb, wsExp, 'Расходы');
   XLSX.utils.book_append_sheet(wb, wsInc, 'Доходы');
+  XLSX.writeFile(wb, filename);
+}
 
-  // File name: budget_YYYY-MM.xlsx or budget_all.xlsx
-  const suffix = mode === 'month' ? _budgetMonth : 'all';
-  XLSX.writeFile(wb, `budget_${suffix}.xlsx`);
+// 1. СКАЧАТЬ ВСЕ ЗАПИСИ — generates a fresh file from DB
+async function exportBudgetExcel() {
+  const btn = document.getElementById('btn-export-all');
+  try {
+    const entries = await _fetchAllBudgetEntries(btn, 'Загрузка…');
+    if (!entries.length) { alert('Нет данных для экспорта'); return; }
+    _downloadBudgetXlsx(
+      _budgetToRows(entries, 'expense'),
+      _budgetToRows(entries, 'income'),
+      'budget_all.xlsx'
+    );
+  } catch(e) { alert('Ошибка: ' + e.message); }
+}
+
+// 2. ОБНОВИТЬ МОЙ ФАЙЛ — user picks their xlsx; we append only new rows and re-download
+async function updateBudgetExcel(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+
+  const btn = document.getElementById('btn-update-file');
+  btn.style.opacity = '0.6';
+
+  try {
+    // Read existing file
+    const ab  = await file.arrayBuffer();
+    const wb  = XLSX.read(ab, { type: 'array' });
+
+    // Read existing rows from both sheets (skip header rows 0+1)
+    const existingRows = (sheetName) => {
+      const ws = wb.Sheets[sheetName];
+      if (!ws) return [];
+      return XLSX.utils.sheet_to_json(ws, { header: 1 }).slice(2); // skip title + col row
+    };
+    const exExp = existingRows('Расходы');
+    const exInc = existingRows('Доходы');
+
+    // Build dedup keys from existing file: "group|cat|amount|date"
+    const key = r => `${r[0]}|${r[1]}|${r[2]}|${r[3]}`;
+    const expKeys = new Set(exExp.map(key));
+    const incKeys = new Set(exInc.map(key));
+
+    // Fetch all entries from DB
+    const entries = await _fetchAllBudgetEntries(null, '');
+
+    // New rows not yet in the file
+    const newExp = entries
+      .filter(e => e.type === 'expense')
+      .map(e => [e.group || 'Основное', e.category, Number(e.amount), e.date, e.note || ''])
+      .filter(r => !expKeys.has(key(r)));
+    const newInc = entries
+      .filter(e => e.type === 'income')
+      .map(e => [e.group || 'Доходы', e.category, Number(e.amount), e.date, e.note || ''])
+      .filter(r => !incKeys.has(key(r)));
+
+    if (!newExp.length && !newInc.length) {
+      alert('Файл уже актуален, новых записей нет.');
+      btn.style.opacity = '';
+      return;
+    }
+
+    // Append new rows to existing sheets (keep all other sheets intact)
+    const appendToSheet = (sheetName, title, typeCol, existingData, newRows) => {
+      const allRows = [
+        [title],
+        ['Категория', typeCol, 'Сумма', 'Дата', 'Заметки'],
+        ...existingData,
+        ...newRows
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(allRows);
+      ws['!cols'] = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40}];
+      // Replace or add sheet
+      if (wb.SheetNames.includes(sheetName)) {
+        wb.Sheets[sheetName] = ws;
+      } else {
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      }
+    };
+
+    appendToSheet('Расходы', 'Расходы', 'Тип',  exExp, newExp);
+    appendToSheet('Доходы',  'Доходы',  'Tипы', exInc, newInc);
+
+    const added = newExp.length + newInc.length;
+    XLSX.writeFile(wb, file.name); // keep original filename
+    alert(`Готово! Добавлено ${added} новых записей.`);
+  } catch(e) {
+    alert('Ошибка: ' + e.message);
+  } finally {
+    btn.style.opacity = '';
+  }
+}
+
+// 3. ЗАГРУЗИТЬ ИЗ ФАЙЛА — reads xlsx and upserts entries to DB
+async function importBudgetExcel(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+
+  const btn = document.getElementById('btn-import-file');
+  btn.style.opacity = '0.6';
+
+  try {
+    const ab = await file.arrayBuffer();
+    const wb = XLSX.read(ab, { type: 'array' });
+
+    // Parse a sheet into entry objects; skip rows 0 (title) and 1 (col names)
+    const parseSheet = (sheetName, type) => {
+      const ws = wb.Sheets[sheetName];
+      if (!ws) return [];
+      return XLSX.utils.sheet_to_json(ws, { header: 1 })
+        .slice(2)
+        .filter(r => r[2] && r[3]) // must have amount + date
+        .map(r => ({
+          user_id:  '122bf844-b593-4ac1-ade5-5e6f29b6f251',
+          type,
+          group:    r[0] || (type === 'expense' ? 'Основное' : null),
+          category: r[1] || '',
+          amount:   parseFloat(String(r[2]).replace(/\s/g,'').replace(',','.')),
+          date:     typeof r[3] === 'number'
+                      ? new Date(Math.round((r[3] - 25569) * 86400 * 1000)).toISOString().slice(0,10)
+                      : String(r[3]).slice(0,10),
+          note:     r[4] || null
+        }));
+    };
+
+    const expenses = parseSheet('Расходы', 'expense');
+    const incomes  = parseSheet('Доходы',  'income');
+    const all = [...expenses, ...incomes];
+
+    if (!all.length) { alert('В файле не найдено данных'); btn.style.opacity = ''; return; }
+
+    // Upsert in batches of 500 (no duplicate check needed — Supabase upsert by unique key)
+    // Since we don't have a natural unique key, we INSERT and skip duplicates via onConflict
+    // Strategy: fetch existing (date+category+amount+type) keys, insert only new
+    const { data: existing } = await _sb.from('budget_entries').select('type,category,amount,date');
+    const existKeys = new Set((existing || []).map(e => `${e.type}|${e.category}|${e.amount}|${e.date}`));
+    const toInsert = all.filter(e => !existKeys.has(`${e.type}|${e.category}|${e.amount}|${e.date}`));
+
+    if (!toInsert.length) { alert('Все записи из файла уже есть в приложении.'); btn.style.opacity = ''; return; }
+
+    let added = 0, errs = 0;
+    const B = 500;
+    for (let i = 0; i < toInsert.length; i += B) {
+      const { error } = await _sb.from('budget_entries').insert(toInsert.slice(i, i + B));
+      if (!error) added += Math.min(B, toInsert.length - i);
+      else { errs++; console.error(error); }
+    }
+
+    // Invalidate cache and re-render
+    _budgetEntriesLoadedMonth = null;
+    await renderBudgetPage();
+    alert(`Импорт завершён! Добавлено: ${added} записей.${errs ? ' Ошибок: ' + errs : ''}`);
+  } catch(e) {
+    alert('Ошибка: ' + e.message);
+  } finally {
+    btn.style.opacity = '';
+  }
 }
 
 function budgetPrevMonth() {
