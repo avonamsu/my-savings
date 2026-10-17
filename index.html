@@ -7636,7 +7636,7 @@ function renderBudgetEntries(entries) {
         const groupLabel = isExpense ? `<span style="font-size:10px;color:var(--text-dim);margin-left:4px;">${e.group}</span>` : '';
         return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);" onclick="openBudgetEntryModal('${e.id}')">
           <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:500;color:var(--text);">${e.category}${groupLabel}</div>
+            <div style="font-size:14px;font-weight:500;color:var(--text);">${(em => em ? em + ' ' : '')(_budgetCatEmoji(e.type,e.group,e.category))}${e.category}${groupLabel}</div>
             ${e.note ? `<div style="font-size:12px;color:var(--text-dim);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.note}</div>` : ''}
           </div>
           <div style="font-size:15px;font-weight:600;color:${isExpense ? '#FF6B6B' : '#4ECDC4'};margin-left:12px;white-space:nowrap;">
@@ -7779,77 +7779,109 @@ function saveBudgetIncome() {
   renderBudgetAnalysis(_budgetEntriesCache);
 }
 
+// Collapsed state for category group blocks; persisted in localStorage
+function _budgetCatsCollapsed() {
+  try { return JSON.parse(localStorage.getItem('budget_cats_collapsed') || '{}'); } catch { return {}; }
+}
+function _budgetCatsSetCollapsed(key, val) {
+  const s = _budgetCatsCollapsed();
+  s[key] = val;
+  localStorage.setItem('budget_cats_collapsed', JSON.stringify(s));
+}
+function toggleBudgetCatGroup(key) {
+  _budgetCatsSetCollapsed(key, !_budgetCatsCollapsed()[key]);
+  renderBudgetCats();
+}
+
+// Builds one category group block (expense group or income section)
+function _budgetGroupBlock(key, label, items, addType, addGroup) {
+  const collapsed  = !!_budgetCatsCollapsed()[key];
+  const chevron    = collapsed ? '›' : '⌄';
+  const active     = items.filter(c => !c.archived);
+  const archived   = items.filter(c => c.archived);
+
+  // Each row: emoji + name on left, edit-emoji + archive on right
+  const makeRow = (c, isArchived, type, group) => {
+    const emojiBtn = isArchived ? '' :
+      `<button onclick="budgetEditCatEmoji('${type}','${group || ''}','${c.name.replace(/'/g,"\\'")}','${(c.emoji||'').replace(/'/g,"\\'")}');event.stopPropagation();"
+         style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px 4px;opacity:.6;" title="Эмодзи">${c.emoji || '＋'}</button>`;
+    const label = `${c.emoji ? c.emoji + ' ' : ''}${c.name}`;
+    if (isArchived) {
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);opacity:0.5;">
+        <span style="font-size:13px;color:var(--text-dim);">${label}</span>
+        <button onclick="budgetRestoreCat('${type}','${group||'null'}','${c.name.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:2px 8px;">Вернуть</button>
+      </div>`;
+    }
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <span style="font-size:14px;color:var(--text);">${label}</span>
+      <div style="display:flex;align-items:center;gap:2px;">
+        ${emojiBtn}
+        <button onclick="budgetArchiveCat('${type}','${group||'null'}','${c.name.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:2px 6px;" title="Удалить">×</button>
+      </div>
+    </div>`;
+  };
+
+  const addBtn = `<button onclick="budgetAddCatPrompt('${addType}','${addGroup||'null'}')"
+    style="width:100%;background:rgba(255,255,255,0.05);border:1px dashed rgba(255,255,255,0.15);border-radius:8px;
+           color:var(--text-dim);font-size:13px;padding:7px;cursor:pointer;margin-bottom:8px;">＋ Добавить категорию</button>`;
+
+  const body = collapsed ? '' : `
+    <div style="margin-top:2px;">
+      ${addBtn}
+      ${active.map(c => makeRow(c, false, addType, addGroup)).join('')}
+      ${archived.length ? `
+        <div style="margin-top:8px;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Архив</div>
+          ${archived.map(c => makeRow(c, true, addType, addGroup)).join('')}
+        </div>` : ''}
+    </div>`;
+
+  return `<div style="background:var(--surface2);border-radius:14px;padding:12px 14px;margin-bottom:10px;">
+    <div onclick="toggleBudgetCatGroup('${key}')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+      <span style="font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;">${label}</span>
+      <span style="font-size:16px;color:var(--text-dim);line-height:1;">${chevron}</span>
+    </div>
+    ${body}
+  </div>`;
+}
+
 // Renders category management view
 function renderBudgetCats() {
   budgetInit();
   const cats = state.budget.categories;
   const el = document.getElementById('budget-cats-list');
 
-  // Expense groups
-  const expenseGroups = Object.entries(cats.expense).map(([group, items]) => {
-    const active   = items.filter(c => !c.archived);
-    const archived = items.filter(c => c.archived);
-    const activeRows = active.map(c =>
-      `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-        <span style="font-size:14px;color:var(--text);">${c.name}</span>
-        <button onclick="budgetArchiveCat('expense','${group}','${c.name}')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:2px 6px;" title="Удалить">×</button>
-      </div>`
-    ).join('');
-    const archivedRows = archived.length ? `
-      <div style="margin-top:6px;">
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Архив</div>
-        ${archived.map(c =>
-          `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);opacity:0.5;">
-            <span style="font-size:13px;color:var(--text-dim);">${c.name}</span>
-            <button onclick="budgetRestoreCat('expense','${group}','${c.name}')" style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:2px 8px;">Вернуть</button>
-          </div>`
-        ).join('')}
-      </div>` : '';
-    return `<div style="background:var(--surface2);border-radius:14px;padding:12px 14px;margin-bottom:10px;">
-      <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">${group}</div>
-      ${activeRows}
-      ${archivedRows}
-      <button onclick="budgetAddCatPrompt('expense','${group}')" style="margin-top:10px;width:100%;background:rgba(255,255,255,0.05);border:1px dashed rgba(255,255,255,0.15);border-radius:8px;color:var(--text-dim);font-size:13px;padding:7px;cursor:pointer;">＋ Добавить категорию</button>
-    </div>`;
-  }).join('');
+  const expenseGroups = Object.entries(cats.expense)
+    .map(([group, items]) => _budgetGroupBlock('exp_' + group, group, items, 'expense', group))
+    .join('');
 
-  // Income categories
-  const activeIncome   = cats.income.filter(c => !c.archived);
-  const archivedIncome = cats.income.filter(c => c.archived);
-  const incomeRows = activeIncome.map(c =>
-    `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-      <span style="font-size:14px;color:var(--text);">${c.name}</span>
-      <button onclick="budgetArchiveCat('income',null,'${c.name}')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:2px 6px;" title="Удалить">×</button>
-    </div>`
-  ).join('');
-  const archivedIncomeRows = archivedIncome.length ? `
-    <div style="margin-top:6px;">
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Архив</div>
-      ${archivedIncome.map(c =>
-        `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);opacity:0.5;">
-          <span style="font-size:13px;color:var(--text-dim);">${c.name}</span>
-          <button onclick="budgetRestoreCat('income',null,'${c.name}')" style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:2px 8px;">Вернуть</button>
-        </div>`
-      ).join('')}
-    </div>` : '';
+  const incomeBlock = _budgetGroupBlock('income', 'Доходы', cats.income, 'income', null);
 
-  const incomeSection = `<div style="background:var(--surface2);border-radius:14px;padding:12px 14px;margin-bottom:10px;">
-    <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Доходы</div>
-    ${incomeRows}
-    ${archivedIncomeRows}
-    <button onclick="budgetAddCatPrompt('income',null)" style="margin-top:10px;width:100%;background:rgba(255,255,255,0.05);border:1px dashed rgba(255,255,255,0.15);border-radius:8px;color:var(--text-dim);font-size:13px;padding:7px;cursor:pointer;">＋ Добавить категорию</button>
-  </div>`;
+  el.innerHTML = `<div style="margin-bottom:8px;font-size:13px;font-weight:600;color:var(--text-dim);">Расходы</div>${expenseGroups}${incomeBlock}`;
+}
 
-  el.innerHTML = `<div style="margin-bottom:8px;font-size:13px;font-weight:600;color:var(--text-dim);">Расходы</div>${expenseGroups}${incomeSection}`;
+// Returns emoji for a category by type, group and name (empty string if none)
+function _budgetCatEmoji(type, group, name) {
+  budgetInit();
+  const list = type === 'income'
+    ? state.budget.categories.income
+    : (state.budget.categories.expense[group] || []);
+  const cat = list.find(c => c.name === name);
+  return (cat && cat.emoji) ? cat.emoji : '';
+}
+
+// Resolves category array from type + group (handles 'null' string from HTML)
+function _budgetCatList(type, group) {
+  const g = (group === 'null' || group === null) ? null : group;
+  return type === 'income'
+    ? state.budget.categories.income
+    : state.budget.categories.expense[g];
 }
 
 // Archive a category (soft delete)
 function budgetArchiveCat(type, group, name) {
   budgetInit();
-  const cats = type === 'income'
-    ? state.budget.categories.income
-    : state.budget.categories.expense[group];
-  const cat = cats.find(c => c.name === name);
+  const cat = _budgetCatList(type, group).find(c => c.name === name);
   if (cat) cat.archived = true;
   save(); renderBudgetCats();
 }
@@ -7857,11 +7889,20 @@ function budgetArchiveCat(type, group, name) {
 // Restore an archived category
 function budgetRestoreCat(type, group, name) {
   budgetInit();
-  const cats = type === 'income'
-    ? state.budget.categories.income
-    : state.budget.categories.expense[group];
-  const cat = cats.find(c => c.name === name);
+  const cat = _budgetCatList(type, group).find(c => c.name === name);
   if (cat) cat.archived = false;
+  save(); renderBudgetCats();
+}
+
+// Opens a small inline emoji picker for a category
+function budgetEditCatEmoji(type, group, name, currentEmoji) {
+  const emoji = prompt('Эмодзи для категории (одним символом, или пусто чтобы убрать):', currentEmoji || '');
+  if (emoji === null) return; // cancelled
+  const trimmed = emoji.trim();
+  // Validate: allow empty (remove) or a single emoji/char
+  budgetInit();
+  const cat = _budgetCatList(type, group).find(c => c.name === name);
+  if (cat) cat.emoji = trimmed || '';
   save(); renderBudgetCats();
 }
 
@@ -7871,9 +7912,7 @@ function budgetAddCatPrompt(type, group) {
   if (!name || !name.trim()) return;
   const trimmed = name.trim();
   budgetInit();
-  const cats = type === 'income'
-    ? state.budget.categories.income
-    : state.budget.categories.expense[group];
+  const cats = _budgetCatList(type, group);
   const existing = cats.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
   if (existing && existing.archived) {
     if (confirm(`Категория «${existing.name}» уже была и сейчас в архиве. Восстановить её?`)) {
@@ -7886,7 +7925,7 @@ function budgetAddCatPrompt(type, group) {
     alert(`Категория «${existing.name}» уже существует.`);
     return;
   }
-  cats.push({ name: trimmed, archived: false });
+  cats.push({ name: trimmed, emoji: '', archived: false });
   save(); renderBudgetCats();
 }
 
@@ -7944,7 +7983,7 @@ function budgetModalUpdateCats(type, group, selected) {
     : (cats.expense[group] || []).filter(c => !c.archived);
   const sel = document.getElementById('bm-category');
   sel.innerHTML = items.map(c =>
-    `<option value="${c.name}" ${c.name === selected ? 'selected' : ''}>${c.name}</option>`
+    `<option value="${c.name}" ${c.name === selected ? 'selected' : ''}>${c.emoji ? c.emoji + ' ' : ''}${c.name}</option>`
   ).join('');
 }
 
