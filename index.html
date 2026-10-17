@@ -5584,7 +5584,7 @@ function showPage(name) {
   render();
   if(name==='savings') setTimeout(drawChart, 50);
   if(name==='income') setTimeout(drawIncomeChart, 50);
-  if(name==='budget') renderBudgetPage();
+  if(name==='budget') renderBudgetPage().catch(console.error);
   if(name==='challenge') renderChallengesPage();
   updateFab(name);
 }
@@ -7527,7 +7527,7 @@ let _budgetEntriesLoadedMonth = null;
 // Load budget entries for a given month (YYYY-MM) from Supabase into cache
 async function loadBudgetEntries(month) {
   if (!_sbUser) return;
-  if (_budgetEntriesLoadedMonth === month && _budgetEntriesCache.length >= 0) return;
+  if (_budgetEntriesLoadedMonth === month) return;
   const from = month + '-01';
   const [y, m] = month.split('-').map(Number);
   const lastDay = new Date(y, m, 0).getDate();
@@ -7565,15 +7565,15 @@ function budgetPrevMonth() {
   const [y, m] = _budgetMonth.split('-').map(Number);
   const d = new Date(y, m - 2, 1);
   _budgetMonth = d.toLocaleDateString('sv').slice(0, 7);
-  _budgetEntriesLoadedMonth = null; // force reload for new month
-  renderBudgetPage();
+  _budgetEntriesLoadedMonth = null;
+  renderBudgetPage().catch(console.error);
 }
 function budgetNextMonth() {
   const [y, m] = _budgetMonth.split('-').map(Number);
   const d = new Date(y, m, 1);
   _budgetMonth = d.toLocaleDateString('sv').slice(0, 7);
-  _budgetEntriesLoadedMonth = null; // force reload for new month
-  renderBudgetPage();
+  _budgetEntriesLoadedMonth = null;
+  renderBudgetPage().catch(console.error);
 }
 
 function switchBudgetTab(tab) {
@@ -7591,6 +7591,12 @@ async function renderBudgetPage() {
   const [y, m] = _budgetMonth.split('-').map(Number);
   const label = new Date(y, m - 1, 1).toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
   document.getElementById('budget-month-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+
+  // Show loading state while fetching
+  const listEl = document.getElementById('budget-entries-list');
+  if (listEl && _budgetEntriesLoadedMonth !== _budgetMonth) {
+    listEl.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:14px;">Загрузка…</div>`;
+  }
 
   // Load entries from Supabase (uses cache if already loaded for this month)
   await loadBudgetEntries(_budgetMonth);
@@ -8045,7 +8051,7 @@ async function saveBudgetEntry() {
     _budgetMonth = newMonth;
     _budgetEntriesLoadedMonth = null;
   }
-  renderBudgetPage();
+  renderBudgetPage().catch(console.error);
 }
 
 async function deleteBudgetEntry() {
@@ -8057,7 +8063,7 @@ async function deleteBudgetEntry() {
 
   _budgetEntriesCache = _budgetEntriesCache.filter(e => e.id !== _budgetEditId);
   closeBudgetEntryModal();
-  renderBudgetPage();
+  renderBudgetPage().catch(console.error);
 }
 
 function renderChallengesPage() {
