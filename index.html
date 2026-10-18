@@ -3829,12 +3829,12 @@ function openTaxDetailSheet() {
   const taxSummary = `
     <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:4px;">
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;">
-        <span style="color:var(--text-dim);">Доход с процентов ${currentYear}</span>
+        <span style="color:var(--text-dim);font-weight:700;">Доход с процентов ${currentYear}</span>
         <span style="font-weight:700;">${fmt(Math.round(t.totalYearlyIncome))} ₽</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:14px;">
-        <span style="color:var(--text-dim);">Необлагаемый порог <span style="opacity:.7;">(ЦБ ${t.cbRate}% × 1 млн)</span></span>
-        <span>${fmt(Math.round(t.taxFreeAmount))} ₽</span>
+        <span style="color:var(--text-dim);font-weight:700;">Необлагаемый порог <span style="opacity:.7;font-weight:400;">(ЦБ ${t.cbRate}% × 1 млн)</span></span>
+        <span style="font-weight:700;">${fmt(Math.round(t.taxFreeAmount))} ₽</span>
       </div>
       <div style="height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-bottom:10px;">
         <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;"></div>
