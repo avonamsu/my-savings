@@ -1279,19 +1279,26 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <button id="bm-type-income" onclick="budgetModalSetType('income')"
         style="flex:1;padding:10px 8px;border-radius:var(--radius-sm);border:2px solid transparent;cursor:pointer;font-size:14px;font-weight:600;background:var(--surface2);color:var(--text-dim);">Доход</button>
     </div>
-    <!-- Group (expense only) — uses standard .field structure -->
+    <!-- Group (expense only) — chip buttons -->
     <div id="bm-group-row" class="field">
       <label>ГРУППА</label>
-      <select id="bm-group" onchange="budgetModalSetGroup(this.value)">
-        <option value="Основное">Основное</option>
-        <option value="Желания">Желания</option>
-        <option value="Накопления">Накопления</option>
-      </select>
+      <div style="display:flex;gap:8px;margin-top:2px;">
+        <button onclick="budgetModalSetGroup('Основное')" id="bm-grp-Основное"
+          style="flex:1;padding:8px 4px;border-radius:var(--radius-sm);border:2px solid var(--accent);background:rgba(78,205,196,0.15);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;">Основное</button>
+        <button onclick="budgetModalSetGroup('Желания')" id="bm-grp-Желания"
+          style="flex:1;padding:8px 4px;border-radius:var(--radius-sm);border:2px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;">Желания</button>
+        <button onclick="budgetModalSetGroup('Накопления')" id="bm-grp-Накопления"
+          style="flex:1;padding:8px 4px;border-radius:var(--radius-sm);border:2px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;">Накопления</button>
+      </div>
     </div>
-    <!-- Category -->
+    <!-- Category + gear icon -->
     <div class="field">
       <label>КАТЕГОРИЯ</label>
-      <select id="bm-category"></select>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="bm-category" style="flex:1;"></select>
+        <button onclick="openBudgetSettings()" title="Управление категориями"
+          style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;">⚙️</button>
+      </div>
     </div>
     <!-- Amount -->
     <div class="field">
@@ -8987,12 +8994,6 @@ function openBudgetEntryModal(id) {
   _budgetEditId = id || null;
   const entry = id ? _budgetEntriesCache.find(e => e.id === id) : null;
 
-  const cats = state.budget.categories;
-  // Build expense group options
-  const expGroupOpts = Object.keys(cats.expense)
-    .map(g => `<option value="${g}" ${entry && entry.type==='expense' && entry.group===g ? 'selected' : ''}>${g}</option>`)
-    .join('');
-
   const modal = document.getElementById('budget-modal');
   if (!modal) return;
 
@@ -9006,7 +9007,7 @@ function openBudgetEntryModal(id) {
 
   budgetModalSetType(type);
   document.getElementById('bm-group-row').style.display = type === 'expense' ? '' : 'none';
-  document.getElementById('bm-group').value = group;
+  budgetModalSetGroup(group);
   document.getElementById('bm-amount').value = amount;
   document.getElementById('bm-date').value = date;
   document.getElementById('bm-note').value = note;
@@ -9049,17 +9050,26 @@ function budgetModalSetType(type) {
   incBtn.style.borderColor  = type === 'income' ? 'var(--accent)' : 'transparent';
   // Hide group selector for income entries
   document.getElementById('bm-group-row').style.display = type === 'expense' ? '' : 'none';
-  const group = document.getElementById('bm-group').value;
+  const group = ['Основное','Желания','Накопления'].find(g => document.getElementById('bm-grp-'+g)?.style.color === 'var(--accent)') || 'Основное';
   budgetModalUpdateCats(type, group, '');
 }
 
 function budgetModalSetGroup(group) {
+  // Update chip styles
+  ['Основное','Желания','Накопления'].forEach(g => {
+    const btn = document.getElementById('bm-grp-' + g);
+    if (!btn) return;
+    const active = g === group;
+    btn.style.borderColor = active ? 'var(--accent)' : 'rgba(255,255,255,0.1)';
+    btn.style.background  = active ? 'rgba(78,205,196,0.15)' : 'var(--surface2)';
+    btn.style.color       = active ? 'var(--accent)' : 'var(--text-dim)';
+  });
   budgetModalUpdateCats('expense', group, '');
 }
 
 async function saveBudgetEntry() {
   const type   = _budgetModalType;
-  const group  = type === 'expense' ? document.getElementById('bm-group').value : null;
+  const group  = type === 'expense' ? (['Основное','Желания','Накопления'].find(g => document.getElementById('bm-grp-'+g)?.style.color === 'var(--accent)') || 'Основное') : null;
   const cat    = document.getElementById('bm-category').value;
   const amount = parseFloat(document.getElementById('bm-amount').value.replace(',', '.'));
   const date   = document.getElementById('bm-date').value;
