@@ -1127,14 +1127,14 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 </div>
 
-<!-- ADD CATEGORY MODAL -->
+<!-- ADD / EDIT CATEGORY MODAL -->
 <div class="modal-overlay" id="add-cat-modal" onclick="if(event.target===this)closeAddCatModal()">
   <div class="modal">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-      <div class="modal-title" style="margin:0;">Новая категория</div>
+      <div class="modal-title" style="margin:0;" id="acm-title">Новая категория</div>
       <button onclick="closeAddCatModal()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;line-height:1;padding:4px;">✕</button>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <div style="display:flex;gap:8px;margin-bottom:16px;" id="acm-type-row">
       <button id="acm-type-expense" onclick="acmSetType('expense')"
         style="flex:1;padding:10px 8px;border-radius:var(--radius-sm);border:2px solid var(--danger);cursor:pointer;font-size:14px;font-weight:600;background:rgba(255,107,107,0.15);color:var(--danger);">Расход</button>
       <button id="acm-type-income" onclick="acmSetType('income')"
@@ -1152,8 +1152,13 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <label>НАЗВАНИЕ</label>
       <input id="acm-name" type="text" placeholder="Название категории" maxlength="60">
     </div>
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="saveAddCat()">Добавить</button>
+    <div class="field">
+      <label>ЭМОДЗИ (НЕОБЯЗАТЕЛЬНО)</label>
+      <input id="acm-emoji" type="text" placeholder="Одним символом, например 🛒" maxlength="4"
+        style="font-size:20px;text-align:center;letter-spacing:4px;">
+    </div>
+    <div class="modal-actions" style="flex-direction:column;gap:8px;">
+      <button class="btn-primary" id="acm-save-btn" onclick="saveAddCat()">Добавить</button>
     </div>
   </div>
 </div>
@@ -7621,6 +7626,7 @@ const BUDGET_DEFAULT_CATEGORIES = {
 // In-memory cache for budget entries (loaded per month from Supabase)
 let _budgetEntriesCache = [];
 let _budgetEntriesLoadedMonth = null;
+let _budgetStatsCache = null; // all-time entries cache for stats tab
 
 // Load budget entries for a given month (YYYY-MM) from Supabase into cache
 async function loadBudgetEntries(month) {
@@ -8334,8 +8340,12 @@ async function renderBudgetStats() {
   // Fetch all entries (not month-limited)
   let entries = _budgetStatsCache;
   if (!entries) {
-    const { data, error } = await _sb.from('budget_entries').select('*').order('date');
-    if (error) { el.innerHTML = '<div style="color:var(--danger);padding:20px;">Ошибка загрузки</div>'; return; }
+    if (!_sb || !_sbUser) {
+      el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--text-dim);font-size:14px;">Войдите в аккаунт для просмотра</div>';
+      return;
+    }
+    const { data, error } = await _sb.from('budget_entries').select('*').eq('user_id', _sbUser.id).order('date');
+    if (error) { el.innerHTML = '<div style="color:var(--danger);padding:20px;">Ошибка загрузки: ' + error.message + '</div>'; return; }
     _budgetStatsCache = entries = data || [];
   }
 
@@ -8415,8 +8425,6 @@ async function renderBudgetStats() {
     ${!expBlocks.length && !incBlocks.length ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}
   `.trim();
 }
-
-let _budgetStatsCache = null; // all-time entries cache for stats tab
 
 // Returns emoji for a category by type, group and name (empty string if none)
 function _budgetCatEmoji(type, group, name) {
