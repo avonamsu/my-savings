@@ -276,9 +276,29 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .edit-btn { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding:4px 0 4px 4px; opacity:.4; flex-shrink:0; }
 .excl-btn { background:none; border:none; cursor:pointer; font-size:17px; padding:4px 6px 4px 0; flex-shrink:0; opacity:0.5; line-height:1; }
 .add-btn { display:none; }
-.fab { position:fixed; bottom:84px; right:20px; height:48px; padding:0 24px; border-radius:24px; background:var(--surface2); color:var(--accent); border:1px solid rgba(78,205,196,0.25); font-size:16px; font-weight:600; cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,0.3); z-index:500; display:flex; align-items:center; justify-content:center; gap:7px; letter-spacing:.01em; transition:transform .15s, background .15s; white-space:nowrap; }
-.fab:active { transform:scale(0.95); background:var(--accent-dim); }
-.fab[hidden] { display:none; }
+/* old pill FAB — hidden, replaced by nav-fab */
+.fab { display:none !important; }
+
+/* Centre nav FAB */
+.nav-fab-slot { flex:1; display:flex; align-items:center; justify-content:center; position:relative; }
+.nav-fab {
+  position:absolute;
+  bottom:6px;
+  width:56px; height:56px;
+  border-radius:50%;
+  background:var(--accent);
+  color:#000;
+  border:none;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 18px rgba(61,214,140,0.45);
+  z-index:10;
+  transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-fab:active { transform:scale(0.92); box-shadow:0 2px 8px rgba(61,214,140,0.3); }
+/* hide when no action available on current page */
+.nav-fab[hidden] { display:none; }
 
 .reset-btn { background:none; border:none; color:var(--danger); font-size:13px; opacity:0.4; cursor:pointer; padding:8px; width:100%; text-align:center; }
 
@@ -449,8 +469,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <nav>
   <button class="active" onclick="showPage('home')" id="nav-home"><span class="ni">🏠</span>Главная</button>
   <button onclick="showPage('savings')" id="nav-savings"><span class="ni">💰</span>Счета</button>
-  <button onclick="showPage('income')" id="nav-income"><span class="ni">📈</span>Доход</button>
-  <button onclick="showPage('goals')" id="nav-goals"><span class="ni">🎯</span>Цели</button>
+  <!-- Centre FAB slot — not a page nav button -->
+  <div class="nav-fab-slot">
+    <button class="nav-fab" id="nav-fab" onclick="fabAction()">
+      <span style="font-size:26px;line-height:1;margin-top:-1px;">＋</span>
+    </button>
+  </div>
   <button onclick="showPage('budget')" id="nav-budget"><span class="ni">📒</span>Бюджет</button>
   <button onclick="showPage('challenge')" id="nav-challenge"><span class="ni">🪙</span>Копилка</button>
 </nav>
@@ -5763,16 +5787,12 @@ function navigateToItem(page, dataId) {
 }
 
 function updateFab(page) {
-  const fab = document.getElementById('fab');
-  if (!fab) return;
-  const labels = {savings:'Счёт', income:'Доход', goals:'Цель', budget:'Запись', challenge:'Копилка'};
-  const label = document.getElementById('fab-label');
-  if (labels[page]) {
-    fab.removeAttribute('hidden');
-    if (label) label.textContent = labels[page];
-  } else {
-    fab.setAttribute('hidden','');
-  }
+  // Nav-centre FAB: show on pages that have an add action
+  const navFab = document.getElementById('nav-fab');
+  if (!navFab) return;
+  const hasAction = ['savings','income','goals','budget','challenge'].includes(page);
+  if (hasAction) navFab.removeAttribute('hidden');
+  else navFab.setAttribute('hidden','');
 }
 
 function fabAction() {
