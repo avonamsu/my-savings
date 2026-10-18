@@ -258,6 +258,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* SECTION TITLE */
 .section-title { font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--text-dim); text-transform:uppercase; margin-bottom:-4px; }
 
+/* Period preset menu items */
+.stats-period-opt { display:block;width:100%;background:none;border:none;border-bottom:1px solid rgba(255,255,255,0.07);color:var(--text);font-size:13px;padding:11px 14px;cursor:pointer;text-align:left; }
+.stats-period-opt:hover { background:rgba(255,255,255,0.05); }
+
 /* CARD */
 .card { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); }
 .card-item { display:flex; align-items:center; padding:13px 14px; gap:10px; border-bottom:1px solid rgba(255,255,255,0.04); }
@@ -879,32 +883,53 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
       </div>
     </div>
-    <!-- Period + Type filters on one row -->
-    <div style="margin-bottom:12px;">
-      <div style="display:flex;gap:8px;">
-        <select id="stats-period" onchange="onStatsPeriodChange()"
-          style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);padding:7px 10px;font-size:13px;">
-          <option value="month">Текущий месяц</option>
-          <option value="last_month">Прошлый месяц</option>
-          <option value="3months">Последние 3 месяца</option>
-          <option value="6months">Последние 6 месяцев</option>
-          <option value="year">Текущий год</option>
-          <option value="custom">Произвольный период</option>
-        </select>
-        <select id="stats-type-select" onchange="statsSetType(this.value)"
-          style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);padding:7px 10px;font-size:13px;">
-          <option value="all">Все</option>
-          <option value="expense">Расходы</option>
-          <option value="income">Доходы</option>
-        </select>
-      </div>
-      <div id="stats-custom-range" style="display:none;margin-top:8px;">
-        <div style="display:flex;gap:8px;">
-          <div class="field" style="flex:1;margin:0;"><label>С</label><input type="date" id="stats-from" onchange="renderBudgetStats()"></div>
-          <div class="field" style="flex:1;margin:0;"><label>ПО</label><input type="date" id="stats-to" onchange="renderBudgetStats()"></div>
+    <!-- Period navigator + type filter -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <!-- Prev arrow -->
+      <button id="stats-nav-prev" onclick="statsNavShift(-1)"
+        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+               width:34px;height:34px;color:var(--text);font-size:18px;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;flex-shrink:0;">‹</button>
+      <!-- Clickable period label -->
+      <button id="stats-period-label" onclick="toggleStatsPeriodMenu()"
+        style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+               height:34px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;gap:4px;position:relative;">
+        <span id="stats-period-text">Октябрь 2026</span>
+        <span style="font-size:10px;color:var(--text-dim);margin-left:2px;">▾</span>
+        <!-- Period dropdown menu -->
+        <div id="stats-period-menu"
+          style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;
+                 background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:12px;
+                 box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:100;overflow:hidden;text-align:left;">
+          <button onclick="statsSetPreset('month')"     class="stats-period-opt">Текущий месяц</button>
+          <button onclick="statsSetPreset('last_month')" class="stats-period-opt">Прошлый месяц</button>
+          <button onclick="statsSetPreset('3months')"   class="stats-period-opt">Последние 3 месяца</button>
+          <button onclick="statsSetPreset('6months')"   class="stats-period-opt">Последние 6 месяцев</button>
+          <button onclick="statsSetPreset('year')"      class="stats-period-opt">Текущий год</button>
+          <button onclick="statsSetPreset('custom')"    class="stats-period-opt" style="border-bottom:none;">Произвольный период →</button>
         </div>
+      </button>
+      <!-- Next arrow -->
+      <button id="stats-nav-next" onclick="statsNavShift(1)"
+        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+               width:34px;height:34px;color:var(--text);font-size:18px;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;flex-shrink:0;">›</button>
+      <!-- Type filter -->
+      <select id="stats-type-select" onchange="statsSetType(this.value)"
+        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+               color:var(--text);padding:0 8px;font-size:13px;height:34px;flex-shrink:0;">
+        <option value="all">Все</option>
+        <option value="expense">Расходы</option>
+        <option value="income">Доходы</option>
+      </select>
+    </div>
+    <!-- Custom date range (shown only when preset = custom) -->
+    <div id="stats-custom-range" style="display:none;margin-bottom:12px;">
+      <div style="display:flex;gap:8px;">
+        <div class="field" style="flex:1;margin:0;"><label>С</label><input type="date" id="stats-from" onchange="renderBudgetStats()"></div>
+        <div class="field" style="flex:1;margin:0;"><label>ПО</label><input type="date" id="stats-to" onchange="renderBudgetStats()"></div>
       </div>
-      <div id="stats-period-label" style="margin-top:6px;font-size:12px;color:var(--text-dim);text-align:center;"></div>
     </div>
     <div id="budget-stats-content"></div>
   </div>
@@ -8572,44 +8597,126 @@ function renderBudgetCats() {
 
 // ── Budget Stats (Analysis tab) ───────────────────────────────────────────────
 
-// Returns [fromDate, toDate] strings YYYY-MM-DD for the selected period
-function _statsPeriodRange() {
-  const period = document.getElementById('stats-period')?.value || 'month';
-  const today  = new Date();
-  const pad    = n => String(n).padStart(2, '0');
-  const ymd    = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+// --- Period state ---
+// _statsPeriod: preset key or 'custom'
+// _statsNavOffset: integer shift relative to "current" (0 = now, -1 = one step back, etc.)
+let _statsPeriod    = 'month'; // current preset
+let _statsNavOffset = 0;       // navigation offset (steps from "now" for the preset)
 
-  if (period === 'custom') {
+const _PERIOD_STEP = { month: 1, last_month: 1, '3months': 3, '6months': 6, year: 12 };
+
+// Returns [fromDate, toDate] strings YYYY-MM-DD for the selected period + nav offset
+function _statsPeriodRange() {
+  const pad = n => String(n).padStart(2, '0');
+  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const today = new Date();
+
+  if (_statsPeriod === 'custom') {
     return [
-      document.getElementById('stats-from').value || ymd(new Date(today.getFullYear(), today.getMonth(), 1)),
-      document.getElementById('stats-to').value   || ymd(today)
+      document.getElementById('stats-from')?.value || ymd(new Date(today.getFullYear(), today.getMonth(), 1)),
+      document.getElementById('stats-to')?.value   || ymd(today)
     ];
   }
-  if (period === 'month') {
-    return [ymd(new Date(today.getFullYear(), today.getMonth(), 1)), ymd(today)];
+
+  const step = _PERIOD_STEP[_statsPeriod] || 1; // step size in months
+  const off  = _statsNavOffset * step;           // total month offset
+
+  if (_statsPeriod === 'month' || _statsPeriod === 'last_month') {
+    // Base anchor: current month (month) or last month (last_month)
+    const base = _statsPeriod === 'last_month' ? -1 : 0;
+    const m = today.getMonth() + base + off;
+    const f = new Date(today.getFullYear(), m, 1);
+    const t = new Date(today.getFullYear(), m + 1, 0); // last day of that month
+    // For current preset at offset 0, "month" ends today not end-of-month
+    const isCurrentMonth = _statsPeriod === 'month' && _statsNavOffset === 0;
+    return [ymd(f), isCurrentMonth ? ymd(today) : ymd(t)];
   }
-  if (period === 'last_month') {
-    const f = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    const t = new Date(today.getFullYear(), today.getMonth(), 0);
+  if (_statsPeriod === '3months' || _statsPeriod === '6months') {
+    const months = step;
+    const endM   = today.getMonth() + off;            // end month index
+    const f = new Date(today.getFullYear(), endM - (months - 1), 1);
+    const t = _statsNavOffset === 0
+      ? today
+      : new Date(today.getFullYear(), endM + 1, 0);
     return [ymd(f), ymd(t)];
   }
-  if (period === '3months') {
-    return [ymd(new Date(today.getFullYear(), today.getMonth() - 2, 1)), ymd(today)];
-  }
-  if (period === '6months') {
-    return [ymd(new Date(today.getFullYear(), today.getMonth() - 5, 1)), ymd(today)];
-  }
-  if (period === 'year') {
-    return [ymd(new Date(today.getFullYear(), 0, 1)), ymd(today)];
+  if (_statsPeriod === 'year') {
+    const y = today.getFullYear() + _statsNavOffset;
+    const f = new Date(y, 0, 1);
+    const t = _statsNavOffset === 0 ? today : new Date(y, 11, 31);
+    return [ymd(f), ymd(t)];
   }
   return [ymd(new Date(today.getFullYear(), today.getMonth(), 1)), ymd(today)];
 }
 
-function onStatsPeriodChange() {
-  const isCustom = document.getElementById('stats-period').value === 'custom';
+// Updates the period label text and arrow visibility
+function _statsUpdatePeriodLabel() {
+  const [from, to] = _statsPeriodRange();
+  const fmtDate  = s => new Date(s + 'T00:00:00').toLocaleString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  const fmtMonth = s => { const d = new Date(s + 'T00:00:00'); return d.toLocaleString('ru-RU', { month: 'long', year: 'numeric' }).replace(/^./, c => c.toUpperCase()); };
+
+  let label = '';
+  if (_statsPeriod === 'custom') {
+    const f = document.getElementById('stats-from')?.value;
+    const t = document.getElementById('stats-to')?.value;
+    label = (f && t) ? `${fmtDate(f)} — ${fmtDate(t)}` : 'Произвольный период';
+  } else if (_statsPeriod === 'month' || _statsPeriod === 'last_month') {
+    label = fmtMonth(from);
+  } else if (_statsPeriod === '3months' || _statsPeriod === '6months') {
+    label = `${fmtDate(from)} — ${fmtDate(to)}`;
+  } else if (_statsPeriod === 'year') {
+    label = new Date(from + 'T00:00:00').getFullYear().toString();
+  }
+
+  const el = document.getElementById('stats-period-text');
+  if (el) el.textContent = label;
+
+  // Hide arrows for custom period; also hide next arrow when already at "now"
+  const isCustom = _statsPeriod === 'custom';
+  const atNow    = _statsNavOffset === 0;
+  const prev = document.getElementById('stats-nav-prev');
+  const next = document.getElementById('stats-nav-next');
+  if (prev) prev.style.display = isCustom ? 'none' : '';
+  if (next) { next.style.display = isCustom ? 'none' : ''; next.style.opacity = atNow ? '0.3' : '1'; next.style.pointerEvents = atNow ? 'none' : ''; }
+
   document.getElementById('stats-custom-range').style.display = isCustom ? '' : 'none';
-  if (!isCustom) renderBudgetStats();
 }
+
+// Called when user picks a preset from the menu
+function statsSetPreset(preset) {
+  _statsPeriod    = preset;
+  _statsNavOffset = 0;
+  document.getElementById('stats-period-menu').style.display = 'none';
+  _statsUpdatePeriodLabel();
+  renderBudgetStats();
+}
+
+// Shift period by +1 or -1 step (arrow click)
+function statsNavShift(dir) {
+  if (_statsPeriod === 'custom') return;
+  const next = _statsNavOffset + dir;
+  if (next > 0) return; // don't go into future
+  _statsNavOffset = next;
+  _statsUpdatePeriodLabel();
+  renderBudgetStats();
+}
+
+// Toggle the period preset dropdown menu
+function toggleStatsPeriodMenu(e) {
+  const menu = document.getElementById('stats-period-menu');
+  if (!menu) return;
+  const open = menu.style.display === 'none' || !menu.style.display;
+  menu.style.display = open ? '' : 'none';
+  if (open) {
+    // Close on outside click
+    setTimeout(() => document.addEventListener('click', function _h(ev) {
+      if (!menu.contains(ev.target)) { menu.style.display = 'none'; document.removeEventListener('click', _h); }
+    }), 0);
+  }
+}
+
+// Legacy — kept so any existing calls don't break; no-op now
+function onStatsPeriodChange() {}
 
 // Renders the stats table for the selected period using entries loaded per-period
 async function renderBudgetStats() {
@@ -8622,24 +8729,8 @@ async function renderBudgetStats() {
     return;
   }
 
+  _statsUpdatePeriodLabel(); // sync header label + arrow states
   const [from, to] = _statsPeriodRange();
-
-  // Update period label below filters
-  const periodLabelEl = document.getElementById('stats-period-label');
-  if (periodLabelEl) {
-    const period = document.getElementById('stats-period')?.value || 'month';
-    const fmtDate = s => new Date(s + 'T00:00:00').toLocaleString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-    const monthName = s => { const d = new Date(s + 'T00:00:00'); return d.toLocaleString('ru-RU', { month: 'long', year: 'numeric' }); };
-    const labels = {
-      month:      () => monthName(from).replace(/^./, c => c.toUpperCase()),
-      last_month: () => monthName(from).replace(/^./, c => c.toUpperCase()),
-      '3months':  () => `${fmtDate(from)} — ${fmtDate(to)}`,
-      '6months':  () => `${fmtDate(from)} — ${fmtDate(to)}`,
-      year:       () => new Date(from + 'T00:00:00').getFullYear().toString(),
-      custom:     () => `${fmtDate(from)} — ${fmtDate(to)}`,
-    };
-    periodLabelEl.textContent = (labels[period] || labels.month)();
-  }
 
   // Re-fetch only when period changed
   if (!_budgetStatsCache || _budgetStatsCache._from !== from || _budgetStatsCache._to !== to) {
