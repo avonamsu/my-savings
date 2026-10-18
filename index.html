@@ -901,26 +901,25 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
       </div>
     </div>
-    <!-- Type pills: Все / Расходы / Доходы -->
-    <div style="display:flex;gap:6px;margin-bottom:12px;">
-      <button id="stats-type-all"     onclick="statsSetType('all')"
-        style="flex:1;padding:6px 4px;border-radius:20px;border:1.5px solid var(--accent);background:rgba(78,205,196,0.15);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">Все</button>
-      <button id="stats-type-expense" onclick="statsSetType('expense')"
-        style="flex:1;padding:6px 4px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;">Расходы</button>
-      <button id="stats-type-income"  onclick="statsSetType('income')"
-        style="flex:1;padding:6px 4px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;">Доходы</button>
-    </div>
-    <!-- Period picker (compact, hidden under period button) -->
+    <!-- Period + Type filters on one row -->
     <div style="margin-bottom:12px;">
-      <select id="stats-period" onchange="onStatsPeriodChange()"
-        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);padding:7px 10px;font-size:13px;">
-        <option value="month">Текущий месяц</option>
-        <option value="last_month">Прошлый месяц</option>
-        <option value="3months">Последние 3 месяца</option>
-        <option value="6months">Последние 6 месяцев</option>
-        <option value="year">Текущий год</option>
-        <option value="custom">Произвольный период</option>
-      </select>
+      <div style="display:flex;gap:8px;">
+        <select id="stats-period" onchange="onStatsPeriodChange()"
+          style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);padding:7px 10px;font-size:13px;">
+          <option value="month">Текущий месяц</option>
+          <option value="last_month">Прошлый месяц</option>
+          <option value="3months">Последние 3 месяца</option>
+          <option value="6months">Последние 6 месяцев</option>
+          <option value="year">Текущий год</option>
+          <option value="custom">Произвольный период</option>
+        </select>
+        <select id="stats-type-select" onchange="statsSetType(this.value)"
+          style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);padding:7px 10px;font-size:13px;">
+          <option value="all">Все</option>
+          <option value="expense">Расходы</option>
+          <option value="income">Доходы</option>
+        </select>
+      </div>
       <div id="stats-custom-range" style="display:none;margin-top:8px;">
         <div style="display:flex;gap:8px;">
           <div class="field" style="flex:1;margin:0;"><label>С</label><input type="date" id="stats-from" onchange="renderBudgetStats()"></div>
@@ -8978,15 +8977,9 @@ let _statsView = 'type';        // 'type' | 'cat'
 
 function statsSetType(val) {
   _statsTypeFilter = val;
-  // Update pill styles
-  ['all','expense','income'].forEach(v => {
-    const btn = document.getElementById('stats-type-' + v);
-    if (!btn) return;
-    const active = v === val;
-    btn.style.borderColor = active ? 'var(--accent)' : 'rgba(255,255,255,0.1)';
-    btn.style.background  = active ? 'rgba(78,205,196,0.15)' : 'var(--surface2)';
-    btn.style.color       = active ? 'var(--accent)' : 'var(--text-dim)';
-  });
+  // Sync select in case called programmatically
+  const sel = document.getElementById('stats-type-select');
+  if (sel) sel.value = val;
   renderBudgetStats();
 }
 
