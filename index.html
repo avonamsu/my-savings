@@ -9038,94 +9038,102 @@ async function renderBudgetStats() {
     ${typeFilter !== 'expense' && incBlocks ? `<div class="section-title" style="margin:12px 0 8px;">Доходы</div>${incBlocks}` : ''}
     ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}`;
 
+  // При фильтре "Доходы" — только слайд с графиком (1 слайд).
+  // При "Расходы" или "Все" — 4 слайда: Основное, Желания, Накопления, График.
+  const isIncomeOnly = typeFilter === 'income';
+  const carouselTotal = isIncomeOnly ? 1 : 4;
+  // Сбрасываем позицию если она вышла за пределы (переключили фильтр)
+  if (_statsCarouselSlide >= carouselTotal) _statsCarouselSlide = 0;
+
+  // Слайд с графиком — общий для обоих режимов
+  const chartSlideHtml = `
+    <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
+      ${donutTotal > 0 && !isIncomeOnly ? `
+      <div style="display:flex;background:rgba(255,255,255,0.07);border-radius:9px;padding:3px;margin-bottom:12px;gap:2px;">
+        <button id="stats-view-type" onclick="statsSetView('type')"
+          style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                 background:${effectiveViewMode==='type'?'var(--surface)':'transparent'};
+                 color:${effectiveViewMode==='type'?'var(--text)':'var(--text-dim)'};
+                 box-shadow:${effectiveViewMode==='type'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
+                 transition:all .2s;">По типу</button>
+        <button id="stats-view-cat" onclick="statsSetView('cat')"
+          style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                 background:${effectiveViewMode==='cat'?'var(--surface)':'transparent'};
+                 color:${effectiveViewMode==='cat'?'var(--text)':'var(--text-dim)'};
+                 box-shadow:${effectiveViewMode==='cat'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
+                 transition:all .2s;">По категориям</button>
+      </div>` : ''}
+      ${donutTotal > 0 ? `
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
+          <canvas id="stats-donut-canvas" width="260" height="260"
+            style="width:130px;height:130px;border-radius:50%;"></canvas>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;
+                      align-items:center;justify-content:center;pointer-events:none;">
+            <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">
+              ${donutType === 'expense' ? 'Расходы' : 'Доходы'}
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:2px;">
+              ${fmt(donutTotal)} ₽
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          ${legendHtml}
+        </div>
+      </div>
+      ${effectiveViewMode === 'type' && !isIncomeOnly ? `
+      <div style="text-align:right;margin-top:10px;">
+        <button onclick="openBudgetSettings()"
+          style="background:none;border:none;padding:0;color:var(--accent);
+                 font-size:12px;cursor:pointer;opacity:0.8;">Параметры →</button>
+      </div>` : ''}
+      ` : '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>'}
+    </div>`;
+
+  // Слайды расходов по типам (только при фильтре расходов)
+  const expenseSlidesHtml = isIncomeOnly ? '' : `
+    <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Основное</div>
+      ${totals.expense['Основное']
+        ? Object.entries(totals.expense['Основное']).sort((a,b)=>b[1]-a[1])
+            .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Основное']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Основное')).join('')
+        : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
+    </div>
+    <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Желания</div>
+      ${totals.expense['Желания']
+        ? Object.entries(totals.expense['Желания']).sort((a,b)=>b[1]-a[1])
+            .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Желания']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Желания')).join('')
+        : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
+    </div>
+    <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Накопления</div>
+      ${totals.expense['Накопления']
+        ? Object.entries(totals.expense['Накопления']).sort((a,b)=>b[1]-a[1])
+            .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Накопления']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Накопления')).join('')
+        : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
+    </div>`;
+
+  // Точки-индикаторы (количество зависит от режима)
+  const dotsHtml = Array.from({length: carouselTotal}, (_, i) =>
+    `<div id="stats-dot-${i}" style="width:6px;height:6px;border-radius:50%;background:${i===0?'var(--accent)':'rgba(255,255,255,0.2)'};transition:background .2s;"></div>`
+  ).join('');
+
   el.innerHTML = `
-    <!-- Карусель: слайды 0-2 = группы расходов, слайд 3 = график -->
     <div class="chart-wrap" style="margin-bottom:14px;">
     <div id="stats-carousel">
-      <!-- Строка: стрелка + трек + стрелка -->
       <div style="display:flex;align-items:center;gap:4px;">
         <button id="stats-carousel-prev" onclick="_statsCarouselGo(-1)"
           style="background:rgba(255,255,255,0.06);border:none;border-radius:50%;flex-shrink:0;
                  width:24px;height:24px;display:flex;align-items:center;justify-content:center;
                  cursor:pointer;color:var(--text-dim);font-size:14px;transition:opacity .2s;
                  opacity:0;pointer-events:none;">‹</button>
-
-      <!-- Слайдер -->
       <div id="stats-carousel-track" style="overflow:hidden;flex:1;transition:height .3s ease;height:0;">
         <div id="stats-carousel-inner"
              style="display:flex;transition:transform .3s ease;will-change:transform;">
-
-          <!-- Слайд 0: Основное -->
-          <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
-            <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Основное</div>
-            ${totals.expense['Основное']
-              ? Object.entries(totals.expense['Основное']).sort((a,b)=>b[1]-a[1])
-                  .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Основное']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Основное')).join('')
-              : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
-          </div>
-
-          <!-- Слайд 1: Желания -->
-          <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
-            <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Желания</div>
-            ${totals.expense['Желания']
-              ? Object.entries(totals.expense['Желания']).sort((a,b)=>b[1]-a[1])
-                  .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Желания']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Желания')).join('')
-              : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
-          </div>
-
-          <!-- Слайд 2: Накопления -->
-          <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
-            <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Накопления</div>
-            ${totals.expense['Накопления']
-              ? Object.entries(totals.expense['Накопления']).sort((a,b)=>b[1]-a[1])
-                  .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Накопления']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Накопления')).join('')
-              : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
-          </div>
-
-          <!-- Слайд 3: График + легенда -->
-          <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
-            ${donutTotal > 0 && typeFilter !== 'income' ? `
-            <div style="display:flex;background:rgba(255,255,255,0.07);border-radius:9px;padding:3px;margin-bottom:12px;gap:2px;">
-              <button id="stats-view-type" onclick="statsSetView('type')"
-                style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-                       background:${effectiveViewMode==='type'?'var(--surface)':'transparent'};
-                       color:${effectiveViewMode==='type'?'var(--text)':'var(--text-dim)'};
-                       box-shadow:${effectiveViewMode==='type'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
-                       transition:all .2s;">По типу</button>
-              <button id="stats-view-cat" onclick="statsSetView('cat')"
-                style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-                       background:${effectiveViewMode==='cat'?'var(--surface)':'transparent'};
-                       color:${effectiveViewMode==='cat'?'var(--text)':'var(--text-dim)'};
-                       box-shadow:${effectiveViewMode==='cat'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
-                       transition:all .2s;">По категориям</button>
-            </div>` : ''}
-            ${donutTotal > 0 ? `
-            <div style="display:flex;align-items:center;gap:16px;">
-              <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
-                <canvas id="stats-donut-canvas" width="260" height="260"
-                  style="width:130px;height:130px;border-radius:50%;"></canvas>
-                <div style="position:absolute;inset:0;display:flex;flex-direction:column;
-                            align-items:center;justify-content:center;pointer-events:none;">
-                  <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">
-                    ${donutType === 'expense' ? 'Расходы' : 'Доходы'}
-                  </div>
-                  <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:2px;">
-                    ${fmt(donutTotal)} ₽
-                  </div>
-                </div>
-              </div>
-              <div style="flex:1;min-width:0;">
-                ${legendHtml}
-              </div>
-            </div>
-            ${effectiveViewMode === 'type' ? `
-            <div style="text-align:right;margin-top:10px;">
-              <button onclick="openBudgetSettings()"
-                style="background:none;border:none;padding:0;color:var(--accent);
-                       font-size:12px;cursor:pointer;opacity:0.8;">Параметры →</button>
-            </div>` : ''}
-            ` : '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>'}
-          </div>
+          ${expenseSlidesHtml}
+          ${chartSlideHtml}
         </div>
       </div>
         <button id="stats-carousel-next" onclick="_statsCarouselGo(1)"
@@ -9134,14 +9142,7 @@ async function renderBudgetStats() {
                  cursor:pointer;color:var(--text-dim);font-size:14px;transition:opacity .2s;
                  opacity:1;pointer-events:auto;">›</button>
       </div>
-
-      <!-- Индикаторы-точки -->
-      <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;">
-        <div id="stats-dot-0" style="width:6px;height:6px;border-radius:50%;background:var(--accent);transition:background .2s;"></div>
-        <div id="stats-dot-1" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:background .2s;"></div>
-        <div id="stats-dot-2" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:background .2s;"></div>
-        <div id="stats-dot-3" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:background .2s;"></div>
-      </div>
+      <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;">${dotsHtml}</div>
     </div>
     </div>
   `.trim();
@@ -9149,7 +9150,7 @@ async function renderBudgetStats() {
   // ── Карусель: инициализация свайпа и стрелок ──
   (function initCarousel() {
     let slide = _statsCarouselSlide; // восстанавливаем позицию после ре-рендера
-    const total = 4;
+    const total = carouselTotal; // динамически: 1 при доходах, 4 при расходах
 
     function goTo(idx) {
       slide = Math.max(0, Math.min(total - 1, idx));
