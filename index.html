@@ -7635,6 +7635,57 @@ function _budgetToRows(entries, type) {
   return rows;
 }
 
+// Builds AoA for the Категории sheet from current state.budget.categories
+// Format: row 0 = ['Расходы', null, null, 'Доходы']
+//         row 1 = group headers [Основное, Желания, Накопления, Доходы]
+//         row N = one category per cell per group, nulls where column is shorter
+function _budgetCatsToAoa() {
+  const cats = state.budget.categories;
+  const GROUP_ORDER = ['Основное', 'Желания', 'Накопления'];
+  // collect active (non-archived) category names per column
+  const cols = GROUP_ORDER.map(g =>
+    (cats.expense[g] || []).filter(c => !c.archived).map(c => c.name)
+  );
+  const incomeCats = (cats.income || []).filter(c => !c.archived).map(c => c.name);
+  cols.push(incomeCats);
+
+  const maxLen = Math.max(...cols.map(c => c.length));
+  const rows = [
+    ['Расходы', null, null, 'Доходы'],
+    [...GROUP_ORDER, 'Доходы'],
+  ];
+  for (let i = 0; i < maxLen; i++) {
+    rows.push(cols.map(col => col[i] ?? null));
+  }
+  return rows;
+}
+
+// Merges new categories into an existing Категории sheet AoA
+// Adds only names not already present in each column
+function _mergeCatsSheet(existingAoa) {
+  const fresh = _budgetCatsToAoa();
+  // Parse existing columns (skip rows 0+1 which are headers)
+  const numCols = 4; // Основное, Желания, Накопления, Доходы
+  const existing = Array.from({length: numCols}, (_, ci) =>
+    new Set(existingAoa.slice(2).map(r => r[ci]).filter(Boolean))
+  );
+  // Find new names per column
+  const toAdd = fresh.slice(2).reduce((acc, row) => {
+    row.forEach((name, ci) => {
+      if (name && !existing[ci].has(name)) acc[ci].push(name);
+    });
+    return acc;
+  }, [[], [], [], []]);
+
+  // Append new names column-by-column to the existing aoa
+  const result = existingAoa.map(r => [...r]); // deep copy
+  const maxNew = Math.max(...toAdd.map(a => a.length));
+  for (let i = 0; i < maxNew; i++) {
+    result.push(Array.from({length: numCols}, (_, ci) => toAdd[ci][i] ?? null));
+  }
+  return result;
+}
+
 // Builds a workbook from two row-arrays and triggers download
 function _downloadBudgetXlsx(expenses, incomes, filename) {
   const wb    = XLSX.utils.book_new();
@@ -7642,8 +7693,12 @@ function _downloadBudgetXlsx(expenses, incomes, filename) {
   const wsExp = XLSX.utils.aoa_to_sheet(expenses);
   const wsInc = XLSX.utils.aoa_to_sheet(incomes);
   wsExp['!cols'] = cols; wsInc['!cols'] = cols;
-  XLSX.utils.book_append_sheet(wb, wsExp, 'Расходы');
-  XLSX.utils.book_append_sheet(wb, wsInc, 'Доходы');
+  // Категории sheet — always first so it matches original file order
+  const wsCats = XLSX.utils.aoa_to_sheet(_budgetCatsToAoa());
+  wsCats['!cols'] = [{wch:22},{wch:22},{wch:22},{wch:22}];
+  XLSX.utils.book_append_sheet(wb, wsCats, 'Категории');
+  XLSX.utils.book_append_sheet(wb, wsExp,  'Расходы');
+  XLSX.utils.book_append_sheet(wb, wsInc,  'Доходы');
   XLSX.writeFile(wb, filename);
 }
 
@@ -7728,6 +7783,26 @@ async function updateBudgetExcel(input) {
 
     appendToSheet('Расходы', 'Расходы', 'Тип',  exExp, newExp);
     appendToSheet('Доходы',  'Доходы',  'Tипы', exInc, newInc);
+
+    // Update Категории sheet — merge new cats into existing, or create fresh
+    const existingCatsAoa = (() => {
+      const ws = wb.Sheets['Категории'];
+      if (!ws) return null;
+      return XLSX.utils.sheet_to_json(ws, { header: 1 });
+    })();
+    const catsAoa = existingCatsAoa ? _mergeCatsSheet(existingCatsAoa) : _budgetCatsToAoa();
+    const wsCats  = XLSX.utils.aoa_to_sheet(catsAoa);
+    wsCats['!cols'] = [{wch:22},{wch:22},{wch:22},{wch:22}];
+    if (wb.SheetNames.includes('Категории')) {
+      wb.Sheets['Категории'] = wsCats;
+    } else {
+      // Insert Категории as first sheet to match original order
+      XLSX.utils.book_append_sheet(wb, wsCats, 'Категории');
+      // Move it to front
+      const idx = wb.SheetNames.indexOf('Категории');
+      wb.SheetNames.splice(idx, 1);
+      wb.SheetNames.unshift('Категории');
+    }
 
     const added = newExp.length + newInc.length;
     XLSX.writeFile(wb, file.name); // keep original filename
