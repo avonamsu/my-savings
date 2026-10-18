@@ -792,6 +792,44 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <!-- BUDGET PAGE -->
 <div class="page" id="page-budget">
   <div>
+    <!-- Shared period selector (used by both History and Analysis views) -->
+    <div id="budget-period-bar" style="display:flex;align-items:center;gap:8px;padding:12px 16px 0;">
+      <button id="stats-nav-prev" onclick="statsNavShift(-1)"
+        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+               width:34px;height:34px;color:var(--text);font-size:18px;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;flex-shrink:0;">‹</button>
+      <div style="flex:1;position:relative;">
+        <button id="stats-period-label" onclick="toggleStatsPeriodMenu()"
+          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+                 height:34px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;
+                 display:flex;align-items:center;justify-content:center;gap:4px;">
+          <span id="stats-period-text">Октябрь 2026</span>
+          <span style="font-size:10px;color:var(--text-dim);margin-left:2px;">▾</span>
+        </button>
+        <div id="stats-period-menu"
+          style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;
+                 background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:12px;
+                 box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:100;overflow:hidden;">
+          <button onclick="statsSetPreset('month')"      class="stats-period-opt">Текущий месяц</button>
+          <button onclick="statsSetPreset('last_month')" class="stats-period-opt">Прошлый месяц</button>
+          <button onclick="statsSetPreset('3months')"    class="stats-period-opt">Последние 3 месяца</button>
+          <button onclick="statsSetPreset('6months')"    class="stats-period-opt">Последние 6 месяцев</button>
+          <button onclick="statsSetPreset('year')"       class="stats-period-opt">Текущий год</button>
+          <button onclick="statsSetPreset('custom')"     class="stats-period-opt" style="border-bottom:none;">Произвольный период →</button>
+        </div>
+      </div>
+      <button id="stats-nav-next" onclick="statsNavShift(1)"
+        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+               width:34px;height:34px;color:var(--text);font-size:18px;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;flex-shrink:0;">›</button>
+    </div>
+    <!-- Custom date range (shown only when preset = custom) -->
+    <div id="stats-custom-range" style="display:none;padding:8px 16px 0;">
+      <div style="display:flex;gap:8px;">
+        <div class="field" style="flex:1;margin:0;"><label>С</label><input type="date" id="stats-from" onchange="renderBudgetPage()"></div>
+        <div class="field" style="flex:1;margin:0;"><label>ПО</label><input type="date" id="stats-to" onchange="renderBudgetPage()"></div>
+      </div>
+    </div>
     <!-- Loader: shown while data is being fetched -->
     <div id="budget-loader" style="text-align:center;padding:60px 0;color:var(--text-dim);font-size:14px;">Загрузка…</div>
     <!-- Main content: hidden until data is ready -->
@@ -824,19 +862,27 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <!-- Entries view: История операций с шапкой и поиском -->
   <div id="budget-entries-view" style="padding-bottom:140px;display:none;">
     <div style="padding:0 16px;">
-      <!-- Навигация по месяцам -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <button onclick="budgetPrevMonth()" style="background:none;border:none;color:var(--accent);font-size:22px;cursor:pointer;padding:0;line-height:1;">‹</button>
-        <span id="budget-month-label" style="font-size:15px;font-weight:700;color:var(--text);"></span>
-        <button onclick="budgetNextMonth()" id="budget-next-month-btn" style="background:none;border:none;color:var(--accent);font-size:22px;cursor:pointer;padding:0;line-height:1;">›</button>
-      </div>
-      <!-- Заголовок + сортировка -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <!-- Заголовок + сортировка + поиск -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:13px;font-weight:600;color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;">История операций</span>
-        <button onclick="toggleBudgetSort()" id="budget-sort-btn"
-          style="background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:5px 14px;color:var(--text-dim);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;">
-          <span id="budget-sort-icon">↓</span> <span id="budget-sort-label">Сначала новые</span>
-        </button>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button onclick="toggleBudgetSearch()" id="budget-search-toggle-btn"
+            style="background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:5px 10px;color:var(--text-dim);font-size:15px;cursor:pointer;line-height:1;">🔍</button>
+          <button onclick="toggleBudgetSort()" id="budget-sort-btn"
+            style="background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:5px 14px;color:var(--text-dim);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;">
+            <span id="budget-sort-icon">↓</span> <span id="budget-sort-label">Сначала новые</span>
+          </button>
+        </div>
+      </div>
+      <!-- Строка поиска (скрыта по умолчанию) -->
+      <div id="budget-search-bar" style="display:none;margin-bottom:10px;">
+        <div style="position:relative;">
+          <input id="budget-search-input" type="text" placeholder="Поиск по категории или описанию…"
+            oninput="onBudgetSearchInput()"
+            style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 36px 9px 12px;color:var(--text);font-size:14px;outline:none;"/>
+          <button id="budget-search-clear" onclick="clearBudgetSearch()"
+            style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0;line-height:1;">✕</button>
+        </div>
       </div>
     </div>
     <div id="budget-entries-list" style="padding:0 16px;"></div>
@@ -888,54 +934,14 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
       </div>
     </div>
-    <!-- Period navigator + type filter -->
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-      <!-- Prev arrow -->
-      <button id="stats-nav-prev" onclick="statsNavShift(-1)"
-        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
-               width:34px;height:34px;color:var(--text);font-size:18px;cursor:pointer;
-               display:flex;align-items:center;justify-content:center;flex-shrink:0;">‹</button>
-      <!-- Clickable period label (wrapper provides positioning context) -->
-      <div style="flex:1;position:relative;">
-        <button id="stats-period-label" onclick="toggleStatsPeriodMenu()"
-          style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
-                 height:34px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;
-                 display:flex;align-items:center;justify-content:center;gap:4px;">
-          <span id="stats-period-text">Октябрь 2026</span>
-          <span style="font-size:10px;color:var(--text-dim);margin-left:2px;">▾</span>
-        </button>
-        <!-- Period dropdown menu — positioned relative to wrapper -->
-        <div id="stats-period-menu"
-          style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;
-                 background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:12px;
-                 box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:100;overflow:hidden;">
-          <button onclick="statsSetPreset('month')"      class="stats-period-opt">Текущий месяц</button>
-          <button onclick="statsSetPreset('last_month')" class="stats-period-opt">Прошлый месяц</button>
-          <button onclick="statsSetPreset('3months')"    class="stats-period-opt">Последние 3 месяца</button>
-          <button onclick="statsSetPreset('6months')"    class="stats-period-opt">Последние 6 месяцев</button>
-          <button onclick="statsSetPreset('year')"       class="stats-period-opt">Текущий год</button>
-          <button onclick="statsSetPreset('custom')"     class="stats-period-opt" style="border-bottom:none;">Произвольный период →</button>
-        </div>
-      </div>
-      <!-- Next arrow -->
-      <button id="stats-nav-next" onclick="statsNavShift(1)"
-        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
-               width:34px;height:34px;color:var(--text);font-size:18px;cursor:pointer;
-               display:flex;align-items:center;justify-content:center;flex-shrink:0;">›</button>
-      <!-- Type filter -->
+    <!-- Type filter (period is shared in the page header) -->
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;">
       <select id="stats-type-select" onchange="statsSetType(this.value)"
         style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
-               color:var(--text);padding:0 8px;font-size:13px;height:34px;flex-shrink:0;">
+               color:var(--text);padding:0 8px;font-size:13px;height:34px;">
         <option value="expense">Расходы</option>
         <option value="income">Доходы</option>
       </select>
-    </div>
-    <!-- Custom date range (shown only when preset = custom) -->
-    <div id="stats-custom-range" style="display:none;margin-bottom:12px;">
-      <div style="display:flex;gap:8px;">
-        <div class="field" style="flex:1;margin:0;"><label>С</label><input type="date" id="stats-from" onchange="renderBudgetStats()"></div>
-        <div class="field" style="flex:1;margin:0;"><label>ПО</label><input type="date" id="stats-to" onchange="renderBudgetStats()"></div>
-      </div>
     </div>
     <div id="budget-stats-content"></div>
   </div>
@@ -7848,16 +7854,24 @@ const BUDGET_DEFAULT_CATEGORIES = {
 let _budgetEntriesCache = [];
 let _budgetEntriesLoadedMonth = null;
 let _budgetSortDesc = true; // true = сначала новые, false = сначала старые
+let _budgetSearchQuery = ''; // current search query in entries view
 let _budgetStatsCache = null; // all-time entries cache for stats tab
 
 // Load budget entries for a given month (YYYY-MM) from Supabase into cache
+// Legacy: load by month string (YYYY-MM) — still used by some entry CRUD handlers
 async function loadBudgetEntries(month) {
-  if (!_sbUser) return;
-  if (_budgetEntriesLoadedMonth === month) return;
   const from = month + '-01';
   const [y, m] = month.split('-').map(Number);
   const lastDay = new Date(y, m, 0).getDate();
   const to = month + '-' + String(lastDay).padStart(2, '0');
+  await loadBudgetEntriesRange(from, to, month);
+}
+
+// Load entries for an arbitrary date range [from, to] (YYYY-MM-DD strings)
+// rangeKey is used as a cache key — pass any stable string that identifies the range
+async function loadBudgetEntriesRange(from, to, rangeKey) {
+  if (!_sbUser) return;
+  if (_budgetEntriesLoadedMonth === rangeKey) return; // cache hit
   const { data, error } = await _sb.from('budget_entries')
     .select('*')
     .eq('user_id', _sbUser.id)
@@ -7866,7 +7880,7 @@ async function loadBudgetEntries(month) {
     .order('date', { ascending: false });
   if (!error) {
     _budgetEntriesCache = data || [];
-    _budgetEntriesLoadedMonth = month;
+    _budgetEntriesLoadedMonth = rangeKey;
   }
 }
 
@@ -7883,9 +7897,6 @@ function budgetInit() {
     state.budget.categories = cats;
   }
 }
-
-// Which month is currently shown on the budget page (YYYY-MM string)
-let _budgetMonth = new Date().toLocaleDateString('sv').slice(0, 7);
 
 // ── Excel helpers ─────────────────────────────────────────────────────────────
 
@@ -8167,22 +8178,6 @@ async function importBudgetExcel(input) {
   }
 }
 
-function budgetPrevMonth() {
-  const [y, m] = _budgetMonth.split('-').map(Number);
-  const d = new Date(y, m - 2, 1);
-  _budgetMonth = d.toLocaleDateString('sv').slice(0, 7);
-  _budgetEntriesLoadedMonth = null;
-  renderBudgetPage().catch(console.error);
-}
-function budgetNextMonth() {
-  const currentMonth = new Date().toLocaleDateString('sv').slice(0, 7);
-  if (_budgetMonth >= currentMonth) return; // не листать в будущее
-  const [y, m] = _budgetMonth.split('-').map(Number);
-  const d = new Date(y, m, 1);
-  _budgetMonth = d.toLocaleDateString('sv').slice(0, 7);
-  _budgetEntriesLoadedMonth = null;
-  renderBudgetPage().catch(console.error);
-}
 
 function switchBudgetTab(tab) {
   // entries = default/main view; stats = analysis (secondary)
@@ -8200,6 +8195,45 @@ function toggleBudgetSort() {
   const label = document.getElementById('budget-sort-label');
   if (icon)  icon.textContent  = _budgetSortDesc ? '↓' : '↑';
   if (label) label.textContent = _budgetSortDesc ? 'Сначала новые' : 'Сначала старые';
+  if (_budgetEntriesCache) renderBudgetEntries(_budgetEntriesCache);
+}
+
+function toggleBudgetSearch() {
+  const bar = document.getElementById('budget-search-bar');
+  const btn = document.getElementById('budget-search-toggle-btn');
+  if (!bar) return;
+  const visible = bar.style.display !== 'none';
+  if (visible) {
+    // Закрываем и сбрасываем поиск
+    bar.style.display = 'none';
+    _budgetSearchQuery = '';
+    const inp = document.getElementById('budget-search-input');
+    if (inp) inp.value = '';
+    const clr = document.getElementById('budget-search-clear');
+    if (clr) clr.style.display = 'none';
+    if (btn) btn.style.color = 'var(--text-dim)';
+    if (_budgetEntriesCache) renderBudgetEntries(_budgetEntriesCache);
+  } else {
+    bar.style.display = '';
+    if (btn) btn.style.color = 'var(--accent)';
+    setTimeout(() => { const inp = document.getElementById('budget-search-input'); if (inp) inp.focus(); }, 50);
+  }
+}
+
+function onBudgetSearchInput() {
+  const inp = document.getElementById('budget-search-input');
+  const clr = document.getElementById('budget-search-clear');
+  _budgetSearchQuery = inp ? inp.value.trim().toLowerCase() : '';
+  if (clr) clr.style.display = _budgetSearchQuery ? '' : 'none';
+  if (_budgetEntriesCache) renderBudgetEntries(_budgetEntriesCache);
+}
+
+function clearBudgetSearch() {
+  const inp = document.getElementById('budget-search-input');
+  if (inp) { inp.value = ''; inp.focus(); }
+  _budgetSearchQuery = '';
+  const clr = document.getElementById('budget-search-clear');
+  if (clr) clr.style.display = 'none';
   if (_budgetEntriesCache) renderBudgetEntries(_budgetEntriesCache);
 }
 
@@ -8249,18 +8283,16 @@ function openBudgetCatsFromSettings() {
 async function renderBudgetPage() {
   budgetInit();
 
-  // Update month label + next-arrow visibility
-  const [y, m] = _budgetMonth.split('-').map(Number);
-  const monthLabel = new Date(y, m - 1, 1).toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
-  const labelEl = document.getElementById('budget-month-label');
-  if (labelEl) labelEl.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
-  const currentMonth = new Date().toLocaleDateString('sv').slice(0, 7);
-  const nextBtn = document.getElementById('budget-next-month-btn');
-  if (nextBtn) { nextBtn.style.opacity = _budgetMonth >= currentMonth ? '0.3' : '1'; nextBtn.style.pointerEvents = _budgetMonth >= currentMonth ? 'none' : ''; }
+  // Update shared period label in the header bar
+  _statsUpdatePeriodLabel();
 
-  // Show loader, hide content until data arrives
-  const isNewMonth = _budgetEntriesLoadedMonth !== _budgetMonth;
-  if (isNewMonth) {
+  // Determine date range from shared period selector
+  const [from, to] = _statsPeriodRange();
+  const rangeKey = from + '_' + to; // cache key — reload when range changes
+
+  // Show loader if period changed
+  const isNewRange = _budgetEntriesLoadedMonth !== rangeKey;
+  if (isNewRange) {
     document.getElementById('budget-loader').style.display  = '';
     document.getElementById('budget-content').style.display = 'none';
     document.getElementById('budget-entries-view').style.display = 'none';
@@ -8268,8 +8300,8 @@ async function renderBudgetPage() {
     if (sv) sv.style.display = 'none';
   }
 
-  // Load entries from Supabase (uses cache if already loaded for this month)
-  await loadBudgetEntries(_budgetMonth);
+  // Load entries for the selected date range from Supabase
+  await loadBudgetEntriesRange(from, to, rangeKey);
   const entries = _budgetEntriesCache;
 
   const totalIncome  = entries.filter(e => e.type === 'income').reduce((s, e) => s + Number(e.amount), 0);
@@ -8283,17 +8315,15 @@ async function renderBudgetPage() {
   balEl.style.color = 'var(--text)';
 
   renderBudgetEntries(entries);
-  // analysis is rendered lazily when settings drawer opens
-  _budgetEntriesCache = entries; // ensure cache is set before drawer opens
 
   // Hide loader, reveal content
   document.getElementById('budget-loader').style.display  = 'none';
   document.getElementById('budget-content').style.display = '';
+
   // Default view is entries; stats (analysis) accessed via "Анализ →"
   const statsView = document.getElementById('budget-stats-view');
   const catsView  = document.getElementById('budget-cats-view');
   catsView.style.display = 'none';
-  // If stats view is currently open, keep it; otherwise show entries
   if (!statsView || statsView.style.display === 'none') {
     document.getElementById('budget-entries-view').style.display = '';
     if (statsView) statsView.style.display = 'none';
@@ -8303,13 +8333,24 @@ async function renderBudgetPage() {
 // Renders entries grouped by day
 function renderBudgetEntries(entries) {
   const el = document.getElementById('budget-entries-list');
-  if (!entries.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📒</div><p>Нет записей за этот месяц</p></div>`;
+  // Apply search filter if active
+  const q = _budgetSearchQuery || '';
+  const filtered = q
+    ? entries.filter(e =>
+        (e.category || '').toLowerCase().includes(q) ||
+        (e.note     || '').toLowerCase().includes(q) ||
+        (e.group    || '').toLowerCase().includes(q)
+      )
+    : entries;
+  if (!filtered.length) {
+    el.innerHTML = q
+      ? `<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено по «${q}»</p></div>`
+      : `<div class="empty"><div class="empty-icon">📒</div><p>Нет записей за этот месяц</p></div>`;
     return;
   }
   // Group by date, sort direction controlled by _budgetSortDesc
   const byDate = {};
-  for (const e of entries) {
+  for (const e of filtered) {
     if (!byDate[e.date]) byDate[e.date] = [];
     byDate[e.date].push(e);
   }
@@ -8698,7 +8739,16 @@ function statsSetPreset(preset) {
   _statsNavOffset = 0;
   document.getElementById('stats-period-menu').style.display = 'none';
   _statsUpdatePeriodLabel();
-  renderBudgetStats();
+  // Invalidate cache so new range is fetched
+  _budgetEntriesLoadedMonth = null;
+  _budgetStatsCache = null;
+  // Refresh whichever view is currently visible
+  const statsView = document.getElementById('budget-stats-view');
+  if (statsView && statsView.style.display !== 'none') {
+    renderBudgetStats();
+  } else {
+    renderBudgetPage().catch(console.error);
+  }
 }
 
 // Shift period by +1 or -1 step (arrow click)
@@ -8708,7 +8758,15 @@ function statsNavShift(dir) {
   if (next > 0) return; // don't go into future
   _statsNavOffset = next;
   _statsUpdatePeriodLabel();
-  renderBudgetStats();
+  // Invalidate cache so new range is fetched
+  _budgetEntriesLoadedMonth = null;
+  _budgetStatsCache = null;
+  const statsView = document.getElementById('budget-stats-view');
+  if (statsView && statsView.style.display !== 'none') {
+    renderBudgetStats();
+  } else {
+    renderBudgetPage().catch(console.error);
+  }
 }
 
 // Toggle the period preset dropdown menu
@@ -9272,12 +9330,8 @@ async function saveBudgetEntry() {
   _budgetStatsCache = null; // invalidate stats cache
 
   closeBudgetEntryModal();
-  // Sync displayed month to entry's month; force reload if month changed
-  const newMonth = date.slice(0, 7);
-  if (newMonth !== _budgetMonth) {
-    _budgetMonth = newMonth;
-    _budgetEntriesLoadedMonth = null;
-  }
+  // Invalidate entries cache so the page reloads with fresh data
+  _budgetEntriesLoadedMonth = null;
   renderBudgetPage().catch(console.error);
 }
 
