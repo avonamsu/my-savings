@@ -854,7 +854,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
         <!-- Подробнее -->
         <div style="text-align:right;">
-          <button onclick="switchBudgetTab('entries')" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">История операций →</button>
+          <button id="budget-tab-toggle-btn" onclick="switchBudgetTab('stats')" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">Анализ →</button>
         </div>
       </div>
     </div>
@@ -8223,6 +8223,17 @@ function switchBudgetTab(tab) {
   const statsView = document.getElementById('budget-stats-view');
   if (statsView) statsView.style.display = tab === 'stats' ? '' : 'none';
   if (tab === 'stats') { _budgetStatsCache = null; renderBudgetStats(); }
+  // Toggle button: shows the opposite tab
+  const toggleBtn = document.getElementById('budget-tab-toggle-btn');
+  if (toggleBtn) {
+    if (tab === 'stats') {
+      toggleBtn.textContent = 'История операций →';
+      toggleBtn.onclick = () => switchBudgetTab('entries');
+    } else {
+      toggleBtn.textContent = 'Анализ →';
+      toggleBtn.onclick = () => switchBudgetTab('stats');
+    }
+  }
 }
 
 // Переключение сортировки записей (новые/старые)
