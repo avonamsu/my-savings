@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018093000">
+  <meta name="version" content="20261018093500">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2624,7 +2624,11 @@ function renderNavNotch() {
 
   const W = nav.offsetWidth || 360;
   const H = nav.offsetHeight || 64;
-  const cx = W / 2;        // centre x
+  // Use actual slot position instead of W/2 to avoid drift when active tab changes size
+  const slot = nav.querySelector('.nav-fab-slot');
+  const slotRect = slot ? slot.getBoundingClientRect() : null;
+  const navRect  = nav.getBoundingClientRect();
+  const cx = slotRect ? (slotRect.left - navRect.left + slotRect.width / 2) : W / 2;
   const R = 36;             // notch radius — button is 62px/2=31px + 5px gap
   const depth = R;          // depth equals radius for a true semicircle
   const spread = R + 10;    // narrow spread for tight circular cutout
@@ -2664,6 +2668,14 @@ function renderNavNotch() {
     <path d="${borderLeft}" stroke="rgba(78,205,196,0.18)" stroke-width="1" fill="none"/>
     <path d="${borderRight}" stroke="rgba(78,205,196,0.18)" stroke-width="1" fill="none"/>
   `;
+
+  // Also reposition the fixed FAB to match the real slot centre
+  const fab = document.getElementById('nav-fab');
+  if (fab && slotRect && navRect) {
+    const fabCx = slotRect.left + slotRect.width / 2; // absolute screen x
+    fab.style.left  = fabCx + 'px';
+    fab.style.transform = 'translateX(-50%)';
+  }
 
   nav.appendChild(svg);
   // Re-render on resize
