@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018091500">
+  <meta name="version" content="20261018092000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2624,9 +2624,9 @@ function renderNavNotch() {
   const W = nav.offsetWidth || 360;
   const H = nav.offsetHeight || 64;
   const cx = W / 2;        // centre x
-  const R = 40;             // notch radius (matches button 62px / 2 + gap)
-  const depth = 26;         // how deep the notch goes
-  const spread = R + 18;    // horizontal spread of the curve entry/exit
+  const R = 36;             // notch radius — button is 62px/2=31px + 5px gap
+  const depth = R;          // depth equals radius for a true semicircle
+  const spread = R + 10;    // narrow spread for tight circular cutout
 
   // Surface colour from CSS var
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#1a2332';
@@ -2641,12 +2641,16 @@ function renderNavNotch() {
 
   // Shift main path down by extraTop so it still fills the nav
   const py = extraTop;
+  // Cubic bezier approximation of a semicircle (k=0.5523 for quarter-circle)
+  const k = 0.5523;
+  // Left tangent point: (cx-R, py), arc bottom: (cx, py+R), right tangent: (cx+R, py)
   const notchPath = [
     `M0,${py}`,
     `L${cx - spread},${py}`,
-    `Q${cx - R},${py} ${cx - R + 6},${py + depth * 0.55}`,
-    `Q${cx},${py + depth + R * 0.35} ${cx + R - 6},${py + depth * 0.55}`,
-    `Q${cx + R},${py} ${cx + spread},${py}`,
+    `L${cx - R},${py}`,
+    `C${cx - R},${py + R * k} ${cx - R * k},${py + R} ${cx},${py + R}`,
+    `C${cx + R * k},${py + R} ${cx + R},${py + R * k} ${cx + R},${py}`,
+    `L${cx + spread},${py}`,
     `L${W},${py} L${W},${H + py} L0,${H + py} Z`
   ].join(' ');
 
