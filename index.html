@@ -9008,7 +9008,16 @@ async function renderBudgetStats() {
               const manualIncome = state.budget.monthlyIncome || 0;
               const periodIncome = Object.values(totals.income).flatMap(Object.values).reduce((s,v)=>s+v,0);
               const refIncome = manualIncome || periodIncome; // база для расчёта % по правилу
-              return donutSlices.slice(0,6).map(s => {
+              // Фиксированный порядок: Основное → Желания → Накопления
+              const ORDER = ['Основное', 'Желания', 'Накопления'];
+              const sortedSlices = [...donutSlices].sort((a, b) => {
+                const ai = ORDER.indexOf(a.cat), bi = ORDER.indexOf(b.cat);
+                if (ai !== -1 && bi !== -1) return ai - bi;
+                if (ai !== -1) return -1;
+                if (bi !== -1) return 1;
+                return 0;
+              });
+              return sortedSlices.slice(0,6).map(s => {
                 const target = BUDGET_SPLIT[s.cat]; // лимит по правилу (50/30/20), %
                 const limitAmt = refIncome > 0 && target ? refIncome * target / 100 : 0;
                 const factPct  = limitAmt > 0 ? Math.min(Math.round(s.amt / limitAmt * 100), 999) : 0;
