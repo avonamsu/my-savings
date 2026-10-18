@@ -816,11 +816,11 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <!-- Доходы и Остаток — мельче -->
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
           <span style="font-size:12px;color:var(--text-dim);">Доходы</span>
-          <span id="budget-total-income" style="font-size:13px;font-weight:600;color:var(--accent);"></span>
+          <span id="budget-total-income" style="font-size:13px;font-weight:600;color:#3DD68C;"></span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
           <span style="font-size:12px;color:var(--text-dim);">Остаток</span>
-          <span id="budget-balance" style="font-size:13px;font-weight:600;"></span>
+          <span id="budget-balance" style="font-size:13px;font-weight:600;color:var(--text);"></span>
         </div>
         <!-- Подробнее -->
         <div style="text-align:right;">
@@ -8183,7 +8183,7 @@ async function renderBudgetPage() {
   document.getElementById('budget-total-expense').textContent = fmt(totalExpense) + ' ₽';
   const balEl = document.getElementById('budget-balance');
   balEl.textContent = fmt(balance) + ' ₽';
-  balEl.style.color = balance >= 0 ? '#3DD68C' : 'var(--danger)';
+  balEl.style.color = 'var(--text)';
 
   renderBudgetEntries(entries);
   // analysis is rendered lazily when settings drawer opens
