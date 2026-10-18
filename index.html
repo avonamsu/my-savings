@@ -9002,16 +9002,48 @@ async function renderBudgetStats() {
           </div>
         </div>
         <div style="flex:1;min-width:0;">
-          ${donutSlices.slice(0,6).map(s => `
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0;">
-              <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
-              <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;
-                          text-overflow:ellipsis;flex:1;min-width:0;">${s.cat}</div>
-              <div style="font-size:11px;color:var(--text-dim);flex-shrink:0;">
-                ${donutTotal > 0 ? Math.round(s.amt/donutTotal*100) : 0}%
-              </div>
-            </div>
-          `).join('')}
+          ${(() => {
+            // В режиме "По типу" показываем сравнение с правилом 50/30/20
+            if (effectiveViewMode === 'type') {
+              budgetInit();
+              const manualIncome = state.budget.monthlyIncome || 0;
+              // Доход: ручной или из записей периода
+              const periodIncome = Object.values(totals.income).flatMap(Object.values).reduce((s,v)=>s+v,0);
+              const refIncome = manualIncome || periodIncome;
+              return donutSlices.slice(0,6).map(s => {
+                const target = BUDGET_SPLIT[s.cat]; // целевой % (50/30/20)
+                const factPct = refIncome > 0
+                  ? Math.round(s.amt / refIncome * 100)       // % от дохода
+                  : (donutTotal > 0 ? Math.round(s.amt / donutTotal * 100) : 0); // % от расходов
+                const ok = target ? factPct <= target : true;
+                const indicator = target
+                  ? `<span style="font-size:10px;color:${ok?'#4ECDC4':'#FF6B6B'};margin-left:2px;">${ok?'✓':'↑'}</span>`
+                  : '';
+                const targetLabel = target && refIncome > 0
+                  ? `<span style="opacity:.5;">/${target}%</span>`
+                  : '';
+                return `
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0;">
+                    <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
+                    <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;
+                                text-overflow:ellipsis;flex:1;min-width:0;">${s.cat}</div>
+                    <div style="font-size:11px;color:${target&&!ok?'#FF6B6B':'var(--text-dim)'};flex-shrink:0;white-space:nowrap;">
+                      ${factPct}%${targetLabel}${indicator}
+                    </div>
+                  </div>`;
+              }).join('');
+            }
+            // Обычный режим "По категориям"
+            return donutSlices.slice(0,6).map(s => `
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0;">
+                <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
+                <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;
+                            text-overflow:ellipsis;flex:1;min-width:0;">${s.cat}</div>
+                <div style="font-size:11px;color:var(--text-dim);flex-shrink:0;">
+                  ${donutTotal > 0 ? Math.round(s.amt/donutTotal*100) : 0}%
+                </div>
+              </div>`).join('');
+          })()}
           ${donutSlices.length > 6 ? `<div style="font-size:11px;color:var(--text-dim);">+${donutSlices.length-6} ещё</div>` : ''}
         </div>
       </div>
