@@ -8350,7 +8350,16 @@ async function renderBudgetStats() {
     const { data, error } = await _sb.from('budget_entries').select('*').eq('user_id', _sbUser.id).order('date');
     if (error) { el.innerHTML = '<div style="color:var(--danger);padding:20px;">Ошибка загрузки: ' + error.message + '</div>'; return; }
     _budgetStatsCache = entries = data || [];
-    console.log('[stats] user_id:', _sbUser.id, '| entries fetched:', entries.length, '| sample:', entries[0]);
+    if (entries.length === 0) {
+      el.innerHTML = `<div style="background:rgba(255,200,0,0.1);border:1px solid rgba(255,200,0,0.3);border-radius:12px;padding:16px;font-size:13px;color:var(--text);">
+        <b>Диагностика:</b><br>
+        user_id: <code>${_sbUser.id}</code><br>
+        Записей найдено: 0<br><br>
+        Записи в кеше (текущий месяц): ${_budgetEntriesCache.length}<br>
+        ${_budgetEntriesCache[0] ? 'user_id первой записи: <code>' + _budgetEntriesCache[0].user_id + '</code>' : ''}
+      </div>`;
+      return;
+    }
   }
 
   const [from, to] = _statsPeriodRange();
