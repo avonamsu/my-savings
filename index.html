@@ -861,11 +861,43 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <!-- Stats view -->
   <div id="budget-stats-view" style="display:none;padding:0 16px;padding-bottom:140px;">
-    <!-- Back + title + CSV -->
+    <!-- Back + title + Excel dropdown -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <button onclick="switchBudgetTab('entries')" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0;">‹ Назад</button>
       <span style="font-size:15px;font-weight:700;color:var(--text);">Анализ</span>
-      <button onclick="exportBudgetStatsCSV()" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:5px 10px;cursor:pointer;">CSV</button>
+      <!-- Excel dropdown trigger -->
+      <div style="position:relative;">
+        <button onclick="toggleStatsExcelMenu()" id="stats-excel-btn"
+          style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+                 color:var(--accent);font-size:12px;font-weight:600;padding:5px 10px;cursor:pointer;">
+          📥 Excel
+        </button>
+        <div id="stats-excel-menu"
+          style="display:none;position:absolute;right:0;top:calc(100% + 6px);
+                 background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:12px;
+                 box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:210px;z-index:50;overflow:hidden;">
+          <button onclick="exportBudgetExcel();toggleStatsExcelMenu()"
+            style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;
+                   border-bottom:1px solid rgba(255,255,255,0.07);color:var(--text);font-size:13px;
+                   padding:12px 14px;cursor:pointer;text-align:left;">
+            <span>📥</span> Скачать все записи
+          </button>
+          <label style="display:flex;align-items:center;gap:10px;width:100%;
+                        border-bottom:1px solid rgba(255,255,255,0.07);color:var(--text);font-size:13px;
+                        padding:12px 14px;cursor:pointer;box-sizing:border-box;">
+            <span>🔄</span> Обновить мой файл
+            <input type="file" accept=".xlsx" style="display:none;"
+              onchange="updateBudgetExcel(this);toggleStatsExcelMenu()">
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;width:100%;
+                        color:var(--text);font-size:13px;
+                        padding:12px 14px;cursor:pointer;box-sizing:border-box;">
+            <span>📤</span> Загрузить из файла
+            <input type="file" accept=".xlsx" style="display:none;"
+              onchange="importBudgetExcel(this);toggleStatsExcelMenu()">
+          </label>
+        </div>
+      </div>
     </div>
     <!-- View toggle: по типу / по категориям — segment control -->
     <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:10px;gap:2px;">
@@ -8967,6 +8999,24 @@ function statsSetView(val) {
 }
 
 // Export currently-displayed stats as CSV
+function toggleStatsExcelMenu() {
+  const menu = document.getElementById('stats-excel-menu');
+  if (!menu) return;
+  const open = menu.style.display !== 'none';
+  menu.style.display = open ? 'none' : '';
+  // Close on outside click
+  if (!open) {
+    setTimeout(() => {
+      document.addEventListener('click', function _close(e) {
+        if (!document.getElementById('stats-excel-btn')?.contains(e.target)) {
+          menu.style.display = 'none';
+          document.removeEventListener('click', _close);
+        }
+      });
+    }, 0);
+  }
+}
+
 function exportBudgetStatsCSV() {
   if (!_budgetStatsCache) return;
   const entries = _budgetStatsCache;
