@@ -8207,6 +8207,8 @@ function clearBudgetFilter() {
 
 // Opens budget settings bottom sheet and renders 50/30/20 inside it
 function openBudgetSettings() {
+  // Close entry modal first if it's open
+  closeBudgetEntryModal();
   const overlay = document.getElementById('budget-settings-overlay');
   const drawer  = document.getElementById('budget-settings-drawer');
   overlay.style.display = '';
