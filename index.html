@@ -8855,17 +8855,6 @@ async function renderBudgetStats() {
   }
 
   el.innerHTML = `
-    <!-- Итоги -->
-    <div class="chart-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-      <div style="text-align:center;">
-        <div class="hero-label">Расходы</div>
-        <div style="font-size:16px;font-weight:700;color:var(--danger);">${fmt(totalExp)} ₽</div>
-      </div>
-      <div style="text-align:center;">
-        <div class="hero-label">Доходы</div>
-        <div style="font-size:16px;font-weight:700;color:var(--accent);">${fmt(totalInc)} ₽</div>
-      </div>
-    </div>
     <!-- Сегмент-контрол + Донат -->
     ${donutTotal > 0 ? `
     <div class="chart-wrap" style="margin-bottom:14px;">
