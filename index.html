@@ -921,7 +921,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <select id="stats-type-select" onchange="statsSetType(this.value)"
         style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
                color:var(--text);padding:0 8px;font-size:13px;height:34px;flex-shrink:0;">
-        <option value="all">Все</option>
         <option value="expense">Расходы</option>
         <option value="income">Доходы</option>
       </select>
@@ -8981,7 +8980,7 @@ async function renderBudgetStats() {
 }
 
 // Stats filter state
-let _statsTypeFilter = 'all';   // 'all' | 'expense' | 'income'
+let _statsTypeFilter = 'expense'; // 'expense' | 'income' (all removed)
 let _statsGroupFilter = 'all';  // 'all' | 'Основное' | 'Желания' | 'Накопления'
 let _statsView = 'type';        // 'type' | 'cat'
 
