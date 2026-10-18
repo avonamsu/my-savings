@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018115000">
+  <meta name="version" content="20261018116000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -116,15 +116,17 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Inter
 /* ── NAV ── */
 nav {
   display:flex;
-  background:rgba(22,36,55,0.82);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  border-top:1px solid rgba(78,205,196,0.12);
-  box-shadow:0 -8px 24px rgba(0,0,0,0.45);
+  background:transparent;
   position:fixed; bottom:0; left:0; right:0;
   max-width:480px; margin:0 auto;
-  border-radius:20px 20px 0 0;
   z-index:100; overflow:visible;
+}
+/* SVG notch background injected by renderNavNotch() */
+#nav-notch-svg {
+  position:absolute; bottom:0; left:0; right:0;
+  width:100%; height:100%;
+  pointer-events:none; z-index:-1; overflow:visible;
+  filter: drop-shadow(0 -6px 16px rgba(0,0,0,0.5));
 }
 /* Notch SVG injected via JS — see renderNavNotch() */
 nav button { flex:1; min-width:0; background:none; border:none; color:var(--text-dim); font-size:11px; font-weight:600; padding:10px 0 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; overflow:hidden; }
@@ -297,8 +299,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* FAB: half inside nav, half above */
 .nav-fab {
   position:fixed;
-  /* nav ~84px, FAB 62px → bottom = 84/2 - 62/2 = 11px; half in/half out */
-  bottom:32px;
+  /* centre of FAB sits on top edge of nav (~84px); bottom = 84 - 65/2 = 51px */
+  bottom:51px;
   left:50%;
   transform:translateX(-50%);
   width:65px; height:65px;
@@ -2618,8 +2620,56 @@ function toggleIncomeExcluded(type, id) {
 // ── RENDER ────────────────────────────────────────────────
 function render() { renderHome(); renderSavings(); renderIncome(); renderGoals(); renderNavNotch(); }
 
-// No-op: SVG notch removed — nav uses solid background + box-shadow instead
-function renderNavNotch() {}
+// Draws an SVG nav background with a circular notch cutout under the FAB
+function renderNavNotch() {
+  const nav = document.querySelector('nav');
+  if (!nav) return;
+  const W = nav.offsetWidth;
+  const H = nav.offsetHeight;
+  if (!W || !H) return;
+
+  const cx = W / 2;       // notch centre x
+  const R = 38;            // notch radius (FAB 65px/2 + 5.5px gap)
+  const k = 0.5523;        // cubic bezier circle approximation
+  const rTop = 20;         // nav top-left/right border-radius
+
+  // Path: top-left arc → left of notch → semicircle cutout → right of notch → top-right arc → bottom
+  const path = [
+    `M ${rTop} 0`,
+    `Q 0 0 0 ${rTop}`,          // top-left rounded corner
+    `L 0 ${H}`,                  // left side down
+    `L ${W} ${H}`,               // bottom
+    `L ${W} ${rTop}`,            // right side up
+    `Q ${W} 0 ${W - rTop} 0`,   // top-right rounded corner
+    // approach notch from right
+    `L ${cx + R} 0`,
+    // cubic bezier semicircle cutout (downward arc)
+    `C ${cx + R} ${k*R} ${cx + k*R} ${R} ${cx} ${R}`,
+    `C ${cx - k*R} ${R} ${cx - R} ${k*R} ${cx - R} 0`,
+    // back to top-left
+    `L ${rTop} 0`,
+    'Z'
+  ].join(' ');
+
+  let svg = document.getElementById('nav-notch-svg');
+  if (!svg) {
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.id = 'nav-notch-svg';
+    nav.insertBefore(svg, nav.firstChild);
+  }
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="nav-bg-grad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(22,36,55,0.92)"/>
+        <stop offset="100%" stop-color="rgba(15,27,45,0.96)"/>
+      </linearGradient>
+    </defs>
+    <path d="${path}" fill="url(#nav-bg-grad)" style="backdrop-filter:blur(16px)"/>
+    <path d="${path}" fill="none" stroke="rgba(78,205,196,0.15)" stroke-width="1"/>
+  `;
+}
 
 function renderHome() {
   const totalRubVal = state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
@@ -9956,6 +10006,9 @@ try {
 } catch(e) {}
 
 render();
+// draw notch after nav has laid out
+requestAnimationFrame(() => { requestAnimationFrame(renderNavNotch); });
+window.addEventListener('resize', renderNavNotch);
 updateFab(_currentPage);
 if (_currentPage === 'challenge') renderChallengesPage();
 if (_currentPage === 'budget') renderBudgetPage().catch(console.error);
