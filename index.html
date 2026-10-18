@@ -8604,8 +8604,8 @@ function _budgetGroupBlock(key, label, items, addType, addGroup) {
                   padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);opacity:.5;">
         <span style="font-size:13px;color:var(--text-dim);">${nameLabel}</span>
         <button onclick="budgetRestoreCat('${type}','${group||'null'}','${safeN}')"
-          style="background:var(--accent-dim);border:none;border-radius:6px;color:var(--accent);
-                 font-size:12px;font-weight:600;cursor:pointer;padding:4px 10px;">Вернуть</button>
+          style="background:none;border:none;color:var(--accent);cursor:pointer;padding:4px 6px;
+                 opacity:.7;line-height:1;font-size:18px;" title="Вернуть"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="m21.706 5.292l-2.999-2.999A1 1 0 0 0 18 2H6a1 1 0 0 0-.707.293L2.294 5.292A1 1 0 0 0 2 6v13c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6a1 1 0 0 0-.294-.708M6.414 4h11.172l1 1H5.414zM14 14v3h-4v-3H7l5-5l5 5z"/></svg></button>
       </div>`;
     }
     return `<div style="display:flex;align-items:center;justify-content:space-between;
@@ -8618,8 +8618,8 @@ function _budgetGroupBlock(key, label, items, addType, addGroup) {
         <span style="font-size:14px;color:var(--text);">${c.name}</span>
       </div>
       <button onclick="budgetArchiveCat('${type}','${group||'null'}','${safeN}')"
-        style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;
-               padding:4px 6px;opacity:.5;line-height:1;" title="Убрать">🗑</button>
+        style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;
+               padding:4px 6px;opacity:.5;line-height:1;" title="Убрать"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="m21.706 5.292l-2.999-2.999A1 1 0 0 0 18 2H6a1 1 0 0 0-.707.293L2.294 5.292A1 1 0 0 0 2 6v13c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6a1 1 0 0 0-.294-.708M6.414 4h11.172l1 1H5.414zM12 18l-5-5h3v-3h4v3h3z"/></svg></button>
     </div>`;
   };
 
@@ -8674,7 +8674,6 @@ function renderBudgetCats() {
 
   // Simpler: render income block normally (it has its own header "Доходы")
   el.innerHTML = `
-    <div class="section-title" style="margin-bottom:8px;padding:0 2px;">Расходы</div>
     ${expenseGroups}
     ${incomeBlock}
   `.trim();
