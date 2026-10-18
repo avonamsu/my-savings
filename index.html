@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018100000">
+  <meta name="version" content="20261018101000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -124,11 +124,11 @@ nav {
   z-index:100; overflow:visible;
 }
 /* Notch SVG injected via JS — see renderNavNotch() */
-nav button { flex:1; min-width:0; background:none; border:none; color:var(--text-dim); font-size:9px; font-weight:600; padding:7px 0 10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; overflow:hidden; }
-nav button .ni { font-size:19px; transition:transform .25s cubic-bezier(.34,1.56,.64,1), font-size .2s; display:block; line-height:1; }
+nav button { flex:1; min-width:0; background:none; border:none; color:var(--text-dim); font-size:9px; font-weight:600; padding:6px 0 10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; overflow:hidden; }
+nav button .ni { font-size:18px; transition:transform .25s cubic-bezier(.34,1.56,.64,1), font-size .2s; display:block; line-height:1; }
 nav button span:not(.ni) { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; display:block; }
 nav button.active { color:var(--accent); }
-nav button.active .ni { font-size:22px; transform:translateY(-2px); }
+nav button.active .ni { font-size:20px; transform:translateY(-1px); }
 nav button.active::before { content:''; position:absolute; top:6px; width:36px; height:36px; border-radius:50%; background:var(--accent-dim); }
 nav button.active::after { content:''; position:absolute; top:0; left:20%; right:20%; height:2px; background:var(--accent); border-radius:0 0 2px 2px; }
 nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,1); }
@@ -289,25 +289,25 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* old pill FAB — hidden, replaced by nav-fab */
 .fab { display:none !important; }
 
-/* The actual FAB is fixed, centred above the nav bar */
+/* FAB: half inside nav, half above */
 .nav-fab {
   position:fixed;
-  bottom:38px;
+  /* nav is ~56px tall; FAB is 56px; centre = 28px from bottom; half above = bottom:28px */
+  bottom:28px;
   left:50%;
   transform:translateX(-50%);
-  width:62px; height:62px;
+  width:56px; height:56px;
   border-radius:50%;
   background:var(--accent);
   color:#0d1f1a;
-  /* bg-coloured ring that visually lifts FAB above nav */
-  border:4px solid var(--bg);
+  border:3px solid var(--bg);
   cursor:pointer;
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  box-shadow:0 -2px 12px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.4);
   z-index:200;
   transition:transform .18s cubic-bezier(.34,1.56,.64,1);
   -webkit-tap-highlight-color:transparent;
-  font-size:32px;
+  font-size:30px;
   font-weight:300;
   line-height:1;
   padding:0;
