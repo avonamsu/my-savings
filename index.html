@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018094000">
+  <meta name="version" content="20261018094500">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -124,7 +124,7 @@ nav {
   /* Shadow applied to SVG inside via filter */
 }
 /* Notch SVG injected via JS — see renderNavNotch() */
-nav button { flex:0 0 calc(100% / 6); min-width:0; background:none; border:none; color:var(--text-dim); font-size:10px; font-weight:600; padding:10px 2px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; }
+nav button { flex:1; background:none; border:none; color:var(--text-dim); font-size:10px; font-weight:600; padding:10px 2px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; }
 nav button .ni { font-size:19px; transition:transform .25s cubic-bezier(.34,1.56,.64,1), font-size .2s; display:block; }
 nav button.active { color:var(--accent); }
 nav button.active .ni { font-size:24px; transform:translateY(-2px); }
@@ -288,8 +288,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* old pill FAB — hidden, replaced by nav-fab */
 .fab { display:none !important; }
 
-/* Centre nav FAB slot — same fixed width as each button */
-.nav-fab-slot { flex:0 0 calc(100% / 6); pointer-events:none; }
 /* The actual FAB is fixed, centred above the nav bar */
 .nav-fab {
   pointer-events:auto; /* override parent's pointer-events:none */
@@ -486,14 +484,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <button class="active" onclick="showPage('home')" id="nav-home"><span class="ni">🏠</span>Главная</button>
   <button onclick="showPage('savings')" id="nav-savings"><span class="ni">💰</span>Счета</button>
   <button onclick="showPage('income')" id="nav-income"><span class="ni">📈</span>Доход</button>
-  <!-- Centre FAB slot -->
-  <div class="nav-fab-slot">
-    <button class="nav-fab" id="nav-fab" onclick="fabAction()">+</button>
-  </div>
   <button onclick="showPage('goals')" id="nav-goals"><span class="ni">🎯</span>Цели</button>
   <button onclick="showPage('budget')" id="nav-budget"><span class="ni">📒</span>Бюджет</button>
   <button onclick="showPage('challenge')" id="nav-challenge"><span class="ni">🪙</span>Копилка</button>
 </nav>
+<!-- FAB is position:fixed, independent of nav layout -->
+<button class="nav-fab" id="nav-fab" onclick="fabAction()">+</button>
 
 <!-- MENU BUTTON -->
 <div style="position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;height:52px;z-index:99;background:var(--bg);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;padding:0 16px;">
@@ -2624,11 +2620,7 @@ function renderNavNotch() {
 
   const W = nav.offsetWidth || 360;
   const H = nav.offsetHeight || 64;
-  // Use actual slot position instead of W/2 to avoid drift when active tab changes size
-  const slot = nav.querySelector('.nav-fab-slot');
-  const slotRect = slot ? slot.getBoundingClientRect() : null;
-  const navRect  = nav.getBoundingClientRect();
-  const cx = slotRect ? (slotRect.left - navRect.left + slotRect.width / 2) : W / 2;
+  const cx = W / 2; // FAB is position:fixed at left:50%, so notch is always at centre
   const R = 36;             // notch radius — button is 62px/2=31px + 5px gap
   const depth = R;          // depth equals radius for a true semicircle
   const spread = R + 10;    // narrow spread for tight circular cutout
@@ -2668,14 +2660,6 @@ function renderNavNotch() {
     <path d="${borderLeft}" stroke="rgba(78,205,196,0.18)" stroke-width="1" fill="none"/>
     <path d="${borderRight}" stroke="rgba(78,205,196,0.18)" stroke-width="1" fill="none"/>
   `;
-
-  // Also reposition the fixed FAB to match the real slot centre
-  const fab = document.getElementById('nav-fab');
-  if (fab && slotRect && navRect) {
-    const fabCx = slotRect.left + slotRect.width / 2; // absolute screen x
-    fab.style.left  = fabCx + 'px';
-    fab.style.transform = 'translateX(-50%)';
-  }
 
   nav.appendChild(svg);
   // Re-render on resize
