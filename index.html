@@ -7464,7 +7464,7 @@ function openChallengeSheet(id) {
         <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 14px;"></div>
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
           <div>
-            <div style="font-size:20px;font-weight:700;">${emoji} ${ch.name}</div>
+            <div style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M10.66 10.66A1.9 1.9 0 0 0 10.1 12a1.9 1.9 0 0 0 1.9 1.9a1.9 1.9 0 0 0 1.34-.56"/><path d="M12 6.3a5.7 5.7 0 1 0 5.7 5.7"/><path d="M12 2.5a9.5 9.5 0 1 0 9.5 9.5m-5.975-3.524L12.95 11.05"/><path d="M20.94 5.844L17.7 6.3l.456-3.24a.19.19 0 0 0-.313-.161l-2.148 2.137a1.9 1.9 0 0 0-.513 1.72l.342 1.72l1.72.341a1.9 1.9 0 0 0 1.72-.513L21.1 6.157a.19.19 0 0 0-.162-.313"/></g></svg> ${ch.name}</div>
             <div style="font-size:12px;color:var(--text-dim);margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               <span style="color:rgba(255,107,157,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;">🎯 ЧЕЛЛЕНДЖ</span>
               ${streak>1?`<span style="font-size:11px;">🔥 ${streak} дн.</span>`:''}
@@ -7488,7 +7488,7 @@ function openChallengeSheet(id) {
             </div>
           </div>
           <div class="progress-bar-bg" style="height:8px;"><div class="progress-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${color},${color}99);height:100%;"></div></div>
-          ${!done && daysNeeded!==null ? `<div style="font-size:12px;color:var(--text-dim);margin-top:8px;"><span style="color:${onTrack?'var(--accent)':'var(--warn)'};">${onTrack?'✓ Успеваешь':'⚠ Нужно ускориться'}</span></div>` : ''}
+          ${!done && daysNeeded!==null ? `<div style="font-size:12px;color:var(--text-dim);margin-top:8px;"><span style="color:${onTrack?'var(--accent)':'var(--warn)'};display:inline-flex;align-items:center;gap:3px;">${onTrack?'<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg> Успеваешь':'⚠ Нужно ускориться'}</span></div>` : ''}
           ${done ? `<div style="margin-top:10px;text-align:center;font-size:15px;font-weight:700;color:${color};">🎉 Цель достигнута!</div>` : ''}
         </div>
         <!-- Кнопки действий -->
@@ -9499,7 +9499,7 @@ function renderChCard(ch) {
     const daysNeeded = avgPerDay > 0 ? Math.ceil(undoneCount / avgPerDay) : null;
     const onTrack = daysNeeded !== null && daysNeeded <= daysLeft;
     const forecastStr = pct >= 100 ? '' : daysNeeded === null ? '' :
-      onTrack ? `<span style="color:var(--accent);font-size:11px;">✓ Успеваешь</span>` :
+      onTrack ? `<span style="color:var(--accent);font-size:11px;display:inline-flex;align-items:center;gap:2px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg> Успеваешь</span>` :
                 `<span style="color:var(--warn);font-size:11px;">⚠ Нужно ускориться</span>`;
 
   return `<div class="ch-card" data-id="${ch.id}" style="border-left:3px solid ${color};padding:14px 16px;cursor:pointer;" onclick="if(!event.target.closest('.drag-handle'))openChallengeSheet('${ch.id}')">
