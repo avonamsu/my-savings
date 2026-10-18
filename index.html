@@ -8392,16 +8392,15 @@ function renderBudgetEntries(entries) {
       .map(e => {
         const isExpense = e.type === 'expense';
         const groupLabel = isExpense ? `<span style="font-size:10px;color:var(--text-dim);margin-left:4px;">${e.group}</span>` : '';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="openBudgetEntryModal('${e.id}')">
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="openBudgetEntryModal('${e.id}')">
           <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:500;color:var(--text);">${(em => em ? em + ' ' : '')(_budgetCatEmoji(e.type,e.group,e.category))}${e.category}${groupLabel}</div>
-            ${e.note ? `<div style="font-size:12px;color:var(--text-dim);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.note}</div>` : ''}
+            <div style="font-size:13px;font-weight:400;color:var(--text);display:flex;align-items:center;gap:4px;">${(em => em ? em : '')(_budgetCatEmoji(e.type,e.group,e.category))} ${e.category}${groupLabel}</div>
+            ${e.note ? `<div style="font-size:11px;color:var(--text-dim);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.note}</div>` : ''}
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-left:12px;">
-            <div style="font-size:15px;font-weight:600;color:${isExpense ? '#FF6B6B' : '#4ECDC4'};white-space:nowrap;">
+          <div style="margin-left:12px;white-space:nowrap;">
+            <span style="font-size:13px;font-weight:500;color:${isExpense ? 'var(--text)' : '#4ECDC4'};">
               ${isExpense ? '−' : '+'}${fmt(e.amount)} ₽
-            </div>
-            <span style="font-size:12px;color:var(--text-dim);opacity:0.35;">›</span>
+            </span>
           </div>
         </div>`;
       }).join('');
