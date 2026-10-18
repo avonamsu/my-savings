@@ -8052,12 +8052,15 @@ function renderBudgetEntries(entries) {
     const daySummary = dayExpense > 0
       ? `<span style="color:#FF6B6B;">−${fmt(dayExpense)}</span>${dayIncome > 0 ? ` <span style="color:#4ECDC4;">+${fmt(dayIncome)}</span>` : ''}`
       : dayIncome > 0 ? `<span style="color:#4ECDC4;">+${fmt(dayIncome)}</span>` : '';
-    return `<div style="margin-bottom:8px;">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 4px;">
-        <span style="font-size:12px;color:var(--text-dim);text-transform:capitalize;">${dayLabel}</span>
+    return `<div style="margin-bottom:4px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;
+                  padding:8px 12px;margin:0 -16px;
+                  background:rgba(255,255,255,0.04);
+                  border-top:1px solid rgba(255,255,255,0.07);">
+        <span style="font-size:13px;font-weight:600;color:var(--text);text-transform:capitalize;">${dayLabel}</span>
         <span style="font-size:12px;">${daySummary}</span>
       </div>
-      ${rows}
+      <div style="padding:0 0 6px;">${rows}</div>
     </div>`;
   }).join('');
 }
