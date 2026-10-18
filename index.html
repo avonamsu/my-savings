@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018045000">
+  <meta name="version" content="20261018091500">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -121,6 +121,7 @@ nav {
   position:fixed; bottom:0; left:0; right:0;
   max-width:480px; margin:0 auto;
   z-index:100; overflow:visible;
+  /* Shadow applied to SVG inside via filter */
 }
 /* Notch SVG injected via JS — see renderNavNotch() */
 nav button { flex:1; background:none; border:none; color:var(--text-dim); font-size:10px; font-weight:600; padding:10px 2px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; }
@@ -2630,30 +2631,33 @@ function renderNavNotch() {
   // Surface colour from CSS var
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#1a2332';
 
-  // Path: left edge → curve down into notch → back up → right edge → bottom → close
-  const path = [
-    `M0,0`,
-    `L${cx - spread},0`,
-    `Q${cx - R},0 ${cx - R + 6},${depth * 0.55}`,
-    `Q${cx},${depth + R * 0.35} ${cx + R - 6},${depth * 0.55}`,
-    `Q${cx + R},0 ${cx + spread},0`,
-    `L${W},0 L${W},${H} L0,${H} Z`
-  ].join(' ');
-
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.id = 'nav-notch-svg';
   svg.setAttribute('width', W);
-  svg.setAttribute('height', H);
-  svg.style.cssText = `position:absolute;inset:0;z-index:-1;pointer-events:none;`;
+  // Extra height above SVG to show drop-shadow spilling upward
+  const extraTop = 24;
+  svg.setAttribute('height', H + extraTop);
+  svg.style.cssText = `position:absolute;left:0;right:0;bottom:0;top:-${extraTop}px;z-index:-1;pointer-events:none;overflow:visible;filter:drop-shadow(0 -4px 16px rgba(0,0,0,0.55));`;
+
+  // Shift main path down by extraTop so it still fills the nav
+  const py = extraTop;
+  const notchPath = [
+    `M0,${py}`,
+    `L${cx - spread},${py}`,
+    `Q${cx - R},${py} ${cx - R + 6},${py + depth * 0.55}`,
+    `Q${cx},${py + depth + R * 0.35} ${cx + R - 6},${py + depth * 0.55}`,
+    `Q${cx + R},${py} ${cx + spread},${py}`,
+    `L${W},${py} L${W},${H + py} L0,${H + py} Z`
+  ].join(' ');
 
   // Thin accent border line across the top (excluding notch area)
-  const borderLeft  = `M0,1 L${cx - spread},1`;
-  const borderRight = `M${cx + spread},1 L${W},1`;
+  const borderLeft  = `M0,${py + 1} L${cx - spread},${py + 1}`;
+  const borderRight = `M${cx + spread},${py + 1} L${W},${py + 1}`;
 
   svg.innerHTML = `
-    <path d="${path}" fill="${bg}"/>
-    <path d="${borderLeft}" stroke="rgba(78,205,196,0.12)" stroke-width="1" fill="none"/>
-    <path d="${borderRight}" stroke="rgba(78,205,196,0.12)" stroke-width="1" fill="none"/>
+    <path d="${notchPath}" fill="${bg}"/>
+    <path d="${borderLeft}" stroke="rgba(78,205,196,0.18)" stroke-width="1" fill="none"/>
+    <path d="${borderRight}" stroke="rgba(78,205,196,0.18)" stroke-width="1" fill="none"/>
   `;
 
   nav.appendChild(svg);
