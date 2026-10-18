@@ -9061,6 +9061,7 @@ async function renderBudgetStats() {
     </div>` : ''}
 
     <!-- Карусель: слайд 0 = график, слайд 1 = таблица -->
+    <div class="chart-wrap" style="margin-bottom:14px;position:relative;">
     <div id="stats-carousel" style="position:relative;">
       <!-- Стрелки -->
       <button id="stats-carousel-prev" onclick="_statsCarouselGo(-1)"
@@ -9125,6 +9126,7 @@ async function renderBudgetStats() {
         <div id="stats-dot-0" style="width:6px;height:6px;border-radius:50%;background:var(--accent);transition:background .2s;"></div>
         <div id="stats-dot-1" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:background .2s;"></div>
       </div>` : ''}
+    </div>
     </div>
   `.trim();
 
