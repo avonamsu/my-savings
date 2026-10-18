@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018094500">
+  <meta name="version" content="20261018095000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2621,9 +2621,9 @@ function renderNavNotch() {
   const W = nav.offsetWidth || 360;
   const H = nav.offsetHeight || 64;
   const cx = W / 2; // FAB is position:fixed at left:50%, so notch is always at centre
-  const R = 36;             // notch radius — button is 62px/2=31px + 5px gap
+  const R = 33;             // notch radius — button is 62px/2=31px + 2px gap
   const depth = R;          // depth equals radius for a true semicircle
-  const spread = R + 10;    // narrow spread for tight circular cutout
+  const spread = 2;         // minimal spread — go straight into arc, no flat entry
 
   // Surface colour from CSS var
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#1a2332';
