@@ -9043,24 +9043,7 @@ async function renderBudgetStats() {
     ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}`;
 
   el.innerHTML = `
-    <!-- Сегмент-контрол -->
-    ${donutTotal > 0 && typeFilter !== 'income' ? `
-    <div style="display:flex;background:rgba(255,255,255,0.07);border-radius:9px;padding:3px;margin-bottom:12px;gap:2px;">
-      <button id="stats-view-type" onclick="statsSetView('type')"
-        style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-               background:${effectiveViewMode==='type'?'var(--surface)':'transparent'};
-               color:${effectiveViewMode==='type'?'var(--text)':'var(--text-dim)'};
-               box-shadow:${effectiveViewMode==='type'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
-               transition:all .2s;">По типу</button>
-      <button id="stats-view-cat" onclick="statsSetView('cat')"
-        style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-               background:${effectiveViewMode==='cat'?'var(--surface)':'transparent'};
-               color:${effectiveViewMode==='cat'?'var(--text)':'var(--text-dim)'};
-               box-shadow:${effectiveViewMode==='cat'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
-               transition:all .2s;">По категориям</button>
-    </div>` : ''}
-
-    <!-- Карусель: слайд 0 = график, слайд 1 = таблица -->
+    <!-- Карусель: слайды 0-2 = группы расходов, слайд 3 = график -->
     <div class="chart-wrap" style="margin-bottom:14px;">
     <div id="stats-carousel">
       <!-- Строка: стрелка + трек + стрелка -->
@@ -9105,6 +9088,21 @@ async function renderBudgetStats() {
 
           <!-- Слайд 3: График + легенда -->
           <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
+            ${donutTotal > 0 && typeFilter !== 'income' ? `
+            <div style="display:flex;background:rgba(255,255,255,0.07);border-radius:9px;padding:3px;margin-bottom:12px;gap:2px;">
+              <button id="stats-view-type" onclick="statsSetView('type')"
+                style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                       background:${effectiveViewMode==='type'?'var(--surface)':'transparent'};
+                       color:${effectiveViewMode==='type'?'var(--text)':'var(--text-dim)'};
+                       box-shadow:${effectiveViewMode==='type'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
+                       transition:all .2s;">По типу</button>
+              <button id="stats-view-cat" onclick="statsSetView('cat')"
+                style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                       background:${effectiveViewMode==='cat'?'var(--surface)':'transparent'};
+                       color:${effectiveViewMode==='cat'?'var(--text)':'var(--text-dim)'};
+                       box-shadow:${effectiveViewMode==='cat'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
+                       transition:all .2s;">По категориям</button>
+            </div>` : ''}
             ${donutTotal > 0 ? `
             <div style="display:flex;align-items:center;gap:16px;">
               <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
