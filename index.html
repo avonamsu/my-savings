@@ -9008,14 +9008,10 @@ async function renderBudgetStats() {
         const target = BUDGET_SPLIT[s.cat];
         const limitAmt = refIncome > 0 && target ? refIncome * target / 100 : 0;
         const ok = limitAmt > 0 ? s.amt <= limitAmt * 1.05 : true;
-        const barColor = ok ? s.color : '#FF6B6B';
-        const barW = limitAmt > 0 ? Math.min(s.amt / limitAmt * 100, 100) : 0;
+        // Строка с суммой под названием (без прогресс-бара)
         const statusLine = refIncome > 0 && target
-          ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">
-               <div style="height:3px;flex:1;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;margin-right:6px;">
-                 <div style="height:3px;width:${barW}%;background:${barColor};border-radius:2px;transition:width .3s;"></div>
-               </div>
-               <span style="font-size:10px;color:${ok?'var(--text-dim)':'#FF6B6B'};white-space:nowrap;flex-shrink:0;">
+          ? `<div style="margin-top:2px;">
+               <span style="font-size:10px;color:${ok?'var(--text-dim)':'#FF6B6B'};">
                  ${fmt(s.amt)} / ${fmt(limitAmt)} ₽
                </span>
              </div>`
