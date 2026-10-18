@@ -869,8 +869,11 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <button onclick="toggleBudgetSearch()" id="budget-search-toggle-btn"
             style="background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:5px 10px;color:var(--text-dim);font-size:15px;cursor:pointer;line-height:1;">🔍</button>
           <button onclick="toggleBudgetSort()" id="budget-sort-btn"
-            style="background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:5px 14px;color:var(--text-dim);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;">
-            <span id="budget-sort-icon">↓</span> <span id="budget-sort-label">Сначала новые</span>
+            title="Сначала новые"
+            style="background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:6px 10px;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+            <svg id="budget-sort-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="16" height="16" style="transition:transform 0.2s;">
+              <path d="M3.5 2.5a0.5 0.5 0 0 0 -1 0v8.793l-1.146 -1.147a0.5 0.5 0 0 0 -0.708 0.708l2 1.999 0.007 0.007a0.497 0.497 0 0 0 0.7 -0.006l2 -2a0.5 0.5 0 0 0 -0.707 -0.708L3.5 11.293zm3.5 1a0.5 0.5 0 0 1 0.5 -0.5h7a0.5 0.5 0 0 1 0 1h-7a0.5 0.5 0 0 1 -0.5 -0.5M7.5 6a0.5 0.5 0 0 0 0 1h5a0.5 0.5 0 0 0 0 -1zm0 3a0.5 0.5 0 0 0 0 1h3a0.5 0.5 0 0 0 0 -1zm0 3a0.5 0.5 0 0 0 0 1h1a0.5 0.5 0 0 0 0 -1z"/>
+            </svg>
           </button>
         </div>
       </div>
@@ -8189,12 +8192,14 @@ function switchBudgetTab(tab) {
 }
 
 // Переключение сортировки записей (новые/старые)
+// Иконка переворачивается через CSS transform вместо смены текста
 function toggleBudgetSort() {
   _budgetSortDesc = !_budgetSortDesc;
-  const icon  = document.getElementById('budget-sort-icon');
-  const label = document.getElementById('budget-sort-label');
-  if (icon)  icon.textContent  = _budgetSortDesc ? '↓' : '↑';
-  if (label) label.textContent = _budgetSortDesc ? 'Сначала новые' : 'Сначала старые';
+  const icon = document.getElementById('budget-sort-icon');
+  const btn  = document.getElementById('budget-sort-btn');
+  // scaleY(-1) = стрелки смотрят вверх = «сначала старые»
+  if (icon) icon.style.transform = _budgetSortDesc ? '' : 'scaleY(-1)';
+  if (btn)  btn.title = _budgetSortDesc ? 'Сначала новые' : 'Сначала старые';
   if (_budgetEntriesCache) renderBudgetEntries(_budgetEntriesCache);
 }
 
