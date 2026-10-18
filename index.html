@@ -8529,7 +8529,29 @@ function renderBudgetAnalysis(entries, targetId) {
     }).join('');
   }
 
-  el.innerHTML = incomeHtml + barsHtml;
+  // Описание правила 50/30/20
+  const ruleHtml = `
+    <div style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:10px;">
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">
+        Правило помогает распределять доходы на три категории:
+      </div>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;text-align:center;font-size:13px;font-weight:700;color:#4ECDC4;">50%</div>
+          <div style="font-size:12px;color:var(--text-dim);"><span style="color:var(--text);">Основное</span> — необходимые расходы: жильё, еда, транспорт</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;text-align:center;font-size:13px;font-weight:700;color:#FFB347;">30%</div>
+          <div style="font-size:12px;color:var(--text-dim);"><span style="color:var(--text);">Желания</span> — развлечения, рестораны, покупки</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;text-align:center;font-size:13px;font-weight:700;color:#A29BFE;">20%</div>
+          <div style="font-size:12px;color:var(--text-dim);"><span style="color:var(--text);">Накопления</span> — сбережения и инвестиции</div>
+        </div>
+      </div>
+    </div>`;
+
+  el.innerHTML = incomeHtml + ruleHtml;
 
   // Auto-focus income input if in edit/prompt mode
   if (_budgetIncomeEditing || income === 0) {
