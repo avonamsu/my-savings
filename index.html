@@ -743,38 +743,25 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <!-- BUDGET PAGE -->
 <div class="page" id="page-budget">
   <div style="padding:0 16px;">
-    <!-- Month switcher -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <button onclick="budgetPrevMonth()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px 8px;">‹</button>
-      <span id="budget-month-label" style="font-size:15px;font-weight:600;color:var(--text);"></span>
-      <button onclick="budgetNextMonth()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px 8px;">›</button>
+    <!-- Header: title + gear -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-top:4px;">
+      <span style="font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.01em;">Бюджет</span>
+      <button onclick="openBudgetSettings()"
+        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
+               border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+               cursor:pointer;color:var(--text-dim);font-size:17px;">⚙️</button>
     </div>
-    <!-- Excel sync panel -->
-    <div class="chart-wrap" style="margin-bottom:12px;display:flex;flex-direction:column;gap:8px;">
-      <div class="section-title" style="margin-bottom:2px;">Excel-файл</div>
-      <!-- Download full export -->
-      <button id="btn-export-all" onclick="exportBudgetExcel()"
-        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
-               border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-weight:600;
-               padding:10px;cursor:pointer;text-align:left;">
-        📥 Скачать все записи
-      </button>
-      <!-- Update existing file: user picks their xlsx, we append new rows -->
-      <label id="btn-update-file"
-        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
-               border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-weight:600;
-               padding:10px;cursor:pointer;display:block;box-sizing:border-box;">
-        🔄 Обновить мой файл
-        <input type="file" accept=".xlsx" style="display:none;" onchange="updateBudgetExcel(this)">
-      </label>
-      <!-- Import from file: upload xlsx → sync to DB -->
-      <label id="btn-import-file"
-        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
-               border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-weight:600;
-               padding:10px;cursor:pointer;display:block;box-sizing:border-box;">
-        📤 Загрузить из файла в приложение
-        <input type="file" accept=".xlsx" style="display:none;" onchange="importBudgetExcel(this)">
-      </label>
+    <!-- Month switcher -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;">
+      <button onclick="budgetPrevMonth()"
+        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
+               border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+               color:var(--text-dim);font-size:18px;cursor:pointer;">‹</button>
+      <span id="budget-month-label" style="font-size:15px;font-weight:600;color:var(--text);min-width:150px;text-align:center;"></span>
+      <button onclick="budgetNextMonth()"
+        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
+               border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+               color:var(--text-dim);font-size:18px;cursor:pointer;">›</button>
     </div>
     <!-- Loader: shown while data is being fetched -->
     <div id="budget-loader" style="text-align:center;padding:60px 0;color:var(--text-dim);font-size:14px;">Загрузка…</div>
@@ -795,12 +782,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <div id="budget-balance" style="font-size:13px;font-weight:700;"></div>
         </div>
       </div>
-      <!-- Spending analysis block -->
-      <div id="budget-analysis" class="chart-wrap" style="margin-bottom:12px;"></div>
-      <!-- Tabs: Записи / Категории / Анализ -->
+      <!-- Tabs: Записи / Анализ -->
       <div class="tab-switch" style="margin-bottom:12px;">
         <button class="active" id="budget-tab-entries" onclick="switchBudgetTab('entries')">Записи</button>
-        <button id="budget-tab-cats" onclick="switchBudgetTab('cats')">Категории</button>
         <button id="budget-tab-stats" onclick="switchBudgetTab('stats')">Анализ</button>
       </div>
     </div>
@@ -809,7 +793,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div id="budget-entries-view" style="padding:0 16px;padding-bottom:100px;display:none;">
     <div id="budget-entries-list"></div>
   </div>
-  <!-- Categories view -->
+  <!-- Categories view (accessed from settings drawer) -->
   <div id="budget-cats-view" style="display:none;padding:0 16px;padding-bottom:100px;">
     <button onclick="budgetAddCatPrompt()"
       style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
@@ -837,6 +821,65 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
     </div>
     <div id="budget-stats-content"></div>
+  </div>
+</div>
+
+<!-- BUDGET SETTINGS DRAWER -->
+<div id="budget-settings-overlay"
+  onclick="closeBudgetSettings()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;"></div>
+<div id="budget-settings-drawer"
+  style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+         width:100%;max-width:480px;
+         background:var(--surface);border-radius:20px 20px 0 0;
+         z-index:201;padding-bottom:max(20px,env(safe-area-inset-bottom,0px));
+         transition:transform .3s cubic-bezier(.4,0,.2,1);">
+  <!-- Handle -->
+  <div style="width:36px;height:4px;background:var(--surface2);border-radius:2px;margin:12px auto 0;"></div>
+  <!-- Title -->
+  <div style="font-size:16px;font-weight:700;color:var(--text);padding:14px 20px 14px;
+              border-bottom:1px solid rgba(255,255,255,0.08);">Настройки бюджета</div>
+
+  <!-- Excel section -->
+  <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.08);">
+    <div class="section-title" style="margin-bottom:10px;">Excel-файл</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button onclick="exportBudgetExcel();closeBudgetSettings()"
+        style="display:flex;align-items:center;gap:10px;width:100%;background:var(--surface2);
+               border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
+               color:var(--text);font-size:14px;font-weight:500;padding:11px 12px;cursor:pointer;">
+        <span style="font-size:18px;">📥</span> Скачать все записи
+      </button>
+      <label style="display:flex;align-items:center;gap:10px;width:100%;background:var(--surface2);
+               border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
+               color:var(--text);font-size:14px;font-weight:500;padding:11px 12px;cursor:pointer;box-sizing:border-box;">
+        <span style="font-size:18px;">🔄</span> Обновить мой файл
+        <input type="file" accept=".xlsx" style="display:none;" onchange="updateBudgetExcel(this);closeBudgetSettings()">
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;width:100%;background:var(--surface2);
+               border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
+               color:var(--text);font-size:14px;font-weight:500;padding:11px 12px;cursor:pointer;box-sizing:border-box;">
+        <span style="font-size:18px;">📤</span> Загрузить из файла в приложение
+        <input type="file" accept=".xlsx" style="display:none;" onchange="importBudgetExcel(this);closeBudgetSettings()">
+      </label>
+    </div>
+  </div>
+
+  <!-- Categories section -->
+  <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.08);">
+    <div class="section-title" style="margin-bottom:10px;">Категории</div>
+    <button onclick="openBudgetCatsFromSettings()"
+      style="display:flex;align-items:center;gap:10px;width:100%;background:var(--surface2);
+             border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
+             color:var(--text);font-size:14px;font-weight:500;padding:11px 12px;cursor:pointer;">
+      <span style="font-size:18px;">✏️</span> Управлять категориями
+    </button>
+  </div>
+
+  <!-- 50/30/20 section -->
+  <div style="padding:14px 20px;">
+    <div class="section-title" style="margin-bottom:10px;">Правило 50/30/20</div>
+    <div id="budget-settings-analysis"></div>
   </div>
 </div>
 
@@ -7964,13 +8007,50 @@ function budgetNextMonth() {
 
 function switchBudgetTab(tab) {
   document.getElementById('budget-entries-view').style.display = tab === 'entries' ? '' : 'none';
-  document.getElementById('budget-cats-view').style.display   = tab === 'cats'     ? '' : 'none';
+  document.getElementById('budget-cats-view').style.display   = 'none'; // only via settings drawer
   document.getElementById('budget-stats-view').style.display  = tab === 'stats'    ? '' : 'none';
   document.getElementById('budget-tab-entries').classList.toggle('active', tab === 'entries');
-  document.getElementById('budget-tab-cats').classList.toggle('active', tab === 'cats');
   document.getElementById('budget-tab-stats').classList.toggle('active', tab === 'stats');
-  if (tab === 'cats')  renderBudgetCats();
   if (tab === 'stats') { _budgetStatsCache = null; renderBudgetStats(); }
+}
+
+// Opens budget settings bottom sheet and renders 50/30/20 inside it
+function openBudgetSettings() {
+  const overlay = document.getElementById('budget-settings-overlay');
+  const drawer  = document.getElementById('budget-settings-drawer');
+  overlay.style.display = '';
+  drawer.style.display  = '';
+  // Render 50/30/20 analysis directly into the drawer container
+  if (_budgetEntriesCache) renderBudgetAnalysis(_budgetEntriesCache, 'budget-settings-analysis');
+}
+
+function closeBudgetSettings() {
+  document.getElementById('budget-settings-overlay').style.display = 'none';
+  document.getElementById('budget-settings-drawer').style.display  = 'none';
+}
+
+// From settings drawer → open categories view as a full-screen overlay
+function openBudgetCatsFromSettings() {
+  closeBudgetSettings();
+  // Show the cats view, hide entries/stats
+  document.getElementById('budget-entries-view').style.display = 'none';
+  document.getElementById('budget-stats-view').style.display   = 'none';
+  document.getElementById('budget-cats-view').style.display    = '';
+  // Add a back button at top if not already there
+  let backBtn = document.getElementById('budget-cats-back-btn');
+  if (!backBtn) {
+    backBtn = document.createElement('button');
+    backBtn.id = 'budget-cats-back-btn';
+    backBtn.textContent = '← Назад';
+    backBtn.style.cssText = 'background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0 16px 12px;display:block;';
+    backBtn.onclick = () => {
+      document.getElementById('budget-cats-view').style.display = 'none';
+      backBtn.remove();
+      switchBudgetTab('entries');
+    };
+    document.getElementById('budget-cats-view').prepend(backBtn);
+  }
+  renderBudgetCats();
 }
 
 // Renders the budget page (summary + entries list); loads data from Supabase
@@ -8007,7 +8087,8 @@ async function renderBudgetPage() {
   balEl.style.color = balance >= 0 ? '#3DD68C' : 'var(--danger)';
 
   renderBudgetEntries(entries);
-  renderBudgetAnalysis(entries);
+  // analysis is rendered lazily when settings drawer opens
+  _budgetEntriesCache = entries; // ensure cache is set before drawer opens
 
   // Hide loader, reveal content
   document.getElementById('budget-loader').style.display  = 'none';
@@ -8078,8 +8159,9 @@ const BUDGET_SPLIT = { 'Основное': 50, 'Желания': 30, 'Накоп
 let _budgetIncomeEditing = false;
 
 // Renders the spending analysis block with income input and group progress bars
-function renderBudgetAnalysis(entries) {
-  const el = document.getElementById('budget-analysis');
+// targetId: optional, defaults to 'budget-analysis'
+function renderBudgetAnalysis(entries, targetId) {
+  const el = document.getElementById(targetId || 'budget-analysis');
   if (!el) return;
 
   budgetInit();
@@ -8172,13 +8254,12 @@ function renderBudgetAnalysis(entries) {
 
 function editBudgetIncome() {
   _budgetIncomeEditing = true;
-  // Re-render only the analysis block using cached entries
-  renderBudgetAnalysis(_budgetEntriesCache);
+  renderBudgetAnalysis(_budgetEntriesCache, 'budget-settings-analysis');
 }
 
 function cancelBudgetIncome() {
   _budgetIncomeEditing = false;
-  renderBudgetAnalysis(_budgetEntriesCache);
+  renderBudgetAnalysis(_budgetEntriesCache, 'budget-settings-analysis');
 }
 
 function saveBudgetIncome() {
@@ -8189,7 +8270,7 @@ function saveBudgetIncome() {
   state.budget.monthlyIncome = (val > 0) ? val : 0;
   save();
   _budgetIncomeEditing = false;
-  renderBudgetAnalysis(_budgetEntriesCache);
+  renderBudgetAnalysis(_budgetEntriesCache, 'budget-settings-analysis');
 }
 
 // Collapsed state for category group blocks; persisted in localStorage
