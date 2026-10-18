@@ -9161,10 +9161,22 @@ async function renderBudgetStats() {
       const inner = document.getElementById('stats-carousel-inner');
       const track = document.getElementById('stats-carousel-track');
       if (inner) inner.style.transform = `translateX(-${slide * 100}%)`;
-      // Подстраиваем высоту трека под текущий слайд
+      // Подстраиваем высоту трека под текущий слайд.
+      // Слайды в display:flex — их scrollHeight равен высоте самого высокого слайда,
+      // поэтому считаем высоту через первый дочерний элемент слайда (реальный контент).
       if (track && inner) {
         const slideEl = inner.children[slide];
-        if (slideEl) track.style.height = slideEl.scrollHeight + 'px';
+        if (slideEl) {
+          // Суммируем высоты всех дочерних элементов слайда + его padding
+          const style = window.getComputedStyle(slideEl);
+          const padT = parseFloat(style.paddingTop) || 0;
+          const padB = parseFloat(style.paddingBottom) || 0;
+          let contentH = 0;
+          for (const child of slideEl.children) {
+            contentH += child.offsetHeight + (parseFloat(window.getComputedStyle(child).marginBottom) || 0);
+          }
+          track.style.height = (contentH + padT + padB + 8) + 'px';
+        }
       }
       // Обновляем точки
       for (let i = 0; i < total; i++) {
