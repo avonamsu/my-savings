@@ -9076,8 +9076,35 @@ async function renderBudgetStats() {
         <div id="stats-carousel-inner"
              style="display:flex;transition:transform .3s ease;will-change:transform;">
 
-          <!-- Слайд 0: График + легенда -->
-          <div style="min-width:100%;box-sizing:border-box;padding:0 18px;">
+          <!-- Слайд 0: Основное -->
+          <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
+            <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Основное</div>
+            ${totals.expense['Основное']
+              ? Object.entries(totals.expense['Основное']).sort((a,b)=>b[1]-a[1])
+                  .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Основное']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Основное')).join('')
+              : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
+          </div>
+
+          <!-- Слайд 1: Желания -->
+          <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
+            <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Желания</div>
+            ${totals.expense['Желания']
+              ? Object.entries(totals.expense['Желания']).sort((a,b)=>b[1]-a[1])
+                  .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Желания']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Желания')).join('')
+              : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
+          </div>
+
+          <!-- Слайд 2: Накопления -->
+          <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
+            <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Накопления</div>
+            ${totals.expense['Накопления']
+              ? Object.entries(totals.expense['Накопления']).sort((a,b)=>b[1]-a[1])
+                  .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Накопления']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Накопления')).join('')
+              : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
+          </div>
+
+          <!-- Слайд 3: График + легенда -->
+          <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
             ${donutTotal > 0 ? `
             <div style="display:flex;align-items:center;gap:16px;">
               <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
@@ -9095,7 +9122,6 @@ async function renderBudgetStats() {
               </div>
               <div style="flex:1;min-width:0;">
                 ${legendHtml}
-                ${donutSlices.length > 6 ? `<div style="font-size:11px;color:var(--text-dim);">+${donutSlices.length-6} ещё</div>` : ''}
               </div>
             </div>
             ${effectiveViewMode === 'type' ? `
@@ -9106,26 +9132,22 @@ async function renderBudgetStats() {
             </div>` : ''}
             ` : '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>'}
           </div>
-
-          <!-- Слайд 1: Таблица расходов/доходов -->
-          <div style="min-width:100%;box-sizing:border-box;padding:0 18px;">
-            ${tableHtml}
-          </div>
         </div>
       </div>
         <button id="stats-carousel-next" onclick="_statsCarouselGo(1)"
           style="background:rgba(255,255,255,0.06);border:none;border-radius:50%;flex-shrink:0;
                  width:24px;height:24px;display:flex;align-items:center;justify-content:center;
                  cursor:pointer;color:var(--text-dim);font-size:14px;transition:opacity .2s;
-                 opacity:${donutTotal > 0 ? '1' : '0'};pointer-events:${donutTotal > 0 ? 'auto' : 'none'};">›</button>
+                 opacity:1;pointer-events:auto;">›</button>
       </div>
 
       <!-- Индикаторы-точки -->
-      ${donutTotal > 0 ? `
       <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;">
         <div id="stats-dot-0" style="width:6px;height:6px;border-radius:50%;background:var(--accent);transition:background .2s;"></div>
         <div id="stats-dot-1" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:background .2s;"></div>
-      </div>` : ''}
+        <div id="stats-dot-2" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:background .2s;"></div>
+        <div id="stats-dot-3" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:background .2s;"></div>
+      </div>
     </div>
     </div>
   `.trim();
@@ -9133,7 +9155,7 @@ async function renderBudgetStats() {
   // ── Карусель: инициализация свайпа и стрелок ──
   (function initCarousel() {
     let slide = 0;
-    const total = 2;
+    const total = 4;
 
     function goTo(idx) {
       slide = Math.max(0, Math.min(total - 1, idx));
