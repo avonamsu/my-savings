@@ -3992,10 +3992,13 @@ function setSavingsSort(val) {
   window._savingsSort = val;
   const menu = document.getElementById('savings-sort-menu');
   if (menu) menu.style.display = 'none';
+  const labels = {type:'По типу', amount:'По сумме ↓', added:'По дате'};
   ['type','amount','added'].forEach(k => {
     const el = document.getElementById('ssort-'+k);
-    if (el) { el.style.color = k===val ? 'var(--accent)' : 'var(--text-dim)'; el.textContent = (k===val?'✓ ':'')+{type:'По типу',amount:'По сумме ↓',added:'По дате'}[k]; }
+    if (el) { el.style.color = k===val ? 'var(--accent)' : 'var(--text-dim)'; el.textContent = (k===val?'✓ ':'')+labels[k]; }
   });
+  const lbl = document.getElementById('savings-sort-label');
+  if (lbl) lbl.textContent = labels[val] || 'Сортировка';
   renderSavings();
 }
 // close sort menu on outside click
