@@ -824,10 +824,15 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <!-- Entries view: История операций с шапкой и поиском -->
   <div id="budget-entries-view" style="padding-bottom:140px;display:none;">
     <div style="padding:0 16px;">
-      <!-- Шапка: Назад + заголовок + кнопки -->
+      <!-- Навигация по месяцам -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <button onclick="budgetPrevMonth()" style="background:none;border:none;color:var(--accent);font-size:22px;cursor:pointer;padding:0;line-height:1;">‹</button>
+        <span id="budget-month-label" style="font-size:15px;font-weight:700;color:var(--text);"></span>
+        <button onclick="budgetNextMonth()" id="budget-next-month-btn" style="background:none;border:none;color:var(--accent);font-size:22px;cursor:pointer;padding:0;line-height:1;">›</button>
+      </div>
+      <!-- Заголовок + сортировка -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <span style="font-size:13px;font-weight:600;color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;">История операций</span>
-        <div></div>
         <button onclick="toggleBudgetSort()" id="budget-sort-btn"
           style="background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:5px 14px;color:var(--text-dim);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;">
           <span id="budget-sort-icon">↓</span> <span id="budget-sort-label">Сначала новые</span>
@@ -8243,6 +8248,15 @@ function openBudgetCatsFromSettings() {
 // Renders the budget page (summary + entries list); loads data from Supabase
 async function renderBudgetPage() {
   budgetInit();
+
+  // Update month label + next-arrow visibility
+  const [y, m] = _budgetMonth.split('-').map(Number);
+  const monthLabel = new Date(y, m - 1, 1).toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+  const labelEl = document.getElementById('budget-month-label');
+  if (labelEl) labelEl.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  const currentMonth = new Date().toLocaleDateString('sv').slice(0, 7);
+  const nextBtn = document.getElementById('budget-next-month-btn');
+  if (nextBtn) { nextBtn.style.opacity = _budgetMonth >= currentMonth ? '0.3' : '1'; nextBtn.style.pointerEvents = _budgetMonth >= currentMonth ? 'none' : ''; }
 
   // Show loader, hide content until data arrives
   const isNewMonth = _budgetEntriesLoadedMonth !== _budgetMonth;
