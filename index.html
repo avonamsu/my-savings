@@ -8529,6 +8529,29 @@ async function renderBudgetStats() {
 
   const hiddenCount = _statsHiddenCats.size;
 
+  // ── Build donut chart data ──
+  // Show expense breakdown when filter is 'all' or 'expense', income when 'income'
+  const donutType = typeFilter === 'income' ? 'income' : 'expense';
+  const donutTotal = donutType === 'expense' ? totalExp : totalInc;
+  const donutColor = donutType === 'expense' ? 'var(--danger)' : 'var(--accent)';
+  const donutColorHex = donutType === 'expense' ? '#FF6B6B' : '#3DD68C';
+
+  // Flatten categories for donut: [{cat, amt, color}]
+  const DONUT_PALETTE = [
+    '#FF6B6B','#FFA94D','#FFD43B','#69DB7C','#38D9A9',
+    '#4DABF7','#748FFC','#DA77F2','#F783AC','#A9E34B'
+  ];
+  const donutGroups = totals[donutType];
+  const donutSlices = [];
+  let pIdx = 0;
+  for (const [grp, cats] of Object.entries(donutGroups)) {
+    for (const [cat, amt] of Object.entries(cats).sort((a,b) => b[1]-a[1])) {
+      if (_statsHiddenCats.has(donutType + '|' + cat)) continue;
+      donutSlices.push({ cat, amt, color: DONUT_PALETTE[pIdx % DONUT_PALETTE.length] });
+      pIdx++;
+    }
+  }
+
   el.innerHTML = `
     <div style="display:flex;gap:6px;margin-bottom:12px;">
       <button style="${btnStyle('all')}"    onclick="statsSetType('all')">Всё</button>
@@ -8545,6 +8568,39 @@ async function renderBudgetStats() {
         <div style="font-size:16px;font-weight:700;color:var(--accent);">${fmt(totalInc)} ₽</div>
       </div>
     </div>
+    ${donutTotal > 0 ? `
+    <div class="chart-wrap" style="margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <!-- Canvas donut chart -->
+        <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
+          <canvas id="stats-donut-canvas" width="260" height="260"
+            style="width:130px;height:130px;border-radius:50%;"></canvas>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;
+                      align-items:center;justify-content:center;pointer-events:none;">
+            <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">
+              ${donutType === 'expense' ? 'Расходы' : 'Доходы'}
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:2px;">
+              ${fmt(donutTotal)} ₽
+            </div>
+          </div>
+        </div>
+        <!-- Legend: top-5 slices -->
+        <div style="flex:1;min-width:0;">
+          ${donutSlices.slice(0,6).map(s => `
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0;">
+              <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
+              <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;
+                          text-overflow:ellipsis;flex:1;min-width:0;">${s.cat}</div>
+              <div style="font-size:11px;color:var(--text-dim);flex-shrink:0;">
+                ${donutTotal > 0 ? Math.round(s.amt/donutTotal*100) : 0}%
+              </div>
+            </div>
+          `).join('')}
+          ${donutSlices.length > 6 ? `<div style="font-size:11px;color:var(--text-dim);">+${donutSlices.length-6} ещё</div>` : ''}
+        </div>
+      </div>
+    </div>` : ''}
     ${hiddenCount > 0 ? `<div style="text-align:right;margin-bottom:8px;">
       <button onclick="statsClearHidden()" style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;">
         Показать все (скрыто: ${hiddenCount})
@@ -8553,6 +8609,49 @@ async function renderBudgetStats() {
     ${typeFilter !== 'expense' && incBlocks ? `<div class="section-title" style="margin:12px 0 8px;">Доходы</div>${incBlocks}` : ''}
     ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}
   `.trim();
+
+  // ── Draw donut on canvas after DOM update ──
+  if (donutTotal > 0 && donutSlices.length > 0) {
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById('stats-donut-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = 260, cx = W/2, cy = W/2, outerR = 115, innerR = 72;
+      ctx.clearRect(0, 0, W, W);
+      let startAngle = -Math.PI / 2; // start from top
+      const total = donutSlices.reduce((s, sl) => s + sl.amt, 0);
+      for (const sl of donutSlices) {
+        const sweep = (sl.amt / total) * 2 * Math.PI;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, outerR, startAngle, startAngle + sweep);
+        ctx.closePath();
+        ctx.fillStyle = sl.color;
+        ctx.fill();
+        startAngle += sweep;
+      }
+      // Punch inner hole to make it a donut
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR, 0, 2 * Math.PI);
+      // Use destination-out to erase center
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = 'rgba(0,0,0,1)';
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      // Thin gap lines between slices
+      startAngle = -Math.PI / 2;
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+      ctx.lineWidth = 2;
+      for (const sl of donutSlices) {
+        const sweep = (sl.amt / total) * 2 * Math.PI;
+        ctx.beginPath();
+        ctx.moveTo(cx + innerR * Math.cos(startAngle), cy + innerR * Math.sin(startAngle));
+        ctx.lineTo(cx + outerR * Math.cos(startAngle), cy + outerR * Math.sin(startAngle));
+        ctx.stroke();
+        startAngle += sweep;
+      }
+    });
+  }
 }
 
 // Stats filter state
