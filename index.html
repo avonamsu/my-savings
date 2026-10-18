@@ -9039,10 +9039,10 @@ async function renderBudgetStats() {
     ${typeFilter !== 'expense' && incBlocks ? `<div class="section-title" style="margin:12px 0 8px;">Доходы</div>${incBlocks}` : ''}
     ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}`;
 
-  // При фильтре "Доходы" — только слайд с графиком (1 слайд).
+  // При фильтре "Доходы" — 2 слайда: таблица категорий + график.
   // При "Расходы" или "Все" — 4 слайда: Основное, Желания, Накопления, График.
   const isIncomeOnly = typeFilter === 'income';
-  const carouselTotal = isIncomeOnly ? 1 : 4;
+  const carouselTotal = isIncomeOnly ? 2 : 4;
   // Сбрасываем позицию если она вышла за пределы (переключили фильтр)
   if (_statsCarouselSlide >= carouselTotal) _statsCarouselSlide = 0;
 
@@ -9076,6 +9076,24 @@ async function renderBudgetStats() {
       </div>` : ''}
       ` : '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>'}
     </div>`;
+
+  // Слайд с таблицей доходов по категориям (только при фильтре доходов)
+  const incomeTableSlideHtml = isIncomeOnly ? (() => {
+    // Собираем все категории доходов по всем группам
+    const allIncCats = {};
+    for (const group of Object.values(totals.income)) {
+      for (const [cat, amt] of Object.entries(group)) {
+        allIncCats[cat] = (allIncCats[cat] || 0) + amt;
+      }
+    }
+    const incTotal = Object.values(allIncCats).reduce((s,v)=>s+v,0);
+    const rows = Object.entries(allIncCats).sort((a,b)=>b[1]-a[1])
+      .map(([cat,amt]) => renderCatRow(cat, amt, incTotal, 'var(--accent)', 'income', 'Доходы')).join('');
+    return `<div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Категории доходов</div>
+      ${rows || '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет доходов</div>'}
+    </div>`;
+  })() : '';
 
   // Слайды расходов по типам (только при фильтре расходов)
   const expenseSlidesHtml = isIncomeOnly ? '' : `
@@ -9119,6 +9137,7 @@ async function renderBudgetStats() {
         <div id="stats-carousel-inner"
              style="display:flex;transition:transform .3s ease;will-change:transform;">
           ${expenseSlidesHtml}
+          ${incomeTableSlideHtml}
           ${chartSlideHtml}
         </div>
       </div>
