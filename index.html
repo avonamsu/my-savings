@@ -528,7 +528,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 </div>
 <div class="sidebar" id="sidebar">
   <div class="sidebar-profile" style="display:flex;align-items:center;gap:14px;">
-    <div id="sb-avatar" style="width:52px;height:52px;flex-shrink:0;position:relative;"><img id="sb-avatar-img" src="" style="width:52px;height:52px;object-fit:contain;border-radius:12px;" alt=""><div id="sb-avatar-letter" style="display:none;position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.5);"></div></div>
+    <div id="sb-avatar" style="width:52px;height:52px;flex-shrink:0;"><img id="sb-avatar-img" src="" style="width:52px;height:52px;object-fit:contain;border-radius:12px;" alt=""></div>
     <div style="flex:1;min-width:0;">
       <div class="sidebar-name" id="sb-name" style="font-size:14px;font-weight:600;word-break:break-all;line-height:1.3;">Мои накопления</div>
       <div id="sbp-signed-out">
@@ -2156,13 +2156,7 @@ function sbUpdateUI() {
     // Set random circle avatar image
     const imgEl = document.getElementById('sb-avatar-img');
     if (imgEl && !imgEl.src) imgEl.src = _AVATAR_IMGS[_AVATAR_IDX];
-    const letterEl = document.getElementById('sb-avatar-letter');
-    if (_sbUser) {
-      const letter = (_sbUser.email || '?')[0].toUpperCase();
-      if (letterEl) { letterEl.textContent = letter; letterEl.style.display = 'flex'; }
-    } else {
-      if (letterEl) letterEl.style.display = 'none';
-    }
+    // no letter overlay — avatar is always the character image
   }
   if (sbName) {
     sbName.textContent = _sbUser ? _sbUser.email : 'Мои накопления';
