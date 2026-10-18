@@ -9152,11 +9152,12 @@ async function renderBudgetStats() {
 
   // ── Карусель: инициализация свайпа и стрелок ──
   (function initCarousel() {
-    let slide = 0;
+    let slide = _statsCarouselSlide; // восстанавливаем позицию после ре-рендера
     const total = 4;
 
     function goTo(idx) {
       slide = Math.max(0, Math.min(total - 1, idx));
+      _statsCarouselSlide = slide; // сохраняем для следующего рендера
       const inner = document.getElementById('stats-carousel-inner');
       const track = document.getElementById('stats-carousel-track');
       if (inner) inner.style.transform = `translateX(-${slide * 100}%)`;
@@ -9180,8 +9181,15 @@ async function renderBudgetStats() {
     // Глобальная функция для стрелок (onclick в HTML)
     window._statsCarouselGo = (dir) => goTo(slide + dir);
 
-    // Установить начальную высоту под первый слайд
-    requestAnimationFrame(() => goTo(0));
+    // Восстановить позицию слайда без анимации
+    requestAnimationFrame(() => {
+      const inner = document.getElementById('stats-carousel-inner');
+      if (inner) inner.style.transition = 'none'; // выключаем анимацию при восстановлении
+      goTo(_statsCarouselSlide);
+      requestAnimationFrame(() => {
+        if (inner) inner.style.transition = 'transform .3s ease'; // включаем обратно
+      });
+    });
 
     // Touch-свайп по треку
     const track = document.getElementById('stats-carousel-track');
@@ -9246,6 +9254,7 @@ async function renderBudgetStats() {
 let _statsTypeFilter = 'expense'; // 'expense' | 'income' (all removed)
 let _statsGroupFilter = 'all';  // 'all' | 'Основное' | 'Желания' | 'Накопления'
 let _statsView = 'type';        // 'type' | 'cat'
+let _statsCarouselSlide = 0;    // запоминаем активный слайд между ре-рендерами
 
 function statsSetType(val) {
   _statsTypeFilter = val;
