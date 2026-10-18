@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018101000">
+  <meta name="version" content="20261018102000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -119,8 +119,9 @@ nav {
   background:var(--surface);
   border-top:1px solid rgba(78,205,196,0.12);
   box-shadow:0 -8px 24px rgba(0,0,0,0.45);
-  position:fixed; bottom:0; left:0; right:0;
-  max-width:480px; margin:0 auto;
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:380px;
+  border-radius:20px 20px 0 0;
   z-index:100; overflow:visible;
 }
 /* Notch SVG injected via JS — see renderNavNotch() */
