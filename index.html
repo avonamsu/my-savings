@@ -824,13 +824,23 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
         <!-- Подробнее -->
         <div style="text-align:right;">
-          <button onclick="switchBudgetTab('stats')" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">Подробнее →</button>
+          <button onclick="openBudgetSettings()" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">Подробнее →</button>
         </div>
       </div>
-      <!-- Tabs: Записи / Анализ -->
-      <div class="tab-switch" style="margin-bottom:12px;">
-        <button class="active" id="budget-tab-entries" onclick="switchBudgetTab('entries')">Записи</button>
-        <button id="budget-tab-stats" onclick="switchBudgetTab('stats')">Анализ</button>
+      <!-- Заголовок Записи + поиск/фильтр -->
+      <div style="margin-bottom:10px;">
+        <div style="text-align:center;font-size:13px;font-weight:600;color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;">Записи</div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;display:flex;align-items:center;gap:6px;background:var(--surface2);border-radius:20px;padding:7px 12px;border:1px solid rgba(255,255,255,0.07);">
+            <span style="font-size:13px;color:var(--text-dim);">🔍</span>
+            <input id="budget-search" type="text" placeholder="Поиск" oninput="filterBudgetEntries()"
+              style="background:none;border:none;outline:none;color:var(--text);font-size:13px;width:100%;">
+          </div>
+          <button onclick="openBudgetFilter()" id="budget-filter-btn"
+            style="display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:7px 14px;color:var(--text-dim);font-size:13px;cursor:pointer;white-space:nowrap;">
+            <span>⚙</span> Фильтр
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -8106,11 +8116,72 @@ function budgetNextMonth() {
 
 function switchBudgetTab(tab) {
   document.getElementById('budget-entries-view').style.display = tab === 'entries' ? '' : 'none';
-  document.getElementById('budget-cats-view').style.display   = 'none'; // only via settings drawer
-  document.getElementById('budget-stats-view').style.display  = tab === 'stats'    ? '' : 'none';
-  document.getElementById('budget-tab-entries').classList.toggle('active', tab === 'entries');
-  document.getElementById('budget-tab-stats').classList.toggle('active', tab === 'stats');
+  document.getElementById('budget-cats-view').style.display   = 'none';
+  const statsView = document.getElementById('budget-stats-view');
+  if (statsView) statsView.style.display = tab === 'stats' ? '' : 'none';
   if (tab === 'stats') { _budgetStatsCache = null; renderBudgetStats(); }
+}
+
+// Фильтрация записей по строке поиска
+function filterBudgetEntries() {
+  const q = (document.getElementById('budget-search')?.value || '').toLowerCase().trim();
+  if (!_budgetEntriesCache) return;
+  if (!q) { renderBudgetEntries(_budgetEntriesCache); return; }
+  const filtered = _budgetEntriesCache.filter(e =>
+    (e.category || '').toLowerCase().includes(q) ||
+    (e.note || '').toLowerCase().includes(q)
+  );
+  renderBudgetEntries(filtered);
+}
+
+// Открыть фильтр по датам (простой date-range picker)
+function openBudgetFilter() {
+  const existing = document.getElementById('budget-filter-popup');
+  if (existing) { existing.remove(); return; }
+  const btn = document.getElementById('budget-filter-btn');
+  const popup = document.createElement('div');
+  popup.id = 'budget-filter-popup';
+  popup.style.cssText = 'position:fixed;bottom:160px;left:16px;right:16px;background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:16px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+  popup.innerHTML = `
+    <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;">Фильтр по датам</div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div style="flex:1;"><label style="font-size:11px;color:var(--text-dim);">С</label>
+        <input type="date" id="bf-from" style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;margin-top:4px;box-sizing:border-box;"></div>
+      <div style="flex:1;"><label style="font-size:11px;color:var(--text-dim);">По</label>
+        <input type="date" id="bf-to" style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;margin-top:4px;box-sizing:border-box;"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="applyBudgetFilter()" style="flex:1;background:var(--accent);border:none;border-radius:10px;padding:10px;color:#0d1f1a;font-size:14px;font-weight:600;cursor:pointer;">Применить</button>
+      <button onclick="clearBudgetFilter()" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;color:var(--text-dim);font-size:14px;cursor:pointer;">Сбросить</button>
+    </div>`;
+  document.body.appendChild(popup);
+  // Закрыть по тапу вне
+  setTimeout(() => document.addEventListener('click', function h(e) {
+    if (!popup.contains(e.target) && e.target !== btn) { popup.remove(); document.removeEventListener('click', h); }
+  }), 100);
+}
+
+function applyBudgetFilter() {
+  const from = document.getElementById('bf-from')?.value;
+  const to   = document.getElementById('bf-to')?.value;
+  document.getElementById('budget-filter-popup')?.remove();
+  if (!_budgetEntriesCache) return;
+  const filtered = _budgetEntriesCache.filter(e => {
+    if (from && e.date < from) return false;
+    if (to   && e.date > to)   return false;
+    return true;
+  });
+  // Highlight filter button when active
+  const btn = document.getElementById('budget-filter-btn');
+  if (btn) btn.style.borderColor = (from || to) ? 'var(--accent)' : 'rgba(255,255,255,0.07)';
+  renderBudgetEntries(filtered);
+}
+
+function clearBudgetFilter() {
+  document.getElementById('budget-filter-popup')?.remove();
+  const btn = document.getElementById('budget-filter-btn');
+  if (btn) btn.style.borderColor = 'rgba(255,255,255,0.07)';
+  if (_budgetEntriesCache) renderBudgetEntries(_budgetEntriesCache);
 }
 
 // Opens budget settings bottom sheet and renders 50/30/20 inside it
