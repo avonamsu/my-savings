@@ -7953,6 +7953,8 @@ function budgetPrevMonth() {
   renderBudgetPage().catch(console.error);
 }
 function budgetNextMonth() {
+  const currentMonth = new Date().toLocaleDateString('sv').slice(0, 7);
+  if (_budgetMonth >= currentMonth) return; // не листать в будущее
   const [y, m] = _budgetMonth.split('-').map(Number);
   const d = new Date(y, m, 1);
   _budgetMonth = d.toLocaleDateString('sv').slice(0, 7);
@@ -7974,10 +7976,13 @@ function switchBudgetTab(tab) {
 // Renders the budget page (summary + entries list); loads data from Supabase
 async function renderBudgetPage() {
   budgetInit();
-  // Month label
+  // Month label + hide next-month button if already at current month
   const [y, m] = _budgetMonth.split('-').map(Number);
   const label = new Date(y, m - 1, 1).toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
   document.getElementById('budget-month-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+  const currentMonth = new Date().toLocaleDateString('sv').slice(0, 7);
+  const nextBtn = document.querySelector('[onclick="budgetNextMonth()"]');
+  if (nextBtn) nextBtn.style.visibility = _budgetMonth >= currentMonth ? 'hidden' : 'visible';
 
   // Show loader, hide content until data arrives
   const isNewMonth = _budgetEntriesLoadedMonth !== _budgetMonth;
