@@ -8126,9 +8126,12 @@ function renderBudgetCats() {
   const cats = state.budget.categories;
   const el = document.getElementById('budget-cats-list');
 
-  // Expense section header + groups
-  const expenseGroups = Object.entries(cats.expense)
-    .map(([group, items]) => _budgetGroupBlock('exp_' + group, group, items, 'expense', group))
+  // Expense section header + groups — fixed order: Основное → Желания → Накопления → rest
+  const GROUP_ORDER = ['Основное', 'Желания', 'Накопления'];
+  const expenseKeys = [...GROUP_ORDER.filter(g => g in cats.expense),
+                       ...Object.keys(cats.expense).filter(g => !GROUP_ORDER.includes(g))];
+  const expenseGroups = expenseKeys
+    .map(group => _budgetGroupBlock('exp_' + group, group, cats.expense[group], 'expense', group))
     .join('');
 
   const incomeBlock = _budgetGroupBlock('income', 'Доходы', cats.income, 'income', null);
