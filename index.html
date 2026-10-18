@@ -861,6 +861,21 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <!-- Stats view -->
   <div id="budget-stats-view" style="display:none;padding:0 16px;padding-bottom:140px;">
+    <!-- Back button + title + CSV -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <button onclick="switchBudgetTab('entries')" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:4px;">
+        ‹ Назад
+      </button>
+      <span style="font-size:15px;font-weight:700;color:var(--text);">Анализ</span>
+      <button onclick="exportBudgetStatsCSV()" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:5px 10px;cursor:pointer;">CSV</button>
+    </div>
+    <!-- View mode toggle: по типу / по категориям -->
+    <div style="display:flex;gap:6px;margin-bottom:12px;">
+      <button id="stats-view-type" onclick="statsSetView('type')"
+        style="flex:1;padding:7px 4px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--accent);color:#000;">По типу</button>
+      <button id="stats-view-cat" onclick="statsSetView('cat')"
+        style="flex:1;padding:7px 4px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--surface2);color:var(--text-dim);">По категориям</button>
+    </div>
     <!-- Period picker -->
     <div class="chart-wrap" style="margin-bottom:12px;">
       <select id="stats-period" onchange="onStatsPeriodChange()" style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);padding:8px 10px;font-size:13px;">
@@ -8666,15 +8681,20 @@ async function renderBudgetStats() {
   }
   const entries = _budgetStatsCache;
 
-  // ── Type filter toggle (persisted in module var) ──
-  const typeFilter = _statsTypeFilter; // 'all' | 'expense' | 'income'
-  const filtered = typeFilter === 'all' ? entries
-    : entries.filter(e => e.type === typeFilter);
+  // ── Filters (persisted in module vars) ──
+  const typeFilter  = _statsTypeFilter;  // 'all' | 'expense' | 'income'
+  const groupFilter = _statsGroupFilter; // 'all' | 'Основное' | 'Желания' | 'Накопления'
+  const viewMode    = _statsView;        // 'type' | 'cat'
+
+  const filtered = entries.filter(e => {
+    if (typeFilter !== 'all' && e.type !== typeFilter) return false;
+    if (groupFilter !== 'all' && e.group !== groupFilter) return false;
+    return true;
+  });
 
   // ── Aggregate by type → group → category ──
   const totals = { expense: {}, income: {} };
   for (const e of filtered) {
-    if (_statsHiddenCats.has(e.type + '|' + e.category)) continue;
     const t = e.type;
     const g = e.group || (t === 'expense' ? 'Основное' : 'Доходы');
     const c = e.category;
@@ -8685,34 +8705,35 @@ async function renderBudgetStats() {
   const totalExp = Object.values(totals.expense).flatMap(Object.values).reduce((s,v) => s+v, 0);
   const totalInc = Object.values(totals.income).flatMap(Object.values).reduce((s,v) => s+v, 0);
 
-  // ── Render a group block ──
+  // ── Render a category row (no click-to-hide) ──
+  const renderCatRow = (cat, amt, total, colorVar, type, groupName) => {
+    const catPct = total > 0 ? Math.round(amt / total * 100) : 0;
+    const emoji = _budgetCatEmoji(type, groupName, cat);
+    return `<div style="display:flex;align-items:center;
+                padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${emoji ? `<span>${emoji}</span>` : ''}
+          <span style="color:var(--text);">${cat}</span>
+        </div>
+        <div style="height:3px;background:var(--surface2);border-radius:2px;margin-top:5px;">
+          <div style="height:3px;background:${colorVar};border-radius:2px;width:${catPct}%;opacity:0.7;"></div>
+        </div>
+      </div>
+      <div style="text-align:right;margin-left:12px;white-space:nowrap;">
+        <span style="color:var(--text);font-weight:600;">${fmt(amt)} ₽</span>
+        <span style="color:var(--text-dim);font-size:11px;margin-left:5px;">${catPct}%</span>
+      </div>
+    </div>`;
+  };
+
+  // ── Render a group block (по типу) ──
   const renderGroup = (groupName, cats, groupTotal, sectionTotal, colorVar, type) => {
     const pct = sectionTotal > 0 ? Math.round(groupTotal / sectionTotal * 100) : 0;
     const rows = Object.entries(cats)
       .sort((a, b) => b[1] - a[1])
-      .map(([cat, amt]) => {
-        const catPct = groupTotal > 0 ? Math.round(amt / groupTotal * 100) : 0;
-        const key = type + '|' + cat;
-        const hidden = _statsHiddenCats.has(key);
-        const emoji = _budgetCatEmoji(type, groupName, cat);
-        return `<div onclick="statsToggleCat('${key}')" style="display:flex;align-items:center;
-                    padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;
-                    cursor:pointer;opacity:${hidden ? 0.35 : 1};transition:opacity .2s;">
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              ${emoji ? `<span>${emoji}</span>` : ''}
-              <span style="color:var(--text);${hidden ? 'text-decoration:line-through;' : ''}">${cat}</span>
-            </div>
-            <div style="height:3px;background:var(--surface2);border-radius:2px;margin-top:5px;">
-              <div style="height:3px;background:${colorVar};border-radius:2px;width:${catPct}%;opacity:0.7;"></div>
-            </div>
-          </div>
-          <div style="text-align:right;margin-left:12px;white-space:nowrap;">
-            <span style="color:var(--text);font-weight:600;">${fmt(amt)} ₽</span>
-            <span style="color:var(--text-dim);font-size:11px;margin-left:5px;">${catPct}%</span>
-          </div>
-        </div>`;
-      }).join('');
+      .map(([cat, amt]) => renderCatRow(cat, amt, groupTotal, colorVar, type, groupName))
+      .join('');
 
     return `<div class="chart-wrap" style="margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -8738,14 +8759,37 @@ async function renderBudgetStats() {
     renderGroup(g, totals.income[g], Object.values(totals.income[g]).reduce((s,v)=>s+v,0), totalInc, 'var(--accent)', 'income')
   ).join('');
 
-  // ── Type filter buttons ──
+  // ── Type filter button style helper ──
   const btnStyle = (val) => `flex:1;padding:8px 4px;border-radius:var(--radius-sm);border:none;
     cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;
     ${typeFilter === val
       ? 'background:var(--accent);color:#000;'
       : 'background:var(--surface2);color:var(--text-dim);'}`;
 
-  const hiddenCount = _statsHiddenCats.size;
+  // ── Group filter button style helper ──
+  const grpStyle = (val) => `flex:1;padding:6px 2px;border-radius:var(--radius-sm);border:none;
+    cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;
+    ${groupFilter === val
+      ? 'background:rgba(78,205,196,0.2);color:var(--accent);border:1px solid var(--accent);'
+      : 'background:var(--surface2);color:var(--text-dim);border:1px solid transparent;'}`;
+
+  // ── Build "по категориям" flat list (all cats merged, sorted by amount) ──
+  const allCatsMap = {}; // { 'expense|Кафе': {amt, type, group, cat}, ... }
+  for (const t of ['expense', 'income']) {
+    const color = t === 'expense' ? 'var(--danger)' : 'var(--accent)';
+    for (const [grp, cats] of Object.entries(totals[t])) {
+      for (const [cat, amt] of Object.entries(cats)) {
+        const key = t + '|' + cat;
+        if (!allCatsMap[key]) allCatsMap[key] = { amt: 0, type: t, group: grp, cat, color };
+        allCatsMap[key].amt += amt;
+      }
+    }
+  }
+  const allCatTotal = Object.values(allCatsMap).reduce((s, v) => s + v.amt, 0);
+  const catViewBlocks = Object.values(allCatsMap)
+    .sort((a, b) => b.amt - a.amt)
+    .map(({ cat, amt, type, group, color }) => renderCatRow(cat, amt, allCatTotal, color, type, group))
+    .join('');
 
   // ── Build donut chart data ──
   // Show expense breakdown when filter is 'all' or 'expense', income when 'income'
@@ -8764,18 +8808,26 @@ async function renderBudgetStats() {
   let pIdx = 0;
   for (const [grp, cats] of Object.entries(donutGroups)) {
     for (const [cat, amt] of Object.entries(cats).sort((a,b) => b[1]-a[1])) {
-      if (_statsHiddenCats.has(donutType + '|' + cat)) continue;
       donutSlices.push({ cat, amt, color: DONUT_PALETTE[pIdx % DONUT_PALETTE.length] });
       pIdx++;
     }
   }
 
   el.innerHTML = `
-    <div style="display:flex;gap:6px;margin-bottom:12px;">
-      <button style="${btnStyle('all')}"    onclick="statsSetType('all')">Всё</button>
+    <!-- Тип: Все / Расходы / Доходы -->
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <button style="${btnStyle('all')}"     onclick="statsSetType('all')">Все</button>
       <button style="${btnStyle('expense')}" onclick="statsSetType('expense')">Расходы</button>
       <button style="${btnStyle('income')}"  onclick="statsSetType('income')">Доходы</button>
     </div>
+    <!-- Группа: Основное / Желания / Накопления / Всего -->
+    <div style="display:flex;gap:5px;margin-bottom:14px;">
+      <button style="${grpStyle('Основное')}"   onclick="statsSetGroup('Основное')">Основное</button>
+      <button style="${grpStyle('Желания')}"     onclick="statsSetGroup('Желания')">Желания</button>
+      <button style="${grpStyle('Накопления')}"  onclick="statsSetGroup('Накопления')">Накопления</button>
+      <button style="${grpStyle('all')}"         onclick="statsSetGroup('all')">Всего</button>
+    </div>
+    <!-- Итоги -->
     <div class="chart-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
       <div style="text-align:center;">
         <div class="hero-label">Расходы</div>
@@ -8786,10 +8838,10 @@ async function renderBudgetStats() {
         <div style="font-size:16px;font-weight:700;color:var(--accent);">${fmt(totalInc)} ₽</div>
       </div>
     </div>
+    <!-- Донат -->
     ${donutTotal > 0 ? `
     <div class="chart-wrap" style="margin-bottom:14px;">
       <div style="display:flex;align-items:center;gap:16px;">
-        <!-- Canvas donut chart -->
         <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
           <canvas id="stats-donut-canvas" width="260" height="260"
             style="width:130px;height:130px;border-radius:50%;"></canvas>
@@ -8803,7 +8855,6 @@ async function renderBudgetStats() {
             </div>
           </div>
         </div>
-        <!-- Legend: top-5 slices -->
         <div style="flex:1;min-width:0;">
           ${donutSlices.slice(0,6).map(s => `
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0;">
@@ -8819,13 +8870,16 @@ async function renderBudgetStats() {
         </div>
       </div>
     </div>` : ''}
-    ${hiddenCount > 0 ? `<div style="text-align:right;margin-bottom:8px;">
-      <button onclick="statsClearHidden()" style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;">
-        Показать все (скрыто: ${hiddenCount})
-      </button></div>` : ''}
-    ${typeFilter !== 'income' && expBlocks ? `<div class="section-title" style="margin-bottom:8px;">Расходы</div>${expBlocks}` : ''}
-    ${typeFilter !== 'expense' && incBlocks ? `<div class="section-title" style="margin:12px 0 8px;">Доходы</div>${incBlocks}` : ''}
-    ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}
+    <!-- Список: по типу или по категориям -->
+    ${viewMode === 'cat' ? `
+      <div class="chart-wrap">
+        ${catViewBlocks || '<div style="text-align:center;padding:20px 0;color:var(--text-dim);">Нет данных</div>'}
+      </div>
+    ` : `
+      ${typeFilter !== 'income' && expBlocks ? `<div class="section-title" style="margin-bottom:8px;">Расходы</div>${expBlocks}` : ''}
+      ${typeFilter !== 'expense' && incBlocks ? `<div class="section-title" style="margin:12px 0 8px;">Доходы</div>${incBlocks}` : ''}
+      ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}
+    `}
   `.trim();
 
   // ── Draw donut on canvas after DOM update ──
@@ -8873,23 +8927,44 @@ async function renderBudgetStats() {
 }
 
 // Stats filter state
-let _statsTypeFilter = 'all';
-let _statsHiddenCats = new Set(); // keys: 'type|category'
+let _statsTypeFilter = 'all';   // 'all' | 'expense' | 'income'
+let _statsGroupFilter = 'all';  // 'all' | 'Основное' | 'Желания' | 'Накопления'
+let _statsView = 'type';        // 'type' | 'cat'
 
 function statsSetType(val) {
   _statsTypeFilter = val;
   renderBudgetStats();
 }
 
-function statsToggleCat(key) {
-  if (_statsHiddenCats.has(key)) _statsHiddenCats.delete(key);
-  else _statsHiddenCats.add(key);
+function statsSetGroup(val) {
+  _statsGroupFilter = val;
   renderBudgetStats();
 }
 
-function statsClearHidden() {
-  _statsHiddenCats.clear();
+function statsSetView(val) {
+  _statsView = val;
+  // Update toggle button styles
+  const vType = document.getElementById('stats-view-type');
+  const vCat  = document.getElementById('stats-view-cat');
+  if (vType) { vType.style.background = val === 'type' ? 'var(--accent)' : 'var(--surface2)'; vType.style.color = val === 'type' ? '#000' : 'var(--text-dim)'; }
+  if (vCat)  { vCat.style.background  = val === 'cat'  ? 'var(--accent)' : 'var(--surface2)'; vCat.style.color  = val === 'cat'  ? '#000' : 'var(--text-dim)'; }
   renderBudgetStats();
+}
+
+// Export currently-displayed stats as CSV
+function exportBudgetStatsCSV() {
+  if (!_budgetStatsCache) return;
+  const entries = _budgetStatsCache;
+  const rows = [['Дата','Тип','Группа','Категория','Сумма','Заметка']];
+  for (const e of entries) {
+    if (_statsTypeFilter !== 'all' && e.type !== _statsTypeFilter) continue;
+    if (_statsGroupFilter !== 'all' && e.group !== _statsGroupFilter) continue;
+    rows.push([e.date, e.type === 'expense' ? 'Расход' : 'Доход', e.group || '', e.category || '', e.amount, e.note || '']);
+  }
+  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'бюджет.csv'; a.click();
 }
 
 // Returns emoji for a category by type, group and name (empty string if none)
