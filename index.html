@@ -861,24 +861,43 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <!-- Stats view -->
   <div id="budget-stats-view" style="display:none;padding:0 16px;padding-bottom:140px;">
-    <!-- Back button + title + CSV -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <button onclick="switchBudgetTab('entries')" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:4px;">
-        ‹ Назад
-      </button>
+    <!-- Back + title + CSV -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <button onclick="switchBudgetTab('entries')" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0;">‹ Назад</button>
       <span style="font-size:15px;font-weight:700;color:var(--text);">Анализ</span>
       <button onclick="exportBudgetStatsCSV()" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:5px 10px;cursor:pointer;">CSV</button>
     </div>
-    <!-- View mode toggle: по типу / по категориям -->
-    <div style="display:flex;gap:6px;margin-bottom:12px;">
+    <!-- View toggle: по типу / по категориям -->
+    <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:10px;">
       <button id="stats-view-type" onclick="statsSetView('type')"
-        style="flex:1;padding:7px 4px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--accent);color:#000;">По типу</button>
+        style="flex:1;padding:7px 4px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--accent);color:#000;transition:all .2s;">По типу</button>
       <button id="stats-view-cat" onclick="statsSetView('cat')"
-        style="flex:1;padding:7px 4px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--surface2);color:var(--text-dim);">По категориям</button>
+        style="flex:1;padding:7px 4px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:transparent;color:var(--text-dim);transition:all .2s;">По категориям</button>
     </div>
-    <!-- Period picker -->
-    <div class="chart-wrap" style="margin-bottom:12px;">
-      <select id="stats-period" onchange="onStatsPeriodChange()" style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);padding:8px 10px;font-size:13px;">
+    <!-- Group pills: Основное / Желания / Накопления / Всего — horizontal scroll -->
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none;">
+      <button id="stats-grp-Основное"  onclick="statsSetGroup('Основное')"
+        style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Основное</button>
+      <button id="stats-grp-Желания"   onclick="statsSetGroup('Желания')"
+        style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Желания</button>
+      <button id="stats-grp-Накопления" onclick="statsSetGroup('Накопления')"
+        style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Накопления</button>
+      <button id="stats-grp-all"        onclick="statsSetGroup('all')"
+        style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid var(--accent);background:rgba(78,205,196,0.15);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Всего</button>
+    </div>
+    <!-- Type pills: Все / Расходы / Доходы -->
+    <div style="display:flex;gap:6px;margin-bottom:12px;">
+      <button id="stats-type-all"     onclick="statsSetType('all')"
+        style="flex:1;padding:6px 4px;border-radius:20px;border:1.5px solid var(--accent);background:rgba(78,205,196,0.15);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">Все</button>
+      <button id="stats-type-expense" onclick="statsSetType('expense')"
+        style="flex:1;padding:6px 4px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;">Расходы</button>
+      <button id="stats-type-income"  onclick="statsSetType('income')"
+        style="flex:1;padding:6px 4px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;">Доходы</button>
+    </div>
+    <!-- Period picker (compact, hidden under period button) -->
+    <div style="margin-bottom:12px;">
+      <select id="stats-period" onchange="onStatsPeriodChange()"
+        style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);padding:7px 10px;font-size:13px;">
         <option value="month">Текущий месяц</option>
         <option value="last_month">Прошлый месяц</option>
         <option value="3months">Последние 3 месяца</option>
@@ -886,7 +905,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <option value="year">Текущий год</option>
         <option value="custom">Произвольный период</option>
       </select>
-      <div id="stats-custom-range" style="display:none;margin-top:10px;">
+      <div id="stats-custom-range" style="display:none;margin-top:8px;">
         <div style="display:flex;gap:8px;">
           <div class="field" style="flex:1;margin:0;"><label>С</label><input type="date" id="stats-from" onchange="renderBudgetStats()"></div>
           <div class="field" style="flex:1;margin:0;"><label>ПО</label><input type="date" id="stats-to" onchange="renderBudgetStats()"></div>
@@ -8759,19 +8778,7 @@ async function renderBudgetStats() {
     renderGroup(g, totals.income[g], Object.values(totals.income[g]).reduce((s,v)=>s+v,0), totalInc, 'var(--accent)', 'income')
   ).join('');
 
-  // ── Type filter button style helper ──
-  const btnStyle = (val) => `flex:1;padding:8px 4px;border-radius:var(--radius-sm);border:none;
-    cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;
-    ${typeFilter === val
-      ? 'background:var(--accent);color:#000;'
-      : 'background:var(--surface2);color:var(--text-dim);'}`;
-
-  // ── Group filter button style helper ──
-  const grpStyle = (val) => `flex:1;padding:6px 2px;border-radius:var(--radius-sm);border:none;
-    cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;
-    ${groupFilter === val
-      ? 'background:rgba(78,205,196,0.2);color:var(--accent);border:1px solid var(--accent);'
-      : 'background:var(--surface2);color:var(--text-dim);border:1px solid transparent;'}`;
+  // Pill button states are managed by statsSetType/statsSetGroup/statsSetView (DOM-based)
 
   // ── Build "по категориям" flat list (all cats merged, sorted by amount) ──
   const allCatsMap = {}; // { 'expense|Кафе': {amt, type, group, cat}, ... }
@@ -8814,19 +8821,6 @@ async function renderBudgetStats() {
   }
 
   el.innerHTML = `
-    <!-- Тип: Все / Расходы / Доходы -->
-    <div style="display:flex;gap:6px;margin-bottom:10px;">
-      <button style="${btnStyle('all')}"     onclick="statsSetType('all')">Все</button>
-      <button style="${btnStyle('expense')}" onclick="statsSetType('expense')">Расходы</button>
-      <button style="${btnStyle('income')}"  onclick="statsSetType('income')">Доходы</button>
-    </div>
-    <!-- Группа: Основное / Желания / Накопления / Всего -->
-    <div style="display:flex;gap:5px;margin-bottom:14px;">
-      <button style="${grpStyle('Основное')}"   onclick="statsSetGroup('Основное')">Основное</button>
-      <button style="${grpStyle('Желания')}"     onclick="statsSetGroup('Желания')">Желания</button>
-      <button style="${grpStyle('Накопления')}"  onclick="statsSetGroup('Накопления')">Накопления</button>
-      <button style="${grpStyle('all')}"         onclick="statsSetGroup('all')">Всего</button>
-    </div>
     <!-- Итоги -->
     <div class="chart-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
       <div style="text-align:center;">
@@ -8933,21 +8927,39 @@ let _statsView = 'type';        // 'type' | 'cat'
 
 function statsSetType(val) {
   _statsTypeFilter = val;
+  // Update pill styles
+  ['all','expense','income'].forEach(v => {
+    const btn = document.getElementById('stats-type-' + v);
+    if (!btn) return;
+    const active = v === val;
+    btn.style.borderColor = active ? 'var(--accent)' : 'rgba(255,255,255,0.1)';
+    btn.style.background  = active ? 'rgba(78,205,196,0.15)' : 'var(--surface2)';
+    btn.style.color       = active ? 'var(--accent)' : 'var(--text-dim)';
+  });
   renderBudgetStats();
 }
 
 function statsSetGroup(val) {
   _statsGroupFilter = val;
+  // Update pill styles
+  ['Основное','Желания','Накопления','all'].forEach(v => {
+    const btn = document.getElementById('stats-grp-' + v);
+    if (!btn) return;
+    const active = v === val;
+    btn.style.borderColor = active ? 'var(--accent)' : 'rgba(255,255,255,0.1)';
+    btn.style.background  = active ? 'rgba(78,205,196,0.15)' : 'var(--surface2)';
+    btn.style.color       = active ? 'var(--accent)' : 'var(--text-dim)';
+  });
   renderBudgetStats();
 }
 
 function statsSetView(val) {
   _statsView = val;
-  // Update toggle button styles
+  // Update segmented control styles
   const vType = document.getElementById('stats-view-type');
   const vCat  = document.getElementById('stats-view-cat');
-  if (vType) { vType.style.background = val === 'type' ? 'var(--accent)' : 'var(--surface2)'; vType.style.color = val === 'type' ? '#000' : 'var(--text-dim)'; }
-  if (vCat)  { vCat.style.background  = val === 'cat'  ? 'var(--accent)' : 'var(--surface2)'; vCat.style.color  = val === 'cat'  ? '#000' : 'var(--text-dim)'; }
+  if (vType) { vType.style.background = val === 'type' ? 'var(--accent)' : 'transparent'; vType.style.color = val === 'type' ? '#000' : 'var(--text-dim)'; }
+  if (vCat)  { vCat.style.background  = val === 'cat'  ? 'var(--accent)' : 'transparent'; vCat.style.color  = val === 'cat'  ? '#000' : 'var(--text-dim)'; }
   renderBudgetStats();
 }
 
