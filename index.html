@@ -5460,7 +5460,7 @@ function renderGoals() {
           <div style="font-size:13px;font-weight:600;color:var(--text);">${fmt(g.amount)} ₽/мес</div>
           ${g.covered ? `<div style="font-size:11px;color:#4ECDC4;font-weight:600;">✓ покрыта</div>` : ''}
         </div>
-        <button class="card-menu-btn" onclick="showGoalMenu(event,'${g.id}')">⋯</button>
+        <button class="card-menu-btn" onclick="showGoalMenu(event,'${g.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><circle cx="8" cy="2.5" r=".75" fill="currentColor"/><circle cx="8" cy="8" r=".75" fill="currentColor"/><circle cx="8" cy="13.5" r=".75" fill="currentColor"/></svg></button>
       </div>
     </div>`;
   }
@@ -5493,7 +5493,7 @@ function renderGoals() {
           ${g.subPeriod && g.subPeriod > 1 ? `<div style="font-size:10px;color:var(--text-dim);">${fmt(Math.round(monthlyAmt))} ₽/мес</div>` : ''}
           ${g.covered ? `<div style="font-size:11px;color:#4ECDC4;font-weight:600;">✓ покрыта</div>` : `<div style="font-size:11px;color:#FFB347;">не покрыта</div>`}
         </div>
-        <button class="card-menu-btn" onclick="showGoalMenu(event,'${g.id}')">⋯</button>
+        <button class="card-menu-btn" onclick="showGoalMenu(event,'${g.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><circle cx="8" cy="2.5" r=".75" fill="currentColor"/><circle cx="8" cy="8" r=".75" fill="currentColor"/><circle cx="8" cy="13.5" r=".75" fill="currentColor"/></svg></button>
       </div>
     </div>`;
   }
