@@ -900,9 +900,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <!-- Stats view (default/main budget view) -->
   <div id="budget-stats-view" style="display:none;padding:0 16px;padding-bottom:140px;">
-    <!-- Назад | тип-фильтр + Excel в одну строку -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <button onclick="switchBudgetTab('entries')" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0;">‹ Назад</button>
+    <!-- тип-фильтр + Excel в одну строку -->
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:8px;">
         <!-- Type filter -->
         <select id="stats-type-select" onchange="statsSetType(this.value)"
