@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018151200">
+  <meta name="version" content="20261018153000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -804,20 +804,26 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="budget-loader" style="text-align:center;padding:60px 0;color:var(--text-dim);font-size:14px;">Загрузка…</div>
     <!-- Main content: hidden until data is ready -->
     <div id="budget-content" style="display:none;">
-      <!-- Summary cards -->
-      <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;">
-        <div class="card" style="flex:1;padding:10px 6px;text-align:center;">
-          <div class="hero-label" style="margin-bottom:3px;font-size:10px;">Доходы</div>
-          <div id="budget-total-income" style="font-size:12px;font-weight:700;color:var(--accent);"></div>
+      <!-- Summary card: one block, expenses primary -->
+      <div class="card" style="padding:16px;margin-bottom:16px;">
+        <!-- Расходы — главная цифра -->
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:600;color:var(--text-dim);">Расходы</span>
+          <span id="budget-total-expense" style="font-size:22px;font-weight:700;color:var(--danger);"></span>
         </div>
-        <div class="card" style="flex:0 0 42%;padding:16px 10px;text-align:center;">
-          <div class="hero-label" style="margin-bottom:4px;font-size:11px;">Расходы</div>
-          <div id="budget-total-expense" style="font-size:16px;font-weight:700;color:var(--danger);"></div>
+        <!-- Divider -->
+        <div style="height:1px;background:rgba(255,255,255,0.07);margin-bottom:10px;"></div>
+        <!-- Доходы и Остаток — мельче -->
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+          <span style="font-size:12px;color:var(--text-dim);">Доходы</span>
+          <span id="budget-total-income" style="font-size:13px;font-weight:600;color:var(--accent);"></span>
         </div>
-        <div class="card" style="flex:1;padding:10px 6px;text-align:center;">
-          <div class="hero-label" style="margin-bottom:3px;font-size:10px;">Остаток</div>
-          <div id="budget-balance" style="font-size:12px;font-weight:700;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+          <span style="font-size:12px;color:var(--text-dim);">Остаток</span>
+          <span id="budget-balance" style="font-size:13px;font-weight:600;"></span>
         </div>
+        <!-- Подробнее -->
+        <button onclick="switchBudgetTab('stats')" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">Подробнее →</button>
       </div>
       <!-- Tabs: Записи / Анализ -->
       <div class="tab-switch" style="margin-bottom:12px;">
