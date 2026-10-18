@@ -8350,6 +8350,7 @@ async function renderBudgetStats() {
     const { data, error } = await _sb.from('budget_entries').select('*').eq('user_id', _sbUser.id).order('date');
     if (error) { el.innerHTML = '<div style="color:var(--danger);padding:20px;">Ошибка загрузки: ' + error.message + '</div>'; return; }
     _budgetStatsCache = entries = data || [];
+    console.log('[stats] user_id:', _sbUser.id, '| entries fetched:', entries.length, '| sample:', entries[0]);
   }
 
   const [from, to] = _statsPeriodRange();
