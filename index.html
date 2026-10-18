@@ -707,7 +707,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div id="chart-anchor"></div>
   <div class="chart-wrap" id="savings-chart-wrap">
     <div class="chart-header">
-      <span class="chart-title">📈 РОСТ НАКОПЛЕНИЙ</span>
+      <span class="chart-title">РОСТ НАКОПЛЕНИЙ</span>
       <button class="chart-add-btn" onclick="addHistoryPoint()">＋ Добавить прошлое</button>
     </div>
     <div id="chart-container" style="position:relative;">
@@ -745,7 +745,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <button class="add-btn" onclick="editingId=null;openModal('income')">＋ Добавить источник дохода</button>
   <div class="chart-wrap">
     <div class="chart-header">
-      <span class="chart-title">📈 РОСТ ПАССИВНОГО ДОХОДА</span>
+      <span class="chart-title">РОСТ ПАССИВНОГО ДОХОДА</span>
       <button class="chart-add-btn" onclick="addIncomeHistoryPoint()">＋ Добавить прошлое</button>
     </div>
     <div id="income-chart-container" style="position:relative;">
@@ -3695,7 +3695,7 @@ function renderDepositTax() {
 
   el.innerHTML = [
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">',
-      '<span style="font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);">💸 НДФЛ С ПРОЦЕНТОВ ' + t.currentYear + '</span>',
+      '<span style="font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);">НДФЛ С ПРОЦЕНТОВ ' + t.currentYear + '</span>',
       '<span style="font-size:11px;color:var(--text-dim);">ставка ЦБ на 1 янв: ' + t.cbRate + '%</span>',
     '</div>',
     // Row: income vs threshold
@@ -3859,7 +3859,7 @@ function openTaxDetailSheet() {
       <div style="padding:14px 20px 0;">
         <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 14px;"></div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06);">
-          <div style="font-size:17px;font-weight:800;">💸 НДФЛ с процентов</div>
+          <div style="font-size:17px;font-weight:800;">НДФЛ с процентов</div>
           <button onclick="${close}" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;margin-left:12px;">×</button>
         </div>
       </div>
@@ -4065,7 +4065,7 @@ function openIncomeBreakdownSheet() {
       <div style="padding:14px 20px 0;">
         <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 14px;"></div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06);">
-          <div style="font-size:17px;font-weight:800;">📊 Пассивный доход</div>
+          <div style="font-size:17px;font-weight:800;">Пассивный доход</div>
           <button onclick="${close}" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;margin-left:12px;">×</button>
         </div>
       </div>
