@@ -8833,9 +8833,12 @@ async function renderBudgetStats() {
     '#FF6B6B','#FFA94D','#FFD43B','#69DB7C','#38D9A9',
     '#4DABF7','#748FFC','#DA77F2','#F783AC','#A9E34B'
   ];
+  // When "income" filter is active, "По типу" makes no sense (one type only) — force "По категориям"
+  const effectiveViewMode = typeFilter === 'income' ? 'cat' : viewMode;
+
   const donutGroups = totals[donutType];
   const donutSlices = [];
-  if (viewMode === 'type') {
+  if (effectiveViewMode === 'type') {
     // По типу = один сегмент на группу (Основное, Желания, Накопления)
     for (const [grp, cats] of Object.entries(donutGroups)) {
       const amt = Object.values(cats).reduce((s, v) => s + v, 0);
@@ -8853,9 +8856,6 @@ async function renderBudgetStats() {
       }
     }
   }
-
-  // When "income" filter is active, "По типу" makes no sense (one type only) — force "По категориям"
-  const effectiveViewMode = typeFilter === 'income' ? 'cat' : viewMode;
 
   el.innerHTML = `
     <!-- Сегмент-контрол + Донат -->
