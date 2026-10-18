@@ -867,12 +867,15 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <span style="font-size:15px;font-weight:700;color:var(--text);">Анализ</span>
       <button onclick="exportBudgetStatsCSV()" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:5px 10px;cursor:pointer;">CSV</button>
     </div>
-    <!-- View toggle: по типу / по категориям -->
-    <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:10px;">
+    <!-- View toggle: по типу / по категориям — segment control -->
+    <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:10px;gap:2px;">
       <button id="stats-view-type" onclick="statsSetView('type')"
-        style="flex:1;padding:7px 4px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:var(--accent);color:#000;transition:all .2s;">По типу</button>
+        style="flex:1;padding:7px 4px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;
+               background:var(--accent);color:#000;transition:background .2s,color .2s;
+               box-shadow:0 1px 4px rgba(0,0,0,0.25);">По типу</button>
       <button id="stats-view-cat" onclick="statsSetView('cat')"
-        style="flex:1;padding:7px 4px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:transparent;color:var(--text-dim);transition:all .2s;">По категориям</button>
+        style="flex:1;padding:7px 4px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;
+               background:transparent;color:var(--text-dim);transition:background .2s,color .2s;">По категориям</button>
     </div>
     <!-- Group pills: Основное / Желания / Накопления / Всего — horizontal scroll -->
     <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none;">
@@ -8958,8 +8961,8 @@ function statsSetView(val) {
   // Update segmented control styles
   const vType = document.getElementById('stats-view-type');
   const vCat  = document.getElementById('stats-view-cat');
-  if (vType) { vType.style.background = val === 'type' ? 'var(--accent)' : 'transparent'; vType.style.color = val === 'type' ? '#000' : 'var(--text-dim)'; }
-  if (vCat)  { vCat.style.background  = val === 'cat'  ? 'var(--accent)' : 'transparent'; vCat.style.color  = val === 'cat'  ? '#000' : 'var(--text-dim)'; }
+  if (vType) { vType.style.background = val === 'type' ? 'var(--accent)' : 'transparent'; vType.style.color = val === 'type' ? '#000' : 'var(--text-dim)'; vType.style.boxShadow = val === 'type' ? '0 1px 4px rgba(0,0,0,0.25)' : 'none'; }
+  if (vCat)  { vCat.style.background  = val === 'cat'  ? 'var(--accent)' : 'transparent'; vCat.style.color  = val === 'cat'  ? '#000' : 'var(--text-dim)'; vCat.style.boxShadow  = val === 'cat'  ? '0 1px 4px rgba(0,0,0,0.25)' : 'none'; }
   renderBudgetStats();
 }
 
