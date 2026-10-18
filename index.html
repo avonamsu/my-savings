@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018103000">
+  <meta name="version" content="20261018104000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -125,14 +125,14 @@ nav {
   z-index:100; overflow:visible;
 }
 /* Notch SVG injected via JS — see renderNavNotch() */
-nav button { flex:1; min-width:0; background:none; border:none; color:var(--text-dim); font-size:9px; font-weight:600; padding:6px 0 10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; overflow:hidden; }
+nav button { flex:1; min-width:0; background:none; border:none; color:var(--text-dim); font-size:11px; font-weight:600; padding:10px 0 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; overflow:hidden; }
 /* empty slot in the centre — same flex weight as a button, reserves space for FAB */
 .nav-fab-slot { flex:1; pointer-events:none; }
-nav button .ni { font-size:18px; transition:transform .25s cubic-bezier(.34,1.56,.64,1), font-size .2s; display:block; line-height:1; }
+nav button .ni { font-size:24px; transition:transform .25s cubic-bezier(.34,1.56,.64,1), font-size .2s; display:block; line-height:1; }
 nav button span:not(.ni) { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; display:block; }
 nav button.active { color:var(--accent); }
-nav button.active .ni { font-size:20px; transform:translateY(-1px); }
-nav button.active::before { content:''; position:absolute; top:6px; width:36px; height:36px; border-radius:50%; background:var(--accent-dim); }
+nav button.active .ni { font-size:27px; transform:translateY(-2px); }
+nav button.active::before { content:''; position:absolute; top:8px; width:44px; height:44px; border-radius:50%; background:var(--accent-dim); }
 nav button.active::after { content:''; position:absolute; top:0; left:20%; right:20%; height:2px; background:var(--accent); border-radius:0 0 2px 2px; }
 nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,1); }
 @keyframes nav-bounce { 0%{transform:translateY(0)} 40%{transform:translateY(-8px)} 70%{transform:translateY(-3px)} 100%{transform:translateY(-2px)} }
@@ -295,11 +295,11 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* FAB: half inside nav, half above */
 .nav-fab {
   position:fixed;
-  /* nav ~56px, FAB 52px → bottom = nav/2 = 28px centres it; sits half in/half out */
-  bottom:22px;
+  /* nav ~84px, FAB 62px → bottom = 84/2 - 62/2 = 11px; half in/half out */
+  bottom:32px;
   left:50%;
   transform:translateX(-50%);
-  width:52px; height:52px;
+  width:62px; height:62px;
   border-radius:50%;
   background:var(--accent);
   color:#0d1f1a;
@@ -310,7 +310,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   z-index:200;
   transition:transform .18s cubic-bezier(.34,1.56,.64,1);
   -webkit-tap-highlight-color:transparent;
-  font-size:30px;
+  font-size:34px;
   font-weight:300;
   line-height:1;
   padding:0;
