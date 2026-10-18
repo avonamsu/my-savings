@@ -9072,7 +9072,7 @@ async function renderBudgetStats() {
                  opacity:0;pointer-events:none;">‹</button>
 
       <!-- Слайдер -->
-      <div id="stats-carousel-track" style="overflow:hidden;flex:1;">
+      <div id="stats-carousel-track" style="overflow:hidden;flex:1;transition:height .3s ease;">
         <div id="stats-carousel-inner"
              style="display:flex;transition:transform .3s ease;will-change:transform;">
 
@@ -9160,7 +9160,13 @@ async function renderBudgetStats() {
     function goTo(idx) {
       slide = Math.max(0, Math.min(total - 1, idx));
       const inner = document.getElementById('stats-carousel-inner');
+      const track = document.getElementById('stats-carousel-track');
       if (inner) inner.style.transform = `translateX(-${slide * 100}%)`;
+      // Подстраиваем высоту трека под текущий слайд
+      if (track && inner) {
+        const slideEl = inner.children[slide];
+        if (slideEl) track.style.height = slideEl.scrollHeight + 'px';
+      }
       // Обновляем точки
       for (let i = 0; i < total; i++) {
         const dot = document.getElementById('stats-dot-' + i);
@@ -9175,6 +9181,9 @@ async function renderBudgetStats() {
 
     // Глобальная функция для стрелок (onclick в HTML)
     window._statsCarouselGo = (dir) => goTo(slide + dir);
+
+    // Установить начальную высоту под первый слайд
+    requestAnimationFrame(() => goTo(0));
 
     // Touch-свайп по треку
     const track = document.getElementById('stats-carousel-track');
