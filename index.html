@@ -901,8 +901,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <!-- Stats view (default/main budget view) -->
   <div id="budget-stats-view" style="display:none;padding:0 16px;padding-bottom:140px;">
     <!-- тип-фильтр + Excel в одну строку -->
-    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;">
-      <div style="display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <!-- Type filter -->
         <select id="stats-type-select" onchange="statsSetType(this.value)"
           style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
@@ -944,7 +943,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
             </label>
           </div>
         </div>
-      </div>
     </div>
     <div id="budget-stats-content"></div>
   </div>
