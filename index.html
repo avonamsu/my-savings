@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="20261018093500">
+  <meta name="version" content="20261018094000">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -124,7 +124,7 @@ nav {
   /* Shadow applied to SVG inside via filter */
 }
 /* Notch SVG injected via JS — see renderNavNotch() */
-nav button { flex:1; background:none; border:none; color:var(--text-dim); font-size:10px; font-weight:600; padding:10px 2px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; }
+nav button { flex:0 0 calc(100% / 6); min-width:0; background:none; border:none; color:var(--text-dim); font-size:10px; font-weight:600; padding:10px 2px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; transition:color .2s; -webkit-tap-highlight-color:transparent; }
 nav button .ni { font-size:19px; transition:transform .25s cubic-bezier(.34,1.56,.64,1), font-size .2s; display:block; }
 nav button.active { color:var(--accent); }
 nav button.active .ni { font-size:24px; transform:translateY(-2px); }
@@ -288,8 +288,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* old pill FAB — hidden, replaced by nav-fab */
 .fab { display:none !important; }
 
-/* Centre nav FAB slot — placeholder to keep flex spacing */
-.nav-fab-slot { flex:1; pointer-events:none; }
+/* Centre nav FAB slot — same fixed width as each button */
+.nav-fab-slot { flex:0 0 calc(100% / 6); pointer-events:none; }
 /* The actual FAB is fixed, centred above the nav bar */
 .nav-fab {
   pointer-events:auto; /* override parent's pointer-events:none */
