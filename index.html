@@ -469,20 +469,17 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <nav>
   <button class="active" onclick="showPage('home')" id="nav-home"><span class="ni">🏠</span>Главная</button>
   <button onclick="showPage('savings')" id="nav-savings"><span class="ni">💰</span>Счета</button>
-  <!-- Centre FAB slot — not a page nav button -->
+  <button onclick="showPage('income')" id="nav-income"><span class="ni">📈</span>Доход</button>
+  <!-- Centre FAB slot -->
   <div class="nav-fab-slot">
     <button class="nav-fab" id="nav-fab" onclick="fabAction()">
       <span style="font-size:26px;line-height:1;margin-top:-1px;">＋</span>
     </button>
   </div>
+  <button onclick="showPage('goals')" id="nav-goals"><span class="ni">🎯</span>Цели</button>
   <button onclick="showPage('budget')" id="nav-budget"><span class="ni">📒</span>Бюджет</button>
   <button onclick="showPage('challenge')" id="nav-challenge"><span class="ni">🪙</span>Копилка</button>
 </nav>
-<!-- Hidden nav buttons for pages accessible only via FAB/other routes -->
-<div style="display:none;">
-  <button id="nav-income"></button>
-  <button id="nav-goals"></button>
-</div>
 
 <!-- MENU BUTTON -->
 <div style="position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;height:52px;z-index:99;background:var(--bg);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;padding:0 16px;">
