@@ -8339,26 +8339,35 @@ function onStatsPeriodChange() {
   if (!isCustom) renderBudgetStats();
 }
 
-// Renders the stats table for the selected period using ALL cached entries
+// Renders the stats table for the selected period using entries loaded per-period
 async function renderBudgetStats() {
   const el = document.getElementById('budget-stats-content');
   if (!el) return;
   el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--text-dim);font-size:14px;">Загрузка…</div>';
 
-  // Fetch all entries (not month-limited)
-  let entries = _budgetStatsCache;
-  if (!entries) {
-    if (!_sb || !_sbUser) {
-      el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--text-dim);font-size:14px;">Войдите в аккаунт для просмотра</div>';
-      return;
-    }
-    const { data, error } = await _sb.from('budget_entries').select('*').eq('user_id', _sbUser.id).order('date');
-    if (error) { el.innerHTML = '<div style="color:var(--danger);padding:20px;">Ошибка загрузки: ' + error.message + '</div>'; return; }
-    _budgetStatsCache = entries = data || [];
+  if (!_sb || !_sbUser) {
+    el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--text-dim);font-size:14px;">Войдите в аккаунт для просмотра</div>';
+    return;
   }
 
   const [from, to] = _statsPeriodRange();
-  const filtered = entries.filter(e => e.date >= from && e.date <= to);
+
+  // Re-fetch only when period changed
+  if (!_budgetStatsCache || _budgetStatsCache._from !== from || _budgetStatsCache._to !== to) {
+    const { data, error } = await _sb.from('budget_entries')
+      .select('*')
+      .eq('user_id', _sbUser.id)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: false });
+    if (error) { el.innerHTML = '<div style="color:var(--danger);padding:20px;">Ошибка: ' + error.message + '</div>'; return; }
+    _budgetStatsCache = data || [];
+    _budgetStatsCache._from = from;
+    _budgetStatsCache._to = to;
+  }
+  const entries = _budgetStatsCache;
+  // entries already filtered by date range in the query
+  const filtered = entries;
 
   // Aggregate by type → group → category
   const totals = { expense: {}, income: {} };
