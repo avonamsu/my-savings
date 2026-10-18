@@ -824,11 +824,17 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
         <!-- Подробнее -->
         <div style="text-align:right;">
-          <button onclick="switchBudgetTab('stats')" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">Подробнее →</button>
+          <button onclick="switchBudgetTab('entries')" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">История операций →</button>
         </div>
       </div>
-      <!-- История операций: заголовок + иконки в одну строку -->
+    </div>
+  </div>
+  <!-- Entries view: История операций с шапкой и поиском -->
+  <div id="budget-entries-view" style="padding-bottom:140px;display:none;">
+    <div style="padding:0 16px;">
+      <!-- Шапка: Назад + заголовок + кнопки -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <button onclick="switchBudgetTab('stats')" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0;">‹ Назад</button>
         <span style="font-size:13px;font-weight:600;color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;">История операций</span>
         <div style="display:flex;gap:6px;">
           <button onclick="toggleBudgetSearch()" id="budget-search-btn"
@@ -846,10 +852,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
       </div>
     </div>
-  </div>
-  <!-- Entries view: also hidden until ready -->
-  <div id="budget-entries-view" style="padding-bottom:140px;display:none;">
-    <div id="budget-entries-list"></div>
+    <div id="budget-entries-list" style="padding:0 16px;"></div>
   </div>
   <!-- Categories view (accessed from settings drawer) -->
   <div id="budget-cats-view" style="display:none;padding:0 16px;padding-bottom:140px;">
@@ -859,11 +862,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
              padding:11px;cursor:pointer;margin-bottom:14px;">＋ Добавить категорию</button>
     <div id="budget-cats-list"></div>
   </div>
-  <!-- Stats view -->
+  <!-- Stats view (default/main budget view) -->
   <div id="budget-stats-view" style="display:none;padding:0 16px;padding-bottom:140px;">
-    <!-- Back + title + Excel dropdown -->
+    <!-- Title + Excel dropdown -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <button onclick="switchBudgetTab('entries')" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0;">‹ Назад</button>
       <span style="font-size:15px;font-weight:700;color:var(--text);">Анализ</span>
       <!-- Excel dropdown trigger -->
       <div style="position:relative;">
@@ -898,17 +900,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           </label>
         </div>
       </div>
-    </div>
-    <!-- Group pills: Основное / Желания / Накопления / Всего — horizontal scroll -->
-    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none;">
-      <button id="stats-grp-Основное"  onclick="statsSetGroup('Основное')"
-        style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Основное</button>
-      <button id="stats-grp-Желания"   onclick="statsSetGroup('Желания')"
-        style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Желания</button>
-      <button id="stats-grp-Накопления" onclick="statsSetGroup('Накопления')"
-        style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Накопления</button>
-      <button id="stats-grp-all"        onclick="statsSetGroup('all')"
-        style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid var(--accent);background:rgba(78,205,196,0.15);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Всего</button>
     </div>
     <!-- Type pills: Все / Расходы / Доходы -->
     <div style="display:flex;gap:6px;margin-bottom:12px;">
@@ -8188,7 +8179,8 @@ function switchBudgetTab(tab) {
   document.getElementById('budget-cats-view').style.display   = 'none';
   const statsView = document.getElementById('budget-stats-view');
   if (statsView) statsView.style.display = tab === 'stats' ? '' : 'none';
-  if (tab === 'stats') { _budgetStatsCache = null; renderBudgetStats(); }
+  // stats is the default (main) view — render when switching to it or on initial load
+  if (tab === 'stats' || !tab) { _budgetStatsCache = null; renderBudgetStats(); }
 }
 
 // Показать/скрыть строку поиска
@@ -8322,6 +8314,8 @@ async function renderBudgetPage() {
     document.getElementById('budget-loader').style.display  = '';
     document.getElementById('budget-content').style.display = 'none';
     document.getElementById('budget-entries-view').style.display = 'none';
+    const sv = document.getElementById('budget-stats-view');
+    if (sv) sv.style.display = 'none';
   }
 
   // Load entries from Supabase (uses cache if already loaded for this month)
@@ -8345,12 +8339,20 @@ async function renderBudgetPage() {
   // Hide loader, reveal content
   document.getElementById('budget-loader').style.display  = 'none';
   document.getElementById('budget-content').style.display = '';
-  // Show the active view (entries or cats)
+  // Default view is stats (analysis); entries view is accessed via "История операций →"
   const entriesView = document.getElementById('budget-entries-view');
   const catsView    = document.getElementById('budget-cats-view');
-  const activeTab   = document.getElementById('budget-tab-entries')?.classList.contains('active');
-  entriesView.style.display = activeTab !== false ? '' : 'none';
-  catsView.style.display    = activeTab !== false ? 'none' : '';
+  catsView.style.display = 'none';
+  // If entries view is open (user navigated there), keep it; otherwise show stats
+  if (entriesView.style.display !== '') {
+    // entries was already hidden — show stats as default
+    const statsView = document.getElementById('budget-stats-view');
+    if (statsView) {
+      _budgetStatsCache = null;
+      renderBudgetStats();
+      statsView.style.display = '';
+    }
+  }
 }
 
 // Renders entries grouped by day
@@ -8727,12 +8729,10 @@ async function renderBudgetStats() {
 
   // ── Filters (persisted in module vars) ──
   const typeFilter  = _statsTypeFilter;  // 'all' | 'expense' | 'income'
-  const groupFilter = _statsGroupFilter; // 'all' | 'Основное' | 'Желания' | 'Накопления'
   const viewMode    = _statsView;        // 'type' | 'cat'
 
   const filtered = entries.filter(e => {
     if (typeFilter !== 'all' && e.type !== typeFilter) return false;
-    if (groupFilter !== 'all' && e.group !== groupFilter) return false;
     return true;
   });
 
@@ -8803,7 +8803,7 @@ async function renderBudgetStats() {
     renderGroup(g, totals.income[g], Object.values(totals.income[g]).reduce((s,v)=>s+v,0), totalInc, 'var(--accent)', 'income')
   ).join('');
 
-  // Pill button states are managed by statsSetType/statsSetGroup/statsSetView (DOM-based)
+  // Pill button states are managed by statsSetType/statsSetView (DOM-based)
 
   // ── Build "по категориям" flat list (all cats merged, sorted by amount) ──
   const allCatsMap = {}; // { 'expense|Кафе': {amt, type, group, cat}, ... }
@@ -8827,21 +8827,31 @@ async function renderBudgetStats() {
   // Show expense breakdown when filter is 'all' or 'expense', income when 'income'
   const donutType = typeFilter === 'income' ? 'income' : 'expense';
   const donutTotal = donutType === 'expense' ? totalExp : totalInc;
-  const donutColor = donutType === 'expense' ? 'var(--danger)' : 'var(--accent)';
-  const donutColorHex = donutType === 'expense' ? '#FF6B6B' : '#3DD68C';
 
-  // Flatten categories for donut: [{cat, amt, color}]
+  // Palettes for "По типу" (by group) and "По категориям" (by category)
+  const GROUP_COLORS = { 'Основное': '#FF6B6B', 'Желания': '#FFA94D', 'Накопления': '#4DABF7' };
   const DONUT_PALETTE = [
     '#FF6B6B','#FFA94D','#FFD43B','#69DB7C','#38D9A9',
     '#4DABF7','#748FFC','#DA77F2','#F783AC','#A9E34B'
   ];
   const donutGroups = totals[donutType];
   const donutSlices = [];
-  let pIdx = 0;
-  for (const [grp, cats] of Object.entries(donutGroups)) {
-    for (const [cat, amt] of Object.entries(cats).sort((a,b) => b[1]-a[1])) {
-      donutSlices.push({ cat, amt, color: DONUT_PALETTE[pIdx % DONUT_PALETTE.length] });
-      pIdx++;
+  if (viewMode === 'type') {
+    // По типу = один сегмент на группу (Основное, Желания, Накопления)
+    for (const [grp, cats] of Object.entries(donutGroups)) {
+      const amt = Object.values(cats).reduce((s, v) => s + v, 0);
+      const color = GROUP_COLORS[grp] || '#748FFC';
+      donutSlices.push({ cat: grp, amt, color });
+    }
+    donutSlices.sort((a, b) => b.amt - a.amt);
+  } else {
+    // По категориям = один сегмент на категорию
+    let pIdx = 0;
+    for (const [grp, cats] of Object.entries(donutGroups)) {
+      for (const [cat, amt] of Object.entries(cats).sort((a,b) => b[1]-a[1])) {
+        donutSlices.push({ cat, amt, color: DONUT_PALETTE[pIdx % DONUT_PALETTE.length] });
+        pIdx++;
+      }
     }
   }
 
