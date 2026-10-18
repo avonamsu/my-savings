@@ -5362,7 +5362,7 @@ function renderGoals() {
     document.getElementById('goals-pct').textContent = '0%';
     document.getElementById('goals-bar').style.width = '0%';
     const hintEl0 = document.getElementById('goals-income-hint');
-    if (hintEl0) hintEl0.innerHTML = `💸 Доход: <b style="color:var(--text);">${fmt(Math.round(totalIncome))} ₽</b> · Свободно: <b style="color:var(--accent);">${fmt(Math.round(totalIncome))} ₽</b>`;
+    if (hintEl0) hintEl0.innerHTML = `Доход: <b style="color:var(--text);">${fmt(Math.round(totalIncome))} ₽</b> · Свободно: <b style="color:var(--accent);">${fmt(Math.round(totalIncome))} ₽</b>`;
     renderChallenges();
     return;
   }
@@ -5394,7 +5394,7 @@ function renderGoals() {
   const hintEl = document.getElementById('goals-income-hint');
   if (hintEl) {
     const freeIncome = Math.max(0, totalIncome - coveredSum);
-    hintEl.innerHTML = `💸 Доход: <b style="color:var(--text);">${fmt(Math.round(totalIncome))} ₽</b> · Свободно: <b style="color:var(--accent);">${fmt(Math.round(freeIncome))} ₽</b>`;
+    hintEl.innerHTML = `Доход: <b style="color:var(--text);">${fmt(Math.round(totalIncome))} ₽</b> · Свободно: <b style="color:var(--accent);">${fmt(Math.round(freeIncome))} ₽</b>`;
   }
 
   // Sort helper — covered always go to bottom visually (doesn't affect coverage calculation)
