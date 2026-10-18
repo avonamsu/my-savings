@@ -8926,9 +8926,11 @@ async function renderBudgetStats() {
           `).join('')}
           ${donutSlices.length > 6 ? `<div style="font-size:11px;color:var(--text-dim);">+${donutSlices.length-6} ещё</div>` : ''}
           ${effectiveViewMode === 'type' ? `
-          <button onclick="openBudgetSettings()"
-            style="margin-top:8px;background:none;border:none;padding:0;color:var(--accent);
-                   font-size:12px;cursor:pointer;opacity:0.8;">Параметры →</button>` : ''}
+          <div style="text-align:right;margin-top:6px;">
+            <button onclick="openBudgetSettings()"
+              style="background:none;border:none;padding:0;color:var(--accent);
+                     font-size:12px;cursor:pointer;opacity:0.8;">Параметры →</button>
+          </div>` : ''}
         </div>
       </div>
     </div>
