@@ -810,6 +810,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <!-- Categories view -->
   <div id="budget-cats-view" style="display:none;padding:0 16px;padding-bottom:100px;">
+    <button onclick="budgetAddCatPrompt()"
+      style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
+             border-radius:var(--radius-sm);color:var(--accent);font-size:14px;font-weight:600;
+             padding:11px;cursor:pointer;margin-bottom:14px;">＋ Добавить категорию</button>
     <div id="budget-cats-list"></div>
   </div>
 </div>
@@ -8166,12 +8170,6 @@ function _budgetGroupBlock(key, label, items, addType, addGroup) {
     </div>`;
   };
 
-  // "Add category" button matches .btn-cancel style
-  const addBtn = `<button onclick="budgetAddCatPrompt('${addType}','${addGroup||'null'}')"
-    style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
-           border-radius:var(--radius-sm);color:var(--accent);font-size:13px;font-weight:600;
-           padding:9px;cursor:pointer;margin-top:10px;">＋ Добавить категорию</button>`;
-
   const body = collapsed ? '' : `
     <div>
       ${active.map(c => makeRow(c, false, addType, addGroup)).join('')}
@@ -8180,7 +8178,6 @@ function _budgetGroupBlock(key, label, items, addType, addGroup) {
           <div class="section-title" style="margin-bottom:6px;">Архив</div>
           ${archived.map(c => makeRow(c, true, addType, addGroup)).join('')}
         </div>` : ''}
-      ${addBtn}
     </div>`;
 
   // Group header with chevron matching app style
@@ -8276,14 +8273,37 @@ function budgetEditCatEmoji(type, group, name, currentEmoji) {
   save(); renderBudgetCats();
 }
 
-// Prompt to add a new category, warn if name matches an archived one
+// Single entry point for adding a category — asks type and group if not provided
 function budgetAddCatPrompt(type, group) {
+  budgetInit();
+  const cats = state.budget.categories;
+  const GROUP_ORDER = ['Основное', 'Желания', 'Накопления'];
+
+  // If called without args (from the top button), ask type first then group
+  if (!type) {
+    const typeChoice = prompt('Тип категории:\n1 — Расход\n2 — Доход');
+    if (!typeChoice) return;
+    if (typeChoice.trim() === '2') {
+      type = 'income'; group = null;
+    } else {
+      type = 'expense';
+      // Ask which expense group
+      const groups = GROUP_ORDER.filter(g => g in cats.expense);
+      const groupList = groups.map((g, i) => `${i + 1} — ${g}`).join('\n');
+      const gChoice = prompt(`Группа расходов:\n${groupList}`);
+      if (!gChoice) return;
+      const gi = parseInt(gChoice.trim()) - 1;
+      group = groups[gi] ?? groups[0];
+    }
+  }
+  if (group === 'null') group = null;
+
   const name = prompt('Название категории:');
   if (!name || !name.trim()) return;
   const trimmed = name.trim();
-  budgetInit();
-  const cats = _budgetCatList(type, group);
-  const existing = cats.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+
+  const list = _budgetCatList(type, group);
+  const existing = list.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
   if (existing && existing.archived) {
     if (confirm(`Категория «${existing.name}» уже была и сейчас в архиве. Восстановить её?`)) {
       existing.archived = false;
@@ -8295,7 +8315,7 @@ function budgetAddCatPrompt(type, group) {
     alert(`Категория «${existing.name}» уже существует.`);
     return;
   }
-  cats.push({ name: trimmed, emoji: '', archived: false });
+  list.push({ name: trimmed, emoji: '', archived: false });
   save(); renderBudgetCats();
 }
 
