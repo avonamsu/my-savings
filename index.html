@@ -964,31 +964,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div style="font-size:16px;font-weight:700;color:var(--text);padding:14px 20px 14px;
               border-bottom:1px solid rgba(255,255,255,0.08);">Настройки бюджета</div>
 
-  <!-- Excel section -->
-  <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.08);">
-    <div class="section-title" style="margin-bottom:10px;">Excel-файл</div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <button onclick="exportBudgetExcel();closeBudgetSettings()"
-        style="display:flex;align-items:center;gap:10px;width:100%;background:var(--surface2);
-               border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
-               color:var(--text);font-size:14px;font-weight:500;padding:11px 12px;cursor:pointer;">
-        <span style="font-size:18px;">📥</span> Скачать все записи
-      </button>
-      <label style="display:flex;align-items:center;gap:10px;width:100%;background:var(--surface2);
-               border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
-               color:var(--text);font-size:14px;font-weight:500;padding:11px 12px;cursor:pointer;box-sizing:border-box;">
-        <span style="font-size:18px;">🔄</span> Обновить мой файл
-        <input type="file" accept=".xlsx" style="display:none;" onchange="updateBudgetExcel(this);closeBudgetSettings()">
-      </label>
-      <label style="display:flex;align-items:center;gap:10px;width:100%;background:var(--surface2);
-               border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);
-               color:var(--text);font-size:14px;font-weight:500;padding:11px 12px;cursor:pointer;box-sizing:border-box;">
-        <span style="font-size:18px;">📤</span> Загрузить из файла в приложение
-        <input type="file" accept=".xlsx" style="display:none;" onchange="importBudgetExcel(this);closeBudgetSettings()">
-      </label>
-    </div>
-  </div>
-
   <!-- Categories section -->
   <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.08);">
     <div class="section-title" style="margin-bottom:10px;">Категории</div>
