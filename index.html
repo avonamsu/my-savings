@@ -8214,11 +8214,15 @@ function renderBudgetEntries(entries) {
     byDate[e.date].push(e);
   }
   const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+  // Track collapsed state per date (persisted in memory during session)
+  if (!window._budgetCollapsed) window._budgetCollapsed = {};
+
   el.innerHTML = sortedDates.map(date => {
     const dayEntries = byDate[date];
     const dayLabel = new Date(date + 'T00:00:00').toLocaleString('ru-RU', { day: 'numeric', month: 'long', weekday: 'short' });
     const dayIncome  = dayEntries.filter(e => e.type === 'income').reduce((s, e) => s + Number(e.amount), 0);
     const dayExpense = dayEntries.filter(e => e.type === 'expense').reduce((s, e) => s + Number(e.amount), 0);
+    const collapsed = !!window._budgetCollapsed[date];
     const rows = dayEntries
       .sort((a, b) => b.id.localeCompare(a.id))
       .map(e => {
@@ -8238,16 +8242,34 @@ function renderBudgetEntries(entries) {
       ? `<span style="color:#FF6B6B;">−${fmt(dayExpense)}</span>${dayIncome > 0 ? ` <span style="color:#4ECDC4;">+${fmt(dayIncome)}</span>` : ''}`
       : dayIncome > 0 ? `<span style="color:#4ECDC4;">+${fmt(dayIncome)}</span>` : '';
     return `<div style="margin-bottom:4px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;
+      <div onclick="toggleBudgetDay('${date}')" style="display:flex;justify-content:space-between;align-items:center;
                   padding:8px 12px;margin:0 -16px;
                   background:rgba(255,255,255,0.04);
-                  border-top:1px solid rgba(255,255,255,0.07);">
-        <span style="font-size:13px;font-weight:600;color:var(--text);text-transform:capitalize;">${dayLabel}</span>
+                  border-top:1px solid rgba(255,255,255,0.07);cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:13px;font-weight:600;color:var(--text);text-transform:capitalize;">${dayLabel}</span>
+          <span style="font-size:11px;color:var(--text-dim);transition:transform .2s;display:inline-block;transform:rotate(${collapsed ? '0deg' : '180deg'});">▾</span>
+        </div>
         <span style="font-size:12px;">${daySummary}</span>
       </div>
-      <div style="padding:0 0 6px;">${rows}</div>
+      <div id="budget-day-${date}" style="padding:0 0 6px;${collapsed ? 'display:none;' : ''}">${rows}</div>
     </div>`;
   }).join('');
+}
+
+// Toggle collapse for a budget day
+function toggleBudgetDay(date) {
+  if (!window._budgetCollapsed) window._budgetCollapsed = {};
+  window._budgetCollapsed[date] = !window._budgetCollapsed[date];
+  const el = document.getElementById('budget-day-' + date);
+  const collapsed = window._budgetCollapsed[date];
+  if (el) el.style.display = collapsed ? 'none' : '';
+  // Rotate arrow
+  const header = el?.previousElementSibling;
+  if (header) {
+    const arrow = header.querySelector('span[style*="rotate"]');
+    if (arrow) arrow.style.transform = collapsed ? 'rotate(0deg)' : 'rotate(180deg)';
+  }
 }
 
 // ── Budget spending analysis (50/30/20 bars) ──────────────────────────────
