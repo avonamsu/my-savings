@@ -793,7 +793,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <div class="page" id="page-budget">
   <div>
     <!-- Shared period selector (used by both History and Analysis views) -->
-    <div id="budget-period-bar" style="display:flex;align-items:center;gap:8px;padding:12px 16px 0;">
+    <div id="budget-period-bar" style="display:flex;align-items:center;gap:8px;padding:12px 16px 12px;">
       <button id="stats-nav-prev" onclick="statsNavShift(-1)"
         style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
                width:34px;height:34px;color:var(--text);font-size:18px;cursor:pointer;
@@ -897,51 +897,51 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <!-- Stats view (default/main budget view) -->
   <div id="budget-stats-view" style="display:none;padding:0 16px;padding-bottom:140px;">
-    <!-- Title + Excel dropdown -->
+    <!-- Назад | тип-фильтр + Excel в одну строку -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <button onclick="switchBudgetTab('entries')" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0;">‹ Назад</button>
-      <!-- Excel dropdown trigger -->
-      <div style="position:relative;">
-        <button onclick="toggleStatsExcelMenu()" id="stats-excel-btn"
+      <div style="display:flex;align-items:center;gap:8px;">
+        <!-- Type filter -->
+        <select id="stats-type-select" onchange="statsSetType(this.value)"
           style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
-                 color:var(--accent);font-size:12px;font-weight:600;padding:5px 10px;cursor:pointer;">
-          📥 Excel
-        </button>
-        <div id="stats-excel-menu"
-          style="display:none;position:absolute;right:0;top:calc(100% + 6px);
-                 background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:12px;
-                 box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:210px;z-index:50;overflow:hidden;">
-          <button onclick="exportBudgetExcel();toggleStatsExcelMenu()"
-            style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;
-                   border-bottom:1px solid rgba(255,255,255,0.07);color:var(--text);font-size:13px;
-                   padding:12px 14px;cursor:pointer;text-align:left;">
-            <span>📥</span> Скачать все записи
+                 color:var(--text);padding:0 8px;font-size:13px;height:34px;">
+          <option value="expense">Расходы</option>
+          <option value="income">Доходы</option>
+        </select>
+        <!-- Excel dropdown trigger -->
+        <div style="position:relative;">
+          <button onclick="toggleStatsExcelMenu()" id="stats-excel-btn"
+            style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+                   color:var(--accent);font-size:12px;font-weight:600;padding:0 10px;height:34px;cursor:pointer;">
+            📥 Excel
           </button>
-          <label style="display:flex;align-items:center;gap:10px;width:100%;
-                        border-bottom:1px solid rgba(255,255,255,0.07);color:var(--text);font-size:13px;
-                        padding:12px 14px;cursor:pointer;box-sizing:border-box;">
-            <span>🔄</span> Обновить мой файл
-            <input type="file" accept=".xlsx" style="display:none;"
-              onchange="updateBudgetExcel(this);toggleStatsExcelMenu()">
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;width:100%;
-                        color:var(--text);font-size:13px;
-                        padding:12px 14px;cursor:pointer;box-sizing:border-box;">
-            <span>📤</span> Загрузить из файла
-            <input type="file" accept=".xlsx" style="display:none;"
-              onchange="importBudgetExcel(this);toggleStatsExcelMenu()">
-          </label>
+          <div id="stats-excel-menu"
+            style="display:none;position:absolute;right:0;top:calc(100% + 6px);
+                   background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:12px;
+                   box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:210px;z-index:50;overflow:hidden;">
+            <button onclick="exportBudgetExcel();toggleStatsExcelMenu()"
+              style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;
+                     border-bottom:1px solid rgba(255,255,255,0.07);color:var(--text);font-size:13px;
+                     padding:12px 14px;cursor:pointer;text-align:left;">
+              <span>📥</span> Скачать все записи
+            </button>
+            <label style="display:flex;align-items:center;gap:10px;width:100%;
+                          border-bottom:1px solid rgba(255,255,255,0.07);color:var(--text);font-size:13px;
+                          padding:12px 14px;cursor:pointer;box-sizing:border-box;">
+              <span>🔄</span> Обновить мой файл
+              <input type="file" accept=".xlsx" style="display:none;"
+                onchange="updateBudgetExcel(this);toggleStatsExcelMenu()">
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;width:100%;
+                          color:var(--text);font-size:13px;
+                          padding:12px 14px;cursor:pointer;box-sizing:border-box;">
+              <span>📤</span> Загрузить из файла
+              <input type="file" accept=".xlsx" style="display:none;"
+                onchange="importBudgetExcel(this);toggleStatsExcelMenu()">
+            </label>
+          </div>
         </div>
       </div>
-    </div>
-    <!-- Type filter (period is shared in the page header) -->
-    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;">
-      <select id="stats-type-select" onchange="statsSetType(this.value)"
-        style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
-               color:var(--text);padding:0 8px;font-size:13px;height:34px;">
-        <option value="expense">Расходы</option>
-        <option value="income">Доходы</option>
-      </select>
     </div>
     <div id="budget-stats-content"></div>
   </div>
