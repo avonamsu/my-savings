@@ -8907,16 +8907,10 @@ async function renderBudgetStats() {
       </div>
     </div>
     </div>` : ''}
-    <!-- Список: по типу или по категориям -->
-    ${effectiveViewMode === 'cat' ? `
-      <div class="chart-wrap">
-        ${catViewBlocks || '<div style="text-align:center;padding:20px 0;color:var(--text-dim);">Нет данных</div>'}
-      </div>
-    ` : `
-      ${typeFilter !== 'income' && expBlocks ? `<div class="section-title" style="margin-bottom:8px;">Расходы</div>${expBlocks}` : ''}
-      ${typeFilter !== 'expense' && incBlocks ? `<div class="section-title" style="margin:12px 0 8px;">Доходы</div>${incBlocks}` : ''}
-      ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}
-    `}
+    <!-- Список всегда по группам, независимо от вида графика -->
+    ${typeFilter !== 'income' && expBlocks ? `<div class="section-title" style="margin-bottom:8px;">Расходы</div>${expBlocks}` : ''}
+    ${typeFilter !== 'expense' && incBlocks ? `<div class="section-title" style="margin:12px 0 8px;">Доходы</div>${incBlocks}` : ''}
+    ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}
   `.trim();
 
   // ── Draw donut on canvas after DOM update ──
