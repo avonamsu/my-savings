@@ -541,7 +541,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0 8px;"></div>
 
-  <div class="sidebar-section"><span>⚙️ Настройки</span></div>
+  <div class="sidebar-section"><span><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32" style="vertical-align:middle;margin-right:6px;"><path d="M0 0h32v32H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M13 2v4l-2 1l-3-3l-4 4l3 3l-1 2H2v6h4l1 2l-3 3l4 4l3-3l2 1v4h6v-4l2-1l3 3l4-4l-3-3l1-2h4v-6h-4l-1-2l3-3l-4-4l-3 3l-2-1V2Z"/><circle cx="16" cy="16" r="4"/></g></svg>Настройки</span></div>
   <button class="sidebar-item" onclick="showPage('backup');closeSidebar()"><span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5 21h14a2 2 0 0 0 2-2V8a1 1 0 0 0-.29-.71l-4-4A1 1 0 0 0 16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2m10-2H9v-5h6zM13 7h-2V5h2zM5 5h2v4h8V5h.59L19 8.41V19h-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5H5z"/></svg></span><span>Синхронизация и резервные данные</span></button>
   <button class="sidebar-item" onclick="closeSidebar();setTimeout(forceStartOnboarding,350)"><span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1zm10 0s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1z"/></svg></span>Пройти обучение</button>
   <div class="sidebar-divider"></div>
@@ -639,12 +639,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
   <!-- кнопка настроить (если нет активных виджетов) -->
   <div id="home-configure-hint" style="text-align:center;padding:4px 0 2px;">
-    <button class="home-configure-btn" style="margin:0 auto;" onclick="openWidgetSettings()">⚙ Настроить главную</button>
+    <button class="home-configure-btn" style="margin:0 auto;display:inline-flex;align-items:center;gap:6px;" onclick="openWidgetSettings()"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32"><path d="M0 0h32v32H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M13 2v4l-2 1l-3-3l-4 4l3 3l-1 2H2v6h4l1 2l-3 3l4 4l3-3l2 1v4h6v-4l2-1l3 3l4-4l-3-3l1-2h4v-6h-4l-1-2l3-3l-4-4l-3 3l-2-1V2Z"/><circle cx="16" cy="16" r="4"/></g></svg>Настроить главную</button>
   </div>
 
   <!-- если хоть один виджет включён — кнопка внизу -->
   <div id="home-configure-bottom" style="display:none;text-align:center;padding:2px 0;">
-    <button class="home-configure-btn" onclick="openWidgetSettings()">⚙ Настроить</button>
+    <button class="home-configure-btn" style="display:inline-flex;align-items:center;gap:6px;" onclick="openWidgetSettings()"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32"><path d="M0 0h32v32H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M13 2v4l-2 1l-3-3l-4 4l3 3l-1 2H2v6h4l1 2l-3 3l4 4l3-3l2 1v4h6v-4l2-1l3 3l4-4l-3-3l1-2h4v-6h-4l-1-2l3-3l-4-4l-3 3l-2-1V2Z"/><circle cx="16" cy="16" r="4"/></g></svg>Настроить</button>
   </div>
 
 
