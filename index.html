@@ -915,8 +915,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <div style="position:relative;">
           <button onclick="toggleStatsExcelMenu()" id="stats-excel-btn"
             style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
-                   color:var(--accent);font-size:12px;font-weight:600;padding:0 10px;height:34px;cursor:pointer;">
-            📥 Excel
+                   color:var(--accent);font-size:12px;font-weight:600;padding:0 10px;height:34px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none"><path fill="currentColor" d="M3.87 13V5.73c0-1.87 1.5-3.39 3.35-3.39h9.3c1.85 0 3.35 1.52 3.35 3.39V13H3.87Z" opacity=".2"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.87 12.95v-5.2C3.87 5.86 5.38 4.34 7.22 4.34h9.3c1.85 0 3.35 1.52 3.35 3.41v5.2M2 13h20M8 21l4-4 4 4M12 17v4"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.22 2.27v2.41c0 .7.57 1.27 1.27 1.27h2.41"/></g></svg>
+            Выгрузить в файл
           </button>
           <div id="stats-excel-menu"
             style="display:none;position:absolute;right:0;top:calc(100% + 6px);
