@@ -899,16 +899,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
       </div>
     </div>
-    <!-- View toggle: по типу / по категориям — segment control -->
-    <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:10px;gap:2px;">
-      <button id="stats-view-type" onclick="statsSetView('type')"
-        style="flex:1;padding:7px 4px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;
-               background:var(--accent);color:#000;transition:background .2s,color .2s;
-               box-shadow:0 1px 4px rgba(0,0,0,0.25);">По типу</button>
-      <button id="stats-view-cat" onclick="statsSetView('cat')"
-        style="flex:1;padding:7px 4px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;
-               background:transparent;color:var(--text-dim);transition:background .2s,color .2s;">По категориям</button>
-    </div>
     <!-- Group pills: Основное / Желания / Накопления / Всего — horizontal scroll -->
     <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none;">
       <button id="stats-grp-Основное"  onclick="statsSetGroup('Основное')"
@@ -8867,9 +8857,24 @@ async function renderBudgetStats() {
         <div style="font-size:16px;font-weight:700;color:var(--accent);">${fmt(totalInc)} ₽</div>
       </div>
     </div>
-    <!-- Донат -->
+    <!-- Сегмент-контрол + Донат -->
     ${donutTotal > 0 ? `
     <div class="chart-wrap" style="margin-bottom:14px;">
+      <!-- Segment control прямо над графиком -->
+      <div style="display:flex;background:rgba(255,255,255,0.07);border-radius:9px;padding:3px;margin-bottom:12px;gap:2px;">
+        <button id="stats-view-type" onclick="statsSetView('type')"
+          style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                 background:${viewMode==='type'?'var(--surface)':'transparent'};
+                 color:${viewMode==='type'?'var(--text)':'var(--text-dim)'};
+                 box-shadow:${viewMode==='type'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
+                 transition:all .2s;">По типу</button>
+        <button id="stats-view-cat" onclick="statsSetView('cat')"
+          style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                 background:${viewMode==='cat'?'var(--surface)':'transparent'};
+                 color:${viewMode==='cat'?'var(--text)':'var(--text-dim)'};
+                 box-shadow:${viewMode==='cat'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
+                 transition:all .2s;">По категориям</button>
+      </div>
       <div style="display:flex;align-items:center;gap:16px;">
         <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
           <canvas id="stats-donut-canvas" width="260" height="260"
@@ -8898,6 +8903,7 @@ async function renderBudgetStats() {
           ${donutSlices.length > 6 ? `<div style="font-size:11px;color:var(--text-dim);">+${donutSlices.length-6} ещё</div>` : ''}
         </div>
       </div>
+    </div>
     </div>` : ''}
     <!-- Список: по типу или по категориям -->
     ${viewMode === 'cat' ? `
@@ -8990,11 +8996,7 @@ function statsSetGroup(val) {
 
 function statsSetView(val) {
   _statsView = val;
-  // Update segmented control styles
-  const vType = document.getElementById('stats-view-type');
-  const vCat  = document.getElementById('stats-view-cat');
-  if (vType) { vType.style.background = val === 'type' ? 'var(--accent)' : 'transparent'; vType.style.color = val === 'type' ? '#000' : 'var(--text-dim)'; vType.style.boxShadow = val === 'type' ? '0 1px 4px rgba(0,0,0,0.25)' : 'none'; }
-  if (vCat)  { vCat.style.background  = val === 'cat'  ? 'var(--accent)' : 'transparent'; vCat.style.color  = val === 'cat'  ? '#000' : 'var(--text-dim)'; vCat.style.boxShadow  = val === 'cat'  ? '0 1px 4px rgba(0,0,0,0.25)' : 'none'; }
+  // Кнопки рендерятся внутри el.innerHTML с учётом viewMode — просто перерендерим
   renderBudgetStats();
 }
 
