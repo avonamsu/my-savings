@@ -3914,13 +3914,22 @@ function renderSavings() {
     '💼 Другое':           sortAlpha(items.filter(x => !x.isDeposit && !x.isSavingsAccount && !['📈','💵','🏠','₿'].includes(x.icon))),
   } : { 'Все счета': sortAlpha(items) };
 
+  // SVG icons for savings group headers
+  const _SAVINGS_GROUP_SVG = {
+    '🏦 Вклады': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="currentColor"><path d="M17 14.94V11.5h-1.5v4.06l2.22 2.22 1.06-1.06z"/><path fill-rule="evenodd" d="M2 3h20v8.713A6.75 6.75 0 1 1 9.884 17.5H2zm18.5 5.221v1.785a6.77 6.77 0 0 0-5.807-1.325 3.25 3.25 0 1 0-4.801 4.297A6.74 6.74 0 0 0 9.542 16H7.22a4.25 4.25 0 0 0-3.72-3.721V8.221A4.25 4.25 0 0 0 7.221 4.5h9.558A4.25 4.25 0 0 0 20.5 8.221M12 8.75c.463 0 .886.181 1.2.477a6.8 6.8 0 0 0-2.6 2.328 1.75 1.75 0 0 1-.35-1.055c0-.966.784-1.75 1.75-1.75M5.705 16A2.75 2.75 0 0 0 3.5 13.795V16zM20.5 4.5v2.205A2.75 2.75 0 0 1 18.295 4.5zm-17 2.205C4.62 6.5 5.5 5.619 5.705 4.5H3.5zM16.25 10a5.25 5.25 0 1 0 0 10.5 5.25 5.25 0 0 0 0-10.5" clip-rule="evenodd"/></g></svg>`,
+  };
   const collapsed = JSON.parse(localStorage.getItem('savings_groups_collapsed')||'{}');
   el.innerHTML = Object.entries(groups).filter(([,g])=>g.length>0).map(([groupName, group]) => {
     const groupTotal = group.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0);
     const key = groupName.replace(/\s+/g,'_');
     const isCollapsed = !!collapsed[key];
+    // Replace emoji with SVG if available, otherwise strip leading emoji
+    const groupSvg = _SAVINGS_GROUP_SVG[groupName];
+    const groupLabel = groupSvg
+      ? `<span style="display:flex;align-items:center;gap:6px;">${groupSvg}${groupName.replace(/^[\p{Emoji}\s]+/u,'')}</span>`
+      : `<span>${groupName}</span>`;
     return `<div class="group-header" onclick="toggleSavingsGroup('${key}')" style="cursor:pointer;user-select:none;">
-        <span class="group-title">${groupName}</span>
+        <span class="group-title">${groupLabel}</span>
         <span style="display:flex;align-items:center;gap:8px;">
           <span class="group-total">${fmt(groupTotal)} ₽</span>
           <span style="font-size:11px;color:var(--text-dim);transition:transform .2s;display:inline-block;transform:rotate(${isCollapsed?'-90':'0'}deg);">▾</span>
