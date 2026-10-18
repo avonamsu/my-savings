@@ -8991,113 +8991,181 @@ async function renderBudgetStats() {
     }
   }
 
-  el.innerHTML = `
-    <!-- Сегмент-контрол + Донат -->
-    ${donutTotal > 0 ? `
-    <div class="chart-wrap" style="margin-bottom:14px;">
-      <!-- Segment control: hidden when viewing income only -->
-      ${typeFilter !== 'income' ? `
-      <div style="display:flex;background:rgba(255,255,255,0.07);border-radius:9px;padding:3px;margin-bottom:12px;gap:2px;">
-        <button id="stats-view-type" onclick="statsSetView('type')"
-          style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-                 background:${effectiveViewMode==='type'?'var(--surface)':'transparent'};
-                 color:${effectiveViewMode==='type'?'var(--text)':'var(--text-dim)'};
-                 box-shadow:${effectiveViewMode==='type'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
-                 transition:all .2s;">По типу</button>
-        <button id="stats-view-cat" onclick="statsSetView('cat')"
-          style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-                 background:${effectiveViewMode==='cat'?'var(--surface)':'transparent'};
-                 color:${effectiveViewMode==='cat'?'var(--text)':'var(--text-dim)'};
-                 box-shadow:${effectiveViewMode==='cat'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
-                 transition:all .2s;">По категориям</button>
-      </div>` : ''}
-      <div style="display:flex;align-items:center;gap:16px;">
-        <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
-          <canvas id="stats-donut-canvas" width="260" height="260"
-            style="width:130px;height:130px;border-radius:50%;"></canvas>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;
-                      align-items:center;justify-content:center;pointer-events:none;">
-            <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">
-              ${donutType === 'expense' ? 'Расходы' : 'Доходы'}
-            </div>
-            <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:2px;">
-              ${fmt(donutTotal)} ₽
-            </div>
-          </div>
-        </div>
-        <div style="flex:1;min-width:0;">
-          ${(() => {
-            // В режиме "По типу" — легенда с прогресс-баром по правилу 50/30/20
-            if (effectiveViewMode === 'type') {
-              budgetInit();
-              const manualIncome = state.budget.monthlyIncome || 0;
-              const periodIncome = Object.values(totals.income).flatMap(Object.values).reduce((s,v)=>s+v,0);
-              const refIncome = manualIncome || periodIncome; // база для расчёта % по правилу
-              // Фиксированный порядок: Основное → Желания → Накопления
-              const ORDER = ['Основное', 'Желания', 'Накопления'];
-              const sortedSlices = [...donutSlices].sort((a, b) => {
-                const ai = ORDER.indexOf(a.cat), bi = ORDER.indexOf(b.cat);
-                if (ai !== -1 && bi !== -1) return ai - bi;
-                if (ai !== -1) return -1;
-                if (bi !== -1) return 1;
-                return 0;
-              });
-              return sortedSlices.slice(0,6).map(s => {
-                const target = BUDGET_SPLIT[s.cat]; // лимит по правилу (50/30/20), %
-                const limitAmt = refIncome > 0 && target ? refIncome * target / 100 : 0;
-                const factPct  = limitAmt > 0 ? Math.min(Math.round(s.amt / limitAmt * 100), 999) : 0;
-                const ok = limitAmt > 0 ? s.amt <= limitAmt * 1.05 : true;
-                const barColor = ok ? s.color : '#FF6B6B';
-                // Прогресс-бар: заполненность = факт/лимит (100% = достиг лимита)
-                const barW = limitAmt > 0 ? Math.min(s.amt / limitAmt * 100, 100) : 0;
-                const statusLine = refIncome > 0 && target
-                  ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">
-                       <div style="height:3px;flex:1;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;margin-right:6px;">
-                         <div style="height:3px;width:${barW}%;background:${barColor};border-radius:2px;transition:width .3s;"></div>
-                       </div>
-                       <span style="font-size:10px;color:${ok?'var(--text-dim)':'#FF6B6B'};white-space:nowrap;flex-shrink:0;">
-                         ${fmt(s.amt)} / ${fmt(limitAmt)} ₽
-                       </span>
-                     </div>`
-                  : '';
-                return `
-                  <div style="margin-bottom:8px;min-width:0;">
-                    <div style="display:flex;align-items:center;gap:6px;">
-                      <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
-                      <div style="font-size:12px;color:var(--text);">${s.cat}</div>
-                      ${target ? `<span style="font-size:10px;color:var(--text-dim);">${target}%</span>` : ''}
-                    </div>
-                    ${statusLine}
-                  </div>`;
-              }).join('');
-            }
-            // Обычный режим "По категориям"
-            return donutSlices.slice(0,6).map(s => `
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0;">
-                <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
-                <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;
-                            text-overflow:ellipsis;flex:1;min-width:0;">${s.cat}</div>
-                <div style="font-size:11px;color:var(--text-dim);flex-shrink:0;">
-                  ${donutTotal > 0 ? Math.round(s.amt/donutTotal*100) : 0}%
-                </div>
-              </div>`).join('');
-          })()}
-          ${donutSlices.length > 6 ? `<div style="font-size:11px;color:var(--text-dim);">+${donutSlices.length-6} ещё</div>` : ''}
-        </div>
-      </div>
-      ${effectiveViewMode === 'type' ? `
-      <div style="text-align:right;margin-top:10px;">
-        <button onclick="openBudgetSettings()"
-          style="background:none;border:none;padding:0;color:var(--accent);
-                 font-size:12px;cursor:pointer;opacity:0.8;">Параметры →</button>
-      </div>` : ''}
-    </div>
-    </div>` : ''}
-    <!-- Список всегда по группам, независимо от вида графика -->
+  // ── Build legend HTML (used in slide 0) ──
+  const legendHtml = (() => {
+    if (effectiveViewMode === 'type') {
+      budgetInit();
+      const manualIncome = state.budget.monthlyIncome || 0;
+      const periodIncome = Object.values(totals.income).flatMap(Object.values).reduce((s,v)=>s+v,0);
+      const refIncome = manualIncome || periodIncome;
+      const ORDER = ['Основное', 'Желания', 'Накопления'];
+      const sortedSlices = [...donutSlices].sort((a, b) => {
+        const ai = ORDER.indexOf(a.cat), bi = ORDER.indexOf(b.cat);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        if (ai !== -1) return -1; if (bi !== -1) return 1; return 0;
+      });
+      return sortedSlices.slice(0,6).map(s => {
+        const target = BUDGET_SPLIT[s.cat];
+        const limitAmt = refIncome > 0 && target ? refIncome * target / 100 : 0;
+        const ok = limitAmt > 0 ? s.amt <= limitAmt * 1.05 : true;
+        const barColor = ok ? s.color : '#FF6B6B';
+        const barW = limitAmt > 0 ? Math.min(s.amt / limitAmt * 100, 100) : 0;
+        const statusLine = refIncome > 0 && target
+          ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">
+               <div style="height:3px;flex:1;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;margin-right:6px;">
+                 <div style="height:3px;width:${barW}%;background:${barColor};border-radius:2px;transition:width .3s;"></div>
+               </div>
+               <span style="font-size:10px;color:${ok?'var(--text-dim)':'#FF6B6B'};white-space:nowrap;flex-shrink:0;">
+                 ${fmt(s.amt)} / ${fmt(limitAmt)} ₽
+               </span>
+             </div>`
+          : '';
+        return `<div style="margin-bottom:8px;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
+            <div style="font-size:12px;color:var(--text);">${s.cat}</div>
+            ${target ? `<span style="font-size:10px;color:var(--text-dim);">${target}%</span>` : ''}
+          </div>${statusLine}</div>`;
+      }).join('');
+    }
+    return donutSlices.slice(0,6).map(s => `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
+        <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${s.cat}</div>
+        <div style="font-size:11px;color:var(--text-dim);flex-shrink:0;">${donutTotal > 0 ? Math.round(s.amt/donutTotal*100) : 0}%</div>
+      </div>`).join('');
+  })();
+
+  // ── Build table HTML (used in slide 1) ──
+  const tableHtml = `
     ${typeFilter !== 'income' && expBlocks ? `<div class="section-title" style="margin-bottom:8px;">Расходы</div>${expBlocks}` : ''}
     ${typeFilter !== 'expense' && incBlocks ? `<div class="section-title" style="margin:12px 0 8px;">Доходы</div>${incBlocks}` : ''}
-    ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}
+    ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}`;
+
+  el.innerHTML = `
+    <!-- Сегмент-контрол -->
+    ${donutTotal > 0 && typeFilter !== 'income' ? `
+    <div style="display:flex;background:rgba(255,255,255,0.07);border-radius:9px;padding:3px;margin-bottom:12px;gap:2px;">
+      <button id="stats-view-type" onclick="statsSetView('type')"
+        style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+               background:${effectiveViewMode==='type'?'var(--surface)':'transparent'};
+               color:${effectiveViewMode==='type'?'var(--text)':'var(--text-dim)'};
+               box-shadow:${effectiveViewMode==='type'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
+               transition:all .2s;">По типу</button>
+      <button id="stats-view-cat" onclick="statsSetView('cat')"
+        style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+               background:${effectiveViewMode==='cat'?'var(--surface)':'transparent'};
+               color:${effectiveViewMode==='cat'?'var(--text)':'var(--text-dim)'};
+               box-shadow:${effectiveViewMode==='cat'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
+               transition:all .2s;">По категориям</button>
+    </div>` : ''}
+
+    <!-- Карусель: слайд 0 = график, слайд 1 = таблица -->
+    <div id="stats-carousel" style="position:relative;">
+      <!-- Стрелки -->
+      <button id="stats-carousel-prev" onclick="_statsCarouselGo(-1)"
+        style="position:absolute;left:-10px;top:50%;transform:translateY(-50%);z-index:2;
+               background:rgba(255,255,255,0.06);border:none;border-radius:50%;
+               width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+               cursor:pointer;color:var(--text-dim);font-size:14px;transition:opacity .2s;
+               opacity:${donutTotal > 0 ? '0' : '0'};pointer-events:none;">‹</button>
+      <button id="stats-carousel-next" onclick="_statsCarouselGo(1)"
+        style="position:absolute;right:-10px;top:50%;transform:translateY(-50%);z-index:2;
+               background:rgba(255,255,255,0.06);border:none;border-radius:50%;
+               width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+               cursor:pointer;color:var(--text-dim);font-size:14px;transition:opacity .2s;
+               opacity:${donutTotal > 0 ? '1' : '0'};pointer-events:${donutTotal > 0 ? 'auto' : 'none'};">›</button>
+
+      <!-- Слайдер -->
+      <div id="stats-carousel-track" style="overflow:hidden;">
+        <div id="stats-carousel-inner"
+             style="display:flex;transition:transform .3s ease;will-change:transform;">
+
+          <!-- Слайд 0: График + легенда -->
+          <div style="min-width:100%;box-sizing:border-box;padding:0 18px;">
+            ${donutTotal > 0 ? `
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
+                <canvas id="stats-donut-canvas" width="260" height="260"
+                  style="width:130px;height:130px;border-radius:50%;"></canvas>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;
+                            align-items:center;justify-content:center;pointer-events:none;">
+                  <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">
+                    ${donutType === 'expense' ? 'Расходы' : 'Доходы'}
+                  </div>
+                  <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:2px;">
+                    ${fmt(donutTotal)} ₽
+                  </div>
+                </div>
+              </div>
+              <div style="flex:1;min-width:0;">
+                ${legendHtml}
+                ${donutSlices.length > 6 ? `<div style="font-size:11px;color:var(--text-dim);">+${donutSlices.length-6} ещё</div>` : ''}
+              </div>
+            </div>
+            ${effectiveViewMode === 'type' ? `
+            <div style="text-align:right;margin-top:10px;">
+              <button onclick="openBudgetSettings()"
+                style="background:none;border:none;padding:0;color:var(--accent);
+                       font-size:12px;cursor:pointer;opacity:0.8;">Параметры →</button>
+            </div>` : ''}
+            ` : '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>'}
+          </div>
+
+          <!-- Слайд 1: Таблица расходов/доходов -->
+          <div style="min-width:100%;box-sizing:border-box;padding:0 18px;">
+            ${tableHtml}
+          </div>
+        </div>
+      </div>
+
+      <!-- Индикаторы-точки -->
+      ${donutTotal > 0 ? `
+      <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;">
+        <div id="stats-dot-0" style="width:6px;height:6px;border-radius:50%;background:var(--accent);transition:background .2s;"></div>
+        <div id="stats-dot-1" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:background .2s;"></div>
+      </div>` : ''}
+    </div>
   `.trim();
+
+  // ── Карусель: инициализация свайпа и стрелок ──
+  (function initCarousel() {
+    let slide = 0;
+    const total = 2;
+
+    function goTo(idx) {
+      slide = Math.max(0, Math.min(total - 1, idx));
+      const inner = document.getElementById('stats-carousel-inner');
+      if (inner) inner.style.transform = `translateX(-${slide * 100}%)`;
+      // Обновляем точки
+      for (let i = 0; i < total; i++) {
+        const dot = document.getElementById('stats-dot-' + i);
+        if (dot) dot.style.background = i === slide ? 'var(--accent)' : 'rgba(255,255,255,0.2)';
+      }
+      // Обновляем стрелки
+      const prev = document.getElementById('stats-carousel-prev');
+      const next = document.getElementById('stats-carousel-next');
+      if (prev) { prev.style.opacity = slide > 0 ? '1' : '0'; prev.style.pointerEvents = slide > 0 ? 'auto' : 'none'; }
+      if (next) { next.style.opacity = slide < total-1 ? '1' : '0'; next.style.pointerEvents = slide < total-1 ? 'auto' : 'none'; }
+    }
+
+    // Глобальная функция для стрелок (onclick в HTML)
+    window._statsCarouselGo = (dir) => goTo(slide + dir);
+
+    // Touch-свайп по треку
+    const track = document.getElementById('stats-carousel-track');
+    if (!track) return;
+    let tx0 = 0, ty0 = 0, swiping = false;
+    track.addEventListener('touchstart', e => {
+      tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY; swiping = true;
+    }, { passive: true });
+    track.addEventListener('touchend', e => {
+      if (!swiping) return; swiping = false;
+      const dx = e.changedTouches[0].clientX - tx0;
+      const dy = e.changedTouches[0].clientY - ty0;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) goTo(slide + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+  })();
 
   // ── Draw donut on canvas after DOM update ──
   if (donutTotal > 0 && donutSlices.length > 0) {
