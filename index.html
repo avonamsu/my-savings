@@ -5790,17 +5790,21 @@ function updateFab(page) {
   // Nav-centre FAB: show on pages that have an add action
   const navFab = document.getElementById('nav-fab');
   if (!navFab) return;
-  const hasAction = ['savings','income','goals','budget','challenge'].includes(page);
-  if (hasAction) navFab.removeAttribute('hidden');
-  else navFab.setAttribute('hidden','');
+  // Show on all pages except pure info pages (always available)
+  navFab.removeAttribute('hidden');
 }
 
 function fabAction() {
-  if (_currentPage==='savings') { editingId=null; openModal('savings'); }
-  else if (_currentPage==='income') { editingId=null; openModal('income'); }
-  else if (_currentPage==='goals') { editingId=null; openModal('goals'); }
-  else if (_currentPage==='budget') { openBudgetEntryModal(); }
-  else if (_currentPage==='challenge') { showNewChallengeFormPage(); }
+  if (_currentPage==='savings')   { editingId=null; openModal('savings'); }
+  else if (_currentPage==='income')   { editingId=null; openModal('income'); }
+  else if (_currentPage==='goals')    { editingId=null; openModal('goals'); }
+  else if (_currentPage==='budget')   { openBudgetEntryModal(); }
+  else if (_currentPage==='challenge'){ showNewChallengeFormPage(); }
+  else {
+    // home or any other page → quick-add budget entry (most common action)
+    showPage('budget');
+    setTimeout(() => openBudgetEntryModal(), 320);
+  }
 }
 
 // ── MODAL ─────────────────────────────────────────────────
