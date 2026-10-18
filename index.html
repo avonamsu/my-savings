@@ -816,7 +816,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
         <!-- Подробнее -->
         <div style="text-align:right;">
-          <button onclick="switchBudgetTab('entries')" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">История операций →</button>
+          <button onclick="switchBudgetTab('stats')" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">Анализ →</button>
         </div>
       </div>
     </div>
@@ -826,8 +826,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div style="padding:0 16px;">
       <!-- Шапка: Назад + заголовок + кнопки -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <button onclick="switchBudgetTab('stats')" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0;">‹ Назад</button>
         <span style="font-size:13px;font-weight:600;color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;">История операций</span>
+        <div></div>
         <button onclick="toggleBudgetSort()" id="budget-sort-btn"
           style="background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:5px 14px;color:var(--text-dim);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;">
           <span id="budget-sort-icon">↓</span> <span id="budget-sort-label">Сначала новые</span>
@@ -848,7 +848,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div id="budget-stats-view" style="display:none;padding:0 16px;padding-bottom:140px;">
     <!-- Title + Excel dropdown -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <span style="font-size:15px;font-weight:700;color:var(--text);">Анализ</span>
+      <button onclick="switchBudgetTab('entries')" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:0;">‹ Назад</button>
       <!-- Excel dropdown trigger -->
       <div style="position:relative;">
         <button onclick="toggleStatsExcelMenu()" id="stats-excel-btn"
@@ -8180,12 +8180,12 @@ function budgetNextMonth() {
 }
 
 function switchBudgetTab(tab) {
-  document.getElementById('budget-entries-view').style.display = tab === 'entries' ? '' : 'none';
+  // entries = default/main view; stats = analysis (secondary)
+  document.getElementById('budget-entries-view').style.display = tab === 'stats' ? 'none' : '';
   document.getElementById('budget-cats-view').style.display   = 'none';
   const statsView = document.getElementById('budget-stats-view');
   if (statsView) statsView.style.display = tab === 'stats' ? '' : 'none';
-  // stats is the default (main) view — render when switching to it or on initial load
-  if (tab === 'stats' || !tab) { _budgetStatsCache = null; renderBudgetStats(); }
+  if (tab === 'stats') { _budgetStatsCache = null; renderBudgetStats(); }
 }
 
 // Переключение сортировки записей (новые/старые)
@@ -8275,19 +8275,14 @@ async function renderBudgetPage() {
   // Hide loader, reveal content
   document.getElementById('budget-loader').style.display  = 'none';
   document.getElementById('budget-content').style.display = '';
-  // Default view is stats (analysis); entries view is accessed via "История операций →"
-  const entriesView = document.getElementById('budget-entries-view');
-  const catsView    = document.getElementById('budget-cats-view');
+  // Default view is entries; stats (analysis) accessed via "Анализ →"
+  const statsView = document.getElementById('budget-stats-view');
+  const catsView  = document.getElementById('budget-cats-view');
   catsView.style.display = 'none';
-  // If entries view is open (user navigated there), keep it; otherwise show stats
-  if (entriesView.style.display !== '') {
-    // entries was already hidden — show stats as default
-    const statsView = document.getElementById('budget-stats-view');
-    if (statsView) {
-      _budgetStatsCache = null;
-      renderBudgetStats();
-      statsView.style.display = '';
-    }
+  // If stats view is currently open, keep it; otherwise show entries
+  if (!statsView || statsView.style.display === 'none') {
+    document.getElementById('budget-entries-view').style.display = '';
+    if (statsView) statsView.style.display = 'none';
   }
 }
 
