@@ -8968,7 +8968,8 @@ async function renderBudgetStats() {
     '#4DABF7','#748FFC','#DA77F2','#F783AC','#A9E34B'
   ];
   // When "income" filter is active, "По типу" makes no sense (one type only) — force "По категориям"
-  const effectiveViewMode = typeFilter === 'income' ? 'cat' : viewMode;
+  // Для расходов всегда показываем по типу, для доходов — по категориям
+  const effectiveViewMode = typeFilter === 'income' ? 'cat' : 'type';
 
   const donutGroups = totals[donutType];
   const donutSlices = [];
@@ -9048,21 +9049,6 @@ async function renderBudgetStats() {
   // Слайд с графиком — общий для обоих режимов
   const chartSlideHtml = `
     <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
-      ${donutTotal > 0 && !isIncomeOnly ? `
-      <div style="display:flex;background:rgba(255,255,255,0.07);border-radius:9px;padding:3px;margin-bottom:12px;gap:2px;">
-        <button id="stats-view-type" onclick="statsSetView('type')"
-          style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-                 background:${effectiveViewMode==='type'?'var(--surface)':'transparent'};
-                 color:${effectiveViewMode==='type'?'var(--text)':'var(--text-dim)'};
-                 box-shadow:${effectiveViewMode==='type'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
-                 transition:all .2s;">По типу</button>
-        <button id="stats-view-cat" onclick="statsSetView('cat')"
-          style="flex:1;padding:6px 4px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-                 background:${effectiveViewMode==='cat'?'var(--surface)':'transparent'};
-                 color:${effectiveViewMode==='cat'?'var(--text)':'var(--text-dim)'};
-                 box-shadow:${effectiveViewMode==='cat'?'0 1px 3px rgba(0,0,0,0.3)':'none'};
-                 transition:all .2s;">По категориям</button>
-      </div>` : ''}
       ${donutTotal > 0 ? `
       <div style="display:flex;align-items:center;gap:16px;">
         <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
