@@ -827,19 +827,22 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <button onclick="openBudgetSettings()" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">Подробнее →</button>
         </div>
       </div>
-      <!-- Заголовок Записи + поиск/фильтр -->
-      <div style="margin-bottom:10px;">
-        <div style="text-align:center;font-size:13px;font-weight:600;color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;">История операций</div>
-        <div style="display:flex;gap:8px;">
-          <div style="flex:1;display:flex;align-items:center;gap:6px;background:var(--surface2);border-radius:20px;padding:7px 12px;border:1px solid rgba(255,255,255,0.07);">
-            <span style="font-size:13px;color:var(--text-dim);">🔍</span>
-            <input id="budget-search" type="text" placeholder="Поиск" oninput="filterBudgetEntries()"
-              style="background:none;border:none;outline:none;color:var(--text);font-size:13px;width:100%;">
-          </div>
+      <!-- История операций: заголовок + иконки в одну строку -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:600;color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;">История операций</span>
+        <div style="display:flex;gap:6px;">
+          <button onclick="toggleBudgetSearch()" id="budget-search-btn"
+            style="background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:5px 11px;color:var(--text-dim);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;">🔍</button>
           <button onclick="openBudgetFilter()" id="budget-filter-btn"
-            style="display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:7px 14px;color:var(--text-dim);font-size:13px;cursor:pointer;white-space:nowrap;">
-            <span>⚙</span> Фильтр
-          </button>
+            style="background:var(--surface2);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:5px 11px;color:var(--text-dim);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;">⚙ Фильтр</button>
+        </div>
+      </div>
+      <!-- Поиск: скрытая строка, раскрывается по кнопке -->
+      <div id="budget-search-bar" style="display:none;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:6px;background:var(--surface2);border-radius:20px;padding:7px 12px;border:1px solid rgba(255,255,255,0.07);">
+          <span style="font-size:13px;color:var(--text-dim);">🔍</span>
+          <input id="budget-search" type="text" placeholder="Поиск по названию и заметкам" oninput="filterBudgetEntries()"
+            style="background:none;border:none;outline:none;color:var(--text);font-size:13px;width:100%;">
         </div>
       </div>
     </div>
@@ -8120,6 +8123,17 @@ function switchBudgetTab(tab) {
   const statsView = document.getElementById('budget-stats-view');
   if (statsView) statsView.style.display = tab === 'stats' ? '' : 'none';
   if (tab === 'stats') { _budgetStatsCache = null; renderBudgetStats(); }
+}
+
+// Показать/скрыть строку поиска
+function toggleBudgetSearch() {
+  const bar = document.getElementById('budget-search-bar');
+  const btn = document.getElementById('budget-search-btn');
+  const visible = bar.style.display !== 'none';
+  bar.style.display = visible ? 'none' : '';
+  btn.style.borderColor = visible ? 'rgba(255,255,255,0.07)' : 'var(--accent)';
+  if (!visible) document.getElementById('budget-search')?.focus();
+  else { document.getElementById('budget-search').value = ''; filterBudgetEntries(); }
 }
 
 // Фильтрация записей по строке поиска
