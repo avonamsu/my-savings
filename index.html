@@ -797,10 +797,11 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
       <!-- Spending analysis block -->
       <div id="budget-analysis" class="chart-wrap" style="margin-bottom:12px;"></div>
-      <!-- Tabs: Записи / Категории -->
+      <!-- Tabs: Записи / Категории / Анализ -->
       <div class="tab-switch" style="margin-bottom:12px;">
         <button class="active" id="budget-tab-entries" onclick="switchBudgetTab('entries')">Записи</button>
         <button id="budget-tab-cats" onclick="switchBudgetTab('cats')">Категории</button>
+        <button id="budget-tab-stats" onclick="switchBudgetTab('stats')">Анализ</button>
       </div>
     </div>
   </div>
@@ -815,6 +816,27 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
              border-radius:var(--radius-sm);color:var(--accent);font-size:14px;font-weight:600;
              padding:11px;cursor:pointer;margin-bottom:14px;">＋ Добавить категорию</button>
     <div id="budget-cats-list"></div>
+  </div>
+  <!-- Stats view -->
+  <div id="budget-stats-view" style="display:none;padding:0 16px;padding-bottom:100px;">
+    <!-- Period picker -->
+    <div class="chart-wrap" style="margin-bottom:12px;">
+      <select id="stats-period" onchange="onStatsPeriodChange()" style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-sm);color:var(--text);padding:8px 10px;font-size:13px;">
+        <option value="month">Текущий месяц</option>
+        <option value="last_month">Прошлый месяц</option>
+        <option value="3months">Последние 3 месяца</option>
+        <option value="6months">Последние 6 месяцев</option>
+        <option value="year">Текущий год</option>
+        <option value="custom">Произвольный период</option>
+      </select>
+      <div id="stats-custom-range" style="display:none;margin-top:10px;">
+        <div style="display:flex;gap:8px;">
+          <div class="field" style="flex:1;margin:0;"><label>С</label><input type="date" id="stats-from" onchange="renderBudgetStats()"></div>
+          <div class="field" style="flex:1;margin:0;"><label>ПО</label><input type="date" id="stats-to" onchange="renderBudgetStats()"></div>
+        </div>
+      </div>
+    </div>
+    <div id="budget-stats-content"></div>
   </div>
 </div>
 
@@ -7907,6 +7929,7 @@ async function importBudgetExcel(input) {
 
     // Invalidate cache and re-render
     _budgetEntriesLoadedMonth = null;
+    _budgetStatsCache = null;
     await renderBudgetPage();
     alert(`Импорт завершён! Добавлено: ${added} записей.${errs ? ' Ошибок: ' + errs : ''}`);
   } catch(e) {
@@ -7933,10 +7956,13 @@ function budgetNextMonth() {
 
 function switchBudgetTab(tab) {
   document.getElementById('budget-entries-view').style.display = tab === 'entries' ? '' : 'none';
-  document.getElementById('budget-cats-view').style.display   = tab === 'cats'    ? '' : 'none';
+  document.getElementById('budget-cats-view').style.display   = tab === 'cats'     ? '' : 'none';
+  document.getElementById('budget-stats-view').style.display  = tab === 'stats'    ? '' : 'none';
   document.getElementById('budget-tab-entries').classList.toggle('active', tab === 'entries');
   document.getElementById('budget-tab-cats').classList.toggle('active', tab === 'cats');
-  if (tab === 'cats') renderBudgetCats();
+  document.getElementById('budget-tab-stats').classList.toggle('active', tab === 'stats');
+  if (tab === 'cats')  renderBudgetCats();
+  if (tab === 'stats') renderBudgetStats();
 }
 
 // Renders the budget page (summary + entries list); loads data from Supabase
@@ -8258,6 +8284,140 @@ function renderBudgetCats() {
   `.trim();
 }
 
+// ── Budget Stats (Analysis tab) ───────────────────────────────────────────────
+
+// Returns [fromDate, toDate] strings YYYY-MM-DD for the selected period
+function _statsPeriodRange() {
+  const period = document.getElementById('stats-period')?.value || 'month';
+  const today  = new Date();
+  const pad    = n => String(n).padStart(2, '0');
+  const ymd    = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+  if (period === 'custom') {
+    return [
+      document.getElementById('stats-from').value || ymd(new Date(today.getFullYear(), today.getMonth(), 1)),
+      document.getElementById('stats-to').value   || ymd(today)
+    ];
+  }
+  if (period === 'month') {
+    return [ymd(new Date(today.getFullYear(), today.getMonth(), 1)), ymd(today)];
+  }
+  if (period === 'last_month') {
+    const f = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const t = new Date(today.getFullYear(), today.getMonth(), 0);
+    return [ymd(f), ymd(t)];
+  }
+  if (period === '3months') {
+    return [ymd(new Date(today.getFullYear(), today.getMonth() - 2, 1)), ymd(today)];
+  }
+  if (period === '6months') {
+    return [ymd(new Date(today.getFullYear(), today.getMonth() - 5, 1)), ymd(today)];
+  }
+  if (period === 'year') {
+    return [ymd(new Date(today.getFullYear(), 0, 1)), ymd(today)];
+  }
+  return [ymd(new Date(today.getFullYear(), today.getMonth(), 1)), ymd(today)];
+}
+
+function onStatsPeriodChange() {
+  const isCustom = document.getElementById('stats-period').value === 'custom';
+  document.getElementById('stats-custom-range').style.display = isCustom ? '' : 'none';
+  if (!isCustom) renderBudgetStats();
+}
+
+// Renders the stats table for the selected period using ALL cached entries
+async function renderBudgetStats() {
+  const el = document.getElementById('budget-stats-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--text-dim);font-size:14px;">Загрузка…</div>';
+
+  // Fetch all entries (not month-limited)
+  let entries = _budgetStatsCache;
+  if (!entries) {
+    const { data, error } = await _sb.from('budget_entries').select('*').order('date');
+    if (error) { el.innerHTML = '<div style="color:var(--danger);padding:20px;">Ошибка загрузки</div>'; return; }
+    _budgetStatsCache = entries = data || [];
+  }
+
+  const [from, to] = _statsPeriodRange();
+  const filtered = entries.filter(e => e.date >= from && e.date <= to);
+
+  // Aggregate by type → group → category
+  const totals = { expense: {}, income: {} };
+  for (const e of filtered) {
+    const t = e.type; // 'expense' | 'income'
+    const g = e.group || (t === 'expense' ? 'Основное' : 'Доходы');
+    const c = e.category;
+    if (!totals[t][g]) totals[t][g] = {};
+    totals[t][g][c] = (totals[t][g][c] || 0) + Number(e.amount);
+  }
+
+  const totalExp = filtered.filter(e => e.type === 'expense').reduce((s, e) => s + Number(e.amount), 0);
+  const totalInc = filtered.filter(e => e.type === 'income').reduce((s,  e) => s + Number(e.amount), 0);
+
+  // Render a group block with category rows and a bar
+  const renderGroup = (groupName, cats, groupTotal, sectionTotal, colorVar) => {
+    const pct = sectionTotal > 0 ? Math.round(groupTotal / sectionTotal * 100) : 0;
+    const rows = Object.entries(cats)
+      .sort((a, b) => b[1] - a[1])
+      .map(([cat, amt]) => {
+        const catPct = groupTotal > 0 ? Math.round(amt / groupTotal * 100) : 0;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;
+                    padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;">
+          <span style="color:var(--text);">${cat}</span>
+          <div style="text-align:right;">
+            <span style="color:var(--text);font-weight:600;">${fmt(amt)} ₽</span>
+            <span style="color:var(--text-dim);font-size:11px;margin-left:6px;">${catPct}%</span>
+          </div>
+        </div>`;
+      }).join('');
+
+    return `<div class="chart-wrap" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span class="section-title">${groupName}</span>
+        <div style="text-align:right;">
+          <span style="font-size:14px;font-weight:700;color:${colorVar};">${fmt(groupTotal)} ₽</span>
+          <span style="font-size:11px;color:var(--text-dim);margin-left:6px;">${pct}%</span>
+        </div>
+      </div>
+      <div style="height:4px;background:var(--surface2);border-radius:2px;margin-bottom:10px;">
+        <div style="height:4px;background:${colorVar};border-radius:2px;width:${pct}%;transition:width .3s;"></div>
+      </div>
+      ${rows}
+    </div>`;
+  };
+
+  const GROUP_ORDER = ['Основное', 'Желания', 'Накопления'];
+  const expKeys = [...GROUP_ORDER.filter(g => g in totals.expense),
+                   ...Object.keys(totals.expense).filter(g => !GROUP_ORDER.includes(g))];
+
+  const expBlocks = expKeys.map(g =>
+    renderGroup(g, totals.expense[g], Object.values(totals.expense[g]).reduce((s,v) => s+v, 0), totalExp, 'var(--danger)')
+  ).join('');
+
+  const incBlocks = Object.keys(totals.income).map(g =>
+    renderGroup(g, totals.income[g], Object.values(totals.income[g]).reduce((s,v) => s+v, 0), totalInc, 'var(--accent)')
+  ).join('');
+
+  el.innerHTML = `
+    <div class="chart-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div style="text-align:center;">
+        <div class="hero-label">Расходы</div>
+        <div style="font-size:16px;font-weight:700;color:var(--danger);">${fmt(totalExp)} ₽</div>
+      </div>
+      <div style="text-align:center;">
+        <div class="hero-label">Доходы</div>
+        <div style="font-size:16px;font-weight:700;color:var(--accent);">${fmt(totalInc)} ₽</div>
+      </div>
+    </div>
+    ${expBlocks.length ? `<div class="section-title" style="margin-bottom:8px;">Расходы</div>${expBlocks}` : ''}
+    ${incBlocks.length ? `<div class="section-title" style="margin:12px 0 8px;">Доходы</div>${incBlocks}` : ''}
+    ${!expBlocks.length && !incBlocks.length ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}
+  `.trim();
+}
+
+let _budgetStatsCache = null; // all-time entries cache for stats tab
+
 // Returns emoji for a category by type, group and name (empty string if none)
 function _budgetCatEmoji(type, group, name) {
   budgetInit();
@@ -8463,6 +8623,7 @@ async function saveBudgetEntry() {
   const idx = _budgetEntriesCache.findIndex(e => e.id === entryId);
   if (idx >= 0) _budgetEntriesCache[idx] = row;
   else _budgetEntriesCache.push(row);
+  _budgetStatsCache = null; // invalidate stats cache
 
   closeBudgetEntryModal();
   // Sync displayed month to entry's month; force reload if month changed
@@ -8482,6 +8643,7 @@ async function deleteBudgetEntry() {
   if (error) { alert('Ошибка удаления: ' + error.message); return; }
 
   _budgetEntriesCache = _budgetEntriesCache.filter(e => e.id !== _budgetEditId);
+  _budgetStatsCache = null;
   closeBudgetEntryModal();
   renderBudgetPage().catch(console.error);
 }
