@@ -983,7 +983,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       style="background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;padding:0;line-height:1;">✕</button>
   </div>
   <!-- Scrollable content -->
-  <div style="overflow-y:auto;padding:14px 20px;">
+  <div style="overflow-y:auto;padding:14px 20px;" ontouchstart="event.stopPropagation()" ontouchmove="event.stopPropagation()">
     <button onclick="budgetAddCatPrompt()"
       style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);
              border-radius:var(--radius-sm);color:var(--accent);font-size:14px;font-weight:600;
@@ -10271,6 +10271,9 @@ function gdriveInit() {
     const page = getActivePage();
     if (!page) return;
     if (page.scrollTop > 0) return; // не в самом верху — не начинаем
+    // Не запускать pull-to-refresh если открыта модалка категорий
+    const catsModal = document.getElementById('budget-cats-modal');
+    if (catsModal && catsModal.style.display === 'flex') return;
     startY = e.touches[0].clientY;
     pulling = true;
     triggered = false;
