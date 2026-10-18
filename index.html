@@ -9055,7 +9055,7 @@ async function renderBudgetStats() {
                  opacity:0;pointer-events:none;">‹</button>
 
       <!-- Слайдер -->
-      <div id="stats-carousel-track" style="overflow:hidden;flex:1;transition:height .3s ease;">
+      <div id="stats-carousel-track" style="overflow:hidden;flex:1;transition:height .3s ease;height:0;">
         <div id="stats-carousel-inner"
              style="display:flex;transition:transform .3s ease;will-change:transform;">
 
@@ -9182,14 +9182,14 @@ async function renderBudgetStats() {
     window._statsCarouselGo = (dir) => goTo(slide + dir);
 
     // Восстановить позицию слайда без анимации
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       const inner = document.getElementById('stats-carousel-inner');
       if (inner) inner.style.transition = 'none'; // выключаем анимацию при восстановлении
       goTo(_statsCarouselSlide);
       requestAnimationFrame(() => {
         if (inner) inner.style.transition = 'transform .3s ease'; // включаем обратно
       });
-    });
+    }, 50);
 
     // Touch-свайп по треку
     const track = document.getElementById('stats-carousel-track');
