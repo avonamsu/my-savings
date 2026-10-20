@@ -6010,7 +6010,13 @@ function openModal(mode) {
   if(mode==='income'){
     _incomeType = 'deposit';
     const sel=document.getElementById('i-saving-ref');
-    sel.innerHTML='<option value="">— выбери счёт —</option>'+state.savings.map(s=>`<option value="${s.id}">${s.icon} ${s.name}${(s.currency&&s.currency!=='RUB')?' ('+currSym(s.currency)+')':''}</option>`).join('');
+    // Исключаем закрытые счета (earlyClosed) и истёкшие вклады без автопродления
+    const activeSavings = state.savings.filter(s => {
+      if (s.earlyClosed) return false;
+      if (s.isDeposit && s.dateEnd && s.dateEnd < today() && !s.autorenew) return false;
+      return true;
+    });
+    sel.innerHTML='<option value="">— выбери счёт —</option>'+activeSavings.map(s=>`<option value="${s.id}">${s.icon} ${s.name}${(s.currency&&s.currency!=='RUB')?' ('+currSym(s.currency)+')':''}</option>`).join('');
     document.querySelectorAll('.income-type-btn').forEach(b=>b.classList.remove('active'));
     const defBtn = document.getElementById('itype-deposit');
     if(defBtn) defBtn.classList.add('active');
