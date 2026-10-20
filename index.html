@@ -2638,10 +2638,10 @@ function calcIncomeAmountRub(item) {
   return Number(item.amount)||0;
 }
 
-// Monthly income from a single saving in RUB. Returns 0 if excluded or no rate.
-// For deposits — uses calcDeposit.monthlyIncome; for savings accounts — rate/12 on current balance.
+// Monthly income from a single saving in RUB. Returns 0 if incomeExcluded or no rate.
+// s.excluded (not in balance) does NOT block income — user can include it in income separately.
 function calcSavingMonthlyIncome(s) {
-  if (s.excluded || s.incomeExcluded) return 0;
+  if (s.incomeExcluded) return 0;
   if (s.isDeposit && s.rate && s.dateStart && s.dateEnd)
     return toRub(calcDeposit(s).monthlyIncome, s.currency||'RUB');
   if (s.isSavingsAccount && s.rate) {
