@@ -4028,10 +4028,11 @@ function openIncomeBreakdownSheet() {
   document.getElementById('income-breakdown-sheet')?.remove();
   const total = calcTotalIncome();
   const totalYearly = total * 12;
-  const autoItems = (state.savings||[]).filter(s => !s.excluded && (s.isDeposit||s.isSavingsAccount) && (calcSavingMonthlyIncome(s) > 0 || s.incomeExcluded));
+  const autoItems = (state.savings||[]).filter(s => (s.isDeposit||s.isSavingsAccount) && (calcSavingMonthlyIncome(s) > 0 || s.incomeExcluded || s.excluded));
   const manualItems = (state.income||[]).filter(x => !x.savingRef || x.calcMode === 'fixed' || !state.savings.find(s=>s.id===x.savingRef));
   const groups = {};
-  autoItems.filter(s=>!s.incomeExcluded).forEach(s => {
+  // В разбивке считаем только те счета, что включены и в доход и в баланс
+  autoItems.filter(s=>!s.incomeExcluded && !s.excluded).forEach(s => {
     const key = s.isDeposit ? '💰 Вклады' : '🏦 Накопит. счета';
     groups[key] = (groups[key]||0) + calcSavingMonthlyIncome(s);
   });
@@ -5256,8 +5257,8 @@ function renderIncome() {
   window._incomeRealYield = realYield;
   window._incomeInflPct = inflPct;
 
-  // Авто-строки: все вклады и накопительные счета (включая отключённые от дохода — показываем, но зачёркнуто)
-  const autoItems = (state.savings||[]).filter(s => !s.excluded && (s.isDeposit||s.isSavingsAccount) && (calcSavingMonthlyIncome(s) > 0 || s.incomeExcluded));
+  // Авто-строки: все вклады и накопительные счета (включая отключённые в Счетах — они всё равно видны здесь)
+  const autoItems = (state.savings||[]).filter(s => (s.isDeposit||s.isSavingsAccount) && (calcSavingMonthlyIncome(s) > 0 || s.incomeExcluded || s.excluded));
   // Ручные: без savingRef, с несуществующим savingRef, или с fixed calcMode (ручная сумма)
   const manualItems = (state.income||[]).filter(x => !x.savingRef || x.calcMode === 'fixed' || !state.savings.find(s=>s.id===x.savingRef));
 
@@ -5283,15 +5284,19 @@ function renderIncome() {
     .filter(s => !query || s.name.toLowerCase().includes(query))
     .map(s => {
       const excl = !!s.incomeExcluded;
-      const amt = excl ? 0 : calcSavingMonthlyIncome(s);
+      // s.excluded = отключён в Счетах (не в балансе), но здесь всё равно показываем
+      const balExcl = !!s.excluded;
+      const amt = (excl || balExcl) ? 0 : calcSavingMonthlyIncome(s);
       const icon = s.isDeposit ? '💰' : '🏦';
       const color = s.isDeposit ? '#4ECDC4' : '#5BC8AF';
       const ratePct = s.rate ? Number(s.rate).toFixed(1)+'% год.' : '';
-      const sub = ratePct ? `авто · ${ratePct}` : 'авто';
-      const opacity = excl ? 'opacity:0.45;' : '';
+      // Подпись: если отключён в Счетах — показываем предупреждение
+      const subBase = ratePct ? `авто · ${ratePct}` : 'авто';
+      const sub = balExcl ? `${subBase} · <span style="color:#FFB347;">не в балансе</span>` : subBase;
+      const opacity = (excl || balExcl) ? 'opacity:0.45;' : '';
       return `<div class="card-item savings-card-item" style="${opacity}">
         <div class="card-item-inner">
-          <label class="toggle" style="flex-shrink:0;margin-right:8px;" title="Учитывать в доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('saving','${s.id}')"><span class="toggle-slider"></span></label>
+          <label class="toggle" style="flex-shrink:0;margin-right:8px;" title="Учитывать в пассивном доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('saving','${s.id}')"><span class="toggle-slider"></span></label>
           <div class="card-icon" style="background:${color}22;">${icon}</div>
           <div class="card-info"><div class="card-name">${s.name}</div><div class="card-sub">${sub}</div></div>
           <div class="card-amount" style="color:${color};">${excl ? '<span style="color:var(--text-dim);font-size:12px;">не учит.</span>' : '+'+fmt(Math.round(amt))+' ₽'}</div>
