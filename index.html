@@ -5292,16 +5292,25 @@ function renderIncome() {
     .filter(s => !query || s.name.toLowerCase().includes(query))
     .map(s => {
       const excl = !!s.incomeExcluded;
-      // s.excluded = отключён в Счетах (не в балансе), но здесь всё равно показываем
+      // s.excluded = отключён в Счетах (не в балансе), но здесь показываем и разрешаем включать
       const balExcl = !!s.excluded;
-      const amt = (excl || balExcl) ? 0 : calcSavingMonthlyIncome(s);
+      // Сумма = 0 только если тоггл дохода выключен (incomeExcluded); balExcl не блокирует.
+      // calcSavingMonthlyIncome возвращает 0 для s.excluded, поэтому считаем напрямую.
+      const amt = excl ? 0 : (() => {
+        if (s.isDeposit && s.rate && s.dateStart && s.dateEnd)
+          return toRub(calcDeposit(s).monthlyIncome, s.currency||'RUB');
+        if (s.isSavingsAccount && s.rate)
+          return getSavingCurrentAmountRub(s) * Number(s.rate) / 100 / 12;
+        return 0;
+      })();
       const icon = s.isDeposit ? '💰' : '🏦';
       const color = s.isDeposit ? '#4ECDC4' : '#5BC8AF';
       const ratePct = s.rate ? Number(s.rate).toFixed(1)+'% год.' : '';
-      // Подпись: если отключён в Счетах — показываем предупреждение
+      // Подпись: если отключён в Счетах — показываем предупреждение (независимо от тоггла дохода)
       const subBase = ratePct ? `авто · ${ratePct}` : 'авто';
       const sub = balExcl ? `${subBase} · <span style="color:#FFB347;">не в балансе</span>` : subBase;
-      const opacity = (excl || balExcl) ? 'opacity:0.45;' : '';
+      // Затемняем только если тоггл дохода выключен
+      const opacity = excl ? 'opacity:0.45;' : '';
       return `<div class="card-item savings-card-item" style="${opacity}">
         <div class="card-item-inner">
           <label class="toggle" style="flex-shrink:0;margin-right:8px;" title="Учитывать в пассивном доходе"><input type="checkbox" ${excl?'':'checked'} onchange="toggleIncomeExcluded('saving','${s.id}')"><span class="toggle-slider"></span></label>
