@@ -5265,8 +5265,8 @@ function renderIncome() {
   window._incomeRealYield = realYield;
   window._incomeInflPct = inflPct;
 
-  // Авто-строки: все вклады и накопительные счета (включая отключённые в Счетах — они всё равно видны здесь)
-  const autoItems = (state.savings||[]).filter(s => (s.isDeposit||s.isSavingsAccount) && (calcSavingMonthlyIncome(s) > 0 || s.incomeExcluded || s.excluded));
+  // Авто-строки: вклады и накопительные счета, кроме полностью закрытых (s.excluded)
+  const autoItems = (state.savings||[]).filter(s => (s.isDeposit||s.isSavingsAccount) && !s.excluded && (calcSavingMonthlyIncome(s) > 0 || s.incomeExcluded));
   // Ручные: без savingRef, с несуществующим savingRef, или с fixed calcMode (ручная сумма)
   const manualItems = (state.income||[]).filter(x => !x.savingRef || x.calcMode === 'fixed' || !state.savings.find(s=>s.id===x.savingRef));
 
