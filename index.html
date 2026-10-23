@@ -7969,7 +7969,7 @@ async function _fetchAllBudgetEntries(btn, loadingText) {
   if (btn) { btn.innerHTML = '⏳ ' + loadingText; btn.disabled = true; }
   if (!_sbUser) { if (btn) { btn.innerHTML = orig; btn.disabled = false; } return []; }
   const { data, error } = await _sb.from('budget_entries')
-    .select('*').eq('user_id', _sbUser.id).order('date', { ascending: true });
+    .select('*').order('date', { ascending: true });
   if (btn) { btn.innerHTML = orig; btn.disabled = false; }
   if (error) throw new Error(error.message);
   return data || [];
@@ -8195,7 +8195,7 @@ async function importBudgetExcel(input) {
         .slice(2)
         .filter(r => r[2] && r[3]) // must have amount + date
         .map(r => ({
-          user_id:  '122bf844-b593-4ac1-ade5-5e6f29b6f251',
+          user_id:  _sbUser?.id || '',
           type,
           group:    r[0] || (type === 'expense' ? 'Основное' : null),
           category: r[1] || '',
@@ -8216,7 +8216,7 @@ async function importBudgetExcel(input) {
     // Upsert in batches of 500 (no duplicate check needed — Supabase upsert by unique key)
     // Since we don't have a natural unique key, we INSERT and skip duplicates via onConflict
     // Strategy: fetch existing (date+category+amount+type) keys, insert only new
-    const { data: existing } = await _sb.from('budget_entries').select('type,category,amount,date');
+    const { data: existing } = await _sb.from('budget_entries').select('type,category,amount,date').eq('user_id', _sbUser.id);
     const existKeys = new Set((existing || []).map(e => `${e.type}|${e.category}|${e.amount}|${e.date}`));
     const toInsert = all.filter(e => !existKeys.has(`${e.type}|${e.category}|${e.amount}|${e.date}`));
 
