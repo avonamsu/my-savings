@@ -7967,8 +7967,9 @@ function budgetInit() {
 async function _fetchAllBudgetEntries(btn, loadingText) {
   const orig = btn ? btn.innerHTML : '';
   if (btn) { btn.innerHTML = '⏳ ' + loadingText; btn.disabled = true; }
+  if (!_sbUser) { if (btn) { btn.innerHTML = orig; btn.disabled = false; } return []; }
   const { data, error } = await _sb.from('budget_entries')
-    .select('*').order('date', { ascending: true });
+    .select('*').eq('user_id', _sbUser.id).order('date', { ascending: true });
   if (btn) { btn.innerHTML = orig; btn.disabled = false; }
   if (error) throw new Error(error.message);
   return data || [];
