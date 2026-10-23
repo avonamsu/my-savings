@@ -8067,7 +8067,8 @@ async function exportBudgetExcel() {
   const btn = document.getElementById('btn-export-all');
   try {
     const entries = await _fetchAllBudgetEntries(btn, 'Загрузка…');
-    if (!entries.length) { alert('Нет данных для экспорта'); return; }
+    console.log('exportBudgetExcel: entries =', entries, '_sbUser =', _sbUser?.id);
+    if (!entries.length) { alert('Нет данных для экспорта. Открой консоль (F12) и посмотри лог exportBudgetExcel.'); return; }
     _downloadBudgetXlsx(
       _budgetToRows(entries, 'expense'),
       _budgetToRows(entries, 'income'),
