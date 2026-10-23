@@ -3211,15 +3211,15 @@ function renderNextSubscriptionsWidget() {
     return;
   }
 
-  // subDate хранится как YYYY-MM-DD — извлекаем день месяца и ищем ближайшую дату
+  // subDate — реальная следующая дата списания (YYYY-MM-DD).
+  // Если дата уже прошла, сдвигаем на period месяцев вперёд до первой будущей даты.
   const withDays = subs.map(g => {
-    const parts = g.subDate.split('-');
-    const day = parseInt(parts[2]) || parseInt(parts[0]) || 1; // YYYY-MM-DD или просто число
-    let next = new Date(currentYear, currentMonth, day);
+    const period = g.subPeriod || 1; // период в месяцах
+    let next = new Date(g.subDate + 'T00:00:00');
     next.setHours(0,0,0,0);
-    if (next.getTime() < today) {
-      next = new Date(currentYear, currentMonth + 1, day);
-      next.setHours(0,0,0,0);
+    // Сдвигаем на period месяцев вперёд, пока дата не станет >= сегодня
+    while (next.getTime() < today) {
+      next.setMonth(next.getMonth() + period);
     }
     const daysLeft = Math.round((next.getTime() - today) / 86400000);
     return { ...g, daysLeft, nextDate: next };
@@ -3232,9 +3232,10 @@ function renderNextSubscriptionsWidget() {
     const color = isUrgent ? 'var(--danger)' : g.daysLeft <= 7 ? 'var(--warn)' : 'var(--text-dim)';
     const label = g.daysLeft === 0 ? '⚠️ Сегодня' : `через ${g.daysLeft} дн.`;
     const dateStr = g.nextDate.toLocaleDateString('ru-RU', { day:'numeric', month:'short' });
+    // Показываем полную сумму списания (не делим на период)
     const amtDisplay = g.subCurrency && g.subCurrency !== 'RUB' && g.subAmountOrig
-      ? `${fmt2(g.subAmountOrig / (g.subPeriod||1))} ${CURRENCY_SYMBOLS?.[g.subCurrency]||g.subCurrency}`
-      : `${fmt(Math.round(g.amount / (g.subPeriod||1)))} ₽`;
+      ? `${fmt2(g.subAmountOrig)} ${CURRENCY_SYMBOLS?.[g.subCurrency]||g.subCurrency}`
+      : `${fmt(Math.round(g.amount))} ₽`;
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;${g !== shown[shown.length-1] ? 'border-bottom:1px solid rgba(255,255,255,0.05);' : ''}">
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:22px;">${g.emoji||'📦'}</span>
