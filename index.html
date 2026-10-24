@@ -7995,7 +7995,7 @@ function _budgetToRows(entries, type) {
         e.group || (type === 'expense' ? 'Основное' : 'Доходы'),
         e.category,
         Number(e.amount),
-        e.date,          // YYYY-MM-DD string; Excel will display as text — fine for raw data
+        new Date(e.date + 'T00:00:00'), // proper Excel date (not string)
         e.note || ''
       ])
   ];
@@ -8053,6 +8053,46 @@ function _mergeCatsSheet(existingAoa) {
   return result;
 }
 
+// Adds Excel Data Validation dropdowns to columns A (Категория) and B (Тип/Типы)
+// Uses named ranges from Категории sheet so Excel resolves them correctly
+function _addDropdowns(ws, type, rowCount) {
+  if (rowCount < 1) return;
+  const dataStart = 3; // row index (1-based) where data starts (row 1=title, row 2=headers, row 3=data)
+  const lastRow   = dataStart + rowCount - 1;
+  const cats = state.budget.categories;
+  const GROUP_ORDER = ['Основное', 'Желания', 'Накопления'];
+
+  // Build flat lists for dropdown formulas
+  const groups = type === 'expense'
+    ? GROUP_ORDER.filter(g => (cats.expense[g]||[]).length)
+    : ['Доходы'];
+  const categories = type === 'expense'
+    ? GROUP_ORDER.flatMap(g => (cats.expense[g]||[]).filter(c=>!c.archived).map(c=>c.name))
+    : (cats.income||[]).filter(c=>!c.archived).map(c=>c.name);
+
+  // Helper: build quoted comma list for Excel validation formula
+  const toFormula = list => '"' + list.join(',') + '"';
+
+  if (!ws['!dataValidation']) ws['!dataValidation'] = [];
+
+  // Col A — group/категория
+  if (groups.length) {
+    ws['!dataValidation'].push({
+      type: 'list', sqref: `A${dataStart}:A${lastRow}`,
+      formula1: toFormula(groups), showDropDown: false,
+      error: 'Выберите значение из списка', errorTitle: 'Неверное значение', showErrorMessage: true
+    });
+  }
+  // Col B — subcategory/тип
+  if (categories.length) {
+    ws['!dataValidation'].push({
+      type: 'list', sqref: `B${dataStart}:B${lastRow}`,
+      formula1: toFormula(categories), showDropDown: false,
+      error: 'Выберите значение из списка', errorTitle: 'Неверное значение', showErrorMessage: true
+    });
+  }
+}
+
 // Builds a workbook from two row-arrays and triggers download
 function _downloadBudgetXlsx(expenses, incomes, filename) {
   const wb    = XLSX.utils.book_new();
@@ -8060,6 +8100,11 @@ function _downloadBudgetXlsx(expenses, incomes, filename) {
   const wsExp = XLSX.utils.aoa_to_sheet(expenses);
   const wsInc = XLSX.utils.aoa_to_sheet(incomes);
   wsExp['!cols'] = cols; wsInc['!cols'] = cols;
+
+  // Add dropdowns — rowCount = data rows only (total rows minus 2 header rows)
+  _addDropdowns(wsExp, 'expense', expenses.length - 2);
+  _addDropdowns(wsInc, 'income',  incomes.length  - 2);
+
   // Категории sheet — always first so it matches original file order
   const wsCats = XLSX.utils.aoa_to_sheet(_budgetCatsToAoa());
   wsCats['!cols'] = [{wch:22},{wch:22},{wch:22},{wch:22}];
