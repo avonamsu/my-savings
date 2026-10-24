@@ -8068,11 +8068,11 @@ async function exportBudgetExcel() {
   try {
     const entries = await _fetchAllBudgetEntries(btn, 'Загрузка…');
     if (!entries.length) { alert('Нет данных для экспорта'); return; }
-    const exp = _budgetToRows(entries, 'expense');
-    const inc = _budgetToRows(entries, 'income');
-    alert(`Строк расходов: ${exp.length}, доходов: ${inc.length}. Первая запись: ${JSON.stringify(entries[0])}`);
-    return;
-    _downloadBudgetXlsx(exp, inc, 'budget_all.xlsx');
+    _downloadBudgetXlsx(
+      _budgetToRows(entries, 'expense'),
+      _budgetToRows(entries, 'income'),
+      'budget_all.xlsx'
+    );
   } catch(e) { alert('Ошибка: ' + e.message); }
 }
 
