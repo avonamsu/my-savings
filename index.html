@@ -913,7 +913,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
             style="display:none;position:absolute;right:0;top:calc(100% + 6px);
                    background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:12px;
                    box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:210px;z-index:50;overflow:hidden;">
-            <button onclick="exportBudgetExcel();toggleStatsExcelMenu()"
+            <button onclick="openExportPopup();toggleStatsExcelMenu()"
               style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;
                      border-bottom:1px solid rgba(255,255,255,0.07);color:var(--text);font-size:13px;
                      padding:12px 14px;cursor:pointer;text-align:left;">
@@ -8115,18 +8115,40 @@ function _downloadBudgetXlsx(expenses, incomes, filename) {
   XLSX.writeFile(wb, filename);
 }
 
-// 1. СКАЧАТЬ ВСЕ ЗАПИСИ — generates a fresh file from DB
+// Export popup open/close
+function openExportPopup() {
+  // Default: from = first day of current month, to = today
+  const now = new Date();
+  const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+  const today = `${y}-${m}-${String(now.getDate()).padStart(2,'0')}`;
+  document.getElementById('export-date-from').value = `${y}-${m}-01`;
+  document.getElementById('export-date-to').value   = today;
+  const el = document.getElementById('export-popup-overlay');
+  el.style.display = 'flex';
+}
+function closeExportPopup() {
+  document.getElementById('export-popup-overlay').style.display = 'none';
+}
+
+// 1. СКАЧАТЬ ВСЕ ЗАПИСИ — generates a fresh file from DB, filtered by date range
 async function exportBudgetExcel() {
-  const btn = document.getElementById('btn-export-all');
+  closeExportPopup();
+  const from = document.getElementById('export-date-from').value; // YYYY-MM-DD or ''
+  const to   = document.getElementById('export-date-to').value;
+  const btn  = document.getElementById('btn-export-all');
   try {
-    const entries = await _fetchAllBudgetEntries(btn, 'Загрузка…');
+    let entries = await _fetchAllBudgetEntries(btn, 'Загрузка…');
     if (!entries.length) { alert('Нет данных для экспорта'); return; }
-    const dates = entries.map(e => e.date).sort();
-    console.log('DEBUG export:', entries.length, 'entries, from', dates[0], 'to', dates[dates.length-1]);
+    // Filter by date range if set
+    if (from) entries = entries.filter(e => e.date >= from);
+    if (to)   entries = entries.filter(e => e.date <= to);
+    if (!entries.length) { alert('За выбранный период записей нет'); return; }
+    // Build filename with period
+    const suffix = (from || to) ? `_${from||''}__${to||''}` : '_all';
     _downloadBudgetXlsx(
       _budgetToRows(entries, 'expense'),
       _budgetToRows(entries, 'income'),
-      'budget_all.xlsx'
+      `budget${suffix}.xlsx`
     );
   } catch(e) { alert('Ошибка: ' + e.message); }
 }
@@ -11043,7 +11065,42 @@ checkPiggyReminders();
   </div>
 </div>
 
-
+<!-- Export date range popup -->
+<div id="export-popup-overlay"
+  onclick="if(event.target===this)closeExportPopup()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;
+         align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:16px;
+              padding:24px;width:300px;box-shadow:0 16px 48px rgba(0,0,0,0.5);">
+    <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px;">Скачать записи</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--text-secondary);">
+        С
+        <input id="export-date-from" type="date"
+          style="background:var(--bg);border:1px solid rgba(255,255,255,0.1);border-radius:8px;
+                 color:var(--text);padding:8px 10px;font-size:14px;outline:none;">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--text-secondary);">
+        По
+        <input id="export-date-to" type="date"
+          style="background:var(--bg);border:1px solid rgba(255,255,255,0.1);border-radius:8px;
+                 color:var(--text);padding:8px 10px;font-size:14px;outline:none;">
+      </label>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <button onclick="closeExportPopup()"
+        style="flex:1;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;
+               color:var(--text-secondary);font-size:13px;padding:9px;cursor:pointer;">
+        Отмена
+      </button>
+      <button onclick="exportBudgetExcel()"
+        style="flex:1;background:var(--accent);border:none;border-radius:8px;
+               color:#fff;font-size:13px;font-weight:600;padding:9px;cursor:pointer;">
+        Скачать
+      </button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
