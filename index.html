@@ -7963,16 +7963,23 @@ function budgetInit() {
 
 // ── Excel helpers ─────────────────────────────────────────────────────────────
 
-// Fetches ALL entries from Supabase sorted by date
+// Fetches ALL entries from Supabase sorted by date (paginates to bypass 1000-row limit)
 async function _fetchAllBudgetEntries(btn, loadingText) {
   const orig = btn ? btn.innerHTML : '';
   if (btn) { btn.innerHTML = '⏳ ' + loadingText; btn.disabled = true; }
   if (!_sbUser) { if (btn) { btn.innerHTML = orig; btn.disabled = false; } return []; }
-  const { data, error } = await _sb.from('budget_entries')
-    .select('*').order('date', { ascending: true });
+  const PAGE = 1000;
+  let all = [], from = 0;
+  while (true) {
+    const { data, error } = await _sb.from('budget_entries')
+      .select('*').order('date', { ascending: true }).range(from, from + PAGE - 1);
+    if (error) { if (btn) { btn.innerHTML = orig; btn.disabled = false; } throw new Error(error.message); }
+    all = all.concat(data || []);
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
+  }
   if (btn) { btn.innerHTML = orig; btn.disabled = false; }
-  if (error) throw new Error(error.message);
-  return data || [];
+  return all;
 }
 
 // Converts DB entries → aoa rows for a sheet (Расходы or Доходы)
@@ -8068,6 +8075,8 @@ async function exportBudgetExcel() {
   try {
     const entries = await _fetchAllBudgetEntries(btn, 'Загрузка…');
     if (!entries.length) { alert('Нет данных для экспорта'); return; }
+    const dates = entries.map(e => e.date).sort();
+    console.log('DEBUG export:', entries.length, 'entries, from', dates[0], 'to', dates[dates.length-1]);
     _downloadBudgetXlsx(
       _budgetToRows(entries, 'expense'),
       _budgetToRows(entries, 'income'),
