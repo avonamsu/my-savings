@@ -7988,7 +7988,7 @@ function _budgetToRows(entries, type) {
   const typeCol = type === 'expense' ? 'Тип'     : 'Tипы';   // matches original spelling
   const rows = [
     [title],
-    ['Категория', typeCol, 'Сумма', 'Дата', 'Заметки'],
+    ['Категория', typeCol, 'Сумма', 'Дата', 'Заметки', 'id'],
     ...entries
       .filter(e => e.type === type)
       .map(e => [
@@ -7996,7 +7996,8 @@ function _budgetToRows(entries, type) {
         e.category,
         Number(e.amount),
         new Date(e.date + 'T00:00:00'), // proper Excel date (not string)
-        e.note || ''
+        e.note || '',
+        e.id  // DB id for dedup in updateBudgetExcel
       ])
   ];
   return rows;
@@ -8096,7 +8097,7 @@ function _addDropdowns(ws, type, rowCount) {
 // Builds a workbook from two row-arrays and triggers download
 function _downloadBudgetXlsx(expenses, incomes, filename) {
   const wb    = XLSX.utils.book_new();
-  const cols  = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40}];
+  const cols  = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40},{wch:38,hidden:true}];
   const wsExp = XLSX.utils.aoa_to_sheet(expenses);
   const wsInc = XLSX.utils.aoa_to_sheet(incomes);
   wsExp['!cols'] = cols; wsInc['!cols'] = cols;
@@ -8153,23 +8154,25 @@ async function updateBudgetExcel(input) {
     const exExp = existingRows('Расходы');
     const exInc = existingRows('Доходы');
 
-    // Build dedup keys from existing file: "group|cat|amount|date"
-    const key = r => `${r[0]}|${r[1]}|${r[2]}|${r[3]}`;
-    const expKeys = new Set(exExp.map(key));
-    const incKeys = new Set(exInc.map(key));
+    // Build dedup sets from existing file — prefer id (col F, index 5), fallback to "group|cat|amount|date"
+    const legacyKey = r => `${r[0]}|${r[1]}|${r[2]}|${r[3]}`;
+    const expIds  = new Set(exExp.map(r => r[5]).filter(Boolean));
+    const incIds  = new Set(exInc.map(r => r[5]).filter(Boolean));
+    const expKeys = new Set(exExp.filter(r => !r[5]).map(legacyKey)); // legacy rows without id
+    const incKeys = new Set(exInc.filter(r => !r[5]).map(legacyKey));
 
     // Fetch all entries from DB
     const entries = await _fetchAllBudgetEntries(null, '');
 
-    // New rows not yet in the file
+    // New rows not yet in the file — check by id first, fallback to legacy key
     const newExp = entries
       .filter(e => e.type === 'expense')
-      .map(e => [e.group || 'Основное', e.category, Number(e.amount), e.date, e.note || ''])
-      .filter(r => !expKeys.has(key(r)));
+      .map(e => [e.group || 'Основное', e.category, Number(e.amount), new Date(e.date + 'T00:00:00'), e.note || '', e.id])
+      .filter(r => !expIds.has(r[5]) && !expKeys.has(legacyKey(r)));
     const newInc = entries
       .filter(e => e.type === 'income')
-      .map(e => [e.group || 'Доходы', e.category, Number(e.amount), e.date, e.note || ''])
-      .filter(r => !incKeys.has(key(r)));
+      .map(e => [e.group || 'Доходы', e.category, Number(e.amount), new Date(e.date + 'T00:00:00'), e.note || '', e.id])
+      .filter(r => !incIds.has(r[5]) && !incKeys.has(legacyKey(r)));
 
     if (!newExp.length && !newInc.length) {
       alert('Файл уже актуален, новых записей нет.');
@@ -8181,12 +8184,12 @@ async function updateBudgetExcel(input) {
     const appendToSheet = (sheetName, title, typeCol, existingData, newRows) => {
       const allRows = [
         [title],
-        ['Категория', typeCol, 'Сумма', 'Дата', 'Заметки'],
+        ['Категория', typeCol, 'Сумма', 'Дата', 'Заметки', 'id'],
         ...existingData,
         ...newRows
       ];
       const ws = XLSX.utils.aoa_to_sheet(allRows);
-      ws['!cols'] = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40}];
+      ws['!cols'] = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40},{wch:38,hidden:true}];
       // Replace or add sheet
       if (wb.SheetNames.includes(sheetName)) {
         wb.Sheets[sheetName] = ws;
