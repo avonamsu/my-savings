@@ -959,18 +959,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <!-- Stats view (default/main budget view) -->
   <div id="budget-stats-view" style="display:none;padding-bottom:140px;">
-    <!-- навигация назад + тип-фильтр -->
+    <!-- навигация назад -->
     <div style="display:flex;align-items:center;margin-bottom:12px;">
       <button onclick="switchBudgetTab('entries')"
         style="background:none;border:none;color:var(--accent);font-size:13px;padding:0 10px 0 0;cursor:pointer;display:flex;align-items:center;gap:4px;">
         ‹ История
       </button>
-        <select id="stats-type-select" onchange="statsSetType(this.value)"
-          style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;
-                 color:var(--text-dim);padding:4px 9px;font-size:12px;height:auto;cursor:pointer;">
-          <option value="expense">Расходы</option>
-          <option value="income">Доходы</option>
-        </select>
     </div>
     <div id="budget-stats-content"></div>
   </div>
@@ -8382,7 +8376,7 @@ async function importBudgetExcel(input) {
 
     // Invalidate cache and re-render
     _budgetEntriesLoadedMonth = null;
-    _budgetStatsCache = null;
+    _budgetStatsCache = null; _budgetStatsCache3 = null;
     await renderBudgetPage();
     alert(`Импорт завершён! Добавлено: ${added} записей.${errs ? ' Ошибок: ' + errs : ''}`);
   } catch(e) {
@@ -8400,7 +8394,7 @@ function switchBudgetTab(tab) {
   document.getElementById('budget-entries-view').style.display = tab === 'stats' ? 'none' : '';
   const statsView = document.getElementById('budget-stats-view');
   if (statsView) statsView.style.display = tab === 'stats' ? '' : 'none';
-  if (tab === 'stats') { _budgetStatsCache = null; renderBudgetStats(); }
+  if (tab === 'stats') { _budgetStatsCache = null; _budgetStatsCache3 = null; renderBudgetStats(); }
   // Toggle button: shows the opposite tab (now a card tile, hide when on stats)
   const toggleBtn = document.getElementById('budget-tab-toggle-btn');
   if (toggleBtn) {
@@ -9072,7 +9066,7 @@ function statsSetPreset(preset) {
   _statsUpdatePeriodLabel();
   // Invalidate cache so new range is fetched
   _budgetEntriesLoadedMonth = null;
-  _budgetStatsCache = null;
+  _budgetStatsCache = null; _budgetStatsCache3 = null;
   // Refresh whichever view is currently visible
   const statsView = document.getElementById('budget-stats-view');
   if (statsView && statsView.style.display !== 'none') {
@@ -9091,7 +9085,7 @@ function statsNavShift(dir) {
   _statsUpdatePeriodLabel();
   // Invalidate cache so new range is fetched
   _budgetEntriesLoadedMonth = null;
-  _budgetStatsCache = null;
+  _budgetStatsCache = null; _budgetStatsCache3 = null;
   const statsView = document.getElementById('budget-stats-view');
   if (statsView && statsView.style.display !== 'none') {
     renderBudgetStats();
@@ -9146,375 +9140,239 @@ async function renderBudgetStats() {
   }
   const entries = _budgetStatsCache;
 
-  // ── Filters (persisted in module vars) ──
-  const typeFilter  = _statsTypeFilter;  // 'all' | 'expense' | 'income'
-  const viewMode    = _statsView;        // 'type' | 'cat'
+  // ── Fetch 3-month comparison data ──
+  const now = new Date(from);
+  const comp3End = new Date(from);
+  comp3End.setDate(comp3End.getDate() - 1);
+  const comp3Start = new Date(comp3End);
+  comp3Start.setMonth(comp3Start.getMonth() - 3);
+  const comp3From = comp3Start.toISOString().slice(0, 10);
+  const comp3To = comp3End.toISOString().slice(0, 10);
 
-  const filtered = entries.filter(e => {
-    if (typeFilter !== 'all' && e.type !== typeFilter) return false;
-    return true;
-  });
+  const cacheKey3 = comp3From + '_' + comp3To;
+  if (!_budgetStatsCache3 || _budgetStatsCache3._key !== cacheKey3) {
+    const { data: data3 } = await _sb.from('budget_entries')
+      .select('*')
+      .eq('user_id', _sbUser.id)
+      .gte('date', comp3From)
+      .lte('date', comp3To);
+    _budgetStatsCache3 = data3 || [];
+    _budgetStatsCache3._key = cacheKey3;
+  }
+  const entries3 = _budgetStatsCache3;
 
-  // ── Aggregate by type → group → category ──
+  // ── Aggregate current period expenses by group → category ──
   const totals = { expense: {}, income: {} };
-  for (const e of filtered) {
+  for (const e of entries) {
     const t = e.type;
     const g = e.group || (t === 'expense' ? 'Основное' : 'Доходы');
     const c = e.category;
     if (!totals[t][g]) totals[t][g] = {};
     totals[t][g][c] = (totals[t][g][c] || 0) + Number(e.amount);
   }
-
   const totalExp = Object.values(totals.expense).flatMap(Object.values).reduce((s,v) => s+v, 0);
-  const totalInc = Object.values(totals.income).flatMap(Object.values).reduce((s,v) => s+v, 0);
 
-  // ── Render a category row (no click-to-hide) ──
-  const renderCatRow = (cat, amt, total, colorVar, type, groupName) => {
-    const catPct = total > 0 ? Math.round(amt / total * 100) : 0;
+  // ── Aggregate 3-month comparison by category ──
+  // Average per month for each expense category over past 3 months
+  const cat3MonthAvg = {}; // { cat: avgPerMonth }
+  const tmp3 = {};
+  for (const e of entries3) {
+    if (e.type !== 'expense') continue;
+    tmp3[e.category] = (tmp3[e.category] || 0) + Number(e.amount);
+  }
+  for (const [cat, total] of Object.entries(tmp3)) {
+    cat3MonthAvg[cat] = total / 3;
+  }
+
+  // ── Find top spending category ──
+  let topCat = null, topCatAmt = 0, topCatGroup = '';
+  for (const [grp, cats] of Object.entries(totals.expense)) {
+    for (const [cat, amt] of Object.entries(cats)) {
+      if (amt > topCatAmt) { topCatAmt = amt; topCat = cat; topCatGroup = grp; }
+    }
+  }
+
+  // ── Find categories with trend vs 3-month avg ──
+  const trendUp = [], trendDown = [];
+  for (const [grp, cats] of Object.entries(totals.expense)) {
+    for (const [cat, amt] of Object.entries(cats)) {
+      const avg = cat3MonthAvg[cat];
+      if (!avg || avg < 100) continue; // ignore tiny/new categories
+      const pctChange = (amt - avg) / avg * 100;
+      if (pctChange >= 15) trendUp.push({ cat, amt, avg, pctChange, grp });
+      else if (pctChange <= -15) trendDown.push({ cat, amt, avg, pctChange, grp });
+    }
+  }
+  trendUp.sort((a, b) => b.pctChange - a.pctChange);
+  trendDown.sort((a, b) => a.pctChange - b.pctChange);
+
+  // ── Donut chart data (by group) ──
+  const GROUP_COLORS = { 'Основное': '#FF6B6B', 'Желания': '#FFA94D', 'Накопления': '#4DABF7' };
+  const donutSlices = [];
+  for (const [grp, cats] of Object.entries(totals.expense)) {
+    const amt = Object.values(cats).reduce((s,v) => s+v, 0);
+    donutSlices.push({ cat: grp, amt, color: GROUP_COLORS[grp] || '#748FFC' });
+  }
+  donutSlices.sort((a,b) => b.amt - a.amt);
+
+  // ── Render a category row with trend indicator ──
+  const renderCatRow = (cat, amt, groupTotal, colorVar, type, groupName) => {
+    const catPct = groupTotal > 0 ? Math.round(amt / groupTotal * 100) : 0;
     const emoji = _budgetCatEmoji(type, groupName, cat);
+    const avg = cat3MonthAvg[cat];
+    let trendBadge = '';
+    if (avg && avg >= 100 && type === 'expense') {
+      const pct = (amt - avg) / avg * 100;
+      if (pct >= 15) trendBadge = `<span style="font-size:10px;color:#FF6B6B;margin-left:4px;font-weight:600;">↑${Math.round(pct)}%</span>`;
+      else if (pct <= -15) trendBadge = `<span style="font-size:10px;color:#69DB7C;margin-left:4px;font-weight:600;">↓${Math.round(Math.abs(pct))}%</span>`;
+    }
     return `<div style="display:flex;align-items:center;
-                padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;">
+                padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;">
       <div style="flex:1;min-width:0;">
-        <div style="display:flex;align-items:center;gap:6px;">
+        <div style="display:flex;align-items:center;gap:5px;">
           ${emoji ? `<span>${emoji}</span>` : ''}
           <span style="color:var(--text);">${cat}</span>
+          ${trendBadge}
         </div>
-        <div style="height:3px;background:var(--surface2);border-radius:2px;margin-top:5px;">
-          <div style="height:3px;background:${colorVar};border-radius:2px;width:${catPct}%;opacity:0.7;"></div>
+        <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;margin-top:5px;">
+          <div style="height:3px;background:${colorVar};border-radius:2px;width:${catPct}%;opacity:0.75;transition:width .3s;"></div>
         </div>
       </div>
       <div style="text-align:right;margin-left:12px;white-space:nowrap;">
         <span style="color:var(--text);font-weight:600;">${fmt(amt)} ₽</span>
-        <span style="color:var(--text-dim);font-size:11px;margin-left:5px;">${catPct}%</span>
+        <span style="color:var(--text-dim);font-size:11px;margin-left:4px;">${catPct}%</span>
       </div>
     </div>`;
   };
 
-  // ── Render a group block (по типу) ──
-  const renderGroup = (groupName, cats, groupTotal, sectionTotal, colorVar, type) => {
-    const pct = sectionTotal > 0 ? Math.round(groupTotal / sectionTotal * 100) : 0;
-    const rows = Object.entries(cats)
-      .sort((a, b) => b[1] - a[1])
-      .map(([cat, amt]) => renderCatRow(cat, amt, groupTotal, colorVar, type, groupName))
-      .join('');
-
-    return `<div class="chart-wrap" style="margin-bottom:10px;">
+  // ── Render expense group block ──
+  const renderExpenseGroup = (groupName, colorHex) => {
+    const cats = totals.expense[groupName];
+    if (!cats) return '';
+    const groupTotal = Object.values(cats).reduce((s,v) => s+v, 0);
+    const pct = totalExp > 0 ? Math.round(groupTotal / totalExp * 100) : 0;
+    const rows = Object.entries(cats).sort((a,b) => b[1]-a[1])
+      .map(([cat, amt]) => renderCatRow(cat, amt, groupTotal, colorHex, 'expense', groupName)).join('');
+    return `<div style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span class="section-title">${groupName}</span>
+        <span style="font-size:12px;font-weight:700;color:${colorHex};text-transform:uppercase;letter-spacing:.04em;">${groupName}</span>
         <div>
-          <span style="font-size:14px;font-weight:700;color:${colorVar};">${fmt(groupTotal)} ₽</span>
-          <span style="font-size:11px;color:var(--text-dim);margin-left:5px;">${pct}%</span>
+          <span style="font-size:13px;font-weight:700;color:var(--text);">${fmt(groupTotal)} ₽</span>
+          <span style="font-size:11px;color:var(--text-dim);margin-left:4px;">${pct}%</span>
         </div>
       </div>
       ${rows}
     </div>`;
   };
 
-  const GROUP_ORDER = ['Основное', 'Желания', 'Накопления'];
-  const expKeys = [...GROUP_ORDER.filter(g => g in totals.expense),
-                   ...Object.keys(totals.expense).filter(g => !GROUP_ORDER.includes(g))];
-
-  const expBlocks = expKeys.map(g =>
-    renderGroup(g, totals.expense[g], Object.values(totals.expense[g]).reduce((s,v)=>s+v,0), totalExp, 'var(--danger)', 'expense')
-  ).join('');
-
-  const incBlocks = Object.keys(totals.income).map(g =>
-    renderGroup(g, totals.income[g], Object.values(totals.income[g]).reduce((s,v)=>s+v,0), totalInc, 'var(--accent)', 'income')
-  ).join('');
-
-  // Pill button states are managed by statsSetType/statsSetView (DOM-based)
-
-  // ── Build "по категориям" flat list (all cats merged, sorted by amount) ──
-  const allCatsMap = {}; // { 'expense|Кафе': {amt, type, group, cat}, ... }
-  for (const t of ['expense', 'income']) {
-    const color = t === 'expense' ? 'var(--danger)' : 'var(--accent)';
-    for (const [grp, cats] of Object.entries(totals[t])) {
-      for (const [cat, amt] of Object.entries(cats)) {
-        const key = t + '|' + cat;
-        if (!allCatsMap[key]) allCatsMap[key] = { amt: 0, type: t, group: grp, cat, color };
-        allCatsMap[key].amt += amt;
-      }
-    }
-  }
-  const allCatTotal = Object.values(allCatsMap).reduce((s, v) => s + v.amt, 0);
-  const catViewBlocks = Object.values(allCatsMap)
-    .sort((a, b) => b.amt - a.amt)
-    .map(({ cat, amt, type, group, color }) => renderCatRow(cat, amt, allCatTotal, color, type, group))
-    .join('');
-
-  // ── Build donut chart data ──
-  // Show expense breakdown when filter is 'all' or 'expense', income when 'income'
-  const donutType = typeFilter === 'income' ? 'income' : 'expense';
-  const donutTotal = donutType === 'expense' ? totalExp : totalInc;
-
-  // Palettes for "По типу" (by group) and "По категориям" (by category)
-  const GROUP_COLORS = { 'Основное': '#FF6B6B', 'Желания': '#FFA94D', 'Накопления': '#4DABF7' };
-  const DONUT_PALETTE = [
-    '#FF6B6B','#FFA94D','#FFD43B','#69DB7C','#38D9A9',
-    '#4DABF7','#748FFC','#DA77F2','#F783AC','#A9E34B'
-  ];
-  // When "income" filter is active, "По типу" makes no sense (one type only) — force "По категориям"
-  // Для расходов всегда показываем по типу, для доходов — по категориям
-  const effectiveViewMode = typeFilter === 'income' ? 'cat' : 'type';
-
-  const donutGroups = totals[donutType];
-  const donutSlices = [];
-  if (effectiveViewMode === 'type') {
-    // По типу = один сегмент на группу (Основное, Желания, Накопления)
-    for (const [grp, cats] of Object.entries(donutGroups)) {
-      const amt = Object.values(cats).reduce((s, v) => s + v, 0);
-      const color = GROUP_COLORS[grp] || '#748FFC';
-      donutSlices.push({ cat: grp, amt, color });
-    }
-    donutSlices.sort((a, b) => b.amt - a.amt);
-  } else {
-    // По категориям = один сегмент на категорию
-    let pIdx = 0;
-    for (const [grp, cats] of Object.entries(donutGroups)) {
-      for (const [cat, amt] of Object.entries(cats).sort((a,b) => b[1]-a[1])) {
-        donutSlices.push({ cat, amt, color: DONUT_PALETTE[pIdx % DONUT_PALETTE.length] });
-        pIdx++;
-      }
-    }
-  }
-
-  // ── Build legend HTML (used in slide 0) ──
-  const legendHtml = (() => {
-    if (effectiveViewMode === 'type') {
-      budgetInit();
-      const manualIncome = state.budget.monthlyIncome || 0;
-      const periodIncome = Object.values(totals.income).flatMap(Object.values).reduce((s,v)=>s+v,0);
-      const refIncome = manualIncome || periodIncome;
-      const ORDER = ['Основное', 'Желания', 'Накопления'];
-      const sortedSlices = [...donutSlices].sort((a, b) => {
-        const ai = ORDER.indexOf(a.cat), bi = ORDER.indexOf(b.cat);
-        if (ai !== -1 && bi !== -1) return ai - bi;
-        if (ai !== -1) return -1; if (bi !== -1) return 1; return 0;
-      });
-      return sortedSlices.map(s => {
-        const target = BUDGET_SPLIT[s.cat];
-        const limitAmt = refIncome > 0 && target ? refIncome * target / 100 : 0;
-        const ok = limitAmt > 0 ? s.amt <= limitAmt * 1.05 : true;
-        // Строка с суммой под названием (без прогресс-бара)
-        const statusLine = refIncome > 0 && target
-          ? `<div style="margin-top:2px;">
-               <span style="font-size:10px;color:${ok?'var(--text-dim)':'#FF6B6B'};">
-                 ${fmt(s.amt)} / ${fmt(limitAmt)} ₽
-               </span>
-             </div>`
-          : '';
-        return `<div style="margin-bottom:8px;min-width:0;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
-            <div style="font-size:12px;color:var(--text);">${s.cat}</div>
-            ${target ? `<span style="font-size:10px;color:var(--text-dim);">${target}%</span>` : ''}
-          </div>${statusLine}</div>`;
-      }).join('');
-    }
-    return donutSlices.map(s => `
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0;">
-        <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
-        <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${s.cat}</div>
-        <div style="font-size:11px;color:var(--text-dim);flex-shrink:0;">${donutTotal > 0 ? Math.round(s.amt/donutTotal*100) : 0}%</div>
-      </div>`).join('');
-  })();
-
-  // ── Build table HTML (used in slide 1) ──
-  const tableHtml = `
-    ${typeFilter !== 'income' && expBlocks ? `<div class="section-title" style="margin-bottom:8px;">Расходы</div>${expBlocks}` : ''}
-    ${typeFilter !== 'expense' && incBlocks ? `<div class="section-title" style="margin:12px 0 8px;">Доходы</div>${incBlocks}` : ''}
-    ${!expBlocks && !incBlocks ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>' : ''}`;
-
-  // При фильтре "Доходы" — 2 слайда: таблица категорий + график.
-  // При "Расходы" или "Все" — 4 слайда: Основное, Желания, Накопления, График.
-  const isIncomeOnly = typeFilter === 'income';
-  const carouselTotal = isIncomeOnly ? 2 : 4;
-  // Сбрасываем позицию если она вышла за пределы (переключили фильтр)
-  if (_statsCarouselSlide >= carouselTotal) _statsCarouselSlide = 0;
-
-  // Слайд с графиком — общий для обоих режимов
-  const chartSlideHtml = `
-    <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
-      ${donutTotal > 0 ? `
-      <div style="display:flex;align-items:center;gap:16px;">
-        <div style="position:relative;flex-shrink:0;width:130px;height:130px;">
-          <canvas id="stats-donut-canvas" width="260" height="260"
-            style="width:130px;height:130px;border-radius:50%;"></canvas>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;
-                      align-items:center;justify-content:center;pointer-events:none;">
-            <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">
-              ${donutType === 'expense' ? 'Расходы' : 'Доходы'}
-            </div>
-            <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:2px;">
-              ${fmt(donutTotal)} ₽
-            </div>
-          </div>
-        </div>
-        <div style="flex:1;min-width:0;">
-          ${legendHtml}
-        </div>
+  // ── Top spending card ──
+  const topCatHtml = topCat ? (() => {
+    const emoji = _budgetCatEmoji('expense', topCatGroup, topCat);
+    const pct = totalExp > 0 ? Math.round(topCatAmt / totalExp * 100) : 0;
+    const groupColor = GROUP_COLORS[topCatGroup] || '#FF6B6B';
+    return `<div style="background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.2);
+                  border-radius:14px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+      <div style="font-size:26px;line-height:1;">${emoji || '💸'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">🏆 Топ трат месяца</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);">${topCat}</div>
+        <div style="font-size:11px;color:${groupColor};margin-top:1px;">${topCatGroup} · ${pct}% расходов</div>
       </div>
-      ${effectiveViewMode === 'type' && !isIncomeOnly ? `
-      <div style="text-align:right;margin-top:10px;">
-        <button onclick="openBudgetSettings()"
-          style="background:none;border:none;padding:0;color:var(--accent);
-                 font-size:12px;cursor:pointer;opacity:0.8;">Параметры →</button>
-      </div>` : ''}
-      ` : '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет данных за период</div>'}
-    </div>`;
-
-  // Слайд с таблицей доходов по категориям (только при фильтре доходов)
-  const incomeTableSlideHtml = isIncomeOnly ? (() => {
-    // Собираем все категории доходов по всем группам
-    const allIncCats = {};
-    for (const group of Object.values(totals.income)) {
-      for (const [cat, amt] of Object.entries(group)) {
-        allIncCats[cat] = (allIncCats[cat] || 0) + amt;
-      }
-    }
-    const incTotal = Object.values(allIncCats).reduce((s,v)=>s+v,0);
-    const rows = Object.entries(allIncCats).sort((a,b)=>b[1]-a[1])
-      .map(([cat,amt]) => renderCatRow(cat, amt, incTotal, 'var(--accent)', 'income', 'Доходы')).join('');
-    return `<div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
-      <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Категории доходов</div>
-      ${rows || '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет доходов</div>'}
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:16px;font-weight:800;color:#FF6B6B;">${fmt(topCatAmt)}</div>
+        <div style="font-size:10px;color:var(--text-dim);">₽</div>
+      </div>
     </div>`;
   })() : '';
 
-  // Слайды расходов по типам (только при фильтре расходов)
-  const expenseSlidesHtml = isIncomeOnly ? '' : `
-    <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
-      <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Основное</div>
-      ${totals.expense['Основное']
-        ? Object.entries(totals.expense['Основное']).sort((a,b)=>b[1]-a[1])
-            .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Основное']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Основное')).join('')
-        : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
-    </div>
-    <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
-      <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Желания</div>
-      ${totals.expense['Желания']
-        ? Object.entries(totals.expense['Желания']).sort((a,b)=>b[1]-a[1])
-            .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Желания']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Желания')).join('')
-        : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
-    </div>
-    <div style="min-width:100%;box-sizing:border-box;padding:0 4px;">
-      <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Накопления</div>
-      ${totals.expense['Накопления']
-        ? Object.entries(totals.expense['Накопления']).sort((a,b)=>b[1]-a[1])
-            .map(([cat,amt]) => renderCatRow(cat, amt, Object.values(totals.expense['Накопления']).reduce((s,v)=>s+v,0), 'var(--danger)', 'expense', 'Накопления')).join('')
-        : '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">Нет расходов</div>'}
+  // ── Trends block ──
+  const trendRowHtml = (item, isUp) => {
+    const emoji = _budgetCatEmoji('expense', item.grp, item.cat);
+    const color = isUp ? '#FF6B6B' : '#69DB7C';
+    const arrow = isUp ? '↑' : '↓';
+    const pct = Math.round(Math.abs(item.pctChange));
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <span style="font-size:16px;">${emoji || '📊'}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;color:var(--text);">${item.cat}</div>
+        <div style="font-size:11px;color:var(--text-dim);">${fmt(item.avg)}/мес → ${fmt(item.amt)}</div>
+      </div>
+      <span style="font-size:13px;font-weight:700;color:${color};flex-shrink:0;">${arrow}${pct}%</span>
+    </div>`;
+  };
+
+  const trendsHtml = (trendUp.length > 0 || trendDown.length > 0) ? `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Тренды vs прошлые 3 месяца</div>
+      ${trendUp.slice(0,3).map(t => trendRowHtml(t, true)).join('')}
+      ${trendDown.slice(0,3).map(t => trendRowHtml(t, false)).join('')}
+    </div>` : '';
+
+  // ── Donut chart block ──
+  const donutHtml = totalExp > 0 ? (() => {
+    budgetInit();
+    const manualIncome = state.budget.monthlyIncome || 0;
+    const periodIncome = Object.values(totals.income || {}).flatMap(Object.values).reduce((s,v)=>s+v,0);
+    const refIncome = manualIncome || periodIncome;
+    const legendItems = ['Основное','Желания','Накопления'].map(grp => {
+      const sl = donutSlices.find(s => s.cat === grp);
+      if (!sl) return '';
+      const target = BUDGET_SPLIT[grp];
+      const limitAmt = refIncome > 0 && target ? refIncome * target / 100 : 0;
+      const ok = limitAmt > 0 ? sl.amt <= limitAmt * 1.05 : true;
+      const statusLine = refIncome > 0 && target
+        ? `<div style="font-size:10px;color:${ok?'var(--text-dim)':'#FF6B6B'};margin-top:1px;">${fmt(sl.amt)} / ${fmt(limitAmt)} ₽</div>`
+        : `<div style="font-size:10px;color:var(--text-dim);margin-top:1px;">${fmt(sl.amt)} ₽</div>`;
+      return `<div style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:${sl.color};flex-shrink:0;"></div>
+          <span style="font-size:12px;color:var(--text);">${grp}</span>
+          ${target ? `<span style="font-size:10px;color:var(--text-dim);">${target}%</span>` : ''}
+        </div>${statusLine}</div>`;
+    }).join('');
+    return `<div class="chart-wrap" style="margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="position:relative;flex-shrink:0;width:120px;height:120px;">
+          <canvas id="stats-donut-canvas" width="240" height="240" style="width:120px;height:120px;"></canvas>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+            <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">Расходы</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:1px;">${fmt(totalExp)} ₽</div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:0;">${legendItems}</div>
+      </div>
+      <div style="text-align:right;margin-top:8px;">
+        <button onclick="openBudgetSettings()" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">Параметры →</button>
+      </div>
+    </div>`;
+  })() : '';
+
+  // ── Render all expense groups ──
+  const allGroupsHtml = `
+    <div class="chart-wrap" style="margin-bottom:14px;">
+      ${renderExpenseGroup('Основное', '#FF6B6B')}
+      ${renderExpenseGroup('Желания', '#FFA94D')}
+      ${renderExpenseGroup('Накопления', '#4DABF7')}
+      ${!totalExp ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет расходов за период</div>' : ''}
     </div>`;
 
-  // Точки-индикаторы (количество зависит от режима)
-  const dotsHtml = Array.from({length: carouselTotal}, (_, i) =>
-    `<div id="stats-dot-${i}" style="width:6px;height:6px;border-radius:50%;background:${i===0?'var(--accent)':'rgba(255,255,255,0.2)'};transition:background .2s;"></div>`
-  ).join('');
-
+  // ── Assemble final HTML ──
   el.innerHTML = `
-    <div class="chart-wrap" style="margin-bottom:14px;">
-    <div id="stats-carousel">
-      <div style="display:flex;align-items:center;gap:4px;">
-        <button id="stats-carousel-prev" onclick="_statsCarouselGo(-1)"
-          style="background:rgba(255,255,255,0.06);border:none;border-radius:50%;flex-shrink:0;
-                 width:24px;height:24px;display:flex;align-items:center;justify-content:center;
-                 cursor:pointer;color:var(--text-dim);font-size:14px;transition:opacity .2s;
-                 opacity:0;pointer-events:none;">‹</button>
-      <div id="stats-carousel-track" style="overflow:hidden;flex:1;transition:height .3s ease;height:0;">
-        <div id="stats-carousel-inner"
-             style="display:flex;transition:transform .3s ease;will-change:transform;">
-          ${expenseSlidesHtml}
-          ${incomeTableSlideHtml}
-          ${chartSlideHtml}
-        </div>
-      </div>
-        <button id="stats-carousel-next" onclick="_statsCarouselGo(1)"
-          style="background:rgba(255,255,255,0.06);border:none;border-radius:50%;flex-shrink:0;
-                 width:24px;height:24px;display:flex;align-items:center;justify-content:center;
-                 cursor:pointer;color:var(--text-dim);font-size:14px;transition:opacity .2s;
-                 opacity:1;pointer-events:auto;">›</button>
-      </div>
-      <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;">${dotsHtml}</div>
-    </div>
-    </div>
+    ${topCatHtml}
+    ${trendsHtml}
+    ${donutHtml}
+    ${allGroupsHtml}
   `.trim();
 
-  // ── Карусель: инициализация свайпа и стрелок ──
-  (function initCarousel() {
-    let slide = _statsCarouselSlide; // восстанавливаем позицию после ре-рендера
-    const total = carouselTotal; // динамически: 1 при доходах, 4 при расходах
-
-    function goTo(idx) {
-      slide = Math.max(0, Math.min(total - 1, idx));
-      _statsCarouselSlide = slide; // сохраняем для следующего рендера
-      const inner = document.getElementById('stats-carousel-inner');
-      const track = document.getElementById('stats-carousel-track');
-      if (inner) inner.style.transform = `translateX(-${slide * 100}%)`;
-      // Подстраиваем высоту трека под текущий слайд.
-      // Слайды в display:flex — их scrollHeight равен высоте самого высокого слайда,
-      // поэтому считаем высоту через первый дочерний элемент слайда (реальный контент).
-      if (track && inner) {
-        const slideEl = inner.children[slide];
-        if (slideEl) {
-          // Суммируем высоты всех дочерних элементов слайда + его padding
-          const style = window.getComputedStyle(slideEl);
-          const padT = parseFloat(style.paddingTop) || 0;
-          const padB = parseFloat(style.paddingBottom) || 0;
-          let contentH = 0;
-          for (const child of slideEl.children) {
-            contentH += child.offsetHeight + (parseFloat(window.getComputedStyle(child).marginBottom) || 0);
-          }
-          track.style.height = (contentH + padT + padB + 8) + 'px';
-        }
-      }
-      // Обновляем точки
-      for (let i = 0; i < total; i++) {
-        const dot = document.getElementById('stats-dot-' + i);
-        if (dot) dot.style.background = i === slide ? 'var(--accent)' : 'rgba(255,255,255,0.2)';
-      }
-      // Обновляем стрелки
-      const prev = document.getElementById('stats-carousel-prev');
-      const next = document.getElementById('stats-carousel-next');
-      if (prev) { prev.style.opacity = slide > 0 ? '1' : '0'; prev.style.pointerEvents = slide > 0 ? 'auto' : 'none'; }
-      if (next) { next.style.opacity = slide < total-1 ? '1' : '0'; next.style.pointerEvents = slide < total-1 ? 'auto' : 'none'; }
-    }
-
-    // Глобальная функция для стрелок (onclick в HTML)
-    window._statsCarouselGo = (dir) => goTo(slide + dir);
-
-    // Восстановить позицию слайда без анимации
-    setTimeout(() => {
-      const inner = document.getElementById('stats-carousel-inner');
-      if (inner) inner.style.transition = 'none'; // выключаем анимацию при восстановлении
-      goTo(_statsCarouselSlide);
-      requestAnimationFrame(() => {
-        if (inner) inner.style.transition = 'transform .3s ease'; // включаем обратно
-      });
-    }, 50);
-
-    // Touch-свайп по треку
-    const track = document.getElementById('stats-carousel-track');
-    if (!track) return;
-    let tx0 = 0, ty0 = 0, swiping = false;
-    track.addEventListener('touchstart', e => {
-      tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY; swiping = true;
-    }, { passive: true });
-    track.addEventListener('touchend', e => {
-      if (!swiping) return; swiping = false;
-      const dx = e.changedTouches[0].clientX - tx0;
-      const dy = e.changedTouches[0].clientY - ty0;
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) goTo(slide + (dx < 0 ? 1 : -1));
-    }, { passive: true });
-  })();
-
-  // ── Draw donut on canvas after DOM update ──
-  if (donutTotal > 0 && donutSlices.length > 0) {
+  // ── Draw donut ──
+  if (totalExp > 0 && donutSlices.length > 0) {
     requestAnimationFrame(() => {
       const canvas = document.getElementById('stats-donut-canvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
-      const W = 260, cx = W/2, cy = W/2, outerR = 115, innerR = 72;
+      const W = 240, cx = W/2, cy = W/2, outerR = 108, innerR = 68;
       ctx.clearRect(0, 0, W, W);
-      let startAngle = -Math.PI / 2; // start from top
+      let startAngle = -Math.PI / 2;
       const total = donutSlices.reduce((s, sl) => s + sl.amt, 0);
       for (const sl of donutSlices) {
         const sweep = (sl.amt / total) * 2 * Math.PI;
@@ -9526,17 +9384,14 @@ async function renderBudgetStats() {
         ctx.fill();
         startAngle += sweep;
       }
-      // Punch inner hole to make it a donut
       ctx.beginPath();
       ctx.arc(cx, cy, innerR, 0, 2 * Math.PI);
-      // Use destination-out to erase center
       ctx.globalCompositeOperation = 'destination-out';
       ctx.fillStyle = 'rgba(0,0,0,1)';
       ctx.fill();
       ctx.globalCompositeOperation = 'source-over';
-      // Thin gap lines between slices
       startAngle = -Math.PI / 2;
-      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
       ctx.lineWidth = 2;
       for (const sl of donutSlices) {
         const sweep = (sl.amt / total) * 2 * Math.PI;
@@ -9555,6 +9410,7 @@ let _statsTypeFilter = 'expense'; // 'expense' | 'income' (all removed)
 let _statsGroupFilter = 'all';  // 'all' | 'Основное' | 'Желания' | 'Накопления'
 let _statsView = 'type';        // 'type' | 'cat'
 let _statsCarouselSlide = 0;    // запоминаем активный слайд между ре-рендерами
+let _budgetStatsCache3 = null;  // кэш данных за прошлые 3 месяца для сравнения
 
 function statsSetType(val) {
   _statsTypeFilter = val;
@@ -9826,7 +9682,7 @@ async function saveBudgetEntry() {
   const idx = _budgetEntriesCache.findIndex(e => e.id === entryId);
   if (idx >= 0) _budgetEntriesCache[idx] = row;
   else _budgetEntriesCache.push(row);
-  _budgetStatsCache = null; // invalidate stats cache
+  _budgetStatsCache = null; _budgetStatsCache3 = null; // invalidate stats cache
 
   closeBudgetEntryModal();
   // Invalidate entries cache so the page reloads with fresh data
@@ -9842,7 +9698,7 @@ async function deleteBudgetEntry() {
   if (error) { alert('Ошибка удаления: ' + error.message); return; }
 
   _budgetEntriesCache = _budgetEntriesCache.filter(e => e.id !== _budgetEditId);
-  _budgetStatsCache = null;
+  _budgetStatsCache = null; _budgetStatsCache3 = null;
   closeBudgetEntryModal();
   renderBudgetPage().catch(console.error);
 }
