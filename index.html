@@ -8094,53 +8094,40 @@ async function _downloadBudgetXlsx(expenses, incomes, filename) {
         errorTitle: 'Неверное значение', error: 'Выберите значение из списка'
       });
     }
-    if (type === 'expense' && expenseCatCount > 0) {
-      // Reference hidden column E in Категории sheet — bypasses Excel's 255-char inline limit
-      ws.dataValidations.add(`B3:B${lastRow}`, {
-        type: 'list', allowBlank: true, showErrorMessage: true,
-        formulae: [`Категории!$E$3:$E$${expenseCatLastRow}`],
-        errorTitle: 'Неверное значение', error: 'Выберите значение из списка'
-      });
-    } else if (type === 'income') {
-      // Income cats — reference column D in Категории sheet
-      const incomeCats = (cats.income||[]).filter(c=>!c.archived);
-      if (incomeCats.length) {
-        const incomeCatLastRow = 3 + incomeCats.length - 1;
-        ws.dataValidations.add(`B3:B${lastRow}`, {
-          type: 'list', allowBlank: true, showErrorMessage: true,
-          formulae: [`Категории!$D$3:$D$${incomeCatLastRow}`],
-          errorTitle: 'Неверное значение', error: 'Выберите значение из списка'
-        });
-      }
-    }
+    // Col B — dependent dropdown via INDIRECT(A3): Excel looks up named range by group name
+    // Named ranges (Основное, Желания, Накопления, Доходы) point to Категории columns
+    ws.dataValidations.add(`B3:B${lastRow}`, {
+      type: 'list', allowBlank: true, showErrorMessage: false,
+      formulae: ['INDIRECT(A3)'],
+    });
   }
 
   // Build Категории sheet
+  // Layout: row1=header, row2=group names, row3+=category names per column
+  // Columns: A=Основное, B=Желания, C=Накопления, D=Доходы
   const wsCats = wb.addWorksheet('Категории');
-  wsCats.columns = [{width:22},{width:22},{width:22},{width:22},{width:22}];
-  const catsAoa = _budgetCatsToAoa();
-  // Add hidden column E: all expense categories in one flat list (for dropdown reference)
-  const expenseCatsFlat = cats.expense
-    ? GROUP_ORDER.flatMap(g => (cats.expense[g]||[]).filter(c=>!c.archived).map(c=>c.name))
-    : [];
-  catsAoa.forEach((r, i) => {
-    const extended = [...r];
-    if (i === 0) extended[4] = 'Все категории';
-    else if (i === 1) extended[4] = null;
-    else extended[4] = expenseCatsFlat[i - 2] ?? null;
-    wsCats.addRow(extended);
+  wsCats.columns = [{width:22},{width:22},{width:22},{width:22}];
+  _budgetCatsToAoa().forEach(r => wsCats.addRow(r));
+
+  // Define named ranges for each group so INDIRECT(A3) works in dependent dropdown
+  // ExcelJS uses wb.definedNames.add(range, name)
+  const colLetter = ['A','B','C','D']; // A=Основное, B=Желания, C=Накопления, D=Доходы
+  const allGroups = [...GROUP_ORDER, 'Доходы'];
+  allGroups.forEach((groupName, ci) => {
+    const groupCats = ci < 3
+      ? (cats.expense[groupName]||[]).filter(c=>!c.archived)
+      : (cats.income||[]).filter(c=>!c.archived);
+    if (!groupCats.length) return;
+    const col = colLetter[ci];
+    const firstRow = 3; // row 3 = first data row (row1=title, row2=headers)
+    const lastDataRow = firstRow + groupCats.length - 1;
+    // Named range must be a valid Excel name — Russian chars are supported in xlsx
+    wb.definedNames.add(`Категории!$${col}$${firstRow}:$${col}$${lastDataRow}`, groupName);
   });
-  // If there are more expense cats than cat rows, add extra rows in col E
-  const catsAoaDataRows = catsAoa.length - 2;
-  if (expenseCatsFlat.length > catsAoaDataRows) {
-    for (let i = catsAoaDataRows; i < expenseCatsFlat.length; i++) {
-      const row = wsCats.addRow([null, null, null, null, expenseCatsFlat[i]]);
-    }
-  }
-  // Hide column E (it's just for validation reference)
-  wsCats.getColumn(5).hidden = true;
-  const expenseCatCount = expenseCatsFlat.length;
-  const expenseCatLastRow = 3 + expenseCatCount - 1; // row 3 = first data row
+
+  // These vars are still referenced in buildSheet closures above (not used now but kept for safety)
+  const expenseCatCount = 0;
+  const expenseCatLastRow = 3;
 
   // Move Категории to first position (ExcelJS adds in order, so add it first — already done above)
   buildSheet('Расходы', expenses, 'expense');
