@@ -959,8 +959,12 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <!-- Stats view (default/main budget view) -->
   <div id="budget-stats-view" style="display:none;padding-bottom:140px;">
-    <!-- тип-фильтр -->
+    <!-- навигация назад + тип-фильтр -->
     <div style="display:flex;align-items:center;margin-bottom:12px;">
+      <button onclick="switchBudgetTab('entries')"
+        style="background:none;border:none;color:var(--accent);font-size:13px;padding:0 10px 0 0;cursor:pointer;display:flex;align-items:center;gap:4px;">
+        ‹ История
+      </button>
         <select id="stats-type-select" onchange="statsSetType(this.value)"
           style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;
                  color:var(--text-dim);padding:4px 9px;font-size:12px;height:auto;cursor:pointer;">
