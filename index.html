@@ -835,27 +835,27 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="budget-loader" style="text-align:center;padding:60px 0;color:var(--text-dim);font-size:14px;">Загрузка…</div>
     <!-- Main content: hidden until data is ready -->
     <div id="budget-content" style="display:none;">
-      <!-- Summary card: one block, expenses primary -->
-      <div class="card" style="padding:16px;margin-bottom:16px;">
-        <!-- Расходы — главная цифра -->
-        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
-          <span style="font-size:13px;font-weight:600;color:var(--text-dim);">Расходы</span>
-          <span id="budget-total-expense" style="font-size:22px;font-weight:700;color:var(--danger);"></span>
+      <!-- Summary: две плитки рядом -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <!-- Левая: цифры -->
+        <div class="card" style="padding:14px 14px 12px;">
+          <div style="font-size:20px;font-weight:700;color:var(--danger);line-height:1.1;" id="budget-total-expense"></div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">Расходы</div>
+          <div style="font-size:15px;font-weight:600;color:#3DD68C;" id="budget-total-income"></div>
+          <div style="font-size:11px;color:var(--text-dim);">Доходы</div>
         </div>
-        <!-- Divider -->
-        <div style="height:1px;background:rgba(255,255,255,0.07);margin-bottom:10px;"></div>
-        <!-- Доходы и Остаток — мельче -->
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
-          <span style="font-size:12px;color:var(--text-dim);">Доходы</span>
-          <span id="budget-total-income" style="font-size:13px;font-weight:600;color:#3DD68C;"></span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
-          <span style="font-size:12px;color:var(--text-dim);">Остаток</span>
-          <span id="budget-balance" style="font-size:13px;font-weight:600;color:var(--text);"></span>
-        </div>
-        <!-- Подробнее -->
-        <div style="text-align:right;">
-          <button id="budget-tab-toggle-btn" onclick="switchBudgetTab('stats')" style="background:none;border:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;opacity:0.8;">Анализ →</button>
+        <!-- Правая: кнопка аналитики -->
+        <div class="card" onclick="switchBudgetTab('stats')" id="budget-tab-toggle-btn"
+          style="padding:14px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;min-height:0;position:relative;overflow:hidden;">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.25;margin-bottom:4px;">Анализ<br>расходов</div>
+            <div style="font-size:11px;color:var(--text-dim);">Остаток: <span id="budget-balance" style="color:var(--text);font-weight:600;"></span></div>
+          </div>
+          <!-- иконка-стрелка -->
+          <div style="position:absolute;bottom:10px;right:12px;opacity:0.25;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+          </div>
+          <div style="font-size:11px;color:var(--accent);margin-top:8px;">Открыть →</div>
         </div>
       </div>
     </div>
@@ -8397,16 +8397,11 @@ function switchBudgetTab(tab) {
   const statsView = document.getElementById('budget-stats-view');
   if (statsView) statsView.style.display = tab === 'stats' ? '' : 'none';
   if (tab === 'stats') { _budgetStatsCache = null; renderBudgetStats(); }
-  // Toggle button: shows the opposite tab
+  // Toggle button: shows the opposite tab (now a card tile, hide when on stats)
   const toggleBtn = document.getElementById('budget-tab-toggle-btn');
   if (toggleBtn) {
-    if (tab === 'stats') {
-      toggleBtn.textContent = 'История операций →';
-      toggleBtn.onclick = () => switchBudgetTab('entries');
-    } else {
-      toggleBtn.textContent = 'Анализ →';
-      toggleBtn.onclick = () => switchBudgetTab('stats');
-    }
+    toggleBtn.style.display = tab === 'stats' ? 'none' : '';
+    toggleBtn.onclick = () => switchBudgetTab('stats');
   }
 }
 
