@@ -8350,7 +8350,7 @@ async function importBudgetExcel(input) {
           category: r[1] || '',
           amount:   parseFloat(String(r[2]).replace(/\s/g,'').replace(',','.')),
           date:     typeof r[3] === 'number'
-                      ? new Date(Math.round((r[3] - 25569) * 86400 * 1000)).toISOString().slice(0,10)
+                      ? new Date(Math.round((r[3] - 25569) * 86400 * 1000) + 43200000).toISOString().slice(0,10)
                       : String(r[3]).slice(0,10),
           note:     r[4] || null
         }));
