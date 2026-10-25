@@ -8087,11 +8087,6 @@ async function _downloadBudgetXlsx(expenses, incomes, filename) {
       ? GROUP_ORDER.filter(g => (cats.expense[g]||[]).length)
       : ['Доходы'];
 
-    // Col B — subcategories
-    const categories = type === 'expense'
-      ? GROUP_ORDER.flatMap(g => (cats.expense[g]||[]).filter(c=>!c.archived).map(c=>c.name))
-      : (cats.income||[]).filter(c=>!c.archived).map(c=>c.name);
-
     if (groups.length) {
       ws.dataValidations.add(`A3:A${lastRow}`, {
         type: 'list', allowBlank: true, showErrorMessage: true,
@@ -8099,19 +8094,53 @@ async function _downloadBudgetXlsx(expenses, incomes, filename) {
         errorTitle: 'Неверное значение', error: 'Выберите значение из списка'
       });
     }
-    if (categories.length) {
+    if (type === 'expense' && expenseCatCount > 0) {
+      // Reference hidden column E in Категории sheet — bypasses Excel's 255-char inline limit
       ws.dataValidations.add(`B3:B${lastRow}`, {
         type: 'list', allowBlank: true, showErrorMessage: true,
-        formulae: ['"' + categories.join(',') + '"'],
+        formulae: [`Категории!$E$3:$E$${expenseCatLastRow}`],
         errorTitle: 'Неверное значение', error: 'Выберите значение из списка'
       });
+    } else if (type === 'income') {
+      // Income cats — reference column D in Категории sheet
+      const incomeCats = (cats.income||[]).filter(c=>!c.archived);
+      if (incomeCats.length) {
+        const incomeCatLastRow = 3 + incomeCats.length - 1;
+        ws.dataValidations.add(`B3:B${lastRow}`, {
+          type: 'list', allowBlank: true, showErrorMessage: true,
+          formulae: [`Категории!$D$3:$D$${incomeCatLastRow}`],
+          errorTitle: 'Неверное значение', error: 'Выберите значение из списка'
+        });
+      }
     }
   }
 
   // Build Категории sheet
   const wsCats = wb.addWorksheet('Категории');
-  wsCats.columns = [{width:22},{width:22},{width:22},{width:22}];
-  _budgetCatsToAoa().forEach(r => wsCats.addRow(r));
+  wsCats.columns = [{width:22},{width:22},{width:22},{width:22},{width:22}];
+  const catsAoa = _budgetCatsToAoa();
+  // Add hidden column E: all expense categories in one flat list (for dropdown reference)
+  const expenseCatsFlat = cats.expense
+    ? GROUP_ORDER.flatMap(g => (cats.expense[g]||[]).filter(c=>!c.archived).map(c=>c.name))
+    : [];
+  catsAoa.forEach((r, i) => {
+    const extended = [...r];
+    if (i === 0) extended[4] = 'Все категории';
+    else if (i === 1) extended[4] = null;
+    else extended[4] = expenseCatsFlat[i - 2] ?? null;
+    wsCats.addRow(extended);
+  });
+  // If there are more expense cats than cat rows, add extra rows in col E
+  const catsAoaDataRows = catsAoa.length - 2;
+  if (expenseCatsFlat.length > catsAoaDataRows) {
+    for (let i = catsAoaDataRows; i < expenseCatsFlat.length; i++) {
+      const row = wsCats.addRow([null, null, null, null, expenseCatsFlat[i]]);
+    }
+  }
+  // Hide column E (it's just for validation reference)
+  wsCats.getColumn(5).hidden = true;
+  const expenseCatCount = expenseCatsFlat.length;
+  const expenseCatLastRow = 3 + expenseCatCount - 1; // row 3 = first data row
 
   // Move Категории to first position (ExcelJS adds in order, so add it first — already done above)
   buildSheet('Расходы', expenses, 'expense');
