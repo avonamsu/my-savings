@@ -8032,7 +8032,7 @@ function _budgetToRows(entries, type) {
         e.group || (type === 'expense' ? 'Основное' : 'Доходы'),
         e.category,
         Number(e.amount),
-        new Date(e.date + 'T00:00:00'), // proper Excel date (not string)
+        new Date(e.date + 'T12:00:00Z'), // UTC noon keeps date correct in any timezone
         e.note || '',
         e.id  // DB id for dedup in updateBudgetExcel
       ])
@@ -8259,11 +8259,11 @@ async function updateBudgetExcel(input) {
     // New rows not yet in the file — check by id first, fallback to legacy key
     const newExp = entries
       .filter(e => e.type === 'expense')
-      .map(e => [e.group || 'Основное', e.category, Number(e.amount), new Date(e.date + 'T00:00:00'), e.note || '', e.id])
+      .map(e => [e.group || 'Основное', e.category, Number(e.amount), new Date(e.date + 'T12:00:00Z'), e.note || '', e.id])
       .filter(r => !expIds.has(r[5]) && !expKeys.has(legacyKey(r)));
     const newInc = entries
       .filter(e => e.type === 'income')
-      .map(e => [e.group || 'Доходы', e.category, Number(e.amount), new Date(e.date + 'T00:00:00'), e.note || '', e.id])
+      .map(e => [e.group || 'Доходы', e.category, Number(e.amount), new Date(e.date + 'T12:00:00Z'), e.note || '', e.id])
       .filter(r => !incIds.has(r[5]) && !incKeys.has(legacyKey(r)));
 
     if (!newExp.length && !newInc.length) {
