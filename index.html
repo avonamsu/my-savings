@@ -18,6 +18,7 @@
 <link rel="apple-touch-icon" href="icon.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 :root {
@@ -8047,65 +8048,82 @@ function _mergeCatsSheet(existingAoa) {
   return result;
 }
 
-// Adds Excel Data Validation dropdowns to columns A (Категория) and B (Тип/Типы)
-// Uses named ranges from Категории sheet so Excel resolves them correctly
-function _addDropdowns(ws, type, rowCount) {
-  if (rowCount < 1) return;
-  const dataStart = 3; // row index (1-based) where data starts (row 1=title, row 2=headers, row 3=data)
-  const lastRow   = dataStart + rowCount - 1;
+// Builds a workbook via ExcelJS (supports Data Validation) and triggers download
+async function _downloadBudgetXlsx(expenses, incomes, filename) {
+  const wb = new ExcelJS.Workbook();
   const cats = state.budget.categories;
   const GROUP_ORDER = ['Основное', 'Желания', 'Накопления'];
 
-  // Build flat lists for dropdown formulas
-  const groups = type === 'expense'
-    ? GROUP_ORDER.filter(g => (cats.expense[g]||[]).length)
-    : ['Доходы'];
-  const categories = type === 'expense'
-    ? GROUP_ORDER.flatMap(g => (cats.expense[g]||[]).filter(c=>!c.archived).map(c=>c.name))
-    : (cats.income||[]).filter(c=>!c.archived).map(c=>c.name);
+  // Helper: add rows to a sheet with column widths and dropdowns
+  function buildSheet(sheetName, rows, type) {
+    const ws = wb.addWorksheet(sheetName);
 
-  // Helper: build quoted comma list for Excel validation formula
-  const toFormula = list => '"' + list.join(',') + '"';
+    // Column widths (A-F, F hidden for id)
+    ws.columns = [
+      { width: 16 }, // A Категория
+      { width: 24 }, // B Тип
+      { width: 12 }, // C Сумма
+      { width: 14 }, // D Дата
+      { width: 42 }, // E Заметки
+      { width: 38, hidden: true }, // F id
+    ];
 
-  if (!ws['!dataValidation']) ws['!dataValidation'] = [];
-
-  // Col A — group/категория
-  if (groups.length) {
-    ws['!dataValidation'].push({
-      type: 'list', sqref: `A${dataStart}:A${lastRow}`,
-      formula1: toFormula(groups), showDropDown: false,
-      error: 'Выберите значение из списка', errorTitle: 'Неверное значение', showErrorMessage: true
+    // Add all rows (title + header + data)
+    rows.forEach((r, i) => {
+      const row = ws.addRow(r);
+      // Format date cells (col D, index 4) as date
+      if (i >= 2 && r[3] instanceof Date) {
+        row.getCell(4).numFmt = 'dd.mm.yyyy';
+      }
     });
+
+    // Data validation dropdowns starting from row 3 (1=title, 2=header)
+    const dataRows = rows.length - 2;
+    if (dataRows < 1) return;
+    const lastRow = 2 + dataRows;
+
+    // Col A — groups (Основное / Желания / Накопления / Доходы)
+    const groups = type === 'expense'
+      ? GROUP_ORDER.filter(g => (cats.expense[g]||[]).length)
+      : ['Доходы'];
+
+    // Col B — subcategories
+    const categories = type === 'expense'
+      ? GROUP_ORDER.flatMap(g => (cats.expense[g]||[]).filter(c=>!c.archived).map(c=>c.name))
+      : (cats.income||[]).filter(c=>!c.archived).map(c=>c.name);
+
+    if (groups.length) {
+      ws.dataValidations.add(`A3:A${lastRow}`, {
+        type: 'list', allowBlank: true, showErrorMessage: true,
+        formulae: ['"' + groups.join(',') + '"'],
+        errorTitle: 'Неверное значение', error: 'Выберите значение из списка'
+      });
+    }
+    if (categories.length) {
+      ws.dataValidations.add(`B3:B${lastRow}`, {
+        type: 'list', allowBlank: true, showErrorMessage: true,
+        formulae: ['"' + categories.join(',') + '"'],
+        errorTitle: 'Неверное значение', error: 'Выберите значение из списка'
+      });
+    }
   }
-  // Col B — subcategory/тип
-  if (categories.length) {
-    ws['!dataValidation'].push({
-      type: 'list', sqref: `B${dataStart}:B${lastRow}`,
-      formula1: toFormula(categories), showDropDown: false,
-      error: 'Выберите значение из списка', errorTitle: 'Неверное значение', showErrorMessage: true
-    });
-  }
-}
 
-// Builds a workbook from two row-arrays and triggers download
-function _downloadBudgetXlsx(expenses, incomes, filename) {
-  const wb    = XLSX.utils.book_new();
-  const cols  = [{wch:14},{wch:22},{wch:10},{wch:12},{wch:40},{wch:38,hidden:true}];
-  const wsExp = XLSX.utils.aoa_to_sheet(expenses);
-  const wsInc = XLSX.utils.aoa_to_sheet(incomes);
-  wsExp['!cols'] = cols; wsInc['!cols'] = cols;
+  // Build Категории sheet
+  const wsCats = wb.addWorksheet('Категории');
+  wsCats.columns = [{width:22},{width:22},{width:22},{width:22}];
+  _budgetCatsToAoa().forEach(r => wsCats.addRow(r));
 
-  // Add dropdowns — rowCount = data rows only (total rows minus 2 header rows)
-  _addDropdowns(wsExp, 'expense', expenses.length - 2);
-  _addDropdowns(wsInc, 'income',  incomes.length  - 2);
+  // Move Категории to first position (ExcelJS adds in order, so add it first — already done above)
+  buildSheet('Расходы', expenses, 'expense');
+  buildSheet('Доходы',  incomes,  'income');
 
-  // Категории sheet — always first so it matches original file order
-  const wsCats = XLSX.utils.aoa_to_sheet(_budgetCatsToAoa());
-  wsCats['!cols'] = [{wch:22},{wch:22},{wch:22},{wch:22}];
-  XLSX.utils.book_append_sheet(wb, wsCats, 'Категории');
-  XLSX.utils.book_append_sheet(wb, wsExp,  'Расходы');
-  XLSX.utils.book_append_sheet(wb, wsInc,  'Доходы');
-  XLSX.writeFile(wb, filename);
+  // Generate buffer and trigger download
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // Export popup open/close
@@ -8138,7 +8156,7 @@ async function exportBudgetExcel() {
     if (!entries.length) { alert('За выбранный период записей нет'); return; }
     // Build filename with period
     const suffix = (from || to) ? `_${from||''}__${to||''}` : '_all';
-    _downloadBudgetXlsx(
+    await _downloadBudgetXlsx(
       _budgetToRows(entries, 'expense'),
       _budgetToRows(entries, 'income'),
       `budget${suffix}.xlsx`
