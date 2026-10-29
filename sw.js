@@ -31,9 +31,9 @@ self.addEventListener('notificationclick', event => {
       const existing = clients.find(c => c.url.includes(self.location.origin));
       if (existing) {
         // Фокусируем вкладку и посылаем action через postMessage
-        existing.focus();
-        existing.postMessage({ type: 'NOTIF_ACTION', url: targetUrl });
-        return;
+        return existing.focus().then(() => {
+          existing.postMessage({ type: 'NOTIF_ACTION', url: targetUrl });
+        });
       }
       return self.clients.openWindow(targetUrl);
     })
