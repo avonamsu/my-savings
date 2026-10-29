@@ -167,6 +167,27 @@ Deno.serve(async (req) => {
         if (currentUtcHour !== 6) { skipped++; continue; }
       }
 
+      // Вспомогательная функция отправки с авто-удалением протухших подписок
+      async function dispatchPush(payload: string) {
+        for (const ps of pushList!) {
+          try {
+            const result = await sendPush(ps, payload);
+            if (result === 'ok') sent++;
+            else if (result === 'expired') {
+              await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(ps.endpoint)}`, {
+                method: 'DELETE',
+                headers: { 'apikey': SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}` },
+              });
+              skipped++;
+            } else skipped++;
+          } catch (e) {
+            console.error('Push error:', e);
+            skipped++;
+          }
+        }
+      }
+
+      // ── 1. Подписки: за 0/1/3/7 дней до списания ──
       const subs = (state?.goals ?? []).filter((g: any) => g.type === 'subscription' && g.subDate);
       for (const g of subs) {
         const period = g.subPeriod || 1;
@@ -181,26 +202,51 @@ Deno.serve(async (req) => {
         const dateStr = next.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', timeZone: 'UTC' });
         const emoji = g.emoji || '🔄';
         const dayWord = daysLeft === 0 ? 'списание сегодня' : daysLeft === 1 ? 'завтра' : `через ${daysLeft} ${daysLeft < 5 ? 'дня' : 'дней'}`;
-        const title = `${emoji} ${g.name} — ${dayWord}`;
-        const payload = JSON.stringify({ title, body: `${amtStr} · ${dateStr}`, tag: `sub_${g.id}_d${daysLeft}`, url: '/' });
+        await dispatchPush(JSON.stringify({
+          title: `${emoji} ${g.name} — ${dayWord}`,
+          body: `${amtStr} · ${dateStr}`,
+          tag: `sub_${g.id}_d${daysLeft}`,
+          url: '/',
+        }));
+      }
 
-        for (const ps of pushList) {
-          try {
-            const result = await sendPush(ps, payload);
-            if (result === 'ok') sent++;
-            else if (result === 'expired') {
-              // Удаляем протухшую подписку из БД
-              await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(ps.endpoint)}`, {
-                method: 'DELETE',
-                headers: { 'apikey': SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}` },
-              });
-              skipped++;
-            } else skipped++;
-          } catch (e) {
-            console.error('Push error:', e);
-            skipped++;
-          }
-        }
+      // ── 2. Вклады: за 7/3/1/0 дней до окончания ──
+      const deposits = (state?.savings ?? []).filter((s: any) => s.isDeposit && s.dateEnd);
+      for (const d of deposits) {
+        const endDate = new Date(d.dateEnd + 'T00:00:00Z');
+        const daysLeft = Math.round((endDate.getTime() - todayTs) / 86400000);
+        if (!NOTIFY_DAYS.includes(daysLeft)) continue;
+
+        const amtStr = `${Math.round(d.amount).toLocaleString('ru-RU')} ₽`;
+        const dateStr = endDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+        const dayWord = daysLeft === 0 ? 'истекает сегодня' : daysLeft === 1 ? 'истекает завтра' : `истекает через ${daysLeft} ${daysLeft < 5 ? 'дня' : 'дней'}`;
+        await dispatchPush(JSON.stringify({
+          title: `🏦 ${d.name || 'Вклад'} — ${dayWord}`,
+          body: `${amtStr} · ${dateStr}`,
+          tag: `deposit_${d.id}_d${daysLeft}`,
+          url: '/',
+        }));
+      }
+
+      // ── 3. Ежемесячный итог: только 1-го числа ──
+      if (nowUtc.getUTCDate() === 1) {
+        const totalSavings = (state?.savings ?? []).reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
+        const totalGoals = (state?.goals ?? [])
+          .filter((g: any) => g.type !== 'subscription')
+          .reduce((sum: number, g: any) => sum + (g.saved || 0), 0);
+        const total = totalSavings + totalGoals;
+
+        // Название прошлого месяца
+        const prevMonth = new Date(nowUtc);
+        prevMonth.setUTCMonth(prevMonth.getUTCMonth() - 1);
+        const monthName = prevMonth.toLocaleDateString('ru-RU', { month: 'long', timeZone: 'UTC' });
+
+        await dispatchPush(JSON.stringify({
+          title: `📊 Итог за ${monthName}`,
+          body: `Всего накоплено: ${Math.round(total).toLocaleString('ru-RU')} ₽`,
+          tag: `monthly_${prevMonth.getUTCFullYear()}_${prevMonth.getUTCMonth()}`,
+          url: '/',
+        }));
       }
     }
 
