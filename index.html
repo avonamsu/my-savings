@@ -6046,7 +6046,11 @@ function navigateToItem(page, dataId) {
     const pageEl = document.getElementById('page-' + page);
     if (!pageEl) return;
     const el = pageEl.querySelector(`[data-id="${dataId}"]`);
-    if (!el) return;
+    if (!el) {
+      // Повторяем если страница ещё не отрендерилась
+      setTimeout(() => navigateToItem(page, dataId), 300);
+      return;
+    }
     // Если элемент внутри свёрнутой группы — раскрываем её
     const groupBlock = el.closest('.group-block');
     if (groupBlock && groupBlock.style.display === 'none') {
