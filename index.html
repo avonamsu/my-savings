@@ -566,10 +566,11 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <div style="font-size:15px;font-weight:500;">Push-уведомления</div>
         <div id="notif-toggle-hint" style="font-size:12px;opacity:0.5;margin-top:2px;">Подписки, вклады и ежемесячный итог</div>
       </div>
-      <div id="notif-toggle-track" style="position:relative;width:51px;height:31px;flex-shrink:0;background:#3a3a3c;border-radius:31px;transition:background 0.2s;cursor:pointer;" onclick="const t=document.getElementById('notif-toggle');t.checked=!t.checked;handleNotifToggle(t.checked)">
+      <label for="notif-toggle" style="position:relative;display:inline-block;width:51px;height:31px;flex-shrink:0;cursor:pointer;">
         <input type="checkbox" id="notif-toggle" style="opacity:0;width:0;height:0;position:absolute;" onchange="handleNotifToggle(this.checked)">
+        <span id="notif-toggle-track" style="position:absolute;inset:0;background:#3a3a3c;border-radius:31px;transition:background 0.2s;"></span>
         <span id="notif-toggle-thumb" style="position:absolute;left:3px;top:3px;width:25px;height:25px;background:#fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:transform 0.2s;pointer-events:none;"></span>
-      </div>
+      </label>
     </div>
     <!-- Time picker -->
     <div id="notif-time-row" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg,rgba(255,255,255,0.06));border-radius:12px;opacity:0.4;pointer-events:none;transition:opacity 0.2s;">
