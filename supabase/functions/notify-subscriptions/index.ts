@@ -47,8 +47,13 @@ async function signVapidJwt(audience: string): Promise<string> {
     new TextEncoder().encode(JSON.stringify(obj))
   );
   const unsignedToken = `${encode(header)}.${encode(payload)}`;
+  // VAPID private key stored as raw base64url — import as JWK with public key coords from VAPID_PUBLIC_KEY
+  const pubKeyBytes = base64UrlToUint8Array(VAPID_PUBLIC_KEY); // 65 bytes: 0x04 + x(32) + y(32)
+  const x = uint8ArrayToBase64Url(pubKeyBytes.slice(1, 33));
+  const y = uint8ArrayToBase64Url(pubKeyBytes.slice(33, 65));
   const key = await crypto.subtle.importKey(
-    'pkcs8', base64UrlToUint8Array(VAPID_PRIVATE_KEY),
+    'jwk',
+    { kty: 'EC', crv: 'P-256', d: VAPID_PRIVATE_KEY, x, y, key_ops: ['sign'] },
     { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']
   );
   const signature = await crypto.subtle.sign(
