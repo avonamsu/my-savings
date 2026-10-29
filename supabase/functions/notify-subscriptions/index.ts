@@ -158,7 +158,14 @@ Deno.serve(async (req) => {
       const pushList = subsByUser.get(user_id);
       if (!pushList?.length) continue;
 
-      // TIME CHECK ОТКЛЮЧЁН — уведомления отправляются всегда (для тестирования)
+      // Проверяем время: если пользователь задал своё время, уведомляем только в тот час
+      if (notif_prefs?.time_utc) {
+        const [prefH] = (notif_prefs.time_utc as string).split(':').map(Number);
+        if (prefH !== currentUtcHour) { skipped++; continue; }
+      } else {
+        // По умолчанию 06:00 UTC (09:00 МСК)
+        if (currentUtcHour !== 6) { skipped++; continue; }
+      }
 
       // Вспомогательная функция отправки с авто-удалением протухших подписок
       async function dispatchPush(payload: string) {
