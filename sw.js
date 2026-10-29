@@ -32,10 +32,10 @@ self.addEventListener('notificationclick', event => {
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
       const existing = clients.find(c => c.url.includes(self.location.origin));
       if (existing) {
-        // Фокусируем вкладку и посылаем action через postMessage
-        return existing.focus().then(() => {
-          existing.postMessage({ type: 'NOTIF_ACTION', url: targetUrl });
-        });
+        // Сначала postMessage, потом фокус (focus может не вернуть Promise на iOS)
+        existing.postMessage({ type: 'NOTIF_ACTION', url: targetUrl });
+        try { existing.focus(); } catch(e) {}
+        return;
       }
       return self.clients.openWindow(targetUrl);
     })
