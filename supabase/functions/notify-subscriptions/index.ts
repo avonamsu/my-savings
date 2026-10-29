@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
           title: `🏦 ${d.name || 'Вклад'} — ${dayWord}`,
           body: `${amtStr} · ${dateStr}`,
           tag: `deposit_${d.id}_d${daysLeft}`,
-          url: '/',
+          url: `/?action=deposit&id=${d.id}`,
         }));
       }
 

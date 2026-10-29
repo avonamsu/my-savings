@@ -10985,7 +10985,7 @@ function handleNotifAction(url) {
     const action = u.searchParams.get('action');
     const id = u.searchParams.get('id');
     if (action === 'renew' && id) {
-      // Ждём пока приложение и данные загрузятся, потом открываем модалку
+      // Ждём пока приложение и данные загрузятся, потом открываем модалку продления подписки
       const tryOpen = (attempts = 0) => {
         const g = (state.goals || []).find(x => x.id === id);
         if (g) {
@@ -10995,6 +10995,17 @@ function handleNotifAction(url) {
         }
       };
       tryOpen();
+    } else if (action === 'deposit' && id) {
+      // Переходим на вкладку счетов и выделяем нужный вклад
+      const tryNav = (attempts = 0) => {
+        const s = (state.savings || []).find(x => x.id === id);
+        if (s) {
+          navigateToItem('savings', id);
+        } else if (attempts < 20) {
+          setTimeout(() => tryNav(attempts + 1), 300);
+        }
+      };
+      tryNav();
     }
   } catch(e) { console.warn('handleNotifAction error', e); }
 }
