@@ -10062,6 +10062,38 @@ function checkSubscriptionNotifications() {
   });
 }
 
+// ── Web Push: сохраняем подписку в Supabase ──────────────────
+const VAPID_PUBLIC_KEY = 'BEX9eDHaS6ld8LS2GwbhcyueetVT3pcIsYpmS3Tc0LDO2SllalZmx_H689dpwblvvJfECFNh51x4IRbO1A-ZnfY';
+
+async function registerWebPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (!_sbUser) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const appKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
+    }
+    const { endpoint, keys } = sub.toJSON();
+    await _sb.from('push_subscriptions').upsert({
+      user_id: _sbUser.id,
+      endpoint,
+      p256dh: keys.p256dh,
+      auth: keys.auth,
+    }, { onConflict: 'user_id,endpoint' });
+  } catch (e) {
+    console.warn('Web Push registration failed:', e);
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
 async function initNotifications() {
   const hasDeposits = state.savings.some(s => s.isDeposit && s.dateEnd);
   const hasSubs = (state.goals || []).some(g => g.type === 'subscription' && g.subDate);
@@ -10070,6 +10102,8 @@ async function initNotifications() {
   if (granted) {
     checkDepositNotifications();
     checkSubscriptionNotifications();
+    // Регистрируем Web Push для фоновых уведомлений (когда приложение закрыто)
+    registerWebPush();
   }
 }
 
