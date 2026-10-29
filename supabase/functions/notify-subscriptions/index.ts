@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
 
   try {
     const [userStates, pushSubs] = await Promise.all([
-      sbGet('user_state', 'user_id,state'),
+      sbGet('user_state', 'user_id,state,notif_prefs'),
       sbGet('push_subscriptions', 'user_id,endpoint,p256dh,auth'),
     ]);
 
@@ -147,14 +147,25 @@ Deno.serve(async (req) => {
       subsByUser.get(ps.user_id)!.push(ps);
     }
 
-    const now = new Date();
-    now.setUTCHours(0, 0, 0, 0);
-    const todayTs = now.getTime();
+    const nowUtc = new Date();
+    const currentUtcHour = nowUtc.getUTCHours();
+    const todayDate = new Date(nowUtc);
+    todayDate.setUTCHours(0, 0, 0, 0);
+    const todayTs = todayDate.getTime();
     let sent = 0, skipped = 0;
 
-    for (const { user_id, state } of userStates) {
+    for (const { user_id, state, notif_prefs } of userStates) {
       const pushList = subsByUser.get(user_id);
       if (!pushList?.length) continue;
+
+      // Проверяем время: если пользователь задал своё время, уведомляем только в тот час
+      if (notif_prefs?.time_utc) {
+        const [prefH] = (notif_prefs.time_utc as string).split(':').map(Number);
+        if (prefH !== currentUtcHour) { skipped++; continue; }
+      } else {
+        // По умолчанию 06:00 UTC (09:00 МСК)
+        if (currentUtcHour !== 6) { skipped++; continue; }
+      }
 
       const subs = (state?.goals ?? []).filter((g: any) => g.type === 'subscription' && g.subDate);
       for (const g of subs) {

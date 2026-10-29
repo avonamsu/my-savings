@@ -543,6 +543,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0 8px;"></div>
 
   <div class="sidebar-section"><span><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32" style="vertical-align:middle;margin-right:6px;"><path d="M0 0h32v32H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M13 2v4l-2 1l-3-3l-4 4l3 3l-1 2H2v6h4l1 2l-3 3l4 4l3-3l2 1v4h6v-4l2-1l3 3l4-4l-3-3l1-2h4v-6h-4l-1-2l3-3l-4-4l-3 3l-2-1V2Z"/><circle cx="16" cy="16" r="4"/></g></svg>Настройки</span></div>
+  <button class="sidebar-item" onclick="openNotifSettings();closeSidebar()"><span class="si">🔔</span><span>Уведомления</span></button>
   <button class="sidebar-item" onclick="showPage('backup');closeSidebar()"><span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5 21h14a2 2 0 0 0 2-2V8a1 1 0 0 0-.29-.71l-4-4A1 1 0 0 0 16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2m10-2H9v-5h6zM13 7h-2V5h2zM5 5h2v4h8V5h.59L19 8.41V19h-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5H5z"/></svg></span><span>Синхронизация и резервные данные</span></button>
   <button class="sidebar-item" onclick="closeSidebar();setTimeout(forceStartOnboarding,350)"><span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1zm10 0s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1z"/></svg></span>Пройти обучение</button>
   <div class="sidebar-divider"></div>
@@ -552,6 +553,37 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </button>
 </div>
 
+
+<!-- NOTIFICATION SETTINGS BOTTOM SHEET -->
+<div id="notif-settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;backdrop-filter:blur(2px);" onclick="closeNotifSettings()"></div>
+<div id="notif-settings-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:1001;background:var(--card-bg,#1c1c1e);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,0) 0;box-shadow:0 -8px 40px rgba(0,0,0,0.4);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);">
+  <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:12px auto 0;"></div>
+  <div style="padding:20px 20px 28px;">
+    <h3 style="margin:0 0 20px;font-size:17px;font-weight:600;">Уведомления</h3>
+    <!-- Toggle -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg,rgba(255,255,255,0.06));border-radius:12px;margin-bottom:12px;">
+      <div>
+        <div style="font-size:15px;font-weight:500;">Push-уведомления</div>
+        <div id="notif-toggle-hint" style="font-size:12px;opacity:0.5;margin-top:2px;">Напоминания об оплате подписок</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:51px;height:31px;flex-shrink:0;">
+        <input type="checkbox" id="notif-toggle" style="opacity:0;width:0;height:0;position:absolute;" onchange="handleNotifToggle(this.checked)">
+        <span id="notif-toggle-track" style="position:absolute;inset:0;background:#3a3a3c;border-radius:31px;transition:background 0.2s;cursor:pointer;" onclick="document.getElementById('notif-toggle').click()">
+          <span style="position:absolute;left:3px;top:3px;width:25px;height:25px;background:#fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:transform 0.2s;" id="notif-toggle-thumb"></span>
+        </span>
+      </label>
+    </div>
+    <!-- Time picker -->
+    <div id="notif-time-row" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg,rgba(255,255,255,0.06));border-radius:12px;opacity:0.4;pointer-events:none;transition:opacity 0.2s;">
+      <div>
+        <div style="font-size:15px;font-weight:500;">Время уведомлений</div>
+        <div style="font-size:12px;opacity:0.5;margin-top:2px;">По московскому времени</div>
+      </div>
+      <input type="time" id="notif-time-input" value="09:00" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;color:inherit;font-size:15px;font-weight:500;cursor:pointer;" onchange="saveNotifTime(this.value)">
+    </div>
+    <p id="notif-info-text" style="margin:16px 0 0;font-size:12px;opacity:0.45;line-height:1.5;">Уведомления приходят за 0, 1, 3 и 7 дней до списания.</p>
+  </div>
+</div>
 
 <!-- FAB -->
 <button class="fab" id="fab" onclick="fabAction()" hidden>＋ <span id="fab-label">Добавить</span></button>
@@ -10114,6 +10146,127 @@ function checkNotifBanner(){
   if(!hasDeposits&&!hasSubs){banner.style.display='none';return;}
   if(!('Notification'in window)||Notification.permission==='granted')banner.style.display='none';
   else if(Notification.permission!=='denied')banner.style.display='';
+}
+
+// ── NOTIFICATION SETTINGS PANEL ──────────────────────────
+
+function openNotifSettings() {
+  const overlay = document.getElementById('notif-settings-overlay');
+  const sheet = document.getElementById('notif-settings-sheet');
+  if (!overlay || !sheet) return;
+
+  // Обновляем состояние тогла
+  const toggle = document.getElementById('notif-toggle');
+  const track = document.getElementById('notif-toggle-track');
+  const thumb = document.getElementById('notif-toggle-thumb');
+  const timeRow = document.getElementById('notif-time-row');
+  const timeInput = document.getElementById('notif-time-input');
+  const hint = document.getElementById('notif-toggle-hint');
+
+  const isGranted = 'Notification' in window && Notification.permission === 'granted';
+  const isEnabled = isGranted && localStorage.getItem('notif_enabled') !== 'false';
+
+  toggle.checked = isEnabled;
+  setToggleStyle(isEnabled);
+
+  // Загружаем сохранённое время (по умолчанию 09:00 МСК)
+  timeInput.value = localStorage.getItem('notif_time_msk') || '09:00';
+
+  if (isEnabled) {
+    timeRow.style.opacity = '1';
+    timeRow.style.pointerEvents = 'auto';
+  } else {
+    timeRow.style.opacity = '0.4';
+    timeRow.style.pointerEvents = 'none';
+  }
+
+  if (Notification.permission === 'denied') {
+    hint.textContent = 'Разрешение отклонено — включите в настройках браузера';
+    hint.style.color = 'var(--warn, #ff9500)';
+  } else {
+    hint.textContent = 'Напоминания об оплате подписок';
+    hint.style.color = '';
+  }
+
+  overlay.style.display = 'block';
+  sheet.style.display = 'block';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { sheet.style.transform = 'translateY(0)'; });
+  });
+}
+
+function closeNotifSettings() {
+  const sheet = document.getElementById('notif-settings-sheet');
+  const overlay = document.getElementById('notif-settings-overlay');
+  if (!sheet) return;
+  sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => {
+    sheet.style.display = 'none';
+    overlay.style.display = 'none';
+  }, 350);
+}
+
+function setToggleStyle(on) {
+  const track = document.getElementById('notif-toggle-track');
+  const thumb = document.getElementById('notif-toggle-thumb');
+  if (!track || !thumb) return;
+  track.style.background = on ? '#34c759' : '#3a3a3c';
+  thumb.style.transform = on ? 'translateX(20px)' : 'translateX(0)';
+}
+
+async function handleNotifToggle(checked) {
+  setToggleStyle(checked);
+  const timeRow = document.getElementById('notif-time-row');
+
+  if (checked) {
+    if (Notification.permission === 'denied') {
+      // Не можем запросить повторно — направляем в настройки
+      setToggleStyle(false);
+      document.getElementById('notif-toggle').checked = false;
+      alert('Уведомления заблокированы браузером. Разрешите их в настройках сайта.');
+      return;
+    }
+    const granted = Notification.permission === 'granted' || await requestNotificationPermission();
+    if (granted) {
+      localStorage.setItem('notif_enabled', 'true');
+      registerWebPush();
+      timeRow.style.opacity = '1';
+      timeRow.style.pointerEvents = 'auto';
+    } else {
+      setToggleStyle(false);
+      document.getElementById('notif-toggle').checked = false;
+    }
+  } else {
+    localStorage.setItem('notif_enabled', 'false');
+    timeRow.style.opacity = '0.4';
+    timeRow.style.pointerEvents = 'none';
+    // Отписываемся от push
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await sub.unsubscribe();
+        if (_sbUser) {
+          await _sb.from('push_subscriptions').delete().eq('user_id', _sbUser.id).eq('endpoint', sub.endpoint);
+        }
+      }
+    } catch(e) { console.warn('Unsubscribe error:', e); }
+  }
+}
+
+function saveNotifTime(value) {
+  // value — строка "HH:MM" по МСК
+  localStorage.setItem('notif_time_msk', value);
+  // Пересчитываем в UTC и обновляем крон в edge function параметрах
+  // (крон обновляется через Supabase при следующем сохранении user_state)
+  const [h, m] = value.split(':').map(Number);
+  const utcH = ((h - 3) + 24) % 24; // МСК = UTC+3
+  localStorage.setItem('notif_time_utc', `${String(utcH).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  // Сохраняем в user_state для использования edge function
+  if (_sbUser) {
+    const notifPrefs = { time_msk: value, time_utc: `${utcH}:${m}` };
+    _sb.from('user_state').upsert({ user_id: _sbUser.id, notif_prefs: notifPrefs }, { onConflict: 'user_id' });
+  }
 }
 
 // ── INDEXEDDB BACKUP ─────────────────────────────────────
