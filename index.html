@@ -564,7 +564,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg,rgba(255,255,255,0.06));border-radius:12px;margin-bottom:12px;">
       <div>
         <div style="font-size:15px;font-weight:500;">Push-уведомления</div>
-        <div id="notif-toggle-hint" style="font-size:12px;opacity:0.5;margin-top:2px;">Напоминания об оплате подписок</div>
+        <div id="notif-toggle-hint" style="font-size:12px;opacity:0.5;margin-top:2px;">Подписки, вклады и ежемесячный итог</div>
       </div>
       <label style="position:relative;display:inline-block;width:51px;height:31px;flex-shrink:0;">
         <input type="checkbox" id="notif-toggle" style="opacity:0;width:0;height:0;position:absolute;" onchange="handleNotifToggle(this.checked)">
@@ -10189,7 +10189,7 @@ function openNotifSettings() {
     hint.textContent = 'Разрешение отклонено — включите в настройках браузера';
     hint.style.color = 'var(--warn, #ff9500)';
   } else {
-    hint.textContent = 'Напоминания об оплате подписок';
+    hint.textContent = 'Подписки, вклады и ежемесячный итог';
     hint.style.color = '';
   }
 
