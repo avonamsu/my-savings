@@ -110,7 +110,8 @@ async function encryptPayload(payload: string, p256dhBase64: string, authBase64:
 
 // --- Send push ---
 
-async function sendPush(sub: { endpoint: string; p256dh: string; auth: string }, payload: string): Promise<boolean> {
+// Returns: 'ok' | 'failed' | 'expired' (404/410 = подписка протухла, нужно удалить)
+async function sendPush(sub: { endpoint: string; p256dh: string; auth: string }, payload: string): Promise<'ok' | 'failed' | 'expired'> {
   const url = new URL(sub.endpoint);
   const jwt = await signVapidJwt(`${url.protocol}//${url.host}`);
   const resp = await fetch(sub.endpoint, {
@@ -123,7 +124,8 @@ async function sendPush(sub: { endpoint: string; p256dh: string; auth: string },
     },
     body: await encryptPayload(payload, sub.p256dh, sub.auth),
   });
-  return resp.status === 200 || resp.status === 201;
+  if (resp.status === 404 || resp.status === 410) return 'expired'; // подписка недействительна
+  return (resp.status === 200 || resp.status === 201) ? 'ok' : 'failed';
 }
 
 // --- Main ---
@@ -173,7 +175,16 @@ Deno.serve(async (req) => {
 
         for (const ps of pushList) {
           try {
-            if (await sendPush(ps, payload)) sent++; else skipped++;
+            const result = await sendPush(ps, payload);
+            if (result === 'ok') sent++;
+            else if (result === 'expired') {
+              // Удаляем протухшую подписку из БД
+              await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(ps.endpoint)}`, {
+                method: 'DELETE',
+                headers: { 'apikey': SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}` },
+              });
+              skipped++;
+            } else skipped++;
           } catch (e) {
             console.error('Push error:', e);
             skipped++;
