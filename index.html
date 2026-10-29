@@ -654,7 +654,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div style="font-size:12px;color:var(--text-dim);">Данные менялись, но копия не создавалась 7+ дней. Нажми чтобы настроить →</div>
   </div>
   <div id="notif-banner" style="display:none;background:rgba(255,179,71,0.12);border:1px solid rgba(255,179,71,0.3);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--warn);cursor:pointer;" onclick="initNotifications()">
-    🔔 Разреши уведомления — напомним когда вклад закроется
+    🔔 Разреши уведомления — напомним о подписках и вкладах
   </div>
 </div>
 
@@ -10021,11 +10021,63 @@ function checkDepositNotifications(){
     if(title){new Notification(title,{body});localStorage.setItem(notifKey,today());}
   });
 }
-async function initNotifications(){const hasDeposits=state.savings.some(s=>s.isDeposit&&s.dateEnd);if(!hasDeposits)return;const granted=await requestNotificationPermission();if(granted)checkDepositNotifications();}
+// ── Subscription notifications: за 7, 3, 1 день и в день списания ──
+function checkSubscriptionNotifications() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const todayTs = now.getTime();
+  const NOTIFY_DAYS = [0, 1, 3, 7]; // в день + за 1, 3, 7 дней
+
+  (state.goals || []).filter(g => g.type === 'subscription' && g.subDate).forEach(g => {
+    const period = g.subPeriod || 1;
+    // вычисляем следующую дату списания (как в виджете)
+    let next = new Date(g.subDate + 'T00:00:00'); next.setHours(0,0,0,0);
+    while (next.getTime() < todayTs) next.setMonth(next.getMonth() + period);
+    const daysLeft = Math.round((next.getTime() - todayTs) / 86400000);
+
+    if (!NOTIFY_DAYS.includes(daysLeft)) return;
+
+    // дедупликация: одно уведомление на (подписку × дату × за N дней)
+    const notifKey = `sub_notif_${g.id}_${next.toISOString().slice(0,10)}_d${daysLeft}`;
+    if (localStorage.getItem(notifKey) === today()) return;
+
+    const amtStr = g.subCurrency && g.subCurrency !== 'RUB' && g.subAmountOrig
+      ? `${fmt2(g.subAmountOrig)} ${CURRENCY_SYMBOLS?.[g.subCurrency] || g.subCurrency}`
+      : `${fmt(Math.round(g.amount))} ₽`;
+    const dateStr = next.toLocaleDateString('ru-RU', { day:'numeric', month:'long' });
+    const emoji = g.emoji || '🔄';
+
+    let title, body;
+    if (daysLeft === 0) {
+      title = `${emoji} ${g.name} — списание сегодня`;
+      body = `${amtStr} · ${dateStr}`;
+    } else {
+      const dayWord = daysLeft === 1 ? 'завтра' : `через ${daysLeft} ${plural(daysLeft,'день','дня','дней')}`;
+      title = `${emoji} ${g.name} — ${dayWord}`;
+      body = `${amtStr} · ${dateStr}`;
+    }
+
+    new Notification(title, { body, icon: '/icon.png', tag: notifKey });
+    localStorage.setItem(notifKey, today());
+  });
+}
+
+async function initNotifications() {
+  const hasDeposits = state.savings.some(s => s.isDeposit && s.dateEnd);
+  const hasSubs = (state.goals || []).some(g => g.type === 'subscription' && g.subDate);
+  if (!hasDeposits && !hasSubs) return;
+  const granted = await requestNotificationPermission();
+  if (granted) {
+    checkDepositNotifications();
+    checkSubscriptionNotifications();
+  }
+}
+
 function checkNotifBanner(){
   const banner=document.getElementById('notif-banner');if(!banner)return;
   const hasDeposits=state.savings.some(s=>s.isDeposit&&s.dateEnd);
-  if(!hasDeposits){banner.style.display='none';return;}
+  const hasSubs=(state.goals||[]).some(g=>g.type==='subscription'&&g.subDate);
+  if(!hasDeposits&&!hasSubs){banner.style.display='none';return;}
   if(!('Notification'in window)||Notification.permission==='granted')banner.style.display='none';
   else if(Notification.permission!=='denied')banner.style.display='';
 }
