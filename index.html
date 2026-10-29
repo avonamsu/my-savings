@@ -10268,9 +10268,11 @@ function saveNotifTime(value) {
   const utcH = ((h - 3) + 24) % 24; // МСК = UTC+3
   localStorage.setItem('notif_time_utc', `${String(utcH).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
   // Сохраняем в user_state для использования edge function
+  // Используем update (не upsert), чтобы не затронуть колонку state
   if (_sbUser) {
-    const notifPrefs = { time_msk: value, time_utc: `${utcH}:${m}` };
-    _sb.from('user_state').upsert({ user_id: _sbUser.id, notif_prefs: notifPrefs }, { onConflict: 'user_id' });
+    const time_utc = `${String(utcH).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    const notifPrefs = { time_msk: value, time_utc };
+    _sb.from('user_state').update({ notif_prefs: notifPrefs }).eq('user_id', _sbUser.id);
   }
 }
 
