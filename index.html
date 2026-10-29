@@ -10259,21 +10259,22 @@ async function handleNotifToggle(checked) {
   }
 }
 
-function saveNotifTime(value) {
+async function saveNotifTime(value) {
   // value — строка "HH:MM" по МСК
   localStorage.setItem('notif_time_msk', value);
-  // Пересчитываем в UTC и обновляем крон в edge function параметрах
-  // (крон обновляется через Supabase при следующем сохранении user_state)
   const [h, m] = value.split(':').map(Number);
   const utcH = ((h - 3) + 24) % 24; // МСК = UTC+3
-  localStorage.setItem('notif_time_utc', `${String(utcH).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-  // Сохраняем в user_state для использования edge function
-  // Используем update (не upsert), чтобы не затронуть колонку state
-  if (_sbUser) {
-    const time_utc = `${String(utcH).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-    const notifPrefs = { time_msk: value, time_utc };
-    _sb.from('user_state').update({ notif_prefs: notifPrefs }).eq('user_id', _sbUser.id);
-  }
+  const time_utc = `${String(utcH).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  localStorage.setItem('notif_time_utc', time_utc);
+
+  // Сохраняем в notif_prefs (отдельная колонка, не затрагивает state)
+  if (!_sbUser) { console.warn('saveNotifTime: нет пользователя'); return; }
+  const notifPrefs = { time_msk: value, time_utc };
+  const { error } = await _sb.from('user_state')
+    .update({ notif_prefs: notifPrefs })
+    .eq('user_id', _sbUser.id);
+  if (error) console.error('saveNotifTime error:', error);
+  else console.log('saveNotifTime: сохранено', notifPrefs);
 }
 
 // ── INDEXEDDB BACKUP ─────────────────────────────────────
