@@ -1899,7 +1899,7 @@ async function sbInit() {
   _sb.auth.onAuthStateChange((_event, session) => {
     _sbUser = session?.user || null;
     sbUpdateUI();
-    if (_sbUser) { closeAuthModal(); sbLoadState().then(() => sbSubscribeRealtime()); }
+    if (_sbUser) { closeAuthModal(); sbLoadState().then(() => { sbSubscribeRealtime(); if (Notification.permission === 'granted') registerWebPush(); }); }
     else { sbUnsubscribeRealtime(); }
   });
   if (_sbUser) { await sbLoadState(); sbSubscribeRealtime(); }
@@ -10102,7 +10102,7 @@ async function initNotifications() {
   if (granted) {
     checkDepositNotifications();
     checkSubscriptionNotifications();
-    // Регистрируем Web Push для фоновых уведомлений (когда приложение закрыто)
+    // Регистрируем Web Push — работает и при уже выданном разрешении
     registerWebPush();
   }
 }
