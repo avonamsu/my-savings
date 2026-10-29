@@ -555,35 +555,43 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 
 <!-- NOTIFICATION SETTINGS BOTTOM SHEET -->
-<div id="notif-settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;backdrop-filter:blur(2px);" onclick="closeNotifSettings()"></div>
-<div id="notif-settings-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:1001;background:var(--card-bg,#1c1c1e);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,0) 0;box-shadow:0 -8px 40px rgba(0,0,0,0.4);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);">
-  <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:12px auto 0;"></div>
-  <div style="padding:20px 20px 28px;">
-    <h3 style="margin:0 0 20px;font-size:17px;font-weight:600;">Уведомления</h3>
-    <!-- Toggle -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg,rgba(255,255,255,0.06));border-radius:12px;margin-bottom:12px;">
-      <div>
-        <div style="font-size:15px;font-weight:500;">Push-уведомления</div>
-        <div id="notif-toggle-hint" style="font-size:12px;opacity:0.5;margin-top:2px;">Подписки, вклады и ежемесячный итог</div>
+<div id="notif-settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;backdrop-filter:blur(4px);" onclick="closeNotifSettings()"></div>
+<div id="notif-settings-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:1001;background:#162437;border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,16px) 0;box-shadow:0 -4px 32px rgba(0,0,0,0.5);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);">
+  <!-- Handle -->
+  <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:14px auto 0;"></div>
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0;">
+    <h3 style="margin:0;font-size:18px;font-weight:700;color:#E8F4F8;">Уведомления</h3>
+    <button onclick="closeNotifSettings()" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#7A9BB5;font-size:18px;line-height:1;padding:0;">✕</button>
+  </div>
+  <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:10px;">
+    <!-- Toggle row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#1E3050;border-radius:14px;">
+      <div style="flex:1;min-width:0;margin-right:12px;">
+        <div style="font-size:15px;font-weight:600;color:#E8F4F8;">Push-уведомления</div>
+        <div id="notif-toggle-hint" style="font-size:12px;color:#7A9BB5;margin-top:3px;line-height:1.4;">Подписки, вклады и ежемесячный итог</div>
       </div>
       <label for="notif-toggle" style="position:relative;display:inline-block;width:51px;height:31px;flex-shrink:0;cursor:pointer;">
         <input type="checkbox" id="notif-toggle" style="opacity:0;width:0;height:0;position:absolute;" onchange="handleNotifToggle(this.checked)">
-        <span id="notif-toggle-track" style="position:absolute;inset:0;background:#3a3a3c;border-radius:31px;transition:background 0.2s;"></span>
-        <span id="notif-toggle-thumb" style="position:absolute;left:3px;top:3px;width:25px;height:25px;background:#fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:transform 0.2s;pointer-events:none;"></span>
+        <span id="notif-toggle-track" style="position:absolute;inset:0;background:#2a3f55;border-radius:31px;transition:background 0.2s;"></span>
+        <span id="notif-toggle-thumb" style="position:absolute;left:3px;top:3px;width:25px;height:25px;background:#fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.4);transition:transform 0.2s;pointer-events:none;"></span>
       </label>
     </div>
-    <!-- Time picker -->
-    <div id="notif-time-row" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg,rgba(255,255,255,0.06));border-radius:12px;opacity:0.4;pointer-events:none;transition:opacity 0.2s;">
-      <div>
-        <div style="font-size:15px;font-weight:500;">Время уведомлений</div>
-        <div style="font-size:12px;opacity:0.5;margin-top:2px;">По московскому времени</div>
+    <!-- Time picker row -->
+    <div id="notif-time-row" style="padding:14px 16px;background:#1E3050;border-radius:14px;opacity:0.4;pointer-events:none;transition:opacity 0.2s;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:#E8F4F8;">Время уведомлений</div>
+          <div style="font-size:12px;color:#7A9BB5;margin-top:3px;">По московскому времени</div>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <input type="time" id="notif-time-input" value="09:00" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;color:inherit;font-size:15px;font-weight:500;cursor:pointer;" onchange="saveNotifTime(this.value)">
-        <button onclick="saveNotifTime(document.getElementById('notif-time-input').value)" style="background:var(--accent,#4ecdc4);border:none;border-radius:8px;padding:7px 14px;color:#000;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;">Сохранить</button>
+        <input type="time" id="notif-time-input" value="09:00" style="flex:1;min-width:0;background:rgba(255,255,255,0.07);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:9px 12px;color:#E8F4F8;font-size:16px;font-weight:600;cursor:pointer;-webkit-appearance:none;appearance:none;" onchange="saveNotifTime(this.value)">
+        <button onclick="saveNotifTime(document.getElementById('notif-time-input').value)" style="background:#4ECDC4;border:none;border-radius:10px;padding:9px 16px;color:#0F1B2D;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Сохранить</button>
       </div>
     </div>
-    <p id="notif-info-text" style="margin:16px 0 0;font-size:12px;opacity:0.45;line-height:1.5;">Уведомления приходят за 0, 1, 3 и 7 дней до списания.</p>
+    <!-- Info -->
+    <p id="notif-info-text" style="margin:2px 0 0;padding:0 4px;font-size:12px;color:#7A9BB5;line-height:1.6;">Уведомления приходят за 0, 1, 3 и 7 дней до списания подписок и окончания вкладов.</p>
   </div>
 </div>
 
