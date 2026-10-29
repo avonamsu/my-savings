@@ -2004,6 +2004,7 @@ async function sbLoadState() {
     // Load snapshots independently
     sbLoadSnapshots();
     _sbStateLoaded = true; // safe to write to DB now
+    window.dispatchEvent(new Event('app-state-loaded')); // для обработки push-action из URL
   } catch(e) { console.warn('sbLoadState exception', e); }
 }
 
@@ -10975,6 +10976,39 @@ checkBackupReminder();
 updateBackupDateDisplay();
 gdriveInit();
 sbInit();
+
+// ── ОБРАБОТКА ДЕЙСТВИЙ ИЗ PUSH-УВЕДОМЛЕНИЙ ───────────────
+// Функция обработки action из URL или postMessage
+function handleNotifAction(url) {
+  try {
+    const u = new URL(url, location.origin);
+    const action = u.searchParams.get('action');
+    const id = u.searchParams.get('id');
+    if (action === 'renew' && id) {
+      // Ждём пока приложение и данные загрузятся, потом открываем модалку
+      const tryOpen = (attempts = 0) => {
+        const g = (state.goals || []).find(x => x.id === id);
+        if (g) {
+          openSubRenewModal(id);
+        } else if (attempts < 20) {
+          setTimeout(() => tryOpen(attempts + 1), 300);
+        }
+      };
+      tryOpen();
+    }
+  } catch(e) { console.warn('handleNotifAction error', e); }
+}
+
+// Слушаем postMessage от Service Worker (клик по уведомлению в открытом окне)
+navigator.serviceWorker?.addEventListener('message', e => {
+  if (e.data?.type === 'NOTIF_ACTION') handleNotifAction(e.data.url);
+});
+
+// Проверяем URL при старте (клик по уведомлению при закрытом окне)
+if (location.search.includes('action=')) {
+  // Ждём загрузки данных из Supabase
+  window.addEventListener('app-state-loaded', () => handleNotifAction(location.href), { once: true });
+}
 
 // ── ONBOARDING ────────────────────────────────────────────
 const OB_STEPS = [

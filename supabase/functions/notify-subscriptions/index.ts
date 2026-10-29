@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
           title: `${emoji} ${g.name} — ${dayWord}`,
           body: `${amtStr} · ${dateStr}`,
           tag: `sub_${g.id}_d${daysLeft}`,
-          url: '/',
+          url: `/?action=renew&id=${g.id}`, // открывает модалку продления при клике
         }));
       }
 

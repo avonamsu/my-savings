@@ -22,14 +22,19 @@ self.addEventListener('push', event => {
   );
 });
 
-// Клик по уведомлению — открываем приложение
+// Клик по уведомлению — открываем приложение и передаём action
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || '/';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
       const existing = clients.find(c => c.url.includes(self.location.origin));
-      if (existing) return existing.focus();
+      if (existing) {
+        // Фокусируем вкладку и посылаем action через postMessage
+        existing.focus();
+        existing.postMessage({ type: 'NOTIF_ACTION', url: targetUrl });
+        return;
+      }
       return self.clients.openWindow(targetUrl);
     })
   );
