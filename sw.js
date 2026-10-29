@@ -25,7 +25,9 @@ self.addEventListener('push', event => {
 // Клик по уведомлению — открываем приложение и передаём action
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/';
+  const rawUrl = event.notification.data?.url || '/';
+  // Строим абсолютный URL относительно scope SW (учитывает /my-savings/ на GitHub Pages)
+  const targetUrl = new URL(rawUrl, self.registration.scope).href;
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
       const existing = clients.find(c => c.url.includes(self.location.origin));
