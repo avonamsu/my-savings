@@ -9273,8 +9273,7 @@ async function renderBudgetStats() {
     let trendBadge = '';
     if (avg && avg >= 100 && type === 'expense') {
       const pct = (amt - avg) / avg * 100;
-      if (pct >= 15) trendBadge = `<span style="font-size:10px;color:#FF6B6B;margin-left:4px;font-weight:600;">↑${Math.round(pct)}%</span>`;
-      else if (pct <= -15) trendBadge = `<span style="font-size:10px;color:#69DB7C;margin-left:4px;font-weight:600;">↓${Math.round(Math.abs(pct))}%</span>`;
+      // trend badges removed per design decision
     }
     return `<div style="display:flex;align-items:center;
                 padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;">
@@ -9410,7 +9409,6 @@ async function renderBudgetStats() {
     </div>` : '';
 
   el.innerHTML = `
-    ${topRowHtml}
     ${donutHtml}
     ${allGroupsHtml}
   `.trim();
