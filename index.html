@@ -9320,12 +9320,11 @@ async function renderBudgetStats() {
     const emoji = _budgetCatEmoji('expense', topCatGroup, topCat);
     const pct = totalExp > 0 ? Math.round(topCatAmt / totalExp * 100) : 0;
     const groupColor = GROUP_COLORS[topCatGroup] || '#FF6B6B';
-    return `<div class="card" style="padding:14px;display:flex;flex-direction:column;justify-content:space-between;min-height:100px;">
-      <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">🏆 Топ трат</div>
-      <div style="font-size:24px;line-height:1;margin-bottom:4px;">${emoji || '💸'}</div>
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;">${topCat}</div>
-      <div style="font-size:11px;color:${groupColor};margin-bottom:6px;">${topCatGroup} · ${pct}%</div>
-      <div style="font-size:16px;font-weight:800;color:#FF6B6B;">${fmt(topCatAmt)} ₽</div>
+    return `<div class="card" style="padding:14px;display:flex;flex-direction:column;gap:6px;">
+      <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">🏆 Топ трат</div>
+      <div style="font-size:22px;line-height:1;">${emoji || '💸'}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);">${topCat}</div>
+      <div style="font-size:16px;font-weight:800;color:#FF6B6B;margin-top:auto;">${fmt(topCatAmt)} ₽</div>
     </div>`;
   })() : '';
 
@@ -9335,13 +9334,10 @@ async function renderBudgetStats() {
     const color = isUp ? '#FF6B6B' : '#69DB7C';
     const diff = item.amt - item.avg; // абсолютная разница (+ рост, - снижение)
     const sign = isUp ? '+' : '−';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-      <span style="font-size:16px;">${emoji || '📊'}</span>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;color:var(--text);">${item.cat}</div>
-        <div style="font-size:11px;color:var(--text-dim);">${fmt(Math.round(item.avg))}/мес → ${fmt(Math.round(item.amt))} ₽</div>
-      </div>
-      <span style="font-size:13px;font-weight:700;color:${color};flex-shrink:0;">${sign}${fmt(Math.round(Math.abs(diff)))} ₽</span>
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <span style="font-size:16px;flex-shrink:0;">${emoji || '📊'}</span>
+      <div style="font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.cat}</div>
+      <span style="font-size:12px;font-weight:700;color:${color};flex-shrink:0;">${sign}${fmt(Math.round(Math.abs(diff)))} ₽</span>
     </div>`;
   };
 
