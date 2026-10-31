@@ -8439,6 +8439,9 @@ function switchBudgetTab(tab) {
   try { localStorage.setItem('budget_active_tab', tab); } catch {}
   // entries = default/main view; stats = analysis (secondary)
   document.getElementById('budget-entries-view').style.display = tab === 'stats' ? 'none' : '';
+  // Hide the summary card (расходы/доходы) when on stats page
+  const summaryBlock = document.querySelector('#budget-content > div[style*="grid-template-columns:1fr 1fr"]');
+  if (summaryBlock) summaryBlock.style.display = tab === 'stats' ? 'none' : '';
   const statsView = document.getElementById('budget-stats-view');
   if (statsView) statsView.style.display = tab === 'stats' ? '' : 'none';
   if (tab === 'stats') { _budgetStatsCache = null; _budgetStatsCache3 = null; renderBudgetStats(); }
