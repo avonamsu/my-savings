@@ -9320,18 +9320,12 @@ async function renderBudgetStats() {
     const emoji = _budgetCatEmoji('expense', topCatGroup, topCat);
     const pct = totalExp > 0 ? Math.round(topCatAmt / totalExp * 100) : 0;
     const groupColor = GROUP_COLORS[topCatGroup] || '#FF6B6B';
-    return `<div style="background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.2);
-                  border-radius:14px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
-      <div style="font-size:26px;line-height:1;">${emoji || '💸'}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">🏆 Топ трат месяца</div>
-        <div style="font-size:14px;font-weight:700;color:var(--text);">${topCat}</div>
-        <div style="font-size:11px;color:${groupColor};margin-top:1px;">${topCatGroup} · ${pct}% расходов</div>
-      </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <div style="font-size:16px;font-weight:800;color:#FF6B6B;">${fmt(topCatAmt)}</div>
-        <div style="font-size:10px;color:var(--text-dim);">₽</div>
-      </div>
+    return `<div class="card" style="padding:14px;display:flex;flex-direction:column;justify-content:space-between;min-height:100px;">
+      <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">🏆 Топ трат</div>
+      <div style="font-size:24px;line-height:1;margin-bottom:4px;">${emoji || '💸'}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;">${topCat}</div>
+      <div style="font-size:11px;color:${groupColor};margin-bottom:6px;">${topCatGroup} · ${pct}%</div>
+      <div style="font-size:16px;font-weight:800;color:#FF6B6B;">${fmt(topCatAmt)} ₽</div>
     </div>`;
   })() : '';
 
@@ -9355,8 +9349,8 @@ async function renderBudgetStats() {
   const topUp   = trendUp[0];
   const topDown = trendDown[0];
   const trendsHtml = (topUp || topDown) ? `
-    <div style="margin-bottom:14px;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Тренды vs прошлые 3 месяца</div>
+    <div class="card" style="padding:14px;display:flex;flex-direction:column;justify-content:space-between;min-height:100px;">
+      <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Изменения</div>
       ${topUp   ? trendRowHtml(topUp,   true)  : ''}
       ${topDown ? trendRowHtml(topDown, false) : ''}
     </div>` : '';
@@ -9410,9 +9404,15 @@ async function renderBudgetStats() {
     </div>`;
 
   // ── Assemble final HTML ──
+  // Топ трат + тренды — в один горизонтальный ряд из двух квадратов
+  const topRowHtml = (topCatHtml || trendsHtml) ? `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      ${topCatHtml}
+      ${trendsHtml}
+    </div>` : '';
+
   el.innerHTML = `
-    ${topCatHtml}
-    ${trendsHtml}
+    ${topRowHtml}
     ${donutHtml}
     ${allGroupsHtml}
   `.trim();
