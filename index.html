@@ -9335,27 +9335,30 @@ async function renderBudgetStats() {
     </div>`;
   })() : '';
 
-  // ── Trends block ──
+  // ── Trends block — top-1 рост и top-1 снижение, абсолютная разница ──
   const trendRowHtml = (item, isUp) => {
     const emoji = _budgetCatEmoji('expense', item.grp, item.cat);
     const color = isUp ? '#FF6B6B' : '#69DB7C';
-    const arrow = isUp ? '↑' : '↓';
-    const pct = Math.round(Math.abs(item.pctChange));
+    const diff = item.amt - item.avg; // абсолютная разница (+ рост, - снижение)
+    const sign = isUp ? '+' : '−';
     return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
       <span style="font-size:16px;">${emoji || '📊'}</span>
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;color:var(--text);">${item.cat}</div>
-        <div style="font-size:11px;color:var(--text-dim);">${fmt(item.avg)}/мес → ${fmt(item.amt)}</div>
+        <div style="font-size:11px;color:var(--text-dim);">${fmt(Math.round(item.avg))}/мес → ${fmt(Math.round(item.amt))} ₽</div>
       </div>
-      <span style="font-size:13px;font-weight:700;color:${color};flex-shrink:0;">${arrow}${pct}%</span>
+      <span style="font-size:13px;font-weight:700;color:${color};flex-shrink:0;">${sign}${fmt(Math.round(Math.abs(diff)))} ₽</span>
     </div>`;
   };
 
-  const trendsHtml = (trendUp.length > 0 || trendDown.length > 0) ? `
+  // Берём только топ-1 из каждой группы
+  const topUp   = trendUp[0];
+  const topDown = trendDown[0];
+  const trendsHtml = (topUp || topDown) ? `
     <div style="margin-bottom:14px;">
       <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Тренды vs прошлые 3 месяца</div>
-      ${trendUp.slice(0,3).map(t => trendRowHtml(t, true)).join('')}
-      ${trendDown.slice(0,3).map(t => trendRowHtml(t, false)).join('')}
+      ${topUp   ? trendRowHtml(topUp,   true)  : ''}
+      ${topDown ? trendRowHtml(topDown, false) : ''}
     </div>` : '';
 
   // ── Donut chart block ──
