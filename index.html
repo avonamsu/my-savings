@@ -9265,26 +9265,21 @@ async function renderBudgetStats() {
   }
   donutSlices.sort((a,b) => b.amt - a.amt);
 
-  // ── Render a category row with trend indicator ──
-  const renderCatRow = (cat, amt, groupTotal, colorVar, type, groupName) => {
+  // ── Render a category row ──
+  // barPct: amt relative to group max (so top category = 100% bar), gives Excel-style data bars
+  const renderCatRow = (cat, amt, groupTotal, colorVar, type, groupName, maxAmt) => {
     const catPct = groupTotal > 0 ? Math.round(amt / groupTotal * 100) : 0;
+    const barPct = maxAmt > 0 ? Math.round(amt / maxAmt * 100) : 0;
     const emoji = _budgetCatEmoji(type, groupName, cat);
-    const avg = cat3MonthAvg[cat];
-    let trendBadge = '';
-    if (avg && avg >= 100 && type === 'expense') {
-      const pct = (amt - avg) / avg * 100;
-      // trend badges removed per design decision
-    }
     return `<div style="display:flex;align-items:center;
-                padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;">
+                padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;">
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;gap:5px;">
           ${emoji ? `<span>${emoji}</span>` : ''}
           <span style="color:var(--text);">${cat}</span>
-          ${trendBadge}
         </div>
-        <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;margin-top:5px;">
-          <div style="height:3px;background:${colorVar};border-radius:2px;width:${catPct}%;opacity:0.75;transition:width .3s;"></div>
+        <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;margin-top:5px;">
+          <div style="height:4px;background:${colorVar};border-radius:2px;width:${barPct}%;opacity:0.8;transition:width .3s;"></div>
         </div>
       </div>
       <div style="text-align:right;margin-left:12px;white-space:nowrap;">
@@ -9300,8 +9295,9 @@ async function renderBudgetStats() {
     if (!cats) return '';
     const groupTotal = Object.values(cats).reduce((s,v) => s+v, 0);
     const pct = totalExp > 0 ? Math.round(groupTotal / totalExp * 100) : 0;
-    const rows = Object.entries(cats).sort((a,b) => b[1]-a[1])
-      .map(([cat, amt]) => renderCatRow(cat, amt, groupTotal, colorHex, 'expense', groupName)).join('');
+    const sortedCats = Object.entries(cats).sort((a,b) => b[1]-a[1]);
+    const maxAmt = sortedCats[0]?.[1] || 1; // top category = 100% bar
+    const rows = sortedCats.map(([cat, amt]) => renderCatRow(cat, amt, groupTotal, colorHex, 'expense', groupName, maxAmt)).join('');
     return `<div style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <span style="font-size:12px;font-weight:700;color:${colorHex};text-transform:uppercase;letter-spacing:.04em;">${groupName}</span>
