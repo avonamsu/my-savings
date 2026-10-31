@@ -9396,6 +9396,46 @@ async function renderBudgetStats() {
       ${!totalExp ? '<div style="text-align:center;padding:40px 0;color:var(--text-dim);">Нет расходов за период</div>' : ''}
     </div>`;
 
+  // ── Render income group ──
+  const incomeColor = '#3DD68C';
+  const incomeGroupsHtml = (() => {
+    const allIncomeCats = Object.values(totals.income).reduce((acc, cats) => {
+      for (const [cat, amt] of Object.entries(cats)) acc[cat] = (acc[cat] || 0) + amt;
+      return acc;
+    }, {});
+    const totalInc = Object.values(allIncomeCats).reduce((s,v) => s+v, 0);
+    if (totalInc <= 0) return '';
+    const sortedCats = Object.entries(allIncomeCats).sort((a,b) => b[1]-a[1]);
+    const maxAmt = sortedCats[0]?.[1] || 1;
+    const rows = sortedCats.map(([cat, amt]) => {
+      const catPct = totalInc > 0 ? Math.round(amt / totalInc * 100) : 0;
+      const barPct = Math.round(amt / maxAmt * 100);
+      const emoji = _budgetCatEmoji('income', 'Доходы', cat);
+      return `<div style="display:flex;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            ${emoji ? `<span>${emoji}</span>` : ''}
+            <span style="color:var(--text);">${cat}</span>
+          </div>
+          <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;margin-top:5px;">
+            <div style="height:4px;background:${incomeColor};border-radius:2px;width:${barPct}%;opacity:0.8;transition:width .3s;"></div>
+          </div>
+        </div>
+        <div style="text-align:right;margin-left:12px;white-space:nowrap;">
+          <span style="color:var(--text);font-weight:600;">${fmt(amt)} ₽</span>
+          <span style="color:var(--text-dim);font-size:11px;margin-left:4px;">${catPct}%</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="chart-wrap" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:12px;font-weight:700;color:${incomeColor};text-transform:uppercase;letter-spacing:.04em;">Доходы</span>
+        <span style="font-size:13px;font-weight:700;color:${incomeColor};">${fmt(totalInc)} ₽</span>
+      </div>
+      ${rows}
+    </div>`;
+  })();
+
   // ── Assemble final HTML ──
   // Топ трат + тренды — в один горизонтальный ряд из двух квадратов
   const topRowHtml = (topCatHtml || trendsHtml) ? `
@@ -9407,6 +9447,7 @@ async function renderBudgetStats() {
   el.innerHTML = `
     ${donutHtml}
     ${allGroupsHtml}
+    ${incomeGroupsHtml}
   `.trim();
 
   // ── Draw donut ──
