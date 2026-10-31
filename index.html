@@ -9685,14 +9685,20 @@ function saveEditCat() {
   cat.name  = newName;
   cat.emoji = newEmoji;
 
-  // Rename category in ALL entries where it matches
-  if (newName !== oldName) {
-    (state.budget.entries || []).forEach(e => {
-      if (e.type === type && e.category === oldName) {
-        if (type === 'income' || e.group === group) {
-          e.category = newName;
-        }
-      }
+  // Rename category in ALL Supabase entries where it matches
+  if (newName !== oldName && _sbUser) {
+    // Build query: match user, type, and old category name
+    let q = _sb.from('budget_entries')
+      .update({ category: newName })
+      .eq('user_id', _sbUser.id)
+      .eq('type', type)
+      .eq('category', oldName);
+    // For expenses also filter by group
+    if (type === 'expense' && group) q = q.eq('group', group);
+    q.then(({ error }) => {
+      if (error) console.error('saveEditCat rename entries:', error);
+      // Flush local cache so next load picks up renamed entries
+      _budgetEntriesCache = [];
     });
   }
 
