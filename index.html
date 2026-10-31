@@ -878,7 +878,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <!-- Main content: hidden until data is ready -->
     <div id="budget-content" style="display:none;">
       <!-- Summary: две плитки рядом -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div id="budget-summary-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
         <!-- Левая: цифры -->
         <div class="card" style="padding:14px 14px 12px;">
           <div style="font-size:20px;font-weight:700;color:var(--danger);line-height:1.1;" id="budget-total-expense"></div>
@@ -8440,7 +8440,7 @@ function switchBudgetTab(tab) {
   // entries = default/main view; stats = analysis (secondary)
   document.getElementById('budget-entries-view').style.display = tab === 'stats' ? 'none' : '';
   // Hide the summary card (расходы/доходы) when on stats page
-  const summaryBlock = document.querySelector('#budget-content > div[style*="grid-template-columns:1fr 1fr"]');
+  const summaryBlock = document.getElementById('budget-summary-grid');
   if (summaryBlock) summaryBlock.style.display = tab === 'stats' ? 'none' : 'grid';
   const statsView = document.getElementById('budget-stats-view');
   if (statsView) statsView.style.display = tab === 'stats' ? '' : 'none';
@@ -9322,8 +9322,10 @@ async function renderBudgetStats() {
     const groupColor = GROUP_COLORS[topCatGroup] || '#FF6B6B';
     return `<div class="card" style="padding:14px;display:flex;flex-direction:column;gap:6px;">
       <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">🏆 Топ трат</div>
-      <div style="font-size:22px;line-height:1;">${emoji || '💸'}</div>
-      <div style="font-size:14px;font-weight:700;color:var(--text);">${topCat}</div>
+      <div style="display:flex;align-items:center;gap:6px;overflow:hidden;">
+        <span style="font-size:20px;flex-shrink:0;">${emoji || '💸'}</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${topCat}</span>
+      </div>
       <div style="font-size:16px;font-weight:800;color:#FF6B6B;margin-top:auto;">${fmt(topCatAmt)} ₽</div>
     </div>`;
   })() : '';
