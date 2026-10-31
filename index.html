@@ -9300,10 +9300,7 @@ async function renderBudgetStats() {
     return `<div style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <span style="font-size:12px;font-weight:700;color:${colorHex};text-transform:uppercase;letter-spacing:.04em;">${groupName}</span>
-        <div>
-          <span style="font-size:13px;font-weight:700;color:var(--text);">${fmt(groupTotal)} ₽</span>
-          <span style="font-size:11px;color:var(--text-dim);margin-left:4px;">${pct}%</span>
-        </div>
+        <span style="font-size:13px;font-weight:700;color:${colorHex};">${fmt(groupTotal)} ₽</span>
       </div>
       ${rows}
     </div>`;
