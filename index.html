@@ -9376,8 +9376,8 @@ async function renderBudgetStats() {
     }).join('');
     return `<div class="chart-wrap" style="margin-bottom:14px;">
       <div style="display:flex;align-items:center;gap:16px;">
-        <div style="position:relative;flex-shrink:0;width:120px;height:120px;">
-          <canvas id="stats-donut-canvas" width="240" height="240" style="width:120px;height:120px;"></canvas>
+        <div style="position:relative;flex-shrink:0;width:150px;height:150px;">
+          <canvas id="stats-donut-canvas" width="300" height="300" style="width:150px;height:150px;"></canvas>
           <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
             <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">Расходы</div>
             <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:1px;">${fmt(totalExp)} ₽</div>
@@ -9419,7 +9419,7 @@ async function renderBudgetStats() {
       const canvas = document.getElementById('stats-donut-canvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
-      const W = 240, cx = W/2, cy = W/2, outerR = 108, innerR = 68;
+      const W = 300, cx = W/2, cy = W/2, outerR = 135, innerR = 80;
       ctx.clearRect(0, 0, W, W);
       let startAngle = -Math.PI / 2;
       const total = donutSlices.reduce((s, sl) => s + sl.amt, 0);
