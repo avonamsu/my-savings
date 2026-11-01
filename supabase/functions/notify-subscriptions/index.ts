@@ -9,8 +9,10 @@ const NOTIFY_DAYS = [0, 1, 3, 7];
 
 // --- Supabase REST helpers ---
 
-async function sbGet(table: string, select = '*') {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${select}`, {
+async function sbGet(table: string, select = '*', filters: Record<string, string> = {}) {
+  const params = new URLSearchParams({ select });
+  for (const [k, v] of Object.entries(filters)) params.set(k, v);
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
     headers: {
       'apikey': SUPABASE_SERVICE_KEY,
       'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
@@ -230,20 +232,41 @@ Deno.serve(async (req) => {
 
       // ── 3. Ежемесячный итог: только 1-го числа ──
       if (nowUtc.getUTCDate() === 1) {
-        const totalSavings = (state?.savings ?? []).reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
-        const totalGoals = (state?.goals ?? [])
-          .filter((g: any) => g.type !== 'subscription')
-          .reduce((sum: number, g: any) => sum + (g.saved || 0), 0);
-        const total = totalSavings + totalGoals;
+        // Текущая сумма по счетам (актуальный state = конец прошлого месяца)
+        const totalNow = (state?.savings ?? []).reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
 
-        // Название прошлого месяца
+        // Прошлый месяц и позапрошлый (для сравнения)
         const prevMonth = new Date(nowUtc);
         prevMonth.setUTCMonth(prevMonth.getUTCMonth() - 1);
+        const prevPrevMonth = new Date(nowUtc);
+        prevPrevMonth.setUTCMonth(prevPrevMonth.getUTCMonth() - 2);
+
+        // Снапшот за позапрошлый месяц (конец позапрошлого = начало прошлого)
+        const prevPrevYm = `${prevPrevMonth.getUTCFullYear()}-${String(prevPrevMonth.getUTCMonth() + 1).padStart(2, '0')}`;
+        let totalPrev = 0;
+        try {
+          const snapRows: any[] = await sbGet('snapshots', 'amount', {
+            'user_id': `eq.${user_id}`,
+            'ym': `eq.${prevPrevYm}`,
+          });
+          // snapshots may have multiple rows (one per saving type) — sum them
+          totalPrev = snapRows.reduce((s: number, r: any) => s + (r.amount || 0), 0);
+        } catch (_) { /* если снапшота нет — просто не показываем дельту */ }
+
         const monthName = prevMonth.toLocaleDateString('ru-RU', { month: 'long', timeZone: 'UTC' });
+        const totalStr = Math.round(totalNow).toLocaleString('ru-RU');
+
+        // Дельта: показываем только если есть снапшот позапрошлого месяца
+        let deltaStr = '';
+        if (totalPrev > 0) {
+          const delta = Math.round(totalNow - totalPrev);
+          const sign = delta >= 0 ? '+' : '−';
+          deltaStr = ` (${sign}${Math.abs(delta).toLocaleString('ru-RU')} ₽ за месяц)`;
+        }
 
         await dispatchPush(JSON.stringify({
           title: `📊 Итог за ${monthName}`,
-          body: `Всего накоплено: ${Math.round(total).toLocaleString('ru-RU')} ₽`,
+          body: `Всего накоплено: ${totalStr} ₽${deltaStr}`,
           tag: `monthly_${prevMonth.getUTCFullYear()}_${prevMonth.getUTCMonth()}`,
           url: '/',
         }));
