@@ -3960,10 +3960,12 @@ function openTaxDetailSheet() {
 
 
 function renderSavings() {
-  const total = state.savings.reduce((s,x) => s+(x.excluded?0:getSavingCurrentAmountRub(x)), 0);
+  // Exclude closed deposits (earlyClosed) from total and count
+  const activeSavings = state.savings.filter(x => !x.earlyClosed);
+  const total = activeSavings.reduce((s,x) => s+(x.excluded?0:getSavingCurrentAmountRub(x)), 0);
   renderDepositTax();
   document.getElementById('total-savings').innerHTML = `${fmt(total)} <span>₽</span>`;
-  const n = state.savings.length;
+  const n = activeSavings.length;
   document.getElementById('savings-count').textContent = n ? `${n} ${plural(n,'счёт','счёта','счетов')}` : 'Нет счетов';
 
   const searchEl = document.getElementById('savings-search');
