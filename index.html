@@ -4912,9 +4912,13 @@ async function confirmAutoRenew(savingId) {
   const newRate = parseFloat(document.getElementById('ar-rate')?.value) || s.rate;
   const months = parseInt(document.getElementById('ar-months')?.value) || 12;
   const oldEnd = s.dateEnd;
-  // Фиксируем доход за прошлый период
-  const interest = calcDeposit(s).currentAmount - Number(s.amount);
+  // Фиксируем доход за прошлый период и обновляем principal
+  const currentTotal = calcDeposit(s).currentAmount;
+  const interest = currentTotal - Number(s.amount);
   if (interest > 0) await sbLogTransaction(savingId, 'interest', Math.round(interest), { date: oldEnd, note: 'Доход за период' });
+  // Новый principal = сумма с процентами (чтобы calcDeposit считал от правильной базы)
+  s.amount = Math.round(currentTotal * 100) / 100;
+  s.initialAmount = s.amount;
   // Продлеваем
   s.dateStart = oldEnd;
   const newEnd = new Date(oldEnd);
