@@ -6516,7 +6516,7 @@ function saveItem(){
     const _prevG = state.goals.find(x=>x.id===id);
     const _g={id,name,amount:amountRub,emoji,color,type:gType,subPeriod,subDate,subAutorenew,note,subCurrency,subAmountOrig,priceHistory:_prevG?.priceHistory||[]};if(_goalIdx>=0)state.goals.splice(_goalIdx,0,_g);else state.goals.push(_g);
   }
-  editingId=null;trackDailyAdd();save();render();closeModal();checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();haptic("success");
+  editingId=null;trackDailyAdd();save();render();closeModal();checkNotifBanner();checkBackupReminder();recordIncomeSnapshot();haptic("success");try{checkAutoRenew();}catch(e){}
 }
 
 function deleteItem(list,id){
