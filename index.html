@@ -3263,7 +3263,7 @@ function renderNextDepositWidget() {
   const el = document.getElementById('home-next-deposit-content');
   if (!el) return;
   const now = new Date(); now.setHours(0,0,0,0);
-  const deps = state.savings.filter(s=>s.isDeposit&&s.dateEnd)
+  const deps = state.savings.filter(s=>s.isDeposit&&s.dateEnd&&!s.earlyClosed)
     .map(s=>{const end=new Date(s.dateEnd);end.setHours(0,0,0,0);return{...s,daysLeft:Math.round((end-now)/86400000)};})
     .filter(s=>s.daysLeft>=0)
     .sort((a,b)=>a.daysLeft-b.daysLeft);
