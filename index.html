@@ -4864,9 +4864,15 @@ function openAutoRenewModal(savingId) {
   const overlay = document.createElement('div');
   overlay.id = 'ar-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
+  // Клик по фону закрывает модалку и сбрасывает _renewPending,
+  // но НЕ отключает autorenew — при следующем открытии приложения покажет снова
+  overlay.addEventListener('click', e => { if (e.target === overlay) snoozeAutoRenew(savingId); });
   overlay.innerHTML = `
     <div style="background:var(--surface);border-radius:20px;padding:24px;width:calc(100% - 48px);max-width:360px;">
-      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">🔄 Вклад завершён</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div style="font-size:16px;font-weight:700;">🔄 Вклад завершён</div>
+        <button onclick="snoozeAutoRenew('${savingId}')" style="background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;padding:0;line-height:1;">×</button>
+      </div>
       <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">${s.icon} ${s.name} — продлить?</div>
       <div class="field" style="margin-bottom:10px;">
         <label>НОВАЯ СТАВКА (%)</label>
@@ -4884,6 +4890,13 @@ function openAutoRenewModal(savingId) {
       </div>
     </div>`;
   document.body.appendChild(overlay);
+}
+
+// Закрыть модалку без действия — сбрасывает _renewPending, autorenew остаётся включённым
+function snoozeAutoRenew(savingId) {
+  const s = state.savings.find(x => x.id === savingId);
+  if (s) { s._renewPending = false; save(); }
+  document.getElementById('ar-overlay')?.remove();
 }
 
 function dismissAutoRenew(savingId) {
