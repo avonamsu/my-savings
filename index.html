@@ -1374,7 +1374,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
 </div>
 
-<div class="modal-overlay" id="add-cat-modal" onclick="if(event.target===this)closeAddCatModal()">
+<div class="modal-overlay" id="add-cat-modal" onclick="if(event.target===this)closeAddCatModal()" style="z-index:800;">
   <div class="modal">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
       <div class="modal-title" style="margin:0;" id="acm-title">Новая категория</div>
@@ -9736,6 +9736,7 @@ function budgetAddCatPrompt(type, group) {
     if (sel) sel.value = group;
   }
   document.getElementById('acm-name').value = '';
+  document.getElementById('acm-emoji').value = '';
   document.getElementById('add-cat-modal').style.display = 'flex';
   setTimeout(() => document.getElementById('acm-name').focus(), 100);
 }
@@ -9769,7 +9770,8 @@ function saveAddCat() {
     closeAddCatModal(); return;
   }
   if (existing) { document.getElementById('acm-name').select(); return; }
-  list.push({ name, emoji: '', archived: false });
+  const emoji = (document.getElementById('acm-emoji').value.trim().match(/\p{Emoji}/u)||[''])[0];
+  list.push({ name, emoji, archived: false });
   save(); renderBudgetCats();
   closeAddCatModal();
 }
