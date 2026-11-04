@@ -11196,30 +11196,8 @@ function showToast(msg) {
 load();
 if (!state.challenges) state.challenges = [];
 
-// Определяем стартовую страницу ДО первого рендера, чтобы не было мигания
-try {
-  const ptrPage = sessionStorage.getItem('ptr_return_page');
-  const lastPage = ptrPage || localStorage.getItem('last_page');
-  if (ptrPage) sessionStorage.removeItem('ptr_return_page');
-  if (lastPage && PAGES.includes(lastPage) && lastPage !== 'home') {
-    // Переключаем DOM напрямую без анимации, до render()
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-    const targetPage = document.getElementById('page-' + lastPage);
-    const targetNav = document.getElementById('nav-' + lastPage);
-    if (targetPage) targetPage.classList.add('active');
-    if (targetNav) targetNav.classList.add('active');
-    _currentPage = lastPage;
-    // Sync topbar back button for pages not in nav
-    const _backPages = { income: 'Счета', goals: 'Расходы' };
-    const _backBtn = document.getElementById('topbar-back-btn');
-    const _backLabel = document.getElementById('topbar-back-label');
-    if (_backBtn && _backPages[lastPage]) {
-      if (_backLabel) _backLabel.textContent = _backPages[lastPage];
-      _backBtn.style.display = 'flex';
-    }
-  }
-} catch(e) {}
+// Приложение всегда открывается с главной страницы
+try { sessionStorage.removeItem('ptr_return_page'); } catch(e) {}
 
 // Hide savings list before first render if user was previously logged in
 // (avoids flash of localStorage amounts before Supabase+tx-cache amounts load)
