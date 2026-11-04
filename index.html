@@ -11250,7 +11250,11 @@ if (titleEl) titleEl.textContent = PAGE_TITLES[_currentPage] || 'Мои нако
 // (not out of the app). Every subsequent showPage() call pushes its own entry.
 // Mark the very first history entry as root (isRoot: true).
 // When back-navigation reaches it, the next back press exits the browser naturally.
+// Two-entry bootstrap:
+// [0] isRoot sentinel — reaching it means "exit the browser"
+// [1] current page — first real entry, so back swipe from initial page hits [0] not browser-exit
 history.replaceState({ page: _currentPage, isRoot: true }, '', '');
+history.pushState({ page: _currentPage }, '', '');
 
 window.addEventListener('popstate', (e) => {
   const state = e.state;
