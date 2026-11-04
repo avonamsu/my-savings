@@ -931,8 +931,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <!-- Entries view: История операций с шапкой и поиском -->
   <div id="budget-entries-view" style="padding-bottom:140px;display:none;">
+    <span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);text-transform:uppercase;">История операций</span>
     <!-- Action bar: поиск, фильтр, сортировка -->
-    <div id="budget-action-bar" style="padding:0 16px 10px;">
+    <div id="budget-action-bar" style="padding:0 16px 10px;margin-top:-6px;">
       <!-- Поисковая строка (видна когда активна) -->
       <div id="budget-search-expanded" style="display:none;margin-bottom:8px;">
         <div style="position:relative;">
@@ -1029,13 +1030,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
   <!-- Stats view (default/main budget view) -->
   <div id="budget-stats-view" style="display:none;padding-bottom:140px;">
-    <!-- навигация назад -->
-    <div style="display:flex;align-items:center;margin-bottom:12px;">
-      <button onclick="switchBudgetTab('entries')"
-        style="background:none;border:none;color:var(--accent);font-size:13px;padding:0 10px 0 0;cursor:pointer;display:flex;align-items:center;gap:4px;">
-        ‹ История
-      </button>
-    </div>
     <div id="budget-stats-content"></div>
   </div>
 </div>
