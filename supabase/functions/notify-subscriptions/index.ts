@@ -253,11 +253,11 @@ Deno.serve(async (req) => {
         } catch (_) {}
 
         const totalStr = Math.round(totalNow).toLocaleString('ru-RU');
-        let savingsLine = `💰 ${totalStr} ₽`;
+        let savingsLine = `💰 Накоплено: ${totalStr} ₽`;
         if (totalPrev > 0) {
           const delta = Math.round(totalNow - totalPrev);
           const sign = delta >= 0 ? '+' : '−';
-          savingsLine += ` (${sign}${Math.abs(delta).toLocaleString('ru-RU')} ₽)`;
+          savingsLine += ` (${sign}${Math.abs(delta).toLocaleString('ru-RU')} ₽ за месяц)`;
         }
 
         // ── Расходы за прошлый и позапрошлый месяц ──
@@ -289,7 +289,7 @@ Deno.serve(async (req) => {
                 ? ` (+${pct}% к ${prevPrevMonth.toLocaleDateString('ru-RU', { month: 'short', timeZone: 'UTC' })})`
                 : ` (−${pct}% к ${prevPrevMonth.toLocaleDateString('ru-RU', { month: 'short', timeZone: 'UTC' })})`;
             }
-            expensesLine = `💸 Расходы: ${expStr} ₽${cmpStr}`;
+            expensesLine = `💸 Потрачено за месяц: ${expStr} ₽${cmpStr}`;
 
             // Топ-категория
             const catTotals: Record<string, number> = {};
@@ -298,7 +298,7 @@ Deno.serve(async (req) => {
             }
             const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
             if (topCat) {
-              expensesLine += `\n🏆 Топ: ${topCat[0]} — ${Math.round(topCat[1]).toLocaleString('ru-RU')} ₽`;
+              expensesLine += `\n🏆 Больше всего ушло на: ${topCat[0]} — ${Math.round(topCat[1]).toLocaleString('ru-RU')} ₽`;
             }
           }
         } catch (_) {}
@@ -317,7 +317,7 @@ Deno.serve(async (req) => {
             }
           }
           if (subTotal > 0) {
-            subsLine = `🔄 Подписки: ${Math.round(subTotal).toLocaleString('ru-RU')} ₽`;
+            subsLine = `🔄 Оплачено подписок: ${Math.round(subTotal).toLocaleString('ru-RU')} ₽`;
           }
         } catch (_) {}
 
