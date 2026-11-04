@@ -508,6 +508,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <div style="position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;height:52px;z-index:99;background:var(--bg);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;padding:0 16px;">
   <button class="menu-btn" onclick="openSidebar()">☰</button>
   <span id="topbar-title" style="position:absolute;left:50%;transform:translateX(-50%);font-size:15px;font-weight:700;color:var(--text);">Мои накопления</span>
+  <button id="topbar-back-btn" onclick="showPage('savings')" style="display:none;margin-left:auto;background:none;border:none;color:var(--text-dim);font-size:13px;cursor:pointer;display:none;align-items:center;gap:4px;padding:4px 0;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> Счета</button>
 </div>
 
 <!-- SIDEBAR -->
@@ -776,7 +777,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- INCOME PAGE -->
 <div class="page" id="page-income">
-  <button onclick="showPage('savings')" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--text-dim);font-size:13px;cursor:pointer;padding:0 0 12px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> Счета</button>
   <div class="hero" id="income-hero" style="display:flex;flex-direction:column;opacity:0;transition:opacity 0.25s ease;">
     <div class="hero-label">Пассивный доход в месяц</div>
     <div class="hero-amount" id="total-income-display">0 <span>₽</span></div>
@@ -6099,6 +6099,9 @@ function showPage(name) {
   }
   const titleEl = document.getElementById('topbar-title');
   if (titleEl) titleEl.textContent = PAGE_TITLES[name] || 'Мои накопления';
+  // Show back button only on income page (accessed from savings)
+  const backBtn = document.getElementById('topbar-back-btn');
+  if (backBtn) backBtn.style.display = name === 'income' ? 'flex' : 'none';
 
   _currentPage = name;
   try { localStorage.setItem('last_page', name); } catch(e) {}
