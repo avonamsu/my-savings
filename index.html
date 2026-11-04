@@ -6096,6 +6096,7 @@ const PAGES = ['home','savings','income','goals','budget','challenge'];
 const PAGE_TITLES = {home:'Мои накопления',savings:'Счета',income:'Доход',goals:'Цели',budget:'Расходы',challenge:'Копилка',achievements:'Ачивки',inflation:'Инфляция'};
 let _currentPage = 'home';
 let _navigatingByPopstate = false; // flag to skip history.pushState when back-navigating
+let _exitingApp = false;           // flag to let browser exit when history.back() fires null popstate
 function showPage(name) {
   if (name === _currentPage) return;
   const popup = document.getElementById('profile-popup');
@@ -11257,14 +11258,17 @@ history.replaceState({ page: _currentPage, isRoot: true }, '', '');
 history.pushState({ page: _currentPage }, '', '');
 
 window.addEventListener('popstate', (e) => {
+  if (_exitingApp) return; // second popstate (null state) after history.back() — let browser exit
+
   const state = e.state;
   if (!state) {
-    // Fell off the bottom of our history — push back so app stays alive
+    // No state at all — push back so app stays alive
     history.pushState({ page: _currentPage }, '', '');
     return;
   }
   if (state.isRoot) {
-    // Reached the initial entry — go one step further back to exit the browser
+    // Reached the root sentinel — exit the browser on next back
+    _exitingApp = true;
     history.back();
     return;
   }
