@@ -496,7 +496,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <nav>
   <button class="active" onclick="showPage('home')" id="nav-home"><span class="ni"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M21 19v-6.733a4 4 0 0 0-1.245-2.9L13.378 3.31a2 2 0 0 0-2.755 0L4.245 9.367A4 4 0 0 0 3 12.267V19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2"/><path d="M9 15a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6H9z"/></g></svg></span>Главная</button>
   <button onclick="showPage('savings')" id="nav-savings"><span class="ni"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.5"><path stroke-linecap="round" d="M20.943 16.835a15.76 15.76 0 0 0-4.476-8.616c-.517-.503-.775-.754-1.346-.986C14.55 7 14.059 7 13.078 7h-2.156c-.981 0-1.472 0-2.043.233c-.57.232-.83.483-1.346.986a15.76 15.76 0 0 0-4.476 8.616C2.57 19.773 5.28 22 8.308 22h7.384c3.029 0 5.74-2.227 5.25-5.165"/><path d="M7.257 4.443c-.207-.3-.506-.708.112-.8c.635-.096 1.294.338 1.94.33c.583-.009.88-.268 1.2-.638C10.845 2.946 11.365 2 12 2s1.155.946 1.491 1.335c.32.37.617.63 1.2.637c.646.01 1.305-.425 1.94-.33c.618.093.319.5.112.8l-.932 1.359c-.4.58-.599.87-1.017 1.035S13.837 7 12.758 7h-1.516c-1.08 0-1.619 0-2.036-.164S8.589 6.38 8.189 5.8z"/><path stroke-linecap="round" d="M13.627 12.919c-.216-.799-1.317-1.519-2.638-.98s-1.53 2.272.467 2.457c.904.083 1.492-.097 2.031.412c.54.508.64 1.923-.739 2.304c-1.377.381-2.742-.214-2.89-1.06m1.984-5.06v.761m0 5.476v.764"/></g></svg></span>Счета</button>
-  <button onclick="showPage('income')" id="nav-income"><span class="ni"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 14 14"><path d="M0 0h14v14H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m9.008 6.709l3.43-1.516v7.672h-3.43zM4.72 4.814l2.144 3.032l2.144-1.137v6.154H4.72z"/><path d="m1.29 6.33l3.43-1.516v8.05H1.29zm12-5.193L7.851 4.613l-2.5-2.923L.878 3.988"/><path d="m10.586.678l2.703.45l-.45 2.704"/></g></svg></span>Доход</button>
   <div class="nav-fab-slot"></div>
   <button onclick="showPage('goals')" id="nav-goals"><span class="ni"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M10.66 10.66A1.9 1.9 0 0 0 10.1 12a1.9 1.9 0 0 0 1.9 1.9a1.9 1.9 0 0 0 1.34-.56"/><path d="M12 6.3a5.7 5.7 0 1 0 5.7 5.7"/><path d="M12 2.5a9.5 9.5 0 1 0 9.5 9.5m-5.975-3.524L12.95 11.05"/><path d="M20.94 5.844L17.7 6.3l.456-3.24a.19.19 0 0 0-.313-.161l-2.148 2.137a1.9 1.9 0 0 0-.513 1.72l.342 1.72l1.72.341a1.9 1.9 0 0 0 1.72-.513L21.1 6.157a.19.19 0 0 0-.162-.313"/></g></svg></span>Цели</button>
   <button onclick="showPage('budget')" id="nav-budget"><span class="ni"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="M21 8H7c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h14c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1m-1 8c-1.1 0-2 .9-2 2h-8c0-1.1-.9-2-2-2v-4c1.1 0 2-.9 2-2h8c0 1.1.9 2 2 2z"/><path fill="currentColor" d="M18 4H3c-.55 0-1 .45-1 1v11h2V6h14zm-4 8a2 2 0 1 0 0 4a2 2 0 1 0 0-4"/></svg></span>Бюджет</button>
@@ -714,10 +713,24 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- SAVINGS PAGE -->
 <div class="page" id="page-savings">
-  <div class="hero" id="savings-hero" style="opacity:0;transition:opacity 0.25s ease;">
-    <div class="hero-label">Всего накоплено (с процентами)</div>
-    <div class="hero-amount" id="total-savings">0 <span>₽</span></div>
-    <div class="hero-sub" id="savings-count">Нет счетов</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div class="hero" id="savings-hero" style="opacity:0;transition:opacity 0.25s ease;">
+      <div class="hero-label">Всего накоплено (с процентами)</div>
+      <div class="hero-amount" id="total-savings" style="font-size:clamp(18px,5vw,28px);">0 <span>₽</span></div>
+      <div class="hero-sub" id="savings-count">Нет счетов</div>
+    </div>
+    <div class="hero" onclick="showPage('income')" id="savings-income-card"
+      style="opacity:0;transition:opacity 0.25s ease;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;min-height:0;position:relative;overflow:hidden;padding:18px 16px;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.25;margin-bottom:4px;">Пассивный<br>доход</div>
+        <div style="font-size:11px;color:var(--text-dim);">в месяц</div>
+        <div id="savings-income-preview" style="font-size:17px;font-weight:700;color:#3DD68C;margin-top:6px;">—</div>
+      </div>
+      <div style="font-size:11px;color:var(--accent);margin-top:8px;">Открыть →</div>
+      <div style="position:absolute;bottom:8px;right:10px;opacity:0.18;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 14 14"><path d="M0 0h14v14H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m9.008 6.709l3.43-1.516v7.672h-3.43zM4.72 4.814l2.144 3.032l2.144-1.137v6.154H4.72z"/><path d="m1.29 6.33l3.43-1.516v8.05H1.29zm12-5.193L7.851 4.613l-2.5-2.923L.878 3.988"/><path d="m10.586.678l2.703.45l-.45 2.704"/></g></svg>
+      </div>
+    </div>
   </div>
   <div class="chart-wrap" id="deposit-tax-block" style="display:none;"></div>
   <!-- toolbar над списком счетов -->
@@ -2177,6 +2190,8 @@ async function preloadTxCache() {
     if (el) el.style.opacity = '1';
     const hero = document.getElementById('savings-hero');
     if (hero) hero.style.opacity = '1';
+    const ic = document.getElementById('savings-income-card');
+    if (ic) ic.style.opacity = '1';
     return;
   }
   // Batch fetch all in one query
@@ -2191,6 +2206,8 @@ async function preloadTxCache() {
     if (el) el.style.opacity = '1';
     const hero = document.getElementById('savings-hero');
     if (hero) hero.style.opacity = '1';
+    const ic = document.getElementById('savings-income-card');
+    if (ic) ic.style.opacity = '1';
     return;
   }
   const byId = {};
@@ -2210,6 +2227,8 @@ async function preloadTxCache() {
   if (el) el.style.opacity = '1';
   const hero = document.getElementById('savings-hero');
   if (hero) hero.style.opacity = '1';
+  const ic = document.getElementById('savings-income-card');
+  if (ic) ic.style.opacity = '1';
   const homeHero = document.getElementById('home-hero');
   if (homeHero) homeHero.style.opacity = '1';
   renderDepositTax();
@@ -5373,6 +5392,8 @@ function renderIncome() {
   document.getElementById('total-income-display').innerHTML = `${fmt(total)} <span>₽</span>`;
   const subEl = document.getElementById('income-hero-sub');
   if(subEl) subEl.textContent = fmt(Math.round(totalYearly)) + ' ₽/год';
+  const previewEl = document.getElementById('savings-income-preview');
+  if(previewEl) previewEl.textContent = fmt(total) + ' ₽';
 
   const yieldPct = totalSavings > 0 ? (totalYearly / totalSavings * 100) : 0;
   const realYield = yieldPct - inflPct;
@@ -11140,6 +11161,8 @@ setTimeout(() => {
   if (sl && sl.style.opacity === '0') sl.style.opacity = '1';
   const hero = document.getElementById('savings-hero');
   if (hero && hero.style.opacity === '0') hero.style.opacity = '1';
+  const ic = document.getElementById('savings-income-card');
+  if (ic && ic.style.opacity === '0') ic.style.opacity = '1';
   const il = document.getElementById('income-list');
   if (il && il.style.opacity === '0') il.style.opacity = '1';
   const ih = document.getElementById('income-hero');
@@ -11221,7 +11244,7 @@ const OB_STEPS = [
   {
     title: '📈 Доход',
     text: 'Здесь видно сколько ты зарабатываешь не работая — проценты по вкладам, дивиденды, курсовая разница. Привяжи к счёту и приложение посчитает доход автоматически.',
-    page: 'income', highlight: '#nav-income', anim: '📈', color: '#5BC8AF'
+    page: 'savings', highlight: '#savings-income-card', anim: '📈', color: '#5BC8AF'
   },
   {
     title: '🎯 Цели и подписки',
