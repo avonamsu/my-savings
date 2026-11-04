@@ -232,41 +232,100 @@ Deno.serve(async (req) => {
 
       // ── 3. Ежемесячный итог: только 1-го числа ──
       if (nowUtc.getUTCDate() === 1) {
-        // Текущая сумма по счетам (актуальный state = конец прошлого месяца)
-        const totalNow = (state?.savings ?? []).reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
-
-        // Прошлый месяц и позапрошлый (для сравнения)
         const prevMonth = new Date(nowUtc);
         prevMonth.setUTCMonth(prevMonth.getUTCMonth() - 1);
         const prevPrevMonth = new Date(nowUtc);
         prevPrevMonth.setUTCMonth(prevPrevMonth.getUTCMonth() - 2);
 
-        // Снапшот за позапрошлый месяц (конец позапрошлого = начало прошлого)
+        const prevYm     = `${prevMonth.getUTCFullYear()}-${String(prevMonth.getUTCMonth() + 1).padStart(2, '0')}`;
         const prevPrevYm = `${prevPrevMonth.getUTCFullYear()}-${String(prevPrevMonth.getUTCMonth() + 1).padStart(2, '0')}`;
+        const monthName  = prevMonth.toLocaleDateString('ru-RU', { month: 'long', timeZone: 'UTC' });
+
+        // ── Накопления ──
+        const totalNow = (state?.savings ?? []).reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
         let totalPrev = 0;
         try {
           const snapRows: any[] = await sbGet('snapshots', 'amount', {
             'user_id': `eq.${user_id}`,
             'ym': `eq.${prevPrevYm}`,
           });
-          // snapshots may have multiple rows (one per saving type) — sum them
           totalPrev = snapRows.reduce((s: number, r: any) => s + (r.amount || 0), 0);
-        } catch (_) { /* если снапшота нет — просто не показываем дельту */ }
+        } catch (_) {}
 
-        const monthName = prevMonth.toLocaleDateString('ru-RU', { month: 'long', timeZone: 'UTC' });
         const totalStr = Math.round(totalNow).toLocaleString('ru-RU');
-
-        // Дельта: показываем только если есть снапшот позапрошлого месяца
-        let deltaStr = '';
+        let savingsLine = `💰 ${totalStr} ₽`;
         if (totalPrev > 0) {
           const delta = Math.round(totalNow - totalPrev);
           const sign = delta >= 0 ? '+' : '−';
-          deltaStr = ` (${sign}${Math.abs(delta).toLocaleString('ru-RU')} ₽ за месяц)`;
+          savingsLine += ` (${sign}${Math.abs(delta).toLocaleString('ru-RU')} ₽)`;
         }
+
+        // ── Расходы за прошлый и позапрошлый месяц ──
+        let expensesLine = '';
+        try {
+          const [entriesPrev, entriesPrevPrev] = await Promise.all([
+            sbGet('budget_entries', 'category,amount', {
+              'user_id': `eq.${user_id}`,
+              'type': 'eq.expense',
+              'date': `like.${prevYm}-%`,
+            }),
+            sbGet('budget_entries', 'amount', {
+              'user_id': `eq.${user_id}`,
+              'type': 'eq.expense',
+              'date': `like.${prevPrevYm}-%`,
+            }),
+          ]);
+
+          const totalExpense     = entriesPrev.reduce((s: number, e: any) => s + (e.amount || 0), 0);
+          const totalExpensePrev = entriesPrevPrev.reduce((s: number, e: any) => s + (e.amount || 0), 0);
+
+          if (totalExpense > 0) {
+            const expStr = Math.round(totalExpense).toLocaleString('ru-RU');
+            let cmpStr = '';
+            if (totalExpensePrev > 0) {
+              const diff = Math.round(totalExpense - totalExpensePrev);
+              const pct  = Math.round(Math.abs(diff) / totalExpensePrev * 100);
+              cmpStr = diff >= 0
+                ? ` (+${pct}% к ${prevPrevMonth.toLocaleDateString('ru-RU', { month: 'short', timeZone: 'UTC' })})`
+                : ` (−${pct}% к ${prevPrevMonth.toLocaleDateString('ru-RU', { month: 'short', timeZone: 'UTC' })})`;
+            }
+            expensesLine = `💸 Расходы: ${expStr} ₽${cmpStr}`;
+
+            // Топ-категория
+            const catTotals: Record<string, number> = {};
+            for (const e of entriesPrev) {
+              catTotals[e.category] = (catTotals[e.category] || 0) + (e.amount || 0);
+            }
+            const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+            if (topCat) {
+              expensesLine += `\n🏆 Топ: ${topCat[0]} — ${Math.round(topCat[1]).toLocaleString('ru-RU')} ₽`;
+            }
+          }
+        } catch (_) {}
+
+        // ── Подписки: сумма из priceHistory за прошлый месяц ──
+        let subsLine = '';
+        try {
+          const goals: any[] = state?.goals ?? [];
+          let subTotal = 0;
+          for (const g of goals) {
+            if (g.type !== 'subscription') continue;
+            for (const h of (g.priceHistory ?? [])) {
+              if (typeof h.date === 'string' && h.date.startsWith(prevYm)) {
+                subTotal += h.amount || 0;
+              }
+            }
+          }
+          if (subTotal > 0) {
+            subsLine = `🔄 Подписки: ${Math.round(subTotal).toLocaleString('ru-RU')} ₽`;
+          }
+        } catch (_) {}
+
+        const bodyLines = [savingsLine, expensesLine, subsLine].filter(Boolean);
 
         await dispatchPush(JSON.stringify({
           title: `📊 Итог за ${monthName}`,
-          body: `Всего накоплено: ${totalStr} ₽${deltaStr}`,
+          body: bodyLines.join('\n'),
           tag: `monthly_${prevMonth.getUTCFullYear()}_${prevMonth.getUTCMonth()}`,
           url: '/',
         }));
