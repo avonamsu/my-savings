@@ -11248,17 +11248,27 @@ if (titleEl) titleEl.textContent = PAGE_TITLES[_currentPage] || 'Мои нако
 // Replace the initial history entry with the current page state,
 // then push a "dummy" entry on top so the first back press goes to replaceState entry
 // (not out of the app). Every subsequent showPage() call pushes its own entry.
-history.replaceState({ page: _currentPage }, '', '');
+// Mark the very first history entry as root (isRoot: true).
+// When back-navigation reaches it, the next back press exits the browser naturally.
+history.replaceState({ page: _currentPage, isRoot: true }, '', '');
 
 window.addEventListener('popstate', (e) => {
-  const target = e.state && e.state.page;
+  const state = e.state;
+  if (!state) {
+    // Fell off the bottom of our history — push back so app stays alive
+    history.pushState({ page: _currentPage }, '', '');
+    return;
+  }
+  if (state.isRoot) {
+    // Reached the initial entry — go one step further back to exit the browser
+    history.back();
+    return;
+  }
+  const target = state.page;
   if (target && target !== _currentPage) {
-    _navigatingByPopstate = true;  // prevent double-push inside showPage
+    _navigatingByPopstate = true;
     showPage(target);
     _navigatingByPopstate = false;
-  } else if (!target) {
-    // No state (very first entry) — push current page back so app stays open
-    history.pushState({ page: _currentPage }, '', '');
   }
 });
 
