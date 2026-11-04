@@ -892,12 +892,16 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="budget-content" style="display:none;">
       <!-- Summary: две плитки рядом -->
       <div id="budget-summary-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-        <!-- Левая: цифры -->
-        <div class="card" style="padding:14px 14px 12px;">
-          <div style="font-size:20px;font-weight:700;color:var(--danger);line-height:1.1;" id="budget-total-expense"></div>
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">Расходы</div>
-          <div style="font-size:15px;font-weight:600;color:#3DD68C;" id="budget-total-income"></div>
-          <div style="font-size:11px;color:var(--text-dim);">Доходы</div>
+        <!-- Левая: две отдельные карточки -->
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="card" style="padding:14px 14px 12px;">
+            <div style="font-size:20px;font-weight:700;color:var(--danger);line-height:1.1;" id="budget-total-expense"></div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:3px;">Расходы</div>
+          </div>
+          <div class="card" style="padding:14px 14px 12px;">
+            <div style="font-size:18px;font-weight:700;color:#3DD68C;line-height:1.1;" id="budget-total-income"></div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:3px;">Доходы</div>
+          </div>
         </div>
         <!-- Правая: кнопка аналитики -->
         <div class="card" onclick="switchBudgetTab('stats')" id="budget-tab-toggle-btn"
