@@ -6096,7 +6096,7 @@ const PAGES = ['home','savings','income','goals','budget','challenge'];
 const PAGE_TITLES = {home:'Мои накопления',savings:'Счета',income:'Доход',goals:'Цели',budget:'Расходы',challenge:'Копилка',achievements:'Ачивки',inflation:'Инфляция'};
 let _currentPage = 'home';
 let _navigatingByPopstate = false; // flag to skip history.pushState when back-navigating
-let _exitingApp = false;           // flag to let browser exit when history.back() fires null popstate
+let _backPressedAt = 0;            // timestamp of last back-press on root page (for "press again to exit")
 function showPage(name) {
   if (name === _currentPage) return;
   const popup = document.getElementById('profile-popup');
@@ -11245,38 +11245,46 @@ if (_currentPage === 'budget') renderBudgetPage().catch(console.error);
 const titleEl = document.getElementById('topbar-title');
 if (titleEl) titleEl.textContent = PAGE_TITLES[_currentPage] || 'Мои накопления';
 
-// Android back button support via History API:
-// Replace the initial history entry with the current page state,
-// then push a "dummy" entry on top so the first back press goes to replaceState entry
-// (not out of the app). Every subsequent showPage() call pushes its own entry.
-// Mark the very first history entry as root (isRoot: true).
-// When back-navigation reaches it, the next back press exits the browser naturally.
-// Two-entry bootstrap:
-// [0] isRoot sentinel — reaching it means "exit the browser"
-// [1] current page — first real entry, so back swipe from initial page hits [0] not browser-exit
-history.replaceState({ page: _currentPage, isRoot: true }, '', '');
-history.pushState({ page: _currentPage }, '', '');
+// Android back button: pushState on every page so back swipe navigates within the app.
+// On the initial/root page, show a "press again to exit" toast instead of closing immediately.
+history.replaceState({ page: _currentPage }, '', '');
+
+function _showExitToast() {
+  let t = document.getElementById('exit-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'exit-toast';
+    t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;pointer-events:none;transition:opacity .3s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = 'Нажмите ещё раз для выхода';
+  t.style.opacity = '1';
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => { t.style.opacity = '0'; }, 2000);
+}
 
 window.addEventListener('popstate', (e) => {
-  if (_exitingApp) return; // second popstate (null state) after history.back() — let browser exit
-
   const state = e.state;
-  if (!state) {
-    // No state at all — push back so app stays alive
-    history.pushState({ page: _currentPage }, '', '');
-    return;
-  }
-  if (state.isRoot) {
-    // Reached the root sentinel — exit the browser on next back
-    _exitingApp = true;
-    history.back();
-    return;
-  }
-  const target = state.page;
+  const target = state && state.page;
+
   if (target && target !== _currentPage) {
+    // Navigate to the previous page within the app
     _navigatingByPopstate = true;
     showPage(target);
     _navigatingByPopstate = false;
+    _backPressedAt = 0;
+    return;
+  }
+
+  // Back pressed on the root/initial page — "press again to exit" pattern
+  history.pushState({ page: _currentPage }, '', ''); // stay in app
+  const now = Date.now();
+  if (now - _backPressedAt < 2000) {
+    // Second press within 2s — let the browser exit by going back twice
+    history.go(-2);
+  } else {
+    _backPressedAt = now;
+    _showExitToast();
   }
 });
 
