@@ -6095,6 +6095,7 @@ function navTo(page, anchor) {
 const PAGES = ['home','savings','income','goals','budget','challenge'];
 const PAGE_TITLES = {home:'Мои накопления',savings:'Счета',income:'Доход',goals:'Цели',budget:'Расходы',challenge:'Копилка',achievements:'Ачивки',inflation:'Инфляция'};
 let _currentPage = 'home';
+let _navigatingByPopstate = false; // flag to skip history.pushState when back-navigating
 function showPage(name) {
   if (name === _currentPage) return;
   const popup = document.getElementById('profile-popup');
@@ -6164,6 +6165,9 @@ function showPage(name) {
 
   _currentPage = name;
   try { localStorage.setItem('last_page', name); } catch(e) {}
+  // Push history entry so Android back button navigates within the app
+  // (skip when navigating is triggered by popstate — browser already moved in history)
+  if (!_navigatingByPopstate) history.pushState({ page: name }, '', '');
   // defer ALL renders until after transition (220ms) so nav never reflows mid-animation
   setTimeout(() => {
     renderHome(); renderSavings(); renderIncome(); renderGoals();
@@ -11239,6 +11243,25 @@ if (_currentPage === 'challenge') renderChallengesPage();
 if (_currentPage === 'budget') renderBudgetPage().catch(console.error);
 const titleEl = document.getElementById('topbar-title');
 if (titleEl) titleEl.textContent = PAGE_TITLES[_currentPage] || 'Мои накопления';
+
+// Android back button support via History API:
+// Replace the initial history entry with the current page state,
+// then push a "dummy" entry on top so the first back press goes to replaceState entry
+// (not out of the app). Every subsequent showPage() call pushes its own entry.
+history.replaceState({ page: _currentPage }, '', '');
+
+window.addEventListener('popstate', (e) => {
+  const target = e.state && e.state.page;
+  if (target && target !== _currentPage) {
+    _navigatingByPopstate = true;  // prevent double-push inside showPage
+    showPage(target);
+    _navigatingByPopstate = false;
+  } else if (!target) {
+    // No state (very first entry) — push current page back so app stays open
+    history.pushState({ page: _currentPage }, '', '');
+  }
+});
+
 // Fallback: reveal savings list+hero after 5s in case Supabase/tx-cache load fails
 setTimeout(() => {
   const sl = document.getElementById('savings-list');
