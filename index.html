@@ -6165,7 +6165,7 @@ function showPage(name) {
   }
 
   _currentPage = name;
-  try { localStorage.setItem('last_page', name); } catch(e) {}
+  // last_page intentionally not saved — app always starts on home
   // Push history entry so Android back button navigates within the app
   // (skip when navigating is triggered by popstate — browser already moved in history)
   if (!_navigatingByPopstate) history.pushState({ page: name }, '', '');
@@ -11551,8 +11551,7 @@ function ptrRefresh(indicatorEl) {
   if (tok) {
     try { sessionStorage.setItem('gdrive_token_backup', tok); } catch(e) {}
   }
-  // Сохраняем текущую страницу чтобы вернуться на неё после reload
-  try { sessionStorage.setItem('ptr_return_page', _currentPage); } catch(e) {}
+  // ptr_return_page intentionally not saved — app always starts on home
   setTimeout(() => location.reload(), 300);
 }
 
