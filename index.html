@@ -4452,6 +4452,33 @@ function saveSubRenew(id) {
   save();
   document.getElementById('sub-renew-overlay')?.remove();
   renderGoals();
+
+  // Ask if user wants to add a record to budget transaction history
+  if (_sb && _sbUser) {
+    const addToHistory = confirm(`Добавить оплату «${g.name}» в историю операций?\n\n${fmt(Math.round(amountRub))} ₽ · ${dateVal}${note ? '\n' + note : ''}`);
+    if (addToHistory) {
+      const entryRow = {
+        id: uid(),
+        user_id: _sbUser.id,
+        type: 'expense',
+        group: 'Основное',
+        category: g.name,
+        amount: Math.round(amountRub),
+        date: dateVal,
+        note: note || null
+      };
+      _sb.from('budget_entries').insert(entryRow).then(({ error }) => {
+        if (error) {
+          alert('Не удалось добавить запись: ' + error.message);
+        } else {
+          _budgetEntriesCache.push(entryRow);
+          _budgetStatsCache = null;
+          _budgetStatsCache3 = null;
+          _budgetEntriesLoadedMonth = null;
+        }
+      });
+    }
+  }
 }
 
 function openSubHistorySheet(id) {
