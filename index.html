@@ -914,7 +914,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
       </div>
       <!-- Прямоугольная кнопка Цели -->
-      <div class="card" onclick="showPage('goals')"
+      <div class="card" id="budget-goals-btn" onclick="showPage('goals')"
         style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;margin-bottom:6px;">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="opacity:0.5;flex-shrink:0;">
@@ -8536,9 +8536,11 @@ function switchBudgetTab(tab) {
   try { localStorage.setItem('budget_active_tab', tab); } catch {}
   // entries = default/main view; stats = analysis (secondary)
   document.getElementById('budget-entries-view').style.display = tab === 'stats' ? 'none' : '';
-  // Hide the summary card (расходы/доходы) when on stats page
+  // Hide the summary card and goals button when on stats page
   const summaryBlock = document.getElementById('budget-summary-grid');
   if (summaryBlock) summaryBlock.style.display = tab === 'stats' ? 'none' : 'grid';
+  const goalsBtn = document.getElementById('budget-goals-btn');
+  if (goalsBtn) goalsBtn.style.display = tab === 'stats' ? 'none' : '';
   const statsView = document.getElementById('budget-stats-view');
   if (statsView) statsView.style.display = tab === 'stats' ? '' : 'none';
   if (tab === 'stats') { _budgetStatsCache = null; _budgetStatsCache3 = null; renderBudgetStats(); }
