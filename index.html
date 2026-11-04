@@ -507,7 +507,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <div style="position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;height:52px;z-index:99;background:var(--bg);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;padding:0 16px;">
   <button class="menu-btn" onclick="openSidebar()">☰</button>
   <span id="topbar-title" style="position:absolute;left:50%;transform:translateX(-50%);font-size:15px;font-weight:700;color:var(--text);">Мои накопления</span>
-  <button id="topbar-back-btn" onclick="topbarBack()" style="display:none;margin-left:auto;background:none;border:none;color:var(--text-dim);font-size:13px;cursor:pointer;align-items:center;gap:4px;padding:4px 0;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> <span id="topbar-back-label">Назад</span></button>
+  <button id="topbar-back-btn" onclick="topbarBack()" style="display:none;margin-left:auto;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.3);border-radius:20px;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;align-items:center;gap:4px;padding:5px 12px 5px 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> <span id="topbar-back-label">Назад</span></button>
 </div>
 
 <!-- SIDEBAR -->
@@ -2392,8 +2392,10 @@ async function sbpHandleSignOut() {
   if (block) block.style.display = 'none';
 }
 
-// Navigate back based on current page (income→savings, goals→budget)
+// Navigate back based on current page/tab
 function topbarBack() {
+  // Special case: budget stats tab → back to budget entries
+  if (_currentPage === 'budget') { switchBudgetTab('entries'); return; }
   const dest = { income: 'savings', goals: 'budget' };
   showPage(dest[_currentPage] || 'home');
 }
@@ -8545,6 +8547,17 @@ function switchBudgetTab(tab) {
   if (toggleBtn) {
     toggleBtn.style.display = tab === 'stats' ? 'none' : '';
     toggleBtn.onclick = () => switchBudgetTab('stats');
+  }
+  // Topbar back button: show when on stats tab, hide when back on entries
+  const backBtn = document.getElementById('topbar-back-btn');
+  const backLabel = document.getElementById('topbar-back-label');
+  if (backBtn) {
+    if (tab === 'stats') {
+      if (backLabel) backLabel.textContent = 'Бюджет';
+      backBtn.style.display = 'flex';
+    } else if (_currentPage === 'budget') {
+      backBtn.style.display = 'none';
+    }
   }
 }
 
