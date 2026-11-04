@@ -11196,8 +11196,28 @@ function showToast(msg) {
 load();
 if (!state.challenges) state.challenges = [];
 
-// Приложение всегда открывается с главной страницы
-try { sessionStorage.removeItem('ptr_return_page'); } catch(e) {}
+// Restore page after pull-to-refresh (sessionStorage only — clears on browser close,
+// so cold opens always start on home).
+try {
+  const ptrPage = sessionStorage.getItem('ptr_return_page');
+  if (ptrPage) sessionStorage.removeItem('ptr_return_page');
+  if (ptrPage && PAGES.includes(ptrPage) && ptrPage !== 'home') {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    const targetPage = document.getElementById('page-' + ptrPage);
+    const targetNav  = document.getElementById('nav-' + ptrPage);
+    if (targetPage) targetPage.classList.add('active');
+    if (targetNav)  targetNav.classList.add('active');
+    _currentPage = ptrPage;
+    const _backPages = { income: 'Счета', goals: 'Расходы' };
+    const _backBtn   = document.getElementById('topbar-back-btn');
+    const _backLabel = document.getElementById('topbar-back-label');
+    if (_backBtn && _backPages[ptrPage]) {
+      if (_backLabel) _backLabel.textContent = _backPages[ptrPage];
+      _backBtn.style.display = 'flex';
+    }
+  }
+} catch(e) {}
 
 // Hide savings list before first render if user was previously logged in
 // (avoids flash of localStorage amounts before Supabase+tx-cache amounts load)
@@ -11551,7 +11571,9 @@ function ptrRefresh(indicatorEl) {
   if (tok) {
     try { sessionStorage.setItem('gdrive_token_backup', tok); } catch(e) {}
   }
-  // ptr_return_page intentionally not saved — app always starts on home
+  // Save current page to sessionStorage so pull-to-refresh returns to it
+  // (sessionStorage is cleared when browser is closed, so cold opens always start on home)
+  try { sessionStorage.setItem('ptr_return_page', _currentPage); } catch(e) {}
   setTimeout(() => location.reload(), 300);
 }
 
