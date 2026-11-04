@@ -11161,6 +11161,14 @@ try {
     if (targetPage) targetPage.classList.add('active');
     if (targetNav) targetNav.classList.add('active');
     _currentPage = lastPage;
+    // Sync topbar back button for pages not in nav
+    const _backPages = { income: 'Счета', goals: 'Бюджет' };
+    const _backBtn = document.getElementById('topbar-back-btn');
+    const _backLabel = document.getElementById('topbar-back-label');
+    if (_backBtn && _backPages[lastPage]) {
+      if (_backLabel) _backLabel.textContent = _backPages[lastPage];
+      _backBtn.style.display = 'flex';
+    }
   }
 } catch(e) {}
 
