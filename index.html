@@ -8041,7 +8041,7 @@ async function toggleCell(challengeId, cellIdx) {
           await _sb.from('transactions').delete()
             .eq('user_id', _sbUser.id).eq('saving_id', linkedSaving.id).eq('type', 'interest').gte('date', nextDayStr);
         }
-        await sbLogTransaction(linkedSaving.id, 'deposit', cellAmount, { date: dateStr, note: 'Пополнение из челленджа' });
+        await sbLogTransaction(linkedSaving.id, 'deposit', cellAmount, { date: dateStr, note: `Пополнение из челленджа «${ch.name}»` });
       }
       // Отказ от пополнения — счёт не трогаем, ячейка уже отмечена
     } else {
@@ -8052,13 +8052,13 @@ async function toggleCell(challengeId, cellIdx) {
         if (_sbUser) {
           const cached = _txCache[linkedSaving.id];
           const origTx = cached && cached.txs.slice().reverse().find(tx =>
-            tx.type === 'deposit' && Number(tx.amount) === cellAmount && tx.note === 'Пополнение из челленджа'
+            tx.type === 'deposit' && Number(tx.amount) === cellAmount && (tx.note === `Пополнение из челленджа «${ch.name}»` || tx.note === 'Пополнение из челленджа')
           );
           if (origTx) {
             await _sb.from('transactions').delete()
               .eq('user_id', _sbUser.id).eq('id', origTx.id);
           } else {
-            await sbLogTransaction(linkedSaving.id, 'withdrawal', cellAmount, { date: dateStr, note: 'Отмена пополнения из челленджа' });
+            await sbLogTransaction(linkedSaving.id, 'withdrawal', cellAmount, { date: dateStr, note: `Отмена пополнения из челленджа «${ch.name}»` });
           }
           if (linkedSaving.isSavingsAccount) {
             const nextDay = new Date(dateStr + 'T12:00:00');
