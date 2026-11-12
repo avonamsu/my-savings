@@ -3627,12 +3627,18 @@ function toggleExclude(id) {
 
 // ── ФИКСАЦИЯ ДОХОДА ПО ВКЛАДУ ─────────────────────────────
 let _fixIncomeEditId = null;
+let _fixIncomeOnDone = null; // callback, вызываемый после сохранения/пропуска
 
-function openFixIncomeModal(savingId) {
+function openFixIncomeModal(savingId, onDone) {
   const s = state.savings.find(x => x.id === savingId);
-  if (!s || !s.isDeposit || !s.rate || !s.dateStart || !s.dateEnd) return;
+  if (!s || !s.isDeposit || !s.rate || !s.dateStart || !s.dateEnd) {
+    // Если вклад не подходит — сразу зовём колбэк
+    if (onDone) onDone();
+    return;
+  }
 
   _fixIncomeEditId = savingId;
+  _fixIncomeOnDone = onDone || null;
   const year = new Date(s.dateEnd).getFullYear();
   const start = new Date(s.dateStart);
   const end = new Date(s.dateEnd);
@@ -3657,6 +3663,10 @@ function openFixIncomeModal(savingId) {
 function closeFixIncomeModal() {
   document.getElementById('fix-income-modal').classList.remove('open');
   _fixIncomeEditId = null;
+  // При пропуске тоже вызываем колбэк (закрытие/продление должны произойти)
+  const cb = _fixIncomeOnDone;
+  _fixIncomeOnDone = null;
+  if (cb) cb();
 }
 
 function saveFixedIncome() {
@@ -3674,7 +3684,12 @@ function saveFixedIncome() {
     sbLogTransaction(_fixIncomeEditId, 'interest', amount, { date: closeDate, note: `Доход за ${year} г.` });
   }
   save();
-  closeFixIncomeModal();
+  // Вызываем колбэк до закрытия модалки, чтобы он отработал в нужный момент
+  const cb = _fixIncomeOnDone;
+  _fixIncomeOnDone = null;
+  document.getElementById('fix-income-modal').classList.remove('open');
+  _fixIncomeEditId = null;
+  if (cb) cb();
   renderSavings();
   haptic('success');
 }
@@ -4878,10 +4893,21 @@ async function closeExpiredDeposit(savingId) {
     const confirmed = confirm(`Закрыть вклад «${s.name}»?\n\nОстаток ${fmt(bal)} ${s.currency || '₽'} останется в истории операций.\nДля перевода остатка сначала воспользуйтесь кнопкой «Перевести».`);
     if (!confirmed) return;
   }
-  s.earlyClosed = true;
+  // Закрываем шит до показа модалки
   document.getElementById('account-sheet-overlay')?.remove();
-  await save();
-  renderSavings();
+  // Показываем модалку фиксирования дохода; фактическое закрытие — в колбэке
+  const doClose = async () => {
+    s.earlyClosed = true;
+    await save();
+    renderSavings();
+  };
+  // Проверяем, не зафиксирован ли уже доход
+  const alreadyFixed = (state.fixedDepositIncome||[]).some(x => x.savingId === savingId);
+  if (!alreadyFixed && s.rate && s.dateStart && s.dateEnd) {
+    openFixIncomeModal(savingId, doClose);
+  } else {
+    await doClose();
+  }
 }
 
 // ── AUTO-RENEW CHECK ──────────────────────────────────────
@@ -4971,9 +4997,18 @@ function snoozeAutoRenew(savingId) {
 
 function dismissAutoRenew(savingId) {
   const s = state.savings.find(x => x.id === savingId);
-  if (s) { s.autorenew = false; s._renewPending = false; save(); }
   document.getElementById('ar-overlay')?.remove();
-  renderSavings();
+  const doClose = () => {
+    if (s) { s.autorenew = false; s._renewPending = false; save(); }
+    renderSavings();
+  };
+  // Показываем модалку фиксирования дохода; фактическое закрытие — в колбэке
+  const alreadyFixed = s && (state.fixedDepositIncome||[]).some(x => x.savingId === savingId);
+  if (s && !alreadyFixed && s.rate && s.dateStart && s.dateEnd) {
+    openFixIncomeModal(savingId, doClose);
+  } else {
+    doClose();
+  }
 }
 
 async function confirmAutoRenew(savingId) {
@@ -5176,7 +5211,7 @@ function openAccountSheet(id) {
     if (canTransfer && (isExpired || canRefill)) btns.push(_sheetBtn(`openTransferModal('${id}')`, '↔️', 'Перевести', false));
     if (canEarlyClose) btns.push(_sheetBtn(`openEarlyCloseModal('${id}')`, '🔓', 'Закрыть досрочно', false));
     if (isExpired && !s.earlyClosed) btns.push(_sheetBtn(`closeExpiredDeposit('${id}')`, '🔒', 'Закрыть вклад', false));
-    if (showFix) btns.push(_sheetBtn(`openFixIncomeModal('${id}')`, '💸', 'Зафикс. доход', false));
+
     btns.push(_sheetBtn(`openHistorySheet('${id}')`, '📋', 'История операций', false));
     const cols = Math.min(btns.length, 4);
     actions = `<div style="padding:16px 20px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;">${btns.join('')}</div>`;
