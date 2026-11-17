@@ -11172,6 +11172,10 @@ function gdriveInit() {
     // Не запускать pull-to-refresh если открыта модалка категорий
     const catsModal = document.getElementById('budget-cats-modal');
     if (catsModal && catsModal.style.display === 'flex') return;
+    // Не запускать pull-to-refresh если открыт любой шит или модалка поверх страницы
+    if (document.getElementById('challenge-sheet-overlay')) return;
+    if (document.getElementById('account-sheet-overlay')) return;
+    if (document.querySelector('.modal-overlay.open')) return;
     startY = e.touches[0].clientY;
     pulling = true;
     triggered = false;
