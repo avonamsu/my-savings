@@ -7778,7 +7778,17 @@ function openChallengeSheet(id) {
         </div>
       </div>
     </div>`;
-  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+  // Закрываем только по тапу (не по свайпу) на затемнённом фоне
+  let _overlayTouchStartY = null;
+  overlay.addEventListener('touchstart', e => {
+    _overlayTouchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  overlay.addEventListener('click', e => {
+    if (e.target !== overlay) return;
+    // Если палец сдвинулся больше 10px — это свайп, не закрываем
+    if (_overlayTouchStartY !== null && Math.abs(e.clientY - _overlayTouchStartY) > 10) return;
+    overlay.remove();
+  });
   document.body.appendChild(overlay);
 }
 
