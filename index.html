@@ -8066,7 +8066,7 @@ async function toggleCell(challengeId, cellIdx) {
     const dateStr = today();
     if (!wasDone) {
       // Ячейка отмечена — предлагаем пополнить счёт
-      if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на ${fmtInt(cellAmount)} ₽?`)) {
+      if (confirm(`💳 Пополнить счёт «${linkedSaving.name}» на ${fmtInt(cellAmount)} ₽?\n\nОтмена — ячейка отметится, но счёт пополнен не будет.`)) {
         linkedSaving.amount = (parseFloat(linkedSaving.amount)||0) + cellAmount;
         save();
         if (_sbUser && linkedSaving.isSavingsAccount) {
