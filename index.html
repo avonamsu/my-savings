@@ -7412,14 +7412,11 @@ function selectPiggyType(type) {
 
 // Вычислить «зеркальный» баланс: баланс счёта + проценты из транзакций
 function getMirrorBalance(pg) {
+  // Используем getSavingCurrentAmountLocal — она считает баланс с процентами
+  // (аналогично модалке счёта), а не только saving.amount
   const saving = pg.linkedSavingId ? (state.savings||[]).find(s=>s.id===pg.linkedSavingId) : null;
   if (!saving) return 0;
-  const balance = Number(saving.amount) || 0;
-  // Прибавляем зафиксированные проценты (fixedDepositIncome)
-  const interest = (state.fixedDepositIncome||[])
-    .filter(x => x.savingId === saving.id)
-    .reduce((sum, x) => sum + (Number(x.amount)||0), 0);
-  return balance + interest;
+  return getSavingCurrentAmountLocal(saving);
 }
 
 // Рассчитать прогноз для зеркала: средняя скорость роста за последние 3 месяца
@@ -7981,11 +7978,9 @@ function openMirrorPiggySheet(id) {
   document.getElementById('piggy-sheet-overlay')?.remove();
 
   const saving = pg.linkedSavingId ? (state.savings||[]).find(s=>s.id===pg.linkedSavingId) : null;
-  const balance = saving ? (Number(saving.amount)||0) : 0;
-  const interest = (state.fixedDepositIncome||[])
-    .filter(x => saving && x.savingId === saving.id)
-    .reduce((sum, x) => sum + (Number(x.amount)||0), 0);
-  const saved = balance + interest;
+  // getSavingCurrentAmountLocal считает баланс + начисленные проценты (аналогично модалке счёта)
+  const saved = saving ? getSavingCurrentAmountLocal(saving) : 0;
+  const balance = saving ? (Number(saving.amount)||0) : 0; // только principal для подписи
   const effectiveGoal = (pg.goal && pg.goal < 999999999) ? pg.goal : 0;
   const pct = effectiveGoal > 0 ? Math.min(100, Math.round(saved/effectiveGoal*100)) : 0;
   const color = pg.color||'#64B5F6';
@@ -8016,7 +8011,7 @@ function openMirrorPiggySheet(id) {
             <div>
               <div style="font-size:28px;font-weight:700;color:${color};">${fmtInt(saved)} ₽</div>
               <div style="font-size:13px;color:var(--text-dim);margin-top:2px;">
-                ${saving ? `Баланс счёта: ${fmtInt(balance)} ₽${interest>0?' + '+fmtInt(interest)+' ₽ проценты':''}` : 'Счёт не привязан'}
+                ${saving ? `Баланс счёта: ${fmtInt(Math.round(saved))} ₽${saved > balance + 1 ? ' (вкл. проценты)' : ''}` : 'Счёт не привязан'}
               </div>
               ${effectiveGoal>0 ? `<div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Цель: ${fmtInt(effectiveGoal)} ₽ · ${pct}%</div>` : ''}
             </div>
