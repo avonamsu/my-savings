@@ -8097,8 +8097,7 @@ function openMirrorPiggySheet(id) {
                 ? `<div style="font-size:13px;color:var(--text);margin-bottom:4px;">Вноси <span style="color:${color};font-weight:600;">${fmtInt(perDeposit)} ₽</span> ${intervalLabel} <span style="font-size:12px;color:var(--text-dim);">(${depositsLeft} раз)</span></div>`
                 : `<div style="font-size:13px;color:var(--text);margin-bottom:4px;">Нужно довнести: <span style="color:${color};font-weight:600;">${fmtInt(perDeposit)} ₽</span></div>`
               }
-              ${interestGain>0?`<div style="font-size:12px;color:rgba(100,181,246,0.7);margin-bottom:3px;">Проценты покроют ≈${fmtInt(interestGain)} ₽ (${Math.round(rate*100)}% годовых)</div>`:''}
-              <div style="font-size:12px;color:var(--text-dim);">Уже накоплено ${pct}% · баланс ${fmtInt(Math.round(saved))} ₽</div>
+              ${interestGain>0?`<div style="font-size:12px;color:rgba(100,181,246,0.7);">Проценты покроют ≈${fmtInt(interestGain)} ₽ (${Math.round(rate*100)}% годовых)</div>`:''}
             </div>`;
           })()}
           ${(()=>{
