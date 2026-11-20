@@ -1272,6 +1272,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div id="pg-mirror-fields" style="display:none;">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-mirror-name" placeholder="Например: Мой вклад 2025"></div>
       <div class="field"><label>ЦЕЛЬ (₽) — необязательно</label><input type="text" id="pg-mirror-goal" placeholder="0 — без цели" inputmode="decimal" oninput="formatAmountInput(this)"></div>
+      <div class="field"><label>ДАТА ЦЕЛИ — необязательно</label><input type="date" id="pg-mirror-deadline"></div>
       <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ <span style="color:var(--danger);">*</span></label>
         <div id="pg-mirror-linked-saving" class="linked-saving-chips" data-value=""></div>
         <div id="pg-mirror-link-error" style="display:none;font-size:12px;color:var(--danger);margin-top:6px;"></div>
@@ -7465,6 +7466,7 @@ function createMirrorPiggyBank() {
   const name = (document.getElementById('pg-mirror-name')?.value||'').trim();
   const goalRaw = readAmountInput('pg-mirror-goal');
   const goal = goalRaw > 0 ? goalRaw : 0;
+  const deadline = document.getElementById('pg-mirror-deadline')?.value||null;
   const emoji = document.getElementById('pgm-emoji')?.value||'✉️';
   const color = document.getElementById('pgm-color')?.value||'#64B5F6';
   const linkedSavingId = getLinkedSavingValue('pg-mirror-linked-saving');
@@ -7487,11 +7489,14 @@ function createMirrorPiggyBank() {
   state.piggyBanks.push({
     id: uid(), name, goal: goal || 999999999, emoji, color,
     mirror: true, linkedSavingId,
+    deadline: deadline||null,
     saved: 0, deposits: [], createdAt: today()
   });
   save();
   document.getElementById('pg-mirror-name').value = '';
   document.getElementById('pg-mirror-goal').value = '';
+  const pgMirrorDL = document.getElementById('pg-mirror-deadline');
+  if (pgMirrorDL) pgMirrorDL.value = '';
   hideChallengeFormPage();
 }
 
@@ -7602,12 +7607,14 @@ function selectEditPiggyType(type, pg) {
   const oldLinked = document.getElementById('pg-edit-linked-saving')?.closest('.field');
   if (oldLinked) oldLinked.style.display = isMirror ? 'none' : '';
 
-  // При переключении на зеркало — заполняем чипы привязки
+  // При переключении на зеркало — заполняем чипы привязки и дедлайн
   if (isMirror) {
     const currentLinked = pg?.linkedSavingId || getLinkedSavingValue('pg-edit-linked-saving') || '';
     fillLinkedSavingSelect('pg-edit-mirror-linked-saving', currentLinked, true);
     const errEl = document.getElementById('pg-edit-mirror-link-error');
     if (errEl) errEl.style.display = 'none';
+    const mdlEl = document.getElementById('pg-edit-mirror-deadline');
+    if (mdlEl) mdlEl.value = pg?.deadline||'';
   }
 }
 
@@ -7671,6 +7678,8 @@ function savePiggyEdit() {
       return;
     }
     pg.linkedSavingId = linkedSavingId;
+    // Сохраняем дедлайн конверта
+    pg.deadline = document.getElementById('pg-edit-mirror-deadline')?.value||null;
   } else {
     // Остаётся обычной
     pg.linkedSavingId = getLinkedSavingValue('pg-edit-linked-saving') || null;
@@ -8015,6 +8024,33 @@ function openMirrorPiggySheet(id) {
           ${effectiveGoal>0 ? `<div class="progress-bar-bg" style="height:8px;"><div class="progress-bar-fill" style="width:${pct}%;background:${color};height:100%;"></div></div>` : ''}
           ${effectiveGoal>0 && pct>=100 ? `<div style="margin-top:10px;text-align:center;font-size:15px;font-weight:700;color:${color};">🎉 Цель достигнута!</div>` : ''}
           ${(()=>{
+            // Блок плана по дедлайну конверта
+            if (!effectiveGoal || pct>=100) return '';
+            const dl = pg.deadline;
+            if (!dl) return '';
+            const daysLeft = Math.max(0, Math.round((new Date(dl)-new Date())/86400000));
+            const monthsLeft = daysLeft/30;
+            const remaining = effectiveGoal - saved;
+            const neededPerMonth = monthsLeft > 0 ? Math.ceil(remaining/monthsLeft) : 0;
+            const fc = getMirrorForecast(pg);
+            const currentMonthly = fc ? Math.round(fc.monthlyAvg) : 0;
+            const onTrack = currentMonthly >= neededPerMonth*0.9;
+            const months_ru = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+            const dlDate = new Date(dl);
+            const dlStr = dlDate.getDate()+' '+months_ru[dlDate.getMonth()]+' '+dlDate.getFullYear();
+            const statusIcon = pct>=100?'🎉':onTrack?'✓':'⚠';
+            const statusColor = onTrack?'var(--accent)':'var(--warn)';
+            const statusText = onTrack?'Успеваешь':'Нужно ускориться';
+            return `<div style="margin-top:10px;padding:10px 12px;background:rgba(100,181,246,0.08);border-radius:10px;border:1px solid rgba(100,181,246,0.15);">
+              <div style="font-size:11px;color:rgba(100,181,246,0.7);font-weight:700;letter-spacing:.04em;margin-bottom:6px;">ПЛАН ДО ЦЕЛИ</div>
+              <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Дедлайн: <strong>${dlStr}</strong> · ${daysLeft} дн.</div>
+              <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Нужно прироста: <span style="color:${color};font-weight:600;">+${fmtInt(neededPerMonth)} ₽/мес</span></div>
+              ${currentMonthly>0?`<div style="font-size:12px;color:var(--text-dim);">Текущий темп: +${fmtInt(currentMonthly)} ₽/мес · <span style="color:${statusColor};">${statusIcon} ${statusText}</span></div>`:'<div style="font-size:12px;color:var(--text-dim);">Пополняй счёт — прогноз появится автоматически</div>'}
+            </div>`;
+          })()}
+          ${(()=>{
+            // Блок авто-прогноза (только если нет дедлайна, иначе уже показан выше)
+            if (pg.deadline) return '';
             const fc = getMirrorForecast(pg);
             if (!fc) return '';
             const months = fc.estimatedMonths;
@@ -8293,9 +8329,14 @@ function renderPiggyCard(pg) {
         <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">
           ${pg.mirror
             ? (()=>{
-                const fc = getMirrorForecast(pg);
-                const forecastStr = fc ? ` · ~${fc.estimatedMonths} мес` : '';
-                return `<span style="color:rgba(100,181,246,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;">✉️ КОНВЕРТ</span>${fmtInt(saved)} ₽${effectiveGoal<999999999?' из '+fmtInt(effectiveGoal)+' ₽ · '+pct+'%'+forecastStr:''}`;
+                // Показываем дедлайн или прогноз как подсказку
+                const dl = pg.deadline;
+                const dlDays = dl ? Math.max(0, Math.round((new Date(dl)-new Date())/86400000)) : null;
+                const fc = !dl ? getMirrorForecast(pg) : null;
+                const hintStr = dl
+                  ? ` · 📅 ${dlDays} дн.`
+                  : fc ? ` · ~${fc.estimatedMonths} мес` : '';
+                return `<span style="color:rgba(100,181,246,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;">✉️ КОНВЕРТ</span>${fmtInt(saved)} ₽${effectiveGoal<999999999?' из '+fmtInt(effectiveGoal)+' ₽ · '+pct+'%'+hintStr:''}`;
               })()
             : `<span style="color:rgba(78,205,196,0.6);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;display:inline-flex;align-items:center;gap:3px;"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g transform="scale(-1,1) translate(-24,0)"><path fill="currentColor" d="M10.081 4.089c.53.366 1.037.607 1.454.66a5 5 0 0 0-.47 1.44c-.672-.149-1.311-.504-1.836-.866a10 10 0 0 1-.729-.557V7a.75.75 0 0 1-.47.695l-.006.003a3 3 0 0 0-.166.074c-.117.055-.287.14-.486.254A6.5 6.5 0 0 0 6.03 9.03c-.453.453-.733 1.063-.89 1.536c-.203.606-.719 1.165-1.453 1.288a.224.224 0 0 0-.187.22v1.754c0 .165.12.306.283.333c.624.104 1.115.512 1.392 1.006a8.4 8.4 0 0 0 1.355 1.802a5 5 0 0 0 1.585 1.039a5 5 0 0 0 .774.254l.005.002A.75.75 0 0 1 9.5 19v1.25c0 .138.112.25.25.25H11a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5h1.25a.25.25 0 0 0 .25-.25V18c0-.283.16-.542.412-.67l.013-.007l.07-.04c.065-.039.164-.1.285-.188c.242-.176.571-.449.9-.833c.653-.761 1.32-1.968 1.32-3.762c0-1.007-.188-1.82-.509-2.488a5 5 0 0 0 .798-1.576q.15.204.282.423c.604.999.929 2.204.929 3.64c0 2.207-.833 3.75-1.68 4.739A6.7 6.7 0 0 1 19 18.42v1.829A1.75 1.75 0 0 1 17.25 22H16a1.5 1.5 0 0 1-1.5-1.5h-2A1.5 1.5 0 0 1 11 22H9.75A1.75 1.75 0 0 1 8 20.25v-.683a7 7 0 0 1-.464-.175A6.5 6.5 0 0 1 5.47 18.03a10 10 0 0 1-1.605-2.131a.49.49 0 0 0-.329-.258A1.84 1.84 0 0 1 2 13.828v-1.753c0-.843.61-1.562 1.44-1.7c.087-.015.216-.102.277-.284c.192-.577.565-1.434 1.253-2.122a8 8 0 0 1 1.658-1.246q.206-.117.372-.2V3.67c0-.938 1.13-1.323 1.74-.716c.33.329.81.767 1.341 1.134m2.989 4.759c-.49-.203-.904-.589-1.002-1.11a4.002 4.002 0 0 1 7.627-2.27a4 4 0 0 1-1.436 4.834c-.438.299-1.003.279-1.493.076zm4.394.18a2.502 2.502 0 0 0-2.42-4.338a2.5 2.5 0 0 0-1.513 2.708l.021.016a.5.5 0 0 0 .092.048l3.696 1.53a.5.5 0 0 0 .124.035M9 10a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></g></svg> КОПИЛКА</span>${fmtInt(saved)} ₽ из ${fmtInt(effectiveGoal)} ₽ · ${pct}%`
           }
@@ -12123,11 +12164,14 @@ checkPiggyReminders();
         </button>
       </div>
     </div>
-    <!-- Поля зеркала (счёт + ошибка) -->
+    <!-- Поля зеркала (счёт + дата цели + ошибка) -->
     <div id="pg-edit-mirror-fields" style="display:none;">
       <div class="field"><label>СЧЁТ ДЛЯ ПРИВЯЗКИ</label>
         <div id="pg-edit-mirror-linked-saving" class="linked-saving-chips" data-value=""></div>
         <div id="pg-edit-mirror-link-error" style="display:none;color:var(--danger);font-size:12px;margin-top:4px;"></div>
+      </div>
+      <div class="field"><label>ДАТА ЦЕЛИ — необязательно</label>
+        <input type="date" id="pg-edit-mirror-deadline">
       </div>
     </div>
     <div class="field" id="pg-edit-goal-row"><label>ЦЕЛЬ (₽)</label>
