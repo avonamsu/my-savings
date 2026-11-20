@@ -8037,7 +8037,7 @@ function openMirrorPiggySheet(id) {
         </div>
         <!-- Последние операции счёта -->
         ${saving ? (()=>{
-          const txs = (_txCache||[]).filter(t=>t.saving_id===saving.id).slice(0,3);
+          const txs = ((_txCache[saving.id]?.txs)||[]).slice(0,3);
           const html = txs.length ? txs.map(t=>{
             const isNeg = t.type==='withdrawal';
             const dateStr = _fmtDateTime(t.created_at||t.date);
