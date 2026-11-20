@@ -8013,10 +8013,10 @@ function openMirrorPiggySheet(id) {
               <div style="font-size:13px;color:var(--text-dim);margin-top:2px;">
                 ${saving ? `Баланс счёта: ${fmtInt(Math.round(saved))} ₽${saved > balance + 1 ? ' (вкл. проценты)' : ''}` : 'Счёт не привязан'}
               </div>
-              ${effectiveGoal>0 ? `<div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Цель: ${fmtInt(effectiveGoal)} ₽ · ${pct}%</div>` : ''}
+              ${effectiveGoal>0 ? `<div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Цель: ${fmtInt(effectiveGoal)} ₽</div>` : ''}
             </div>
           </div>
-          ${effectiveGoal>0 ? `<div class="progress-bar-bg" style="height:8px;"><div class="progress-bar-fill" style="width:${pct}%;background:${color};height:100%;"></div></div>` : ''}
+          ${effectiveGoal>0 ? `<div style="display:flex;align-items:center;gap:8px;"><div class="progress-bar-bg" style="height:8px;flex:1;"><div class="progress-bar-fill" style="width:${pct}%;background:${color};height:100%;"></div></div><span style="font-size:12px;color:${color};font-weight:600;min-width:36px;text-align:right;">${pct}%</span></div>` : ''}
           ${effectiveGoal>0 && pct>=100 ? `<div style="margin-top:10px;text-align:center;font-size:15px;font-weight:700;color:${color};">🎉 Цель достигнута!</div>` : ''}
           ${(()=>{
             // Блок плана по дедлайну конверта
