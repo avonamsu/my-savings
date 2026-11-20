@@ -7449,12 +7449,23 @@ function openPiggyEdit(id) {
   if (!pg) return;
   document.getElementById('pg-edit-id').value = id;
   document.getElementById('pg-edit-name').value = pg.name;
-  document.getElementById('pg-edit-goal').value = pg.goal;
+  document.getElementById('pg-edit-goal').value = (pg.goal && pg.goal < 999999999) ? pg.goal : '';
+
+  // Показываем переключатель типа только для не-челленджей
+  const typeRow = document.getElementById('pg-edit-type-row');
+  if (typeRow) typeRow.style.display = pg.challenge ? 'none' : '';
+
+  // Выбираем текущий тип и показываем/скрываем соответствующие поля
+  if (!pg.challenge) {
+    selectEditPiggyType(pg.mirror ? 'mirror' : 'piggy', pg);
+  }
+
+  // Заполняем поля обычной копилки (план и т.д.)
   const hasPlan = !!(pg.deadline || pg.dateStart);
   const planCheck = document.getElementById('pg-edit-plan-check');
   if(planCheck) planCheck.checked = hasPlan;
   const planFields = document.getElementById('pg-edit-plan-fields');
-  if(planFields) planFields.style.display = hasPlan ? '' : 'none';
+  if(planFields) planFields.style.display = (hasPlan && !pg.mirror) ? '' : 'none';
   const dsEl = document.getElementById('pg-edit-date-start');
   if(dsEl) dsEl.value = pg.dateStart||'';
   document.getElementById('pg-edit-deadline').value = pg.deadline||'';
@@ -7462,7 +7473,7 @@ function openPiggyEdit(id) {
   if(freqEl) freqEl.value = pg.frequency||'month';
   const remEl = document.getElementById('pg-edit-reminder');
   if(remEl) remEl.checked = !!pg.reminder;
-  if(hasPlan) {
+  if(hasPlan && !pg.mirror) {
     const mode = pg.planMode||'date';
     selectPiggyPlanMode(mode, 'pg-edit');
     if(mode==='amount') {
@@ -7472,13 +7483,42 @@ function openPiggyEdit(id) {
     updatePiggyPlanPreview('pg-edit');
   }
   const stdPgEmojis = ['🐷','✈️','🏠','🚗','💍','🎓','💻','🌴'];
-  selectEmoji(pg.emoji||'🐷', 'pge');
+  selectEmoji(pg.emoji||(pg.mirror?'🪞':'🐷'), 'pge');
   const pgeCustom = document.getElementById('pge-emoji-custom');
   if (pgeCustom) pgeCustom.value = stdPgEmojis.includes(pg.emoji||'🐷') ? '' : (pg.emoji||'');
-  selectColor(pg.color||'#4ECDC4', 'pge');
+  selectColor(pg.color||(pg.mirror?'#64B5F6':'#4ECDC4'), 'pge');
   fillLinkedSavingSelect('pg-edit-linked-saving', pg.linkedSavingId||'');
   document.getElementById('pg-edit-modal').classList.add('open');
   document.getElementById('fab')?.setAttribute('hidden','');
+}
+
+// Переключить отображение полей в модале редактирования по типу (обычная/зеркало)
+function selectEditPiggyType(type, pg) {
+  const isMirror = type === 'mirror';
+  document.getElementById('pg-edit-type-piggy')?.classList.toggle('active', !isMirror);
+  document.getElementById('pg-edit-type-mirror')?.classList.toggle('active', isMirror);
+
+  // Скрываем план при зеркале
+  const planRow = document.querySelector('#pg-edit-modal .toggle-row');
+  if (planRow) planRow.style.display = isMirror ? 'none' : '';
+  const planFields = document.getElementById('pg-edit-plan-fields');
+  if (planFields && isMirror) planFields.style.display = 'none';
+
+  // Показываем/скрываем поля зеркала (выбор счёта)
+  const mirrorFields = document.getElementById('pg-edit-mirror-fields');
+  if (mirrorFields) mirrorFields.style.display = isMirror ? '' : 'none';
+
+  // Старый инпут «Привязать к счёту» скрываем при зеркале (там свой)
+  const oldLinked = document.getElementById('pg-edit-linked-saving')?.closest('.field');
+  if (oldLinked) oldLinked.style.display = isMirror ? 'none' : '';
+
+  // При переключении на зеркало — заполняем чипы привязки
+  if (isMirror) {
+    const currentLinked = pg?.linkedSavingId || getLinkedSavingValue('pg-edit-linked-saving') || '';
+    fillLinkedSavingSelect('pg-edit-mirror-linked-saving', currentLinked);
+    const errEl = document.getElementById('pg-edit-mirror-link-error');
+    if (errEl) errEl.style.display = 'none';
+  }
 }
 
 function closePiggyEdit() {
@@ -7491,21 +7531,80 @@ function savePiggyEdit() {
   const pg = (state.piggyBanks||[]).find(p=>p.id===id);
   if (!pg) return;
   const name = document.getElementById('pg-edit-name').value.trim();
-  const goal = parseFloat(document.getElementById('pg-edit-goal').value||0);
-  if (!name || !goal || goal<=0) return;
+  if (!name) return;
+
+  // Определяем желаемый тип (если не челлендж — смотрим на кнопку)
+  const wantsMirror = !pg.challenge &&
+    document.getElementById('pg-edit-type-mirror')?.classList.contains('active');
+
+  // Обрабатываем конвертацию типа
+  if (wantsMirror && !pg.mirror) {
+    // Обычная → зеркало
+    const linkedSavingId = getLinkedSavingValue('pg-edit-mirror-linked-saving');
+    if (!linkedSavingId) {
+      const errEl = document.getElementById('pg-edit-mirror-link-error');
+      if (errEl) { errEl.textContent = 'Нужно выбрать счёт для привязки'; errEl.style.display = ''; }
+      return;
+    }
+    // Проверяем уникальность зеркала для данного счёта (кроме самой копилки)
+    const existingMirror = (state.piggyBanks||[]).find(p => p.mirror && p.linkedSavingId === linkedSavingId && p.id !== id);
+    if (existingMirror) {
+      const errEl = document.getElementById('pg-edit-mirror-link-error');
+      if (errEl) { errEl.textContent = `К этому счёту уже привязано зеркало «${existingMirror.name}»`; errEl.style.display = ''; }
+      return;
+    }
+    pg.mirror = true;
+    pg.linkedSavingId = linkedSavingId;
+    // Сбрасываем ручные депозиты — баланс теперь считается автоматически
+    pg.saved = 0;
+    pg.deposits = [];
+    pg.deadline = null; pg.dateStart = null; pg.frequency = null; pg.planMode = null; pg.perPeriod = null; pg.reminder = false;
+  } else if (!wantsMirror && pg.mirror) {
+    // Зеркало → обычная: сид текущего баланса как стартовое накопление
+    const currentBalance = getMirrorBalance(pg);
+    pg.mirror = false;
+    pg.saved = currentBalance;
+    pg.deposits = currentBalance > 0 ? [{id: uid(), amount: currentBalance, date: today(), note: 'Перенос из зеркала'}] : [];
+    pg.linkedSavingId = getLinkedSavingValue('pg-edit-linked-saving') || null;
+  } else if (wantsMirror && pg.mirror) {
+    // Остаётся зеркалом — обновляем привязанный счёт
+    const linkedSavingId = getLinkedSavingValue('pg-edit-mirror-linked-saving');
+    if (!linkedSavingId) {
+      const errEl = document.getElementById('pg-edit-mirror-link-error');
+      if (errEl) { errEl.textContent = 'Нужно выбрать счёт для привязки'; errEl.style.display = ''; }
+      return;
+    }
+    const existingMirror = (state.piggyBanks||[]).find(p => p.mirror && p.linkedSavingId === linkedSavingId && p.id !== id);
+    if (existingMirror) {
+      const errEl = document.getElementById('pg-edit-mirror-link-error');
+      if (errEl) { errEl.textContent = `К этому счёту уже привязано зеркало «${existingMirror.name}»`; errEl.style.display = ''; }
+      return;
+    }
+    pg.linkedSavingId = linkedSavingId;
+  } else {
+    // Остаётся обычной
+    pg.linkedSavingId = getLinkedSavingValue('pg-edit-linked-saving') || null;
+  }
+
   pg.name = name;
-  pg.goal = goal;
-  const editHasPlan = document.getElementById('pg-edit-plan-check')?.checked;
-  pg.deadline = editHasPlan ? (document.getElementById('pg-edit-deadline').value||null) : null;
-  pg.dateStart = editHasPlan ? (document.getElementById('pg-edit-date-start')?.value||today()) : null;
-  pg.frequency = editHasPlan ? (document.getElementById('pg-edit-frequency')?.value||'month') : null;
-  const editPlanMode = editHasPlan ? (document.getElementById('pg-edit-mode-date')?.classList.contains('active') ? 'date' : 'amount') : null;
-  pg.planMode = editPlanMode;
-  pg.perPeriod = editHasPlan && editPlanMode==='amount' ? parseFloat(document.getElementById('pg-edit-per-period')?.value||0)||null : null;
-  pg.reminder = editHasPlan ? !!(document.getElementById('pg-edit-reminder')?.checked) : false;
+  const goalRaw = parseFloat(document.getElementById('pg-edit-goal').value||0);
+  pg.goal = goalRaw > 0 ? goalRaw : (pg.mirror ? 999999999 : 999999999);
+
+  // Сохраняем план только для обычной копилки
+  if (!pg.mirror) {
+    if (!pg.goal || pg.goal <= 0) return;
+    const editHasPlan = document.getElementById('pg-edit-plan-check')?.checked;
+    pg.deadline = editHasPlan ? (document.getElementById('pg-edit-deadline').value||null) : null;
+    pg.dateStart = editHasPlan ? (document.getElementById('pg-edit-date-start')?.value||today()) : null;
+    pg.frequency = editHasPlan ? (document.getElementById('pg-edit-frequency')?.value||'month') : null;
+    const editPlanMode = editHasPlan ? (document.getElementById('pg-edit-mode-date')?.classList.contains('active') ? 'date' : 'amount') : null;
+    pg.planMode = editPlanMode;
+    pg.perPeriod = editHasPlan && editPlanMode==='amount' ? parseFloat(document.getElementById('pg-edit-per-period')?.value||0)||null : null;
+    pg.reminder = editHasPlan ? !!(document.getElementById('pg-edit-reminder')?.checked) : false;
+  }
+
   pg.emoji = document.getElementById('pg-edit-emoji')?.value||pg.emoji||'🐷';
   pg.color = document.getElementById('pg-edit-color')?.value||pg.color||'#4ECDC4';
-  pg.linkedSavingId = getLinkedSavingValue('pg-edit-linked-saving') || null;
   save();
   closePiggyEdit();
   renderChallengesPage();
@@ -11921,7 +12020,26 @@ checkPiggyReminders();
     <div class="field"><label>НАЗВАНИЕ</label>
       <input type="text" id="pg-edit-name" placeholder="Название">
     </div>
-    <div class="field"><label>ЦЕЛЬ (₽)</label>
+    <!-- Переключатель типа (только обычная ↔ зеркало; челлендж не трогаем) -->
+    <div id="pg-edit-type-row" class="field" style="display:none;">
+      <label>ТИП</label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" id="pg-edit-type-piggy" class="income-type-btn active" onclick="selectEditPiggyType('piggy')" style="flex:1;">
+          <span>🐷</span><span>Обычная</span>
+        </button>
+        <button type="button" id="pg-edit-type-mirror" class="income-type-btn" onclick="selectEditPiggyType('mirror')" style="flex:1;">
+          <span>🪞</span><span>Зеркало</span>
+        </button>
+      </div>
+    </div>
+    <!-- Поля зеркала (счёт + ошибка) -->
+    <div id="pg-edit-mirror-fields" style="display:none;">
+      <div class="field"><label>СЧЁТ ДЛЯ ПРИВЯЗКИ</label>
+        <div id="pg-edit-mirror-linked-saving" class="linked-saving-chips" data-value=""></div>
+        <div id="pg-edit-mirror-link-error" style="display:none;color:var(--danger);font-size:12px;margin-top:4px;"></div>
+      </div>
+    </div>
+    <div class="field" id="pg-edit-goal-row"><label>ЦЕЛЬ (₽)</label>
       <input type="number" id="pg-edit-goal" placeholder="100 000" inputmode="decimal">
     </div>
     <div class="toggle-row">
@@ -11971,6 +12089,7 @@ checkPiggyReminders();
         <button type="button" onclick="selectEmoji('🎓','pge')" class="emoji-pick-btn" id="epb-pge-grad">🎓</button>
         <button type="button" onclick="selectEmoji('💻','pge')" class="emoji-pick-btn" id="epb-pge-laptop">💻</button>
         <button type="button" onclick="selectEmoji('🌴','pge')" class="emoji-pick-btn" id="epb-pge-palm">🌴</button>
+        <button type="button" onclick="selectEmoji('🪞','pge')" class="emoji-pick-btn" id="epb-pge-mirror">🪞</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
         <span style="font-size:12px;color:var(--text-dim);">Свой:</span>
