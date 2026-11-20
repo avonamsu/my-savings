@@ -8027,22 +8027,78 @@ function openMirrorPiggySheet(id) {
             const months_ru = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
             const dlDate = new Date(dl);
             const dlStr = dlDate.getDate()+' '+months_ru[dlDate.getMonth()]+' '+dlDate.getFullYear();
-            // Учитываем проценты по счёту: если внести D сейчас, к дедлайну будет
-            // (saved + D) * growFactor = goal → D = goal/growFactor - saved
+
+            // Анализируем историю пополнений — средний интервал между ними
+            const depositTxs = ((_txCache[saving?.id]?.txs)||[])
+              .filter(t => t.type==='deposit' || t.type==='init')
+              .sort((a,b) => new Date(a.date)-new Date(b.date));
+            let avgInterval = null; // средний интервал между пополнениями в днях
+            if (depositTxs.length >= 2) {
+              const intervals = [];
+              for (let i=1; i<depositTxs.length; i++) {
+                const d = Math.round((new Date(depositTxs[i].date)-new Date(depositTxs[i-1].date))/86400000);
+                if (d > 0) intervals.push(d);
+              }
+              if (intervals.length) avgInterval = Math.round(intervals.reduce((a,b)=>a+b,0)/intervals.length);
+            }
+
+            // Количество оставшихся пополнений до дедлайна (минимум 1)
+            const depositsLeft = avgInterval ? Math.max(1, Math.floor(daysLeft / avgInterval)) : 1;
+
+            // Учитываем проценты: каждое пополнение D_i вносится в момент i*avgInterval дней до дедлайна
+            // Упрощение: равномерные пополнения, считаем среднюю дату → вносить каждый раз D
             const rate = saving ? (Number(saving.rate)||0)/100 : 0;
-            const growFactor = rate > 0 && daysLeft > 0
-              ? (saving.compound
-                  ? Math.pow(1 + rate/12, daysLeft/30.4375) // сложные проценты
-                  : (1 + rate * daysLeft / 365))             // простые проценты
-              : 1;
-            const needToDeposit = Math.max(0, Math.ceil(effectiveGoal / growFactor - saved));
-            const interestGain = rate > 0 ? Math.round(effectiveGoal - effectiveGoal/growFactor) : 0;
+
+            let perDeposit = null;
+            let totalNeeded = null;
+            if (rate > 0 && avgInterval && depositsLeft > 1) {
+              // Аннуитетная формула: каждое пополнение D растёт со своим growFactor
+              // sum(D * growFactor_i) + saved * growFactor_total = goal
+              // growFactor_i = (1 + rate * days_i / 365) для простых процентов
+              let sumFactors = 0;
+              const totalGrow = saving.compound
+                ? Math.pow(1 + rate/12, daysLeft/30.4375)
+                : (1 + rate * daysLeft / 365);
+              for (let i=1; i<=depositsLeft; i++) {
+                // i-е пополнение вносится через (i-1)*avgInterval дней от сейчас
+                const daysRemaining = daysLeft - (i-1)*avgInterval;
+                const f = daysRemaining > 0
+                  ? (saving.compound ? Math.pow(1+rate/12,daysRemaining/30.4375) : (1+rate*daysRemaining/365))
+                  : 1;
+                sumFactors += f;
+              }
+              const goalAfterCurrentGrowth = effectiveGoal - saved * totalGrow;
+              perDeposit = goalAfterCurrentGrowth > 0 ? Math.ceil(goalAfterCurrentGrowth / sumFactors) : 0;
+              totalNeeded = perDeposit * depositsLeft;
+            } else {
+              // Нет ставки или одно пополнение — простой расчёт
+              const growFactor = rate > 0 && daysLeft > 0
+                ? (saving.compound ? Math.pow(1+rate/12,daysLeft/30.4375) : (1+rate*daysLeft/365))
+                : 1;
+              totalNeeded = Math.max(0, Math.ceil(effectiveGoal / growFactor - saved));
+              perDeposit = depositsLeft > 0 ? Math.ceil(totalNeeded / depositsLeft) : totalNeeded;
+            }
+
+            // Человекочитаемый интервал
+            const intervalLabel = !avgInterval ? null
+              : avgInterval <= 2 ? 'каждый день'
+              : avgInterval <= 10 ? `каждые ${avgInterval} дн.`
+              : avgInterval <= 20 ? 'каждые ~2 нед.'
+              : avgInterval <= 40 ? 'раз в месяц'
+              : avgInterval <= 70 ? 'раз в 2 месяца'
+              : `каждые ${Math.round(avgInterval/30)} мес.`;
+
+            const interestGain = rate > 0 ? Math.max(0, Math.round(effectiveGoal - saved - totalNeeded)) : 0;
+
             return `<div style="margin-top:10px;padding:10px 12px;background:rgba(100,181,246,0.08);border-radius:10px;border:1px solid rgba(100,181,246,0.15);">
               <div style="font-size:11px;color:rgba(100,181,246,0.7);font-weight:700;letter-spacing:.04em;margin-bottom:6px;">ПЛАН ДО ЦЕЛИ</div>
               <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Дедлайн: <strong>${dlStr}</strong> · ${daysLeft} дн.</div>
-              <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Нужно довнести: <span style="color:${color};font-weight:600;">${fmtInt(needToDeposit)} ₽</span></div>
-              ${interestGain>0?`<div style="font-size:12px;color:rgba(100,181,246,0.7);margin-bottom:3px;">Проценты покроют ≈${fmtInt(interestGain)} ₽ (${Math.round(rate*100)}% годовых · ${daysLeft} дн.)</div>`:''}
-              <div style="font-size:12px;color:var(--text-dim);">Уже накоплено ${pct}% · текущий баланс ${fmtInt(Math.round(saved))} ₽</div>
+              ${intervalLabel && depositsLeft > 1
+                ? `<div style="font-size:13px;color:var(--text);margin-bottom:4px;">Вноси <span style="color:${color};font-weight:600;">${fmtInt(perDeposit)} ₽</span> ${intervalLabel} <span style="font-size:12px;color:var(--text-dim);">(${depositsLeft} раз)</span></div>`
+                : `<div style="font-size:13px;color:var(--text);margin-bottom:4px;">Нужно довнести: <span style="color:${color};font-weight:600;">${fmtInt(perDeposit)} ₽</span></div>`
+              }
+              ${interestGain>0?`<div style="font-size:12px;color:rgba(100,181,246,0.7);margin-bottom:3px;">Проценты покроют ≈${fmtInt(interestGain)} ₽ (${Math.round(rate*100)}% годовых)</div>`:''}
+              <div style="font-size:12px;color:var(--text-dim);">Уже накоплено ${pct}% · баланс ${fmtInt(Math.round(saved))} ₽</div>
             </div>`;
           })()}
           ${(()=>{
