@@ -1124,7 +1124,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <span style="display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M10.66 10.66A1.9 1.9 0 0 0 10.1 12a1.9 1.9 0 0 0 1.9 1.9a1.9 1.9 0 0 0 1.34-.56"/><path d="M12 6.3a5.7 5.7 0 1 0 5.7 5.7"/><path d="M12 2.5a9.5 9.5 0 1 0 9.5 9.5m-5.975-3.524L12.95 11.05"/><path d="M20.94 5.844L17.7 6.3l.456-3.24a.19.19 0 0 0-.313-.161l-2.148 2.137a1.9 1.9 0 0 0-.513 1.72l.342 1.72l1.72.341a1.9 1.9 0 0 0 1.72-.513L21.1 6.157a.19.19 0 0 0-.162-.313"/></g></svg></span><span>Челлендж</span>
         </button>
         <button type="button" id="pg-type-mirror" class="income-type-btn" onclick="selectPiggyType('mirror')" style="flex:1;">
-          <span style="display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="M12 1a9 9 0 0 1 9 9v4a9 9 0 0 1-18 0v-4a9 9 0 0 1 9-9m0 2a7 7 0 0 0-7 7v4a7 7 0 0 0 14 0v-4a7 7 0 0 0-7-7m0 3a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0v-2a4 4 0 0 1 4-4m0 2a2 2 0 0 0-2 2v2a2 2 0 0 0 4 0v-2a2 2 0 0 0-2-2"/></svg></span><span>Зеркало</span>
+          <span style="display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="M12 1a9 9 0 0 1 9 9v4a9 9 0 0 1-18 0v-4a9 9 0 0 1 9-9m0 2a7 7 0 0 0-7 7v4a7 7 0 0 0 14 0v-4a7 7 0 0 0-7-7m0 3a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0v-2a4 4 0 0 1 4-4m0 2a2 2 0 0 0-2 2v2a2 2 0 0 0 4 0v-2a2 2 0 0 0-2-2"/></svg></span><span>Конверт</span>
         </button>
       </div>
     </div>
@@ -1207,10 +1207,10 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <!-- Mirror piggy bank fields -->
     <div id="pg-mirror-fields" style="display:none;">
       <div style="background:rgba(100,181,246,0.08);border:1px solid rgba(100,181,246,0.2);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:600;color:#64B5F6;margin-bottom:4px;">🪞 Зеркало счёта</div>
-        <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">Прогресс копилки автоматически отражает реальный баланс привязанного счёта с учётом начисленных процентов. Пополнения идут напрямую на счёт.</div>
+        <div style="font-size:13px;font-weight:600;color:#64B5F6;margin-bottom:4px;">✉️ Конверт счёта</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">Прогресс конверта автоматически отражает баланс привязанного счёта с учётом процентов. Пополнять счёт можно как обычно — конверт обновится сам.</div>
       </div>
-      <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-mirror-name" placeholder="Например: Мой вклад"></div>
+      <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-mirror-name" placeholder="Например: Мой вклад 2025"></div>
       <div class="field"><label>ЦЕЛЬ (₽) — необязательно</label><input type="number" id="pg-mirror-goal" placeholder="0 — без цели" inputmode="decimal"></div>
       <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ <span style="color:var(--danger);">*</span></label>
         <div id="pg-mirror-linked-saving" class="linked-saving-chips" data-value=""></div>
@@ -1218,7 +1218,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
       <div class="field"><label>ЭМОДЗИ</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button type="button" onclick="selectEmoji('🪞','pgm')" class="emoji-pick-btn selected" id="epb-pgm-mirror">🪞</button>
+          <button type="button" onclick="selectEmoji('✉️','pgm')" class="emoji-pick-btn selected" id="epb-pgm-envelope">✉️</button>
           <button type="button" onclick="selectEmoji('🏦','pgm')" class="emoji-pick-btn" id="epb-pgm-bank">🏦</button>
           <button type="button" onclick="selectEmoji('💎','pgm')" class="emoji-pick-btn" id="epb-pgm-diamond">💎</button>
           <button type="button" onclick="selectEmoji('💰','pgm')" class="emoji-pick-btn" id="epb-pgm-money">💰</button>
@@ -1228,7 +1228,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
           <span style="font-size:12px;color:var(--text-dim);">Свой:</span>
           <input type="text" id="pgm-emoji-custom" placeholder="✨" maxlength="4" oninput="onCustomEmojiInput('pgm')" style="width:48px;text-align:center;font-size:20px;padding:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;">
         </div>
-        <input type="hidden" id="pgm-emoji" value="🪞">
+        <input type="hidden" id="pgm-emoji" value="✉️">
       </div>
       <div class="field"><label>ЦВЕТ</label>
         <div style="display:flex;gap:8px;">
@@ -3461,13 +3461,13 @@ function renderPiggyWidget(piggyId, container) {
       const effectiveGoal = (pg.goal && pg.goal < 999999999) ? pg.goal : 0;
       const pct = effectiveGoal > 0 ? Math.min(100, Math.round(mirrorSaved/effectiveGoal*100)) : 0;
       const saving = pg.linkedSavingId ? (state.savings||[]).find(s=>s.id===pg.linkedSavingId) : null;
-      container.innerHTML = `<div class="widget-section-header" style="cursor:pointer;" onclick="showPage('challenge');setTimeout(()=>openPiggySheet('${pg.id}'),350)"><span class="widget-section-label">${pg.emoji||'🪞'} ${pg.name}</span></div>
+      container.innerHTML = `<div class="widget-section-header" style="cursor:pointer;" onclick="showPage('challenge');setTimeout(()=>openPiggySheet('${pg.id}'),350)"><span class="widget-section-label">${pg.emoji||'✉️'} ${pg.name}</span></div>
         <div class="home-piggy-widget" style="cursor:pointer;" onclick="showPage('challenge');setTimeout(()=>openPiggySheet('${pg.id}'),350)">
           <div class="home-piggy-header">
             <div>
               <div style="font-size:15px;font-weight:700;">${fmtInt(mirrorSaved)} ₽${effectiveGoal>0?` <span style="font-size:12px;color:var(--text-dim);">из ${fmtInt(effectiveGoal)} ₽</span>`:''}
               </div>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">🪞 ${saving?saving.name:'Зеркало счёта'}</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">✉️ ${saving?saving.name:'Конверт счёта'}</div>
             </div>
           </div>
           ${effectiveGoal>0 ? `<div style="padding:0 14px 14px;"><div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${color};border-radius:2px;transition:width .3s;"></div></div></div>` : ''}
@@ -7312,9 +7312,9 @@ function selectPiggyType(type) {
   document.getElementById('pg-challenge-fields').style.display = type==='challenge' ? '' : 'none';
   document.getElementById('pg-mirror-fields').style.display = type==='mirror' ? '' : 'none';
   if (type === 'mirror') {
-    fillLinkedSavingSelect('pg-mirror-linked-saving', '');
+    fillLinkedSavingSelect('pg-mirror-linked-saving', '', true);
     // Reset emoji/color for mirror
-    selectEmoji('🪞', 'pgm');
+    selectEmoji('✉️', 'pgm');
     selectColor('#64B5F6', 'pgm');
   }
 }
@@ -7375,7 +7375,7 @@ function createMirrorPiggyBank() {
   const name = (document.getElementById('pg-mirror-name')?.value||'').trim();
   const goalRaw = parseFloat(document.getElementById('pg-mirror-goal')?.value||0);
   const goal = goalRaw > 0 ? goalRaw : 0;
-  const emoji = document.getElementById('pgm-emoji')?.value||'🪞';
+  const emoji = document.getElementById('pgm-emoji')?.value||'✉️';
   const color = document.getElementById('pgm-color')?.value||'#64B5F6';
   const linkedSavingId = getLinkedSavingValue('pg-mirror-linked-saving');
 
@@ -7389,7 +7389,7 @@ function createMirrorPiggyBank() {
   const existingMirror = (state.piggyBanks||[]).find(p => p.mirror && p.linkedSavingId === linkedSavingId);
   if (existingMirror) {
     const errEl = document.getElementById('pg-mirror-link-error');
-    if (errEl) { errEl.textContent = `К этому счёту уже привязано зеркало «${existingMirror.name}»`; errEl.style.display = ''; }
+    if (errEl) { errEl.textContent = `К этому счёту уже привязано конверт «${existingMirror.name}»`; errEl.style.display = ''; }
     return;
   }
 
@@ -7483,7 +7483,7 @@ function openPiggyEdit(id) {
     updatePiggyPlanPreview('pg-edit');
   }
   const stdPgEmojis = ['🐷','✈️','🏠','🚗','💍','🎓','💻','🌴'];
-  selectEmoji(pg.emoji||(pg.mirror?'🪞':'🐷'), 'pge');
+  selectEmoji(pg.emoji||(pg.mirror?'✉️':'🐷'), 'pge');
   const pgeCustom = document.getElementById('pge-emoji-custom');
   if (pgeCustom) pgeCustom.value = stdPgEmojis.includes(pg.emoji||'🐷') ? '' : (pg.emoji||'');
   selectColor(pg.color||(pg.mirror?'#64B5F6':'#4ECDC4'), 'pge');
@@ -7515,7 +7515,7 @@ function selectEditPiggyType(type, pg) {
   // При переключении на зеркало — заполняем чипы привязки
   if (isMirror) {
     const currentLinked = pg?.linkedSavingId || getLinkedSavingValue('pg-edit-linked-saving') || '';
-    fillLinkedSavingSelect('pg-edit-mirror-linked-saving', currentLinked);
+    fillLinkedSavingSelect('pg-edit-mirror-linked-saving', currentLinked, true);
     const errEl = document.getElementById('pg-edit-mirror-link-error');
     if (errEl) errEl.style.display = 'none';
   }
@@ -7550,7 +7550,7 @@ function savePiggyEdit() {
     const existingMirror = (state.piggyBanks||[]).find(p => p.mirror && p.linkedSavingId === linkedSavingId && p.id !== id);
     if (existingMirror) {
       const errEl = document.getElementById('pg-edit-mirror-link-error');
-      if (errEl) { errEl.textContent = `К этому счёту уже привязано зеркало «${existingMirror.name}»`; errEl.style.display = ''; }
+      if (errEl) { errEl.textContent = `К этому счёту уже привязано конверт «${existingMirror.name}»`; errEl.style.display = ''; }
       return;
     }
     pg.mirror = true;
@@ -7577,7 +7577,7 @@ function savePiggyEdit() {
     const existingMirror = (state.piggyBanks||[]).find(p => p.mirror && p.linkedSavingId === linkedSavingId && p.id !== id);
     if (existingMirror) {
       const errEl = document.getElementById('pg-edit-mirror-link-error');
-      if (errEl) { errEl.textContent = `К этому счёту уже привязано зеркало «${existingMirror.name}»`; errEl.style.display = ''; }
+      if (errEl) { errEl.textContent = `К этому счёту уже привязано конверт «${existingMirror.name}»`; errEl.style.display = ''; }
       return;
     }
     pg.linkedSavingId = linkedSavingId;
@@ -7890,7 +7890,7 @@ function openMirrorPiggySheet(id) {
   const effectiveGoal = (pg.goal && pg.goal < 999999999) ? pg.goal : 0;
   const pct = effectiveGoal > 0 ? Math.min(100, Math.round(saved/effectiveGoal*100)) : 0;
   const color = pg.color||'#64B5F6';
-  const emoji = pg.emoji||'🪞';
+  const emoji = pg.emoji||'✉️';
 
   const overlay = document.createElement('div');
   overlay.id = 'piggy-sheet-overlay';
@@ -7903,7 +7903,7 @@ function openMirrorPiggySheet(id) {
           <div>
             <div style="font-size:20px;font-weight:700;">${emoji} ${pg.name}</div>
             <div style="font-size:12px;color:var(--text-dim);margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span style="color:rgba(100,181,246,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;">🪞 ЗЕРКАЛО</span>
+              <span style="color:rgba(100,181,246,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;">✉️ КОНВЕРТ</span>
               ${saving?`<span style="font-size:11px;color:var(--text-dim);">· 💳 ${saving.name}</span>`:'<span style="font-size:11px;color:var(--danger);">· счёт не найден</span>'}
             </div>
           </div>
@@ -8205,7 +8205,7 @@ function renderPiggyCard(pg) {
             ? (()=>{
                 const fc = getMirrorForecast(pg);
                 const forecastStr = fc ? ` · ~${fc.estimatedMonths} мес` : '';
-                return `<span style="color:rgba(100,181,246,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;">🪞 ЗЕРКАЛО</span>${fmtInt(saved)} ₽${effectiveGoal<999999999?' из '+fmtInt(effectiveGoal)+' ₽ · '+pct+'%'+forecastStr:''}`;
+                return `<span style="color:rgba(100,181,246,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;">✉️ КОНВЕРТ</span>${fmtInt(saved)} ₽${effectiveGoal<999999999?' из '+fmtInt(effectiveGoal)+' ₽ · '+pct+'%'+forecastStr:''}`;
               })()
             : `<span style="color:rgba(78,205,196,0.6);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;display:inline-flex;align-items:center;gap:3px;"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g transform="scale(-1,1) translate(-24,0)"><path fill="currentColor" d="M10.081 4.089c.53.366 1.037.607 1.454.66a5 5 0 0 0-.47 1.44c-.672-.149-1.311-.504-1.836-.866a10 10 0 0 1-.729-.557V7a.75.75 0 0 1-.47.695l-.006.003a3 3 0 0 0-.166.074c-.117.055-.287.14-.486.254A6.5 6.5 0 0 0 6.03 9.03c-.453.453-.733 1.063-.89 1.536c-.203.606-.719 1.165-1.453 1.288a.224.224 0 0 0-.187.22v1.754c0 .165.12.306.283.333c.624.104 1.115.512 1.392 1.006a8.4 8.4 0 0 0 1.355 1.802a5 5 0 0 0 1.585 1.039a5 5 0 0 0 .774.254l.005.002A.75.75 0 0 1 9.5 19v1.25c0 .138.112.25.25.25H11a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5h1.25a.25.25 0 0 0 .25-.25V18c0-.283.16-.542.412-.67l.013-.007l.07-.04c.065-.039.164-.1.285-.188c.242-.176.571-.449.9-.833c.653-.761 1.32-1.968 1.32-3.762c0-1.007-.188-1.82-.509-2.488a5 5 0 0 0 .798-1.576q.15.204.282.423c.604.999.929 2.204.929 3.64c0 2.207-.833 3.75-1.68 4.739A6.7 6.7 0 0 1 19 18.42v1.829A1.75 1.75 0 0 1 17.25 22H16a1.5 1.5 0 0 1-1.5-1.5h-2A1.5 1.5 0 0 1 11 22H9.75A1.75 1.75 0 0 1 8 20.25v-.683a7 7 0 0 1-.464-.175A6.5 6.5 0 0 1 5.47 18.03a10 10 0 0 1-1.605-2.131a.49.49 0 0 0-.329-.258A1.84 1.84 0 0 1 2 13.828v-1.753c0-.843.61-1.562 1.44-1.7c.087-.015.216-.102.277-.284c.192-.577.565-1.434 1.253-2.122a8 8 0 0 1 1.658-1.246q.206-.117.372-.2V3.67c0-.938 1.13-1.323 1.74-.716c.33.329.81.767 1.341 1.134m2.989 4.759c-.49-.203-.904-.589-1.002-1.11a4.002 4.002 0 0 1 7.627-2.27a4 4 0 0 1-1.436 4.834c-.438.299-1.003.279-1.493.076zm4.394.18a2.502 2.502 0 0 0-2.42-4.338a2.5 2.5 0 0 0-1.513 2.708l.021.016a.5.5 0 0 0 .092.048l3.696 1.53a.5.5 0 0 0 .124.035M9 10a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></g></svg> КОПИЛКА</span>${fmtInt(saved)} ₽ из ${fmtInt(effectiveGoal)} ₽ · ${pct}%`
           }
@@ -8229,14 +8229,15 @@ function switchChTab(tab) {
   renderChallengesPage();
 }
 
-function fillLinkedSavingSelect(containerId, currentVal) {
+// required=true убирает чип «Без привязки» (для конвертов, где счёт обязателен)
+function fillLinkedSavingSelect(containerId, currentVal, required) {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.dataset.value = currentVal || '';
 
   const chips = [];
-  // "No link" chip
-  chips.push({ id: '', label: '<span style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 1024 1024"><path d="M0 0h1024v1024H0z" fill="none"/><path fill="currentColor" d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448s448-200.6 448-448S759.4 64 512 64m0 820c-205.4 0-372-166.6-372-372c0-89 31.3-170.8 83.5-234.8l523.3 523.3C682.8 852.7 601 884 512 884m288.5-137.2L277.2 223.5C341.2 171.3 423 140 512 140c205.4 0 372 166.6 372 372c0 89-31.3 170.8-83.5 234.8"/></svg>Без привязки</span>', sub: '' });
+  // "No link" chip — скрываем если привязка обязательна
+  if (!required) chips.push({ id: '', label: '<span style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 1024 1024"><path d="M0 0h1024v1024H0z" fill="none"/><path fill="currentColor" d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448s448-200.6 448-448S759.4 64 512 64m0 820c-205.4 0-372-166.6-372-372c0-89 31.3-170.8 83.5-234.8l523.3 523.3C682.8 852.7 601 884 512 884m288.5-137.2L277.2 223.5C341.2 171.3 423 140 512 140c205.4 0 372 166.6 372 372c0 89-31.3 170.8-83.5 234.8"/></svg>Без привязки</span>', sub: '' });
   (state.savings || []).forEach(s => {
     const icon = s.emoji || s.icon || '💰';
     const sub = s.isSavingsAccount ? 'накоп. счёт' : s.isDeposit ? 'вклад' : '';
@@ -8285,7 +8286,7 @@ function showNewChallengeFormPage() {
   if(planFields) planFields.style.display = 'none';
   fillLinkedSavingSelect('pg-linked-saving', '');
   fillLinkedSavingSelect('ch-linked-saving-p', '');
-  fillLinkedSavingSelect('pg-mirror-linked-saving', '');
+  fillLinkedSavingSelect('pg-mirror-linked-saving', '', true);
   updateChallengePreviewPage();
 }
 
@@ -12028,7 +12029,7 @@ checkPiggyReminders();
           <span>🐷</span><span>Обычная</span>
         </button>
         <button type="button" id="pg-edit-type-mirror" class="income-type-btn" onclick="selectEditPiggyType('mirror')" style="flex:1;">
-          <span>🪞</span><span>Зеркало</span>
+          <span>✉️</span><span>Конверт</span>
         </button>
       </div>
     </div>
