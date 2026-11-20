@@ -1195,7 +1195,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <!-- Piggy bank fields -->
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
-      <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="pg-goal" placeholder="100 000" inputmode="decimal"></div>
+      <div class="field"><label>ЦЕЛЬ (₽)</label><input type="text" id="pg-goal" placeholder="100 000" inputmode="decimal" oninput="formatAmountInput(this)"></div>
       <div class="toggle-row">
         <span class="toggle-label">План</span>
         <label class="toggle"><input type="checkbox" id="pg-plan-check" onchange="togglePiggyPlan('pg')"><span class="toggle-slider"></span></label>
@@ -1228,7 +1228,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         <!-- By amount mode -->
         <div id="pg-by-amount" style="display:none;" class="field">
           <label>ОТКЛАДЫВАТЬ (₽)</label>
-          <input type="number" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')">
+          <input type="text" id="pg-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg')" oninput="formatAmountInput(this)">
         </div>
         <div class="calc-preview" id="pg-plan-preview" style="display:none;"></div>
         <div class="toggle-row" style="margin-top:8px;">
@@ -1271,7 +1271,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <!-- Mirror piggy bank fields -->
     <div id="pg-mirror-fields" style="display:none;">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-mirror-name" placeholder="Например: Мой вклад 2025"></div>
-      <div class="field"><label>ЦЕЛЬ (₽) — необязательно</label><input type="number" id="pg-mirror-goal" placeholder="0 — без цели" inputmode="decimal"></div>
+      <div class="field"><label>ЦЕЛЬ (₽) — необязательно</label><input type="text" id="pg-mirror-goal" placeholder="0 — без цели" inputmode="decimal" oninput="formatAmountInput(this)"></div>
       <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ <span style="color:var(--danger);">*</span></label>
         <div id="pg-mirror-linked-saving" class="linked-saving-chips" data-value=""></div>
         <div id="pg-mirror-link-error" style="display:none;font-size:12px;color:var(--danger);margin-top:6px;"></div>
@@ -1305,7 +1305,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <!-- Challenge fields (existing) -->
     <div id="pg-challenge-fields" style="display:none;">
     <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="ch-name-p" placeholder="Например: На отпуск в Турции"></div>
-    <div class="field"><label>ЦЕЛЬ (₽)</label><input type="number" id="ch-goal-p" placeholder="100 000" inputmode="decimal" oninput="updateChallengePreviewPage()"></div>
+    <div class="field"><label>ЦЕЛЬ (₽)</label><input type="text" id="ch-goal-p" placeholder="100 000" inputmode="decimal" oninput="updateChallengePreviewPage()" oninput="formatAmountInput(this)"></div>
     <div class="field"><label>СРОК</label>
       <select id="ch-period-p" onchange="onChPeriodChange()">
         <option value="30">1 месяц</option>
@@ -1376,7 +1376,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <input type="text" id="ech-name" placeholder="Название">
     </div>
     <div class="field"><label>НОВАЯ ЦЕЛЬ (₽)</label>
-      <input type="number" id="ech-goal" placeholder="100 000" inputmode="decimal" oninput="updateEditChallengePreview()">
+      <input type="text" id="ech-goal" placeholder="100 000" inputmode="decimal" oninput="updateEditChallengePreview()" oninput="formatAmountInput(this)">
     </div>
     <div class="field"><label>СРОК</label>
       <select id="ech-period" onchange="onEchPeriodChange()">
@@ -1446,7 +1446,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div class="calc-preview" id="fix-income-preview" style="margin-bottom:14px;"></div>
     <div class="field">
       <label>ФАКТИЧЕСКИЙ ДОХОД (₽)</label>
-      <input type="number" id="fix-income-amount" placeholder="0" inputmode="decimal">
+      <input type="text" id="fix-income-amount" placeholder="0" inputmode="decimal" oninput="formatAmountInput(this)">
     </div>
     <div class="field">
       <label>ГОД</label>
@@ -1579,7 +1579,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <!-- Amount -->
     <div class="field">
       <label>СУММА, ₽</label>
-      <input id="bm-amount" type="number" min="0" step="0.01" placeholder="0.00" inputmode="decimal">
+      <input id="bm-amount" type="text" min="0" step="0.01" placeholder="0.00" inputmode="decimal" oninput="formatAmountInput(this)">
     </div>
     <!-- Date -->
     <div class="field">
@@ -1763,7 +1763,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
         <div class="field">
           <label>ДОХОД В МЕСЯЦ (₽)</label>
-          <input type="number" id="i-amount" placeholder="0" inputmode="decimal">
+          <input type="text" id="i-amount" placeholder="0" inputmode="decimal" oninput="formatAmountInput(this)">
           <div class="field-hint error" id="i-amount-err" style="display:none;">Введи сумму больше 0</div>
         </div>
       </div>
@@ -1783,7 +1783,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </div>
         <div class="field" id="field-fixed" style="display:none;">
           <label>ДОХОД В МЕСЯЦ (₽)</label>
-          <input type="number" id="i-fixed-amount" placeholder="0" inputmode="decimal">
+          <input type="text" id="i-fixed-amount" placeholder="0" inputmode="decimal" oninput="formatAmountInput(this)">
         </div>
         <div class="calc-preview" id="income-linked-preview" style="display:none;"></div>
       </div>
@@ -1814,7 +1814,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <div class="field">
         <label id="g-amount-label">СУММА В МЕСЯЦ (₽)</label>
         <div style="display:flex;gap:8px;">
-          <input type="number" id="g-amount" placeholder="0" inputmode="decimal" style="flex:1;" oninput="updateGoalCurrencyPreview()">
+          <input type="text" id="g-amount" placeholder="0" inputmode="decimal" style="flex:1;" oninput="updateGoalCurrencyPreview()" oninput="formatAmountInput(this)">
           <select id="g-sub-currency" style="display:none;width:auto;flex-shrink:0;" onchange="updateGoalAmountLabel()">
             <option value="RUB">₽ RUB</option>
             <option value="USD">$ USD</option>
@@ -1904,7 +1904,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div class="modal">
     <div class="modal-title">Добавить прошлое значение</div>
     <div class="field"><label>МЕСЯЦ И ГОД</label><input type="month" id="ih-month"></div>
-    <div class="field"><label>ДОХОД В МЕСЯЦ (₽)</label><input type="number" id="ih-amount" placeholder="0" inputmode="decimal"></div>
+    <div class="field"><label>ДОХОД В МЕСЯЦ (₽)</label><input type="text" id="ih-amount" placeholder="0" inputmode="decimal" oninput="formatAmountInput(this)"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeIncomeHistoryModal()">Отмена</button>
       <button class="btn-primary" onclick="saveIncomeHistoryPoint()">Сохранить</button>
@@ -1916,7 +1916,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div class="modal">
     <div class="modal-title">Добавить прошлое значение</div>
     <div class="field"><label>МЕСЯЦ И ГОД</label><input type="month" id="h-month"></div>
-    <div class="field"><label>СУММА НАКОПЛЕНИЙ (₽)</label><input type="number" id="h-amount" placeholder="0" inputmode="decimal"></div>
+    <div class="field"><label>СУММА НАКОПЛЕНИЙ (₽)</label><input type="text" id="h-amount" placeholder="0" inputmode="decimal" oninput="formatAmountInput(this)"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeHistoryModal()">Отмена</button>
       <button class="btn-primary" onclick="saveHistoryPoint()">Сохранить</button>
@@ -3798,7 +3798,7 @@ function closeFixIncomeModal() {
 }
 
 function saveFixedIncome() {
-  const amount = parseFloat(document.getElementById('fix-income-amount')?.value || 0);
+  const amount = readAmountInput('fix-income-amount');
   const year = parseInt(document.getElementById('fix-income-year')?.value || new Date().getFullYear());
   if (!amount || amount <= 0) { closeFixIncomeModal(); return; }
   if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
@@ -4811,9 +4811,9 @@ function openTransferModal(fromId) {
       </div>
       <div class="field" style="margin-bottom:10px;">
         <label>СУММА (${currSym(fromCur)})</label>
-        <input type="number" id="tr-amount" inputmode="decimal" placeholder="0"
+        <input type="text" id="tr-amount" inputmode="decimal" placeholder="0"
           style="width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 12px;color:var(--text);font-size:15px;box-sizing:border-box;"
-          oninput="updateTransferConversion('${fromId}')">
+          oninput="updateTransferConversion('${fromId}')" oninput="formatAmountInput(this)">
       </div>
       <div id="tr-conversion" style="display:none;background:var(--surface2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--text-dim);">
         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -4824,8 +4824,8 @@ function openTransferModal(fromId) {
           </div>
         </div>
         <div id="tr-manual-row" style="display:none;margin-top:8px;">
-          <input type="number" id="tr-amount-to" inputmode="decimal" placeholder="Сумма зачисления"
-            style="width:100%;background:var(--surface);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 10px;color:var(--text);font-size:14px;box-sizing:border-box;">
+          <input type="text" id="tr-amount-to" inputmode="decimal" placeholder="Сумма зачисления"
+            style="width:100%;background:var(--surface);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 10px;color:var(--text);font-size:14px;box-sizing:border-box;" oninput="formatAmountInput(this)">
         </div>
       </div>
       <div class="field" style="margin-bottom:16px;">
@@ -4853,7 +4853,7 @@ function updateTransferConversion(fromId) {
 
   const fromCur = from.currency || 'RUB';
   const toCur = to.currency || 'RUB';
-  const amount = parseFloat(document.getElementById('tr-amount')?.value) || 0;
+  const amount = readAmountInput('tr-amount');
 
   if (fromCur === toCur || amount <= 0) {
     convEl.style.display = 'none';
@@ -6040,8 +6040,35 @@ function checkUpcomingSubs() {
 
 // ── SAVINGS FORM HELPERS ──────────────────────────────────
 function formatAmountInput(el) {
-  const raw = el.value.replace(/ /g, '').replace(',', '.');
-  el._rawValue = isNaN(parseFloat(raw)) ? '' : String(parseFloat(raw));
+  // Strip everything except digits and dot/comma
+  const raw = el.value.replace(/\s/g, '').replace(',', '.');
+  const num = parseFloat(raw);
+  el._rawValue = isNaN(num) ? '' : String(num);
+  if (el._rawValue === '') return;
+
+  // Preserve trailing dot or trailing zeros after dot while typing
+  const hasDot = raw.includes('.');
+  const afterDot = hasDot ? raw.split('.')[1] : '';
+  const intPart = Math.floor(Math.abs(num));
+
+  // Format integer part with thin non-breaking spaces as thousands separator
+  const intFormatted = intPart.toLocaleString('ru-RU').replace(/ /g, ' ');
+  const display = hasDot ? intFormatted + '.' + afterDot : intFormatted;
+
+  // Save/restore caret position relative to end (stays stable as digits grow)
+  const prevLen = el.value.length;
+  el.value = display;
+  const diff = el.value.length - prevLen;
+  if (el.selectionStart !== undefined) {
+    try { el.selectionEnd = el.selectionStart = (el.selectionStart + diff); } catch(_){}
+  }
+}
+// Read amount from a formatted text input (strips spaces, parses float)
+function readAmountInput(elOrId) {
+  const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+  if (!el) return 0;
+  if (el._rawValue !== undefined && el._rawValue !== '') return parseFloat(el._rawValue) || 0;
+  return parseFloat((el.value||'').replace(/[\s  ]/g,'').replace(',','.')) || 0;
 }
 function getSavingAmountValue() {
   const el = document.getElementById('s-amount');
@@ -6736,7 +6763,7 @@ function saveItem(){
 
     if (type === 'rent' || type === 'other') {
       const name=document.getElementById('i-name').value.trim();
-      const amount=parseFloat(document.getElementById('i-amount').value);
+      const amount=readAmountInput('i-amount');
       if(!name||!amount||amount<=0)return;
       const _ii={id,name,icon,amount};if(_incomeIdx>=0)state.income.splice(_incomeIdx,0,_ii);else state.income.push(_ii);
     } else {
@@ -6751,12 +6778,12 @@ function saveItem(){
       } else {
         const calcMode=document.getElementById('i-calc-mode').value;
         if(calcMode==='percent'){const rate=parseFloat(document.getElementById('i-percent').value);if(!rate||rate<=0)return;const _i={id,name:saving.name,icon,amount:0,savingRef:refId,calcMode:'percent',rate};if(_incomeIdx>=0)state.income.splice(_incomeIdx,0,_i);else state.income.push(_i);}
-        else{const amt=parseFloat(document.getElementById('i-fixed-amount').value);if(!amt||amt<=0)return;const _i={id,name:saving.name,icon,amount:amt,savingRef:refId,calcMode:'fixed'};if(_incomeIdx>=0)state.income.splice(_incomeIdx,0,_i);else state.income.push(_i);}
+        else{const amt=readAmountInput('i-fixed-amount');if(!amt||amt<=0)return;const _i={id,name:saving.name,icon,amount:amt,savingRef:refId,calcMode:'fixed'};if(_incomeIdx>=0)state.income.splice(_incomeIdx,0,_i);else state.income.push(_i);}
       }
     }
   } else {
     const name=document.getElementById('g-name').value.trim();
-    const amount=parseFloat(document.getElementById('g-amount').value);
+    const amount=readAmountInput('g-amount');
     if(!name||isNaN(amount)||amount<=0)return;
     const emoji=document.getElementById('g-emoji')?.value||'🎯';
     const color=document.getElementById('g-color')?.value||'#4ECDC4';
@@ -7131,7 +7158,7 @@ function closeIncomeHistoryModal() {
 }
 function saveIncomeHistoryPoint() {
   const ym = document.getElementById('ih-month').value;
-  const amt = parseFloat(document.getElementById('ih-amount').value);
+  const amt = readAmountInput('ih-amount');
   if (!ym || isNaN(amt) || amt < 0) return;
   if (!state._incomeHistory) state._incomeHistory = {};
   const rounded = Math.round(amt);
@@ -7241,7 +7268,7 @@ function drawIncomeChart() {
 
 function addHistoryPoint(){document.getElementById('history-modal').classList.add('open');document.getElementById('h-month').value=new Date().toISOString().slice(0,7);document.getElementById('h-amount').value='';}
 function closeHistoryModal(){document.getElementById('history-modal').classList.remove('open');}
-function saveHistoryPoint(){const ym=document.getElementById('h-month').value;const amt=Math.round(parseFloat(document.getElementById('h-amount').value));if(!ym||isNaN(amt)||amt<0)return;if(!state._history)state._history={};state._history[ym]=amt;save();sbUpsertSnapshot('savings',ym,amt);closeHistoryModal();drawChart();}
+function saveHistoryPoint(){const ym=document.getElementById('h-month').value;const amt=Math.round(readAmountInput('h-amount'));if(!ym||isNaN(amt)||amt<0)return;if(!state._history)state._history={};state._history[ym]=amt;save();sbUpsertSnapshot('savings',ym,amt);closeHistoryModal();drawChart();}
 function recordSnapshot(){const ym=new Date().toISOString().slice(0,7);if(!state._history)state._history={};const amt=Math.round(state.savings.reduce((s,x)=>s+(x.excluded?0:getSavingCurrentAmountRub(x)),0));state._history[ym]=amt;save();sbUpsertSnapshot('savings',ym,amt);}
 
 
@@ -7436,7 +7463,7 @@ function getMirrorForecast(pg) {
 
 function createMirrorPiggyBank() {
   const name = (document.getElementById('pg-mirror-name')?.value||'').trim();
-  const goalRaw = parseFloat(document.getElementById('pg-mirror-goal')?.value||0);
+  const goalRaw = readAmountInput('pg-mirror-goal');
   const goal = goalRaw > 0 ? goalRaw : 0;
   const emoji = document.getElementById('pgm-emoji')?.value||'✉️';
   const color = document.getElementById('pgm-color')?.value||'#64B5F6';
@@ -7470,7 +7497,7 @@ function createMirrorPiggyBank() {
 
 function createPiggyBank() {
   const name = (document.getElementById('pg-name')?.value||'').trim();
-  const goal = parseFloat(document.getElementById('pg-goal')?.value||0);
+  const goal = readAmountInput('pg-goal');
   const hasPlan = document.getElementById('pg-plan-check')?.checked;
   // If amount mode, deadline was auto-calculated into the field
   const deadlineRaw = document.getElementById('pg-deadline')?.value||null;
@@ -7479,7 +7506,7 @@ function createPiggyBank() {
   const dateStart = hasPlan ? dateStartRaw : null;
   const frequency = hasPlan ? (document.getElementById('pg-frequency')?.value||'month') : null;
   const planMode = hasPlan ? (document.getElementById('pg-mode-date')?.classList.contains('active') ? 'date' : 'amount') : null;
-  const perPeriod = hasPlan && planMode==='amount' ? parseFloat(document.getElementById('pg-per-period')?.value||0)||null : null;
+  const perPeriod = hasPlan && planMode==='amount' ? readAmountInput('pg-per-period')||null : null;
   const reminder = hasPlan ? !!(document.getElementById('pg-reminder')?.checked) : false;
   const emoji = document.getElementById('pg-emoji')?.value||'🐷';
   const color = document.getElementById('pg-color')?.value||'#4ECDC4';
@@ -7512,7 +7539,7 @@ function openPiggyEdit(id) {
   if (!pg) return;
   document.getElementById('pg-edit-id').value = id;
   document.getElementById('pg-edit-name').value = pg.name;
-  document.getElementById('pg-edit-goal').value = (pg.goal && pg.goal < 999999999) ? pg.goal : '';
+  const _pgEG=document.getElementById('pg-edit-goal');_pgEG.value=(pg.goal&&pg.goal<999999999)?pg.goal:'';if(_pgEG.value)formatAmountInput(_pgEG);
 
   // Показываем переключатель типа только для не-челленджей
   const typeRow = document.getElementById('pg-edit-type-row');
@@ -7541,7 +7568,7 @@ function openPiggyEdit(id) {
     selectPiggyPlanMode(mode, 'pg-edit');
     if(mode==='amount') {
       const ppEl = document.getElementById('pg-edit-per-period');
-      if(ppEl) ppEl.value = pg.perPeriod||'';
+      if(ppEl){ppEl.value=pg.perPeriod||'';if(ppEl.value)formatAmountInput(ppEl);}
     }
     updatePiggyPlanPreview('pg-edit');
   }
@@ -7650,7 +7677,7 @@ function savePiggyEdit() {
   }
 
   pg.name = name;
-  const goalRaw = parseFloat(document.getElementById('pg-edit-goal').value||0);
+  const goalRaw = readAmountInput('pg-edit-goal');
   pg.goal = goalRaw > 0 ? goalRaw : (pg.mirror ? 999999999 : 999999999);
 
   // Сохраняем план только для обычной копилки
@@ -7662,7 +7689,7 @@ function savePiggyEdit() {
     pg.frequency = editHasPlan ? (document.getElementById('pg-edit-frequency')?.value||'month') : null;
     const editPlanMode = editHasPlan ? (document.getElementById('pg-edit-mode-date')?.classList.contains('active') ? 'date' : 'amount') : null;
     pg.planMode = editPlanMode;
-    pg.perPeriod = editHasPlan && editPlanMode==='amount' ? parseFloat(document.getElementById('pg-edit-per-period')?.value||0)||null : null;
+    pg.perPeriod = editHasPlan && editPlanMode==='amount' ? readAmountInput('pg-edit-per-period')||null : null;
     pg.reminder = editHasPlan ? !!(document.getElementById('pg-edit-reminder')?.checked) : false;
   }
 
@@ -7705,7 +7732,7 @@ function savePiggyDeposit() {
   if (!_piggyDepositId) return;
   const pg = (state.piggyBanks||[]).find(p=>p.id===_piggyDepositId);
   if (!pg) return;
-  const amount = parseFloat(document.getElementById('pg-deposit-amount').value||0);
+  const amount = readAmountInput('pg-deposit-amount');
   const date = document.getElementById('pg-deposit-date').value||today();
   if (!amount||amount<=0) return;
   pg.deposits = pg.deposits||[];
@@ -8389,7 +8416,7 @@ function getChDays(prefix) {
 }
 
 function updateChallengePreviewPage() {
-  const goal = parseFloat(document.getElementById('ch-goal-p').value) || 0;
+  const goal = readAmountInput('ch-goal-p') || 0;
   const days = getChDays('ch');
   const preview = document.getElementById('ch-preview-p');
   if (!goal) { preview.style.display='none'; return; }
@@ -8400,7 +8427,7 @@ function updateChallengePreviewPage() {
 
 function createChallengeFromPage() {
   const name = document.getElementById('ch-name-p').value.trim();
-  const goal = parseFloat(document.getElementById('ch-goal-p').value);
+  const goal = readAmountInput('ch-goal-p');
   const days = getChDays('ch');
   const mode = document.getElementById('ch-cell-mode-p').value;
   const emoji = document.getElementById('ch-emoji-p').value || '🎯';
@@ -10371,7 +10398,7 @@ function openBudgetEntryModal(id) {
   budgetModalSetType(type);
   document.getElementById('bm-group-row').style.display = type === 'expense' ? '' : 'none';
   budgetModalSetGroup(group);
-  document.getElementById('bm-amount').value = amount;
+  const _bmA=document.getElementById('bm-amount');_bmA.value=amount;if(amount)formatAmountInput(_bmA);
   document.getElementById('bm-date').value = date;
   document.getElementById('bm-note').value = note;
   document.getElementById('bm-delete-btn').style.display = id ? '' : 'none';
@@ -10434,7 +10461,7 @@ async function saveBudgetEntry() {
   const type   = _budgetModalType;
   const group  = type === 'expense' ? (['Основное','Желания','Накопления'].find(g => document.getElementById('bm-grp-'+g)?.style.color === 'var(--accent)') || 'Основное') : null;
   const cat    = document.getElementById('bm-category').value;
-  const amount = parseFloat(document.getElementById('bm-amount').value.replace(',', '.'));
+  const amount = readAmountInput('bm-amount');
   const date   = document.getElementById('bm-date').value;
   const note   = document.getElementById('bm-note').value.trim();
 
@@ -10717,7 +10744,7 @@ function editChallenge(id) {
   if (!ch) return;
   document.getElementById('ech-id').value = id;
   document.getElementById('ech-name').value = ch.name;
-  document.getElementById('ech-goal').value = ch.goal || ch.cells.reduce((s,c)=>s+c.amt,0);
+  const _echG=document.getElementById('ech-goal');_echG.value=ch.goal||ch.cells.reduce((s,c)=>s+c.amt,0);formatAmountInput(_echG);
   const chDays = ch.days || 90;
   const stdPeriods = [30,60,90,180,365];
   if(stdPeriods.includes(chDays)){document.getElementById('ech-period').value=chDays;}else{document.getElementById('ech-period').value='custom';const cd=document.getElementById('ech-custom-date');if(cd){const d=new Date();d.setDate(d.getDate()+chDays);cd.value=d.toISOString().slice(0,10);}const w=document.getElementById('ech-custom-date-wrap');if(w)w.style.display='';}
@@ -10739,7 +10766,7 @@ function closeEditChallenge() {
 }
 
 function updateEditChallengePreview() {
-  const goal = parseFloat(document.getElementById('ech-goal').value) || 0;
+  const goal = readAmountInput('ech-goal') || 0;
   const ch = state.challenges.find(c => c.id === document.getElementById('ech-id').value);
   const preview = document.getElementById('ech-preview');
   const cellsWarn = document.getElementById('ech-cells-warn');
@@ -10761,7 +10788,7 @@ function saveEditChallenge() {
   if (!ch) return;
 
   const name = document.getElementById('ech-name').value.trim();
-  const newGoal = parseFloat(document.getElementById('ech-goal').value);
+  const newGoal = readAmountInput('ech-goal');
   const days = parseInt(document.getElementById('ech-period').value);
   const mode = document.getElementById('ech-cell-mode').value;
 
@@ -12104,7 +12131,7 @@ checkPiggyReminders();
       </div>
     </div>
     <div class="field" id="pg-edit-goal-row"><label>ЦЕЛЬ (₽)</label>
-      <input type="number" id="pg-edit-goal" placeholder="100 000" inputmode="decimal">
+      <input type="text" id="pg-edit-goal" placeholder="100 000" inputmode="decimal" oninput="formatAmountInput(this)">
     </div>
     <div class="toggle-row">
       <span class="toggle-label">План</span>
@@ -12135,7 +12162,7 @@ checkPiggyReminders();
       </div>
       <div id="pg-edit-by-amount" style="display:none;" class="field">
         <label>ОТКЛАДЫВАТЬ (₽)</label>
-        <input type="number" id="pg-edit-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg-edit')">
+        <input type="text" id="pg-edit-per-period" placeholder="5 000" inputmode="decimal" oninput="updatePiggyPlanPreview('pg-edit')" oninput="formatAmountInput(this)">
       </div>
       <div class="calc-preview" id="pg-edit-plan-preview" style="display:none;"></div>
       <div class="toggle-row" style="margin-top:8px;">
@@ -12196,7 +12223,7 @@ checkPiggyReminders();
       </button>
     </div>
     <div class="field"><label>СУММА (₽)</label>
-      <input type="number" id="pg-deposit-amount" placeholder="0" inputmode="decimal">
+      <input type="text" id="pg-deposit-amount" placeholder="0" inputmode="decimal" oninput="formatAmountInput(this)">
     </div>
     <div class="field"><label>ДАТА</label>
       <input type="date" id="pg-deposit-date">
