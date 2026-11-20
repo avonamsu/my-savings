@@ -8024,23 +8024,18 @@ function openMirrorPiggySheet(id) {
             const dl = pg.deadline;
             if (!dl) return '';
             const daysLeft = Math.max(0, Math.round((new Date(dl)-new Date())/86400000));
-            const monthsLeft = daysLeft/30;
-            const remaining = effectiveGoal - saved;
-            const neededPerMonth = monthsLeft > 0 ? Math.ceil(remaining/monthsLeft) : 0;
-            const fc = getMirrorForecast(pg);
-            const currentMonthly = fc ? Math.round(fc.monthlyAvg) : 0;
-            const onTrack = currentMonthly >= neededPerMonth*0.9;
+            const remaining = Math.max(0, effectiveGoal - saved); // сколько ещё не хватает
             const months_ru = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
             const dlDate = new Date(dl);
             const dlStr = dlDate.getDate()+' '+months_ru[dlDate.getMonth()]+' '+dlDate.getFullYear();
-            const statusIcon = pct>=100?'🎉':onTrack?'✓':'⚠';
-            const statusColor = onTrack?'var(--accent)':'var(--warn)';
-            const statusText = onTrack?'Успеваешь':'Нужно ускориться';
+            // "Нужно внести" — сумма пополнения счёта для достижения цели
+            // (проценты на оставшуюся сумму незначительны, показываем просто остаток)
+            const needToDeposit = Math.ceil(remaining);
             return `<div style="margin-top:10px;padding:10px 12px;background:rgba(100,181,246,0.08);border-radius:10px;border:1px solid rgba(100,181,246,0.15);">
               <div style="font-size:11px;color:rgba(100,181,246,0.7);font-weight:700;letter-spacing:.04em;margin-bottom:6px;">ПЛАН ДО ЦЕЛИ</div>
               <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Дедлайн: <strong>${dlStr}</strong> · ${daysLeft} дн.</div>
-              <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Нужно прироста: <span style="color:${color};font-weight:600;">+${fmtInt(neededPerMonth)} ₽/мес</span></div>
-              ${currentMonthly>0?`<div style="font-size:12px;color:var(--text-dim);">Текущий темп: +${fmtInt(currentMonthly)} ₽/мес · <span style="color:${statusColor};">${statusIcon} ${statusText}</span></div>`:'<div style="font-size:12px;color:var(--text-dim);">Пополняй счёт — прогноз появится автоматически</div>'}
+              <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Нужно довнести: <span style="color:${color};font-weight:600;">${fmtInt(needToDeposit)} ₽</span></div>
+              <div style="font-size:12px;color:var(--text-dim);">Уже накоплено ${pct}% от цели · осталось ${fmtInt(Math.round(remaining))} ₽</div>
             </div>`;
           })()}
           ${(()=>{
