@@ -1128,6 +1128,40 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
         </button>
       </div>
     </div>
+    <!-- Инфо-карточки по типам -->
+    <div id="pg-info-piggy" style="background:rgba(78,205,196,0.07);border:1px solid rgba(78,205,196,0.18);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:600;color:#4ECDC4;margin-bottom:6px;">🐷 Обычная копилка</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Откладываете вручную — сами решаете когда и сколько. Можно поставить цель и план пополнений с напоминаниями.<br><br>
+        <span style="color:var(--text);opacity:.7;">Подходит, если:</span>
+        <ul style="margin:4px 0 0 14px;padding:0;display:flex;flex-direction:column;gap:3px;">
+          <li>На одном счёте копите сразу на несколько целей</li>
+          <li>Хотите откладывать фиксированную сумму по расписанию</li>
+          <li>Копите наличными или в нескольких местах сразу</li>
+        </ul>
+      </div>
+    </div>
+    <div id="pg-info-challenge" style="display:none;background:rgba(255,107,157,0.07);border:1px solid rgba(255,107,157,0.18);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:600;color:#FF6B9D;margin-bottom:6px;">🎯 Челлендж</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Копилка с игровым форматом — делите цель на ячейки и зачёркивайте их по мере пополнения. Мотивирует наглядным прогрессом.<br><br>
+        <span style="color:var(--text);opacity:.7;">Подходит, если:</span>
+        <ul style="margin:4px 0 0 14px;padding:0;display:flex;flex-direction:column;gap:3px;">
+          <li>Хотите копить в игровом формате — каждый взнос как шаг к цели</li>
+          <li>Нужна мотивация видеть прогресс «ячейка за ячейкой»</li>
+          <li>Копите с кем-то вместе и хотите отмечать взносы</li>
+        </ul>
+      </div>
+    </div>
+    <div id="pg-info-mirror" style="display:none;background:rgba(100,181,246,0.07);border:1px solid rgba(100,181,246,0.18);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:600;color:#64B5F6;margin-bottom:6px;">✉️ Конверт</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Прогресс автоматически берётся из привязанного счёта — баланс и начисленные проценты. Пополнять можно как обычно через раздел «Счета».<br><br>
+        <span style="color:var(--text);opacity:.7;">Подходит, если:</span>
+        <ul style="margin:4px 0 0 14px;padding:0;display:flex;flex-direction:column;gap:3px;">
+          <li>Один счёт — одна цель (например, отдельный вклад под отпуск)</li>
+          <li>Не хотите вручную фиксировать каждое пополнение счёта</li>
+          <li>Хотите видеть прогресс с учётом процентов автоматически</li>
+        </ul>
+      </div>
+    </div>
     <!-- Piggy bank fields -->
     <div id="pg-piggy-fields">
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-name" placeholder="Например: На отпуск"></div>
@@ -1206,10 +1240,6 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     </div>
     <!-- Mirror piggy bank fields -->
     <div id="pg-mirror-fields" style="display:none;">
-      <div style="background:rgba(100,181,246,0.08);border:1px solid rgba(100,181,246,0.2);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:600;color:#64B5F6;margin-bottom:4px;">✉️ Конверт счёта</div>
-        <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">Прогресс конверта автоматически отражает баланс привязанного счёта с учётом процентов. Пополнять счёт можно как обычно — конверт обновится сам.</div>
-      </div>
       <div class="field"><label>НАЗВАНИЕ</label><input type="text" id="pg-mirror-name" placeholder="Например: Мой вклад 2025"></div>
       <div class="field"><label>ЦЕЛЬ (₽) — необязательно</label><input type="number" id="pg-mirror-goal" placeholder="0 — без цели" inputmode="decimal"></div>
       <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ <span style="color:var(--danger);">*</span></label>
@@ -7311,9 +7341,12 @@ function selectPiggyType(type) {
   document.getElementById('pg-piggy-fields').style.display = type==='piggy' ? '' : 'none';
   document.getElementById('pg-challenge-fields').style.display = type==='challenge' ? '' : 'none';
   document.getElementById('pg-mirror-fields').style.display = type==='mirror' ? '' : 'none';
+  // Показываем инфо-карточку нужного типа
+  document.getElementById('pg-info-piggy').style.display = type==='piggy' ? '' : 'none';
+  document.getElementById('pg-info-challenge').style.display = type==='challenge' ? '' : 'none';
+  document.getElementById('pg-info-mirror').style.display = type==='mirror' ? '' : 'none';
   if (type === 'mirror') {
     fillLinkedSavingSelect('pg-mirror-linked-saving', '', true);
-    // Reset emoji/color for mirror
     selectEmoji('✉️', 'pgm');
     selectColor('#64B5F6', 'pgm');
   }
