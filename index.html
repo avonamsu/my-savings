@@ -7432,8 +7432,8 @@ function getMirrorForecast(pg) {
   const currentBalance = getMirrorBalance(pg);
   if (currentBalance >= effectiveGoal) return null; // already reached
 
-  // Берём транзакции по счёту за последние 90 дней
-  const txs = (_txCache||[]).filter(t => t.saving_id === saving.id);
+  // Берём транзакции по счёту за последние 90 дней (из кеша по id счёта)
+  const txs = (_txCache[saving.id]?.txs) || [];
   if (!txs.length) return null;
 
   const now = new Date();
