@@ -8024,18 +8024,25 @@ function openMirrorPiggySheet(id) {
             const dl = pg.deadline;
             if (!dl) return '';
             const daysLeft = Math.max(0, Math.round((new Date(dl)-new Date())/86400000));
-            const remaining = Math.max(0, effectiveGoal - saved); // сколько ещё не хватает
             const months_ru = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
             const dlDate = new Date(dl);
             const dlStr = dlDate.getDate()+' '+months_ru[dlDate.getMonth()]+' '+dlDate.getFullYear();
-            // "Нужно внести" — сумма пополнения счёта для достижения цели
-            // (проценты на оставшуюся сумму незначительны, показываем просто остаток)
-            const needToDeposit = Math.ceil(remaining);
+            // Учитываем проценты по счёту: если внести D сейчас, к дедлайну будет
+            // (saved + D) * growFactor = goal → D = goal/growFactor - saved
+            const rate = saving ? (Number(saving.rate)||0)/100 : 0;
+            const growFactor = rate > 0 && daysLeft > 0
+              ? (saving.compound
+                  ? Math.pow(1 + rate/12, daysLeft/30.4375) // сложные проценты
+                  : (1 + rate * daysLeft / 365))             // простые проценты
+              : 1;
+            const needToDeposit = Math.max(0, Math.ceil(effectiveGoal / growFactor - saved));
+            const interestGain = rate > 0 ? Math.round(effectiveGoal - effectiveGoal/growFactor) : 0;
             return `<div style="margin-top:10px;padding:10px 12px;background:rgba(100,181,246,0.08);border-radius:10px;border:1px solid rgba(100,181,246,0.15);">
               <div style="font-size:11px;color:rgba(100,181,246,0.7);font-weight:700;letter-spacing:.04em;margin-bottom:6px;">ПЛАН ДО ЦЕЛИ</div>
               <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Дедлайн: <strong>${dlStr}</strong> · ${daysLeft} дн.</div>
               <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Нужно довнести: <span style="color:${color};font-weight:600;">${fmtInt(needToDeposit)} ₽</span></div>
-              <div style="font-size:12px;color:var(--text-dim);">Уже накоплено ${pct}% от цели · осталось ${fmtInt(Math.round(remaining))} ₽</div>
+              ${interestGain>0?`<div style="font-size:12px;color:rgba(100,181,246,0.7);margin-bottom:3px;">Проценты покроют ≈${fmtInt(interestGain)} ₽ (${Math.round(rate*100)}% годовых · ${daysLeft} дн.)</div>`:''}
+              <div style="font-size:12px;color:var(--text-dim);">Уже накоплено ${pct}% · текущий баланс ${fmtInt(Math.round(saved))} ₽</div>
             </div>`;
           })()}
           ${(()=>{
