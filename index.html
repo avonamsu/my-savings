@@ -1130,35 +1130,54 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     </div>
     <!-- Инфо-карточки по типам -->
     <div id="pg-info-piggy" style="background:rgba(78,205,196,0.07);border:1px solid rgba(78,205,196,0.18);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:600;color:#4ECDC4;margin-bottom:6px;">🐷 Обычная копилка</div>
-      <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Откладываете вручную — сами решаете когда и сколько. Можно поставить цель и план пополнений с напоминаниями.<br><br>
-        <span style="color:var(--text);opacity:.7;">Подходит, если:</span>
+      <div style="font-size:13px;font-weight:600;color:#4ECDC4;margin-bottom:8px;">🐷 Обычная копилка</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">
+        Вы вручную фиксируете каждое пополнение. Приложение считает накопленное, показывает прогресс к цели и может напоминать по расписанию.
+        <div style="margin-top:8px;color:rgba(255,255,255,0.55);font-size:11px;font-weight:600;letter-spacing:.04em;">КОГДА ВЫБИРАТЬ</div>
+        <ul style="margin:4px 0 8px 14px;padding:0;display:flex;flex-direction:column;gap:3px;">
+          <li>Копите на несколько целей с одного счёта — каждая копилка своя «мысленная доля»</li>
+          <li>Хотите план: откладывать X ₽ каждую неделю/месяц с напоминанием</li>
+          <li>Копите наличными, переводами или из разных источников</li>
+        </ul>
+        <div style="margin-top:4px;color:rgba(255,180,80,0.8);font-size:11px;font-weight:600;letter-spacing:.04em;">НЮАНСЫ</div>
         <ul style="margin:4px 0 0 14px;padding:0;display:flex;flex-direction:column;gap:3px;">
-          <li>На одном счёте копите сразу на несколько целей</li>
-          <li>Хотите откладывать фиксированную сумму по расписанию</li>
-          <li>Копите наличными или в нескольких местах сразу</li>
+          <li>Баланс в копилке — учётный, а не реальный: деньги физически хранятся там, куда вы их кладёте</li>
+          <li>Если пополнить счёт, не зафиксировав это в копилке, прогресс не обновится</li>
         </ul>
       </div>
     </div>
     <div id="pg-info-challenge" style="display:none;background:rgba(255,107,157,0.07);border:1px solid rgba(255,107,157,0.18);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:600;color:#FF6B9D;margin-bottom:6px;">🎯 Челлендж</div>
-      <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Копилка с игровым форматом — делите цель на ячейки и зачёркивайте их по мере пополнения. Мотивирует наглядным прогрессом.<br><br>
-        <span style="color:var(--text);opacity:.7;">Подходит, если:</span>
+      <div style="font-size:13px;font-weight:600;color:#FF6B9D;margin-bottom:8px;">🎯 Челлендж</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">
+        Цель делится на ячейки с суммами — вы зачёркиваете их по мере пополнения. Работает как настольная игра: каждый взнос — это ход.
+        <div style="margin-top:8px;color:rgba(255,255,255,0.55);font-size:11px;font-weight:600;letter-spacing:.04em;">КОГДА ВЫБИРАТЬ</div>
+        <ul style="margin:4px 0 8px 14px;padding:0;display:flex;flex-direction:column;gap:3px;">
+          <li>Нужна наглядная мотивация — видеть как закрашиваются ячейки к цели</li>
+          <li>Хотите копить нефиксированными суммами: сколько есть — столько и кладёте</li>
+          <li>Участвуете в марафоне накоплений или копите вместе с кем-то</li>
+        </ul>
+        <div style="margin-top:4px;color:rgba(255,180,80,0.8);font-size:11px;font-weight:600;letter-spacing:.04em;">НЮАНСЫ</div>
         <ul style="margin:4px 0 0 14px;padding:0;display:flex;flex-direction:column;gap:3px;">
-          <li>Хотите копить в игровом формате — каждый взнос как шаг к цели</li>
-          <li>Нужна мотивация видеть прогресс «ячейка за ячейкой»</li>
-          <li>Копите с кем-то вместе и хотите отмечать взносы</li>
+          <li>Сумма и количество ячеек задаются один раз — потом не меняются</li>
+          <li>Как и обычная копилка, отражает учётные данные, а не реальный счёт</li>
         </ul>
       </div>
     </div>
     <div id="pg-info-mirror" style="display:none;background:rgba(100,181,246,0.07);border:1px solid rgba(100,181,246,0.18);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:600;color:#64B5F6;margin-bottom:6px;">✉️ Конверт</div>
-      <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Прогресс автоматически берётся из привязанного счёта — баланс и начисленные проценты. Пополнять можно как обычно через раздел «Счета».<br><br>
-        <span style="color:var(--text);opacity:.7;">Подходит, если:</span>
+      <div style="font-size:13px;font-weight:600;color:#64B5F6;margin-bottom:8px;">✉️ Конверт</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">
+        Прогресс конверта = реальный баланс привязанного счёта + начисленные проценты. Ничего не нужно фиксировать вручную — пополняйте счёт как обычно.
+        <div style="margin-top:8px;color:rgba(255,255,255,0.55);font-size:11px;font-weight:600;letter-spacing:.04em;">КОГДА ВЫБИРАТЬ</div>
+        <ul style="margin:4px 0 8px 14px;padding:0;display:flex;flex-direction:column;gap:3px;">
+          <li>Один счёт — одна цель: например, отдельный вклад под отпуск или ипотечный взнос</li>
+          <li>Не хотите дублировать действия — пополнили счёт в банке, конверт сам обновился</li>
+          <li>Хотите видеть, как проценты по вкладу приближают к цели</li>
+        </ul>
+        <div style="margin-top:4px;color:rgba(255,180,80,0.8);font-size:11px;font-weight:600;letter-spacing:.04em;">НЮАНСЫ</div>
         <ul style="margin:4px 0 0 14px;padding:0;display:flex;flex-direction:column;gap:3px;">
-          <li>Один счёт — одна цель (например, отдельный вклад под отпуск)</li>
-          <li>Не хотите вручную фиксировать каждое пополнение счёта</li>
-          <li>Хотите видеть прогресс с учётом процентов автоматически</li>
+          <li>К одному счёту можно привязать только один конверт</li>
+          <li>Если на счёте несколько целей — лучше использовать обычную копилку</li>
+          <li>Снятие денег со счёта автоматически уменьшит прогресс конверта</li>
         </ul>
       </div>
     </div>
