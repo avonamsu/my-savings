@@ -3364,8 +3364,8 @@ function renderHomeChartWidget() {
     return '';
   }).join('');
 
-  // dots only at first and last point
-  const dots = [0, n-1].map(i => `<circle cx="${xs[i]}" cy="${ys[i]}" r="3.5" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`).join('');
+  // dots at each point
+  const dots = xs.map((x,i) => `<circle cx="${x}" cy="${ys[i]}" r="3.5" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`).join('');
 
   // invisible hit areas for tap
   const hits = xs.map((x,i) => `<rect x="${x-18}" y="0" width="36" height="${H}" fill="transparent" style="cursor:pointer" onclick="showHomeChartTooltip(event,${x},${ys[i]},'${points[i].label}',${points[i].val},'${color}')"/>`).join('');
