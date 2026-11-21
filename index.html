@@ -3335,7 +3335,22 @@ function renderHomeChartWidget() {
   const xs = points.map((_,i) => pad.l + (n===1?iW/2:i/(n-1)*iW));
   const ys = points.map(p => pad.t + iH - ((p.val-minV)/range*iH));
 
-  const path = xs.map((x,i)=>i===0?`M${x},${ys[i]}`:`L${x},${ys[i]}`).join(' ');
+  // Build smooth cubic bezier path through points
+  function smoothPath(xs, ys) {
+    if (xs.length === 1) return `M${xs[0]},${ys[0]}`;
+    let d = `M${xs[0]},${ys[0]}`;
+    for (let i = 1; i < xs.length; i++) {
+      const cp1x = xs[i-1] + (xs[i] - xs[i-1]) * 0.5;
+      const cp1y = ys[i-1];
+      const cp2x = xs[i-1] + (xs[i] - xs[i-1]) * 0.5;
+      const cp2y = ys[i];
+      d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${xs[i]},${ys[i]}`;
+    }
+    return d;
+  }
+
+  const path = smoothPath(xs, ys);
+  // Area: follow curve then close along bottom
   const areaPath = `${path} L${xs[n-1]},${pad.t+iH} L${xs[0]},${pad.t+iH} Z`;
 
   // color
@@ -3349,20 +3364,20 @@ function renderHomeChartWidget() {
     return '';
   }).join('');
 
-  // dots at each point
-  const dots = xs.map((x,i) => `<circle cx="${x}" cy="${ys[i]}" r="3.5" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`).join('');
+  // dots only at first and last point
+  const dots = [0, n-1].map(i => `<circle cx="${xs[i]}" cy="${ys[i]}" r="3.5" fill="${color}" stroke="var(--surface)" stroke-width="1.5"/>`).join('');
 
   // invisible hit areas for tap
   const hits = xs.map((x,i) => `<rect x="${x-18}" y="0" width="36" height="${H}" fill="transparent" style="cursor:pointer" onclick="showHomeChartTooltip(event,${x},${ys[i]},'${points[i].label}',${points[i].val},'${color}')"/>`).join('');
 
   svg.innerHTML = `<defs>
     <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
       <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
     </linearGradient>
   </defs>
   <path d="${areaPath}" fill="url(#${gid})" />
-  <path d="${path}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
   ${labels}
   ${dots}
   ${hits}`;
