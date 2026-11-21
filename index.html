@@ -7302,7 +7302,7 @@ function updatePiggyPlanPreview(prefix) {
 
   const start = startEl?.value;
   const freq  = freqEl?.value || 'month';
-  const goal  = parseFloat(goalEl?.value || 0);
+  const goal  = parseFloat((goalEl?.value || '0').replace(/\s/g,'').replace(',','.'));
   const mode  = modeDate?.classList.contains('active') ? 'date' : 'amount';
 
   if (!start || !goal) { previewEl.style.display='none'; return; }
