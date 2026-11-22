@@ -3195,8 +3195,8 @@ function renderNavNotch() {
   svg.setAttribute('preserveAspectRatio', 'none');
   // Цвета notch зависят от темы
   const isLight = document.body.classList.contains('theme-light');
-  const notchC1 = isLight ? 'rgba(255,255,255,0.72)' : 'rgba(22,36,55,0.92)';
-  const notchC2 = isLight ? 'rgba(248,245,255,0.78)' : 'rgba(15,27,45,0.96)';
+  const notchC1 = isLight ? '#ffffff' : 'rgba(22,36,55,0.92)';
+  const notchC2 = isLight ? '#f5f0ff' : 'rgba(15,27,45,0.96)';
   const accentDim = getComputedStyle(document.documentElement).getPropertyValue('--accent-dim').trim() || 'rgba(78,205,196,0.15)';
   svg.innerHTML = `
     <defs>
