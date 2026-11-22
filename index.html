@@ -543,6 +543,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0 8px;"></div>
 
   <div class="sidebar-section"><span><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32" style="vertical-align:middle;margin-right:6px;"><path d="M0 0h32v32H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M13 2v4l-2 1l-3-3l-4 4l3 3l-1 2H2v6h4l1 2l-3 3l4 4l3-3l2 1v4h6v-4l2-1l3 3l4-4l-3-3l1-2h4v-6h-4l-1-2l3-3l-4-4l-3 3l-2-1V2Z"/><circle cx="16" cy="16" r="4"/></g></svg>Настройки</span></div>
+  <button class="sidebar-item" onclick="openThemeSheet();closeSidebar()"><span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M2 12h20"/></svg></span><span>Тема</span></button>
   <button class="sidebar-item" onclick="openNotifSettings();closeSidebar()"><span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" fill-rule="evenodd" d="M13 3a1 1 0 1 0-2 0v.75h-.557A4.214 4.214 0 0 0 6.237 7.7l-.221 3.534a7.4 7.4 0 0 1-1.308 3.754a1.617 1.617 0 0 0 1.135 2.529l3.407.408V19a2.75 2.75 0 1 0 5.5 0v-1.075l3.407-.409a1.617 1.617 0 0 0 1.135-2.528a7.4 7.4 0 0 1-1.308-3.754l-.221-3.533a4.214 4.214 0 0 0-4.206-3.951H13zm-2.557 2.25a2.714 2.714 0 0 0-2.709 2.544l-.22 3.534a8.9 8.9 0 0 1-1.574 4.516a.117.117 0 0 0 .082.183l3.737.449c1.489.178 2.993.178 4.482 0l3.737-.449a.117.117 0 0 0 .082-.183a8.9 8.9 0 0 1-1.573-4.516l-.221-3.534a2.714 2.714 0 0 0-2.709-2.544zm1.557 15c-.69 0-1.25-.56-1.25-1.25v-.75h2.5V19c0 .69-.56 1.25-1.25 1.25" clip-rule="evenodd"/></svg></span><span>Уведомления</span></button>
   <button class="sidebar-item" onclick="showPage('backup');closeSidebar()"><span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5 21h14a2 2 0 0 0 2-2V8a1 1 0 0 0-.29-.71l-4-4A1 1 0 0 0 16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2m10-2H9v-5h6zM13 7h-2V5h2zM5 5h2v4h8V5h.59L19 8.41V19h-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5H5z"/></svg></span><span>Синхронизация и резервные данные</span></button>
   <button class="sidebar-item" onclick="closeSidebar();setTimeout(forceStartOnboarding,350)"><span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1zm10 0s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1z"/></svg></span>Пройти обучение</button>
@@ -556,6 +557,17 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- NOTIFICATION SETTINGS BOTTOM SHEET -->
 <div id="notif-settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;backdrop-filter:blur(4px);" onclick="closeNotifSettings()"></div>
+<!-- THEME PICKER SHEET -->
+<div id="theme-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:1001;background:var(--surface);border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,16px) 0;box-shadow:0 -4px 32px rgba(0,0,0,0.6);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);">
+  <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:14px auto 0;"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;">
+    <h3 style="margin:0;font-size:18px;font-weight:700;color:var(--text);">Тема</h3>
+    <button onclick="closeThemeSheet()" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-dim);font-size:18px;line-height:1;padding:0;">✕</button>
+  </div>
+  <div style="padding:0 16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="theme-grid"></div>
+</div>
+<div id="theme-sheet-overlay" onclick="closeThemeSheet()" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);"></div>
+
 <div id="notif-settings-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:1001;background:#111111;border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,16px) 0;box-shadow:0 -4px 32px rgba(0,0,0,0.5);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);">
   <!-- Handle -->
   <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:14px auto 0;"></div>
@@ -11045,6 +11057,90 @@ function checkNotifBanner(){
 }
 
 // ── NOTIFICATION SETTINGS PANEL ──────────────────────────
+
+// ── THEME ────────────────────────────────────────────────────────────────
+const THEMES = [
+  { id:'green',  label:'🌿 Зелёный',    accent:'#2ECC71', r:'46,204,113',  bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
+  { id:'blue',   label:'🔵 Синий',      accent:'#4ECDC4', r:'78,205,196',  bg:'#0F1B2D', surface:'#162437', surface2:'#1E3050', text:'#E8F4F8', textDim:'#7A9BB5' },
+  { id:'purple', label:'💜 Фиолетовый', accent:'#A78BFA', r:'167,139,250', bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
+  { id:'orange', label:'🍊 Оранжевый',  accent:'#FB923C', r:'251,146,60',  bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
+  { id:'rose',   label:'🌸 Розовый',    accent:'#F472B6', r:'244,114,182', bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
+];
+
+function applyTheme(id) {
+  // Находим тему по id, дефолт — green
+  const t = THEMES.find(x => x.id === id) || THEMES[0];
+  const r = document.documentElement.style;
+  r.setProperty('--bg',          t.bg);
+  r.setProperty('--surface',     t.surface);
+  r.setProperty('--surface2',    t.surface2);
+  r.setProperty('--accent',      t.accent);
+  r.setProperty('--accent-dim',  `rgba(${t.r},0.15)`);
+  r.setProperty('--accent-glow', `rgba(${t.r},0.3)`);
+  r.setProperty('--text',        t.text);
+  r.setProperty('--text-dim',    t.textDim);
+  r.setProperty('--done',        t.accent);
+  r.setProperty('--done-bg',     `rgba(${t.r},0.12)`);
+  // theme-color мета
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = t.bg;
+  try { localStorage.setItem('app-theme', id); } catch(e) {}
+}
+
+function openThemeSheet() {
+  const grid = document.getElementById('theme-grid');
+  const curId = (()=>{ try{ return localStorage.getItem('app-theme')||'green'; }catch(e){ return 'green'; } })();
+  // Рендерим карточки тем
+  grid.innerHTML = THEMES.map(t => `
+    <button onclick="applyTheme('${t.id}');renderThemeGrid()" style="
+      border:2px solid ${t.id===curId ? t.accent : 'rgba(255,255,255,0.08)'};
+      border-radius:14px;padding:12px 10px;background:${t.bg};
+      cursor:pointer;text-align:left;transition:border-color .15s;
+    ">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:${t.accent};flex-shrink:0;"></div>
+        <span style="font-size:13px;font-weight:700;color:${t.text};">${t.label}</span>
+      </div>
+      <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.1);">
+        <div style="height:100%;width:65%;border-radius:2px;background:${t.accent};"></div>
+      </div>
+    </button>
+  `).join('');
+
+  document.getElementById('theme-sheet').style.display = 'block';
+  document.getElementById('theme-sheet-overlay').style.display = 'block';
+  setTimeout(() => {
+    document.getElementById('theme-sheet').style.transform = 'translateY(0)';
+  }, 10);
+}
+
+function renderThemeGrid() {
+  // Перерисовываем сетку чтобы обновить выделение
+  const curId = (()=>{ try{ return localStorage.getItem('app-theme')||'green'; }catch(e){ return 'green'; } })();
+  document.getElementById('theme-grid').querySelectorAll('button').forEach((btn, i) => {
+    const t = THEMES[i];
+    btn.style.borderColor = t.id===curId ? t.accent : 'rgba(255,255,255,0.08)';
+  });
+}
+
+function closeThemeSheet() {
+  const sheet = document.getElementById('theme-sheet');
+  const overlay = document.getElementById('theme-sheet-overlay');
+  sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => {
+    sheet.style.display = 'none';
+    overlay.style.display = 'none';
+  }, 350);
+}
+
+// Загружаем тему при старте
+(function() {
+  try {
+    const saved = localStorage.getItem('app-theme');
+    if (saved && THEMES.find(t => t.id === saved)) applyTheme(saved);
+  } catch(e) {}
+})();
+// ─────────────────────────────────────────────────────────────────────────
 
 function openNotifSettings() {
   const overlay = document.getElementById('notif-settings-overlay');
