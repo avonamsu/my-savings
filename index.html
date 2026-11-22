@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0a0a">
+<meta name="theme-color" content="#0F1B2D">
 <title>Мои накопления</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icon.png">
@@ -22,10 +22,10 @@
 <style>
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 :root {
-  --bg:#0a0a0a; --surface:#111111; --surface2:#1a1a1a;
-  --accent:#2ECC71; --accent-dim:rgba(46,204,113,0.15); --accent-glow:rgba(46,204,113,0.3);
-  --text:#f0f0f0; --text-dim:#6b7280;
-  --done:#2ECC71; --done-bg:rgba(46,204,113,0.12);
+  --bg:#0F1B2D; --surface:#162437; --surface2:#1E3050;
+  --accent:#4ECDC4; --accent-dim:rgba(78,205,196,0.15); --accent-glow:rgba(78,205,196,0.3);
+  --text:#E8F4F8; --text-dim:#7A9BB5;
+  --done:#4ECDC4; --done-bg:rgba(78,205,196,0.12);
   --danger:#FF6B6B; --warn:#FFB347;
   --radius:16px; --radius-sm:10px;
 }
@@ -11061,7 +11061,7 @@ function checkNotifBanner(){
 // ── THEME ────────────────────────────────────────────────────────────────
 const THEMES = [
   { id:'green',  label:'🌿 Зелёный',    accent:'#2ECC71', r:'46,204,113',  bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
-  { id:'blue',   label:'🔵 Синий',      accent:'#4ECDC4', r:'78,205,196',  bg:'#0F1B2D', surface:'#162437', surface2:'#1E3050', text:'#E8F4F8', textDim:'#7A9BB5' },
+  { id:'blue',   label:'🔵 Синий',      accent:'#4ECDC4', r:'78,205,196',  bg:'#0F1B2D', surface:'#162437', surface2:'#1E3050', text:'#E8F4F8', textDim:'#7A9BB5', isDefault:true },
   { id:'purple', label:'💜 Фиолетовый', accent:'#A78BFA', r:'167,139,250', bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
   { id:'orange', label:'🍊 Оранжевый',  accent:'#FB923C', r:'251,146,60',  bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
   { id:'rose',   label:'🌸 Розовый',    accent:'#F472B6', r:'244,114,182', bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
@@ -11089,7 +11089,7 @@ function applyTheme(id) {
 
 function openThemeSheet() {
   const grid = document.getElementById('theme-grid');
-  const curId = (()=>{ try{ return localStorage.getItem('app-theme')||'green'; }catch(e){ return 'green'; } })();
+  const curId = (()=>{ try{ return localStorage.getItem('app-theme')||'blue'; }catch(e){ return 'blue'; } })();
   // Рендерим карточки тем
   grid.innerHTML = THEMES.map(t => `
     <button onclick="applyTheme('${t.id}');renderThemeGrid()" style="
@@ -11097,10 +11097,11 @@ function openThemeSheet() {
       border-radius:14px;padding:12px 10px;background:${t.bg};
       cursor:pointer;text-align:left;transition:border-color .15s;
     ">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:${t.isDefault?'4px':'8px'};">
         <div style="width:22px;height:22px;border-radius:50%;background:${t.accent};flex-shrink:0;"></div>
         <span style="font-size:13px;font-weight:700;color:${t.text};">${t.label}</span>
       </div>
+      ${t.isDefault ? `<div style="font-size:9px;font-weight:700;letter-spacing:.06em;color:${t.accent};opacity:0.7;margin-bottom:6px;text-transform:uppercase;">по умолчанию</div>` : ''}
       <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.1);">
         <div style="height:100%;width:65%;border-radius:2px;background:${t.accent};"></div>
       </div>
@@ -11117,9 +11118,10 @@ function openThemeSheet() {
 function renderThemeGrid() {
   // Перерисовываем сетку чтобы обновить выделение
   const curId = (()=>{ try{ return localStorage.getItem('app-theme')||'green'; }catch(e){ return 'green'; } })();
+  const curId2 = (()=>{ try{ return localStorage.getItem('app-theme')||'blue'; }catch(e){ return 'blue'; } })();
   document.getElementById('theme-grid').querySelectorAll('button').forEach((btn, i) => {
     const t = THEMES[i];
-    btn.style.borderColor = t.id===curId ? t.accent : 'rgba(255,255,255,0.08)';
+    btn.style.borderColor = t.id===curId2 ? t.accent : 'rgba(255,255,255,0.08)';
   });
 }
 
@@ -11137,7 +11139,8 @@ function closeThemeSheet() {
 (function() {
   try {
     const saved = localStorage.getItem('app-theme');
-    if (saved && THEMES.find(t => t.id === saved)) applyTheme(saved);
+    // Применяем сохранённую тему; если ничего нет — CSS уже показывает blue (дефолт)
+    if (saved && saved !== 'blue' && THEMES.find(t => t.id === saved)) applyTheme(saved);
   } catch(e) {}
 })();
 // ─────────────────────────────────────────────────────────────────────────
