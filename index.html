@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0F1B2D">
+<meta name="theme-color" content="#0a0a0a">
 <title>Мои накопления</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icon.png">
@@ -22,10 +22,10 @@
 <style>
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 :root {
-  --bg:#0F1B2D; --surface:#162437; --surface2:#1E3050;
-  --accent:#4ECDC4; --accent-dim:rgba(78,205,196,0.15); --accent-glow:rgba(78,205,196,0.3);
-  --text:#E8F4F8; --text-dim:#7A9BB5;
-  --done:#4ECDC4; --done-bg:rgba(78,205,196,0.12);
+  --bg:#0a0a0a; --surface:#111111; --surface2:#1a1a1a;
+  --accent:#2ECC71; --accent-dim:rgba(46,204,113,0.15); --accent-glow:rgba(46,204,113,0.3);
+  --text:#f0f0f0; --text-dim:#6b7280;
+  --done:#2ECC71; --done-bg:rgba(46,204,113,0.12);
   --danger:#FF6B6B; --warn:#FFB347;
   --radius:16px; --radius-sm:10px;
 }
@@ -60,7 +60,7 @@
 }
 @keyframes ob-pulse {
   0%,100% { box-shadow:0 0 0 3px var(--accent); }
-  50%      { box-shadow:0 0 0 6px rgba(78,205,196,0.4); }
+  50%      { box-shadow:0 0 0 6px rgba(46,204,113,0.4); }
 }
 .ob-tooltip {
   position:fixed;
@@ -151,7 +151,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .sidebar-overlay.open { display:block; }
 .sidebar { position:fixed; top:0; left:-300px; width:280px; height:100dvh; background:var(--surface); z-index:201; transition:left .3s cubic-bezier(.4,0,.2,1); overflow-y:auto; padding-bottom:40px; }
 .sidebar.open { left:0; }
-.sidebar-profile { padding:24px 20px 16px; background:linear-gradient(135deg,var(--surface2),#1a2e4a); border-bottom:1px solid rgba(78,205,196,0.1); }
+.sidebar-profile { padding:24px 20px 16px; background:linear-gradient(135deg,var(--surface2),#1a1a1a); border-bottom:1px solid rgba(46,204,113,0.1); }
 .sidebar-name { font-size:18px; font-weight:700; margin-bottom:4px; }
 .sidebar-total { font-size:13px; color:var(--accent); font-weight:600; }
 .sidebar-section { padding:16px 20px 6px; font-size:10px; font-weight:700; letter-spacing:.12em; color:var(--text-dim); text-transform:uppercase; display:flex; align-items:center; gap:8px; }
@@ -177,7 +177,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .page.active { display:flex; }
 
 /* HERO */
-.hero { background:linear-gradient(135deg,var(--surface2) 0%,#1a2e4a 100%); border-radius:var(--radius); padding:24px; border:1px solid rgba(78,205,196,0.15); position:relative; transition:opacity 0.25s ease; }
+.hero { background:linear-gradient(135deg,var(--surface2) 0%,#1a1a1a 100%); border-radius:var(--radius); padding:24px; border:1px solid rgba(46,204,113,0.15); position:relative; transition:opacity 0.25s ease; }
 .hero::before { content:''; position:absolute; top:-40px; right:-40px; width:140px; height:140px; background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%); pointer-events:none; }
 .hero-label { font-size:12px; color:var(--text-dim); margin-bottom:8px; font-weight:500; }
 .hero-amount { font-size:32px; font-weight:700; color:var(--text); line-height:1.1; letter-spacing:-1px; margin-top:4px; }
@@ -207,7 +207,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* Widget settings panel */
 .widget-settings-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:300; align-items:flex-end; justify-content:center; }
 .widget-settings-overlay.open { display:flex; }
-.widget-settings-panel { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; width:100%; max-width:480px; padding:20px 20px 36px; border-top:2px solid rgba(78,205,196,0.3); }
+.widget-settings-panel { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; width:100%; max-width:480px; padding:20px 20px 36px; border-top:2px solid rgba(46,204,113,0.3); }
 .widget-settings-title { font-size:16px; font-weight:700; margin-bottom:4px; }
 .widget-settings-sub { font-size:12px; color:var(--text-dim); margin-bottom:18px; }
 .widget-toggle-item { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
@@ -253,7 +253,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .home-piggy-cell.done { opacity:0.5; }
 .home-piggy-cell.undone { background:var(--surface2); color:var(--text-dim); }
 .home-piggy-cell.undone:active { filter:brightness(1.3); }
-  .quick-btn { flex:1; background:var(--surface); border:1px solid rgba(78,205,196,0.25); border-radius:var(--radius-sm); color:var(--accent); font-size:13px; font-weight:600; padding:11px 8px; cursor:pointer; text-align:center; transition:all .15s; }
+  .quick-btn { flex:1; background:var(--surface); border:1px solid rgba(46,204,113,0.25); border-radius:var(--radius-sm); color:var(--accent); font-size:13px; font-weight:600; padding:11px 8px; cursor:pointer; text-align:center; transition:all .15s; }
   .quick-btn:active { background:var(--accent-dim); }
 
 /* SECTION TITLE */
@@ -331,9 +331,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 /* BADGES */
 .badge { font-size:10px; border-radius:4px; padding:2px 5px; font-weight:600; flex-shrink:0; white-space:nowrap; }
-.badge-cap { background:rgba(78,205,196,0.15); color:var(--accent); }
+.badge-cap { background:rgba(46,204,113,0.15); color:var(--accent); }
 .badge-exp { background:rgba(255,179,71,0.15); color:var(--warn); }
-.badge-link { background:rgba(78,205,196,0.15); color:var(--accent); }
+.badge-link { background:rgba(46,204,113,0.15); color:var(--accent); }
 .badge-cur { background:rgba(255,255,255,0.08); color:var(--text-dim); }
 
 /* GOALS */
@@ -388,9 +388,9 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .chart-wrap { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); padding:14px; }
 .chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
 .chart-title { font-size:11px; font-weight:700; letter-spacing:.07em; color:var(--text-dim); text-transform:uppercase; }
-.chart-add-btn { background:none; border:1px solid rgba(78,205,196,0.3); border-radius:6px; color:var(--accent); font-size:11px; font-weight:600; padding:4px 10px; cursor:pointer; }
+.chart-add-btn { background:none; border:1px solid rgba(46,204,113,0.3); border-radius:6px; color:var(--accent); font-size:11px; font-weight:600; padding:4px 10px; cursor:pointer; }
 .chart-empty { text-align:center; padding:28px; color:var(--text-dim); font-size:13px; }
-.chart-tooltip { position:absolute; background:var(--surface2); border:1px solid rgba(78,205,196,0.3); border-radius:8px; padding:7px 11px; font-size:12px; pointer-events:none; z-index:10; white-space:nowrap; }
+.chart-tooltip { position:absolute; background:var(--surface2); border:1px solid rgba(46,204,113,0.3); border-radius:8px; padding:7px 11px; font-size:12px; pointer-events:none; z-index:10; white-space:nowrap; }
 
 /* TABS (income modal) */
 .tab-switch { display:flex; background:var(--surface2); border-radius:var(--radius-sm); padding:3px; gap:3px; margin-bottom:14px; }
@@ -408,7 +408,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .toggle input:checked + .toggle-slider::before { transform:translateX(18px); background:var(--bg); }
 
 /* CALC PREVIEW */
-.calc-preview { background:var(--accent-dim); border:1px solid rgba(78,205,196,0.25); border-radius:var(--radius-sm); padding:11px 13px; font-size:13px; color:var(--text-dim); margin-bottom:14px; line-height:1.7; }
+.calc-preview { background:var(--accent-dim); border:1px solid rgba(46,204,113,0.25); border-radius:var(--radius-sm); padding:11px 13px; font-size:13px; color:var(--text-dim); margin-bottom:14px; line-height:1.7; }
 .calc-preview strong { color:var(--accent); font-size:15px; }
 .linked-saving-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
 .linked-chip { display:flex; flex-direction:column; align-items:flex-start; gap:1px; background:var(--surface2); border:1.5px solid rgba(255,255,255,0.12); border-radius:10px; padding:8px 12px; cursor:pointer; transition:border-color .15s, background .15s; text-align:left; min-width:80px; }
@@ -420,7 +420,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 /* MODAL */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:650; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
 .modal-overlay.open { display:flex; }
-.modal { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; padding:22px 18px 38px; width:100%; max-width:480px; border-top:1px solid rgba(78,205,196,0.2); max-height:92dvh; overflow-y:auto; overscroll-behavior-y:contain; }
+.modal { background:var(--surface); border-radius:var(--radius) var(--radius) 0 0; padding:22px 18px 38px; width:100%; max-width:480px; border-top:1px solid rgba(46,204,113,0.2); max-height:92dvh; overflow-y:auto; overscroll-behavior-y:contain; }
 .modal-title { font-size:17px; font-weight:700; margin-bottom:18px; }
 .field { display:flex; flex-direction:column; gap:6px; margin-bottom:13px; }
 .field label { font-size:11px; color:var(--text-dim); font-weight:600; letter-spacing:.05em; }
@@ -452,7 +452,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 .empty p { font-size:13px; line-height:1.5; }
 
 
-.ach-card.unlocked { border-color:rgba(78,205,196,0.3); background:rgba(78,205,196,0.06); }
+.ach-card.unlocked { border-color:rgba(46,204,113,0.3); background:rgba(46,204,113,0.06); }
 .ach-card.secret { opacity:0.35; }
 
 .ach-card.unlocked 
@@ -480,11 +480,11 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   .color-pick-btn { width:28px; height:28px; border-radius:50%; border:3px solid transparent; cursor:pointer; transition:all .15s; flex-shrink:0; }
   .color-pick-btn.selected { border-color:var(--text); transform:scale(1.2); }
   
-  .ch-random-btn { background:none; border:1px solid rgba(78,205,196,0.3); border-radius:8px; color:var(--accent); font-size:12px; padding:5px 10px; cursor:pointer; }
+  .ch-random-btn { background:none; border:1px solid rgba(46,204,113,0.3); border-radius:8px; color:var(--accent); font-size:12px; padding:5px 10px; cursor:pointer; }
   .pg-card { background:var(--surface); border-radius:var(--radius); border:1px solid rgba(255,255,255,0.05); padding:16px; }
   .pg-type-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; letter-spacing:.05em; border-radius:4px; padding:2px 7px; margin-bottom:8px; }
   .pg-type-badge.challenge { background:rgba(255,107,157,0.15); color:#FF6B9D; }
-  .pg-type-badge.piggy { background:rgba(78,205,196,0.15); color:var(--accent); }
+  .pg-type-badge.piggy { background:rgba(46,204,113,0.15); color:var(--accent); }
   .pg-type-badge.mirror { background:rgba(100,181,246,0.15); color:#64B5F6; }
   .pg-add-btn { background:var(--accent); color:var(--bg); border:none; border-radius:8px; font-size:13px; font-weight:700; padding:8px 16px; cursor:pointer; }
   .pg-history { margin-top:10px; display:flex; flex-direction:column; gap:4px; max-height:120px; overflow-y:auto; }
@@ -508,7 +508,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 <div style="position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;height:52px;z-index:99;background:var(--bg);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;padding:0 16px;">
   <button class="menu-btn" onclick="openSidebar()">☰</button>
   <span id="topbar-title" style="position:absolute;left:50%;transform:translateX(-50%);font-size:15px;font-weight:700;color:var(--text);">Мои накопления</span>
-  <button id="topbar-back-btn" onclick="topbarBack()" style="display:none;margin-left:auto;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.3);border-radius:20px;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;align-items:center;gap:4px;padding:5px 12px 5px 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> <span id="topbar-back-label">Назад</span></button>
+  <button id="topbar-back-btn" onclick="topbarBack()" style="display:none;margin-left:auto;background:rgba(46,204,113,0.12);border:1px solid rgba(46,204,113,0.3);border-radius:20px;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;align-items:center;gap:4px;padding:5px 12px 5px 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> <span id="topbar-back-label">Назад</span></button>
 </div>
 
 <!-- SIDEBAR -->
@@ -533,7 +533,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div style="flex:1;min-width:0;">
       <div class="sidebar-name" id="sb-name" style="font-size:14px;font-weight:600;word-break:break-all;line-height:1.3;">Мои накопления</div>
       <div id="sbp-signed-out">
-        <button onclick="openAuthModal()" style="background:none;border:1px solid rgba(78,205,196,0.4);border-radius:8px;padding:4px 10px;color:var(--accent);font-size:12px;cursor:pointer;font-weight:600;margin-top:5px;">Войти в аккаунт →</button>
+        <button onclick="openAuthModal()" style="background:none;border:1px solid rgba(46,204,113,0.4);border-radius:8px;padding:4px 10px;color:var(--accent);font-size:12px;cursor:pointer;font-weight:600;margin-top:5px;">Войти в аккаунт →</button>
       </div>
       <div id="sbp-signed-in" style="display:none;">
         <button onclick="sbpHandleSignOut()" style="background:none;border:none;padding:4px 10px;color:var(--text-dim);font-size:12px;cursor:pointer;margin-top:5px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;">Выйти →</button>
@@ -556,20 +556,20 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
 
 <!-- NOTIFICATION SETTINGS BOTTOM SHEET -->
 <div id="notif-settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;backdrop-filter:blur(4px);" onclick="closeNotifSettings()"></div>
-<div id="notif-settings-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:1001;background:#162437;border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,16px) 0;box-shadow:0 -4px 32px rgba(0,0,0,0.5);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);">
+<div id="notif-settings-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:1001;background:#111111;border-radius:20px 20px 0 0;padding:0 0 env(safe-area-inset-bottom,16px) 0;box-shadow:0 -4px 32px rgba(0,0,0,0.5);transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);">
   <!-- Handle -->
   <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:14px auto 0;"></div>
   <!-- Header -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0;">
-    <h3 style="margin:0;font-size:18px;font-weight:700;color:#E8F4F8;">Уведомления</h3>
-    <button onclick="closeNotifSettings()" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#7A9BB5;font-size:18px;line-height:1;padding:0;">✕</button>
+    <h3 style="margin:0;font-size:18px;font-weight:700;color:#f0f0f0;">Уведомления</h3>
+    <button onclick="closeNotifSettings()" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#6b7280;font-size:18px;line-height:1;padding:0;">✕</button>
   </div>
   <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:10px;">
     <!-- Toggle row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#1E3050;border-radius:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#1a1a1a;border-radius:14px;">
       <div style="flex:1;min-width:0;margin-right:12px;">
-        <div style="font-size:15px;font-weight:600;color:#E8F4F8;">Push-уведомления</div>
-        <div id="notif-toggle-hint" style="font-size:12px;color:#7A9BB5;margin-top:3px;line-height:1.4;">Подписки, вклады и ежемесячный итог</div>
+        <div style="font-size:15px;font-weight:600;color:#f0f0f0;">Push-уведомления</div>
+        <div id="notif-toggle-hint" style="font-size:12px;color:#6b7280;margin-top:3px;line-height:1.4;">Подписки, вклады и ежемесячный итог</div>
       </div>
       <label for="notif-toggle" style="position:relative;display:inline-block;width:51px;height:31px;flex-shrink:0;cursor:pointer;">
         <input type="checkbox" id="notif-toggle" style="opacity:0;width:0;height:0;position:absolute;" onchange="handleNotifToggle(this.checked)">
@@ -578,20 +578,20 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </label>
     </div>
     <!-- Time picker row -->
-    <div id="notif-time-row" style="padding:14px 16px;background:#1E3050;border-radius:14px;opacity:0.4;pointer-events:none;transition:opacity 0.2s;">
+    <div id="notif-time-row" style="padding:14px 16px;background:#1a1a1a;border-radius:14px;opacity:0.4;pointer-events:none;transition:opacity 0.2s;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <div>
-          <div style="font-size:15px;font-weight:600;color:#E8F4F8;">Время уведомлений</div>
-          <div style="font-size:12px;color:#7A9BB5;margin-top:3px;">По московскому времени</div>
+          <div style="font-size:15px;font-weight:600;color:#f0f0f0;">Время уведомлений</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:3px;">По московскому времени</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <input type="time" id="notif-time-input" value="09:00" style="flex:1;min-width:0;background:rgba(255,255,255,0.07);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:9px 12px;color:#E8F4F8;font-size:16px;font-weight:600;cursor:pointer;-webkit-appearance:none;appearance:none;" onchange="saveNotifTime(this.value)">
-        <button onclick="saveNotifTime(document.getElementById('notif-time-input').value)" style="background:#4ECDC4;border:none;border-radius:10px;padding:9px 16px;color:#0F1B2D;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Сохранить</button>
+        <input type="time" id="notif-time-input" value="09:00" style="flex:1;min-width:0;background:rgba(255,255,255,0.07);border:1px solid rgba(46,204,113,0.2);border-radius:10px;padding:9px 12px;color:#f0f0f0;font-size:16px;font-weight:600;cursor:pointer;-webkit-appearance:none;appearance:none;" onchange="saveNotifTime(this.value)">
+        <button onclick="saveNotifTime(document.getElementById('notif-time-input').value)" style="background:#2ECC71;border:none;border-radius:10px;padding:9px 16px;color:#0a0a0a;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Сохранить</button>
       </div>
     </div>
     <!-- Info -->
-    <p id="notif-info-text" style="margin:2px 0 0;padding:0 4px;font-size:12px;color:#7A9BB5;line-height:1.6;">Уведомления приходят за 0, 1, 3 и 7 дней до списания подписок и окончания вкладов.</p>
+    <p id="notif-info-text" style="margin:2px 0 0;padding:0 4px;font-size:12px;color:#6b7280;line-height:1.6;">Уведомления приходят за 0, 1, 3 и 7 дней до списания подписок и окончания вкладов.</p>
   </div>
 </div>
 
@@ -691,7 +691,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   </div>
 
 
-  <div id="backup-banner" style="display:none;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text);cursor:pointer;" onclick="showPage('backup');document.getElementById('backup-banner').style.display='none'">
+  <div id="backup-banner" style="display:none;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text);cursor:pointer;" onclick="showPage('backup');document.getElementById('backup-banner').style.display='none'">
     <div style="font-weight:600;margin-bottom:2px;">💾 Пора создать резервную копию</div>
     <div style="font-size:12px;color:var(--text-dim);">Данные менялись, но копия не создавалась 7+ дней. Нажми чтобы настроить →</div>
   </div>
@@ -736,7 +736,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
   <div class="chart-wrap" id="deposit-tax-block" style="display:none;"></div>
   <!-- toolbar над списком счетов -->
   <div id="savings-search-bar" style="display:none;margin-bottom:-8px;">
-    <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(78,205,196,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
+    <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(46,204,113,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
       <input type="text" id="savings-search" placeholder="Поиск счёта..." oninput="renderSavings()" autocomplete="off"
         style="flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none;padding:8px 0;">
       <button onclick="clearPageSearch('savings')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;">✕</button>
@@ -790,7 +790,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <button onclick="togglePageSearch('income')" id="income-search-btn" style="background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 9px;display:flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14"><path d="M11.742 10.344a6.5 6.5 0 1 0 -1.397 1.398h-0.001q0.044 0.06 0.098 0.115l3.85 3.85a1 1 0 0 0 1.415 -1.414l-3.85 -3.85a1 1 0 0 0 -0.115 -0.1zM12 6.5a5.5 5.5 0 1 1 -11 0 5.5 5.5 0 0 1 11 0"/></svg> Поиск</button>
   </div>
   <div id="income-search-bar" style="display:none;margin-bottom:-8px;">
-    <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(78,205,196,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
+    <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(46,204,113,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
       <input type="text" id="income-search" placeholder="Поиск дохода..." oninput="renderIncome()" autocomplete="off"
         style="flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none;padding:8px 0;width:100%;">
       <button onclick="clearPageSearch('income')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;">✕</button>
@@ -824,7 +824,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     <div style="font-size:12px;color:var(--text-dim);margin-top:6px;" id="goals-income-hint"></div>
   </div>
   <div id="goals-search-bar" style="display:none;margin-bottom:-8px;">
-    <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(78,205,196,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
+    <div style="display:flex;align-items:center;background:var(--surface);border:1px solid rgba(46,204,113,0.3);border-radius:var(--radius-sm);padding:0 4px 0 12px;">
       <input type="text" id="goals-search" placeholder="Поиск цели или подписки..." oninput="renderGoals()" autocomplete="off"
         style="flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none;padding:8px 0;">
       <button onclick="clearPageSearch('goals')" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;">✕</button>
@@ -1129,8 +1129,8 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
     </div>
     <!-- Инфо-карточки по типам -->
-    <div id="pg-info-piggy" style="background:rgba(78,205,196,0.07);border:1px solid rgba(78,205,196,0.18);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:600;color:#4ECDC4;margin-bottom:8px;">🐷 Обычная копилка</div>
+    <div id="pg-info-piggy" style="background:rgba(46,204,113,0.07);border:1px solid rgba(46,204,113,0.18);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:600;color:#2ECC71;margin-bottom:8px;">🐷 Обычная копилка</div>
       <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">
         Вы вручную фиксируете каждое пополнение. Приложение считает накопленное, показывает прогресс к цели и может напоминать по расписанию.
         <div style="margin-top:8px;color:rgba(255,255,255,0.55);font-size:11px;font-weight:600;letter-spacing:.04em;">КОГДА ВЫБИРАТЬ</div>
@@ -1255,13 +1255,13 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
       <div class="field"><label>ЦВЕТ</label>
         <div style="display:flex;gap:8px;">
-          <button type="button" onclick="selectColor('#4ECDC4','pg')" class="color-pick-btn selected" id="cpb-pg-4ECDC4" style="background:#4ECDC4;"></button>
+          <button type="button" onclick="selectColor('#2ECC71','pg')" class="color-pick-btn selected" id="cpb-pg-4ECDC4" style="background:#2ECC71;"></button>
           <button type="button" onclick="selectColor('#FF6B9D','pg')" class="color-pick-btn" id="cpb-pg-FF6B9D" style="background:#FF6B9D;"></button>
           <button type="button" onclick="selectColor('#FFB347','pg')" class="color-pick-btn" id="cpb-pg-FFB347" style="background:#FFB347;"></button>
           <button type="button" onclick="selectColor('#7B68EE','pg')" class="color-pick-btn" id="cpb-pg-7B68EE" style="background:#7B68EE;"></button>
           <button type="button" onclick="selectColor('#64B5F6','pg')" class="color-pick-btn" id="cpb-pg-64B5F6" style="background:#64B5F6;"></button>
         </div>
-        <input type="hidden" id="pg-color" value="#4ECDC4">
+        <input type="hidden" id="pg-color" value="#2ECC71">
       </div>
       <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
         <div id="pg-linked-saving" class="linked-saving-chips" data-value=""></div>
@@ -1294,7 +1294,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <div class="field"><label>ЦВЕТ</label>
         <div style="display:flex;gap:8px;">
           <button type="button" onclick="selectColor('#64B5F6','pgm')" class="color-pick-btn selected" id="cpb-pgm-64B5F6" style="background:#64B5F6;"></button>
-          <button type="button" onclick="selectColor('#4ECDC4','pgm')" class="color-pick-btn" id="cpb-pgm-4ECDC4" style="background:#4ECDC4;"></button>
+          <button type="button" onclick="selectColor('#2ECC71','pgm')" class="color-pick-btn" id="cpb-pgm-4ECDC4" style="background:#2ECC71;"></button>
           <button type="button" onclick="selectColor('#FF6B9D','pgm')" class="color-pick-btn" id="cpb-pgm-FF6B9D" style="background:#FF6B9D;"></button>
           <button type="button" onclick="selectColor('#FFB347','pgm')" class="color-pick-btn" id="cpb-pgm-FFB347" style="background:#FFB347;"></button>
           <button type="button" onclick="selectColor('#7B68EE','pgm')" class="color-pick-btn" id="cpb-pgm-7B68EE" style="background:#7B68EE;"></button>
@@ -1350,14 +1350,14 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     </div>
     <div class="field"><label>ЦВЕТ</label>
       <div style="display:flex;gap:8px;">
-        <button type="button" onclick="selectColor('#4ECDC4','p')" class="color-pick-btn selected" id="cpb-p-4ECDC4" style="background:#4ECDC4;"></button>
+        <button type="button" onclick="selectColor('#2ECC71','p')" class="color-pick-btn selected" id="cpb-p-4ECDC4" style="background:#2ECC71;"></button>
         <button type="button" onclick="selectColor('#FF6B9D','p')" class="color-pick-btn" id="cpb-p-FF6B9D" style="background:#FF6B9D;"></button>
         <button type="button" onclick="selectColor('#FFB347','p')" class="color-pick-btn" id="cpb-p-FFB347" style="background:#FFB347;"></button>
         <button type="button" onclick="selectColor('#7B68EE','p')" class="color-pick-btn" id="cpb-p-7B68EE" style="background:#7B68EE;"></button>
         <button type="button" onclick="selectColor('#5BC8AF','p')" class="color-pick-btn" id="cpb-p-5BC8AF" style="background:#5BC8AF;"></button>
         <button type="button" onclick="selectColor('#64B5F6','p')" class="color-pick-btn" id="cpb-p-64B5F6" style="background:#64B5F6;"></button>
       </div>
-      <input type="hidden" id="ch-color-p" value="#4ECDC4">
+      <input type="hidden" id="ch-color-p" value="#2ECC71">
     </div>
     <div class="calc-preview" id="ch-preview-p" style="display:none;"></div>
     <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
@@ -1418,13 +1418,13 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
     </div>
     <div class="field"><label>ЦВЕТ</label>
       <div style="display:flex;gap:8px;">
-        <button type="button" onclick="selectColor('#4ECDC4','ech')" class="color-pick-btn" id="cpb-ech-4ECDC4" style="background:#4ECDC4;"></button>
+        <button type="button" onclick="selectColor('#2ECC71','ech')" class="color-pick-btn" id="cpb-ech-4ECDC4" style="background:#2ECC71;"></button>
         <button type="button" onclick="selectColor('#FF6B9D','ech')" class="color-pick-btn" id="cpb-ech-FF6B9D" style="background:#FF6B9D;"></button>
         <button type="button" onclick="selectColor('#FFB347','ech')" class="color-pick-btn" id="cpb-ech-FFB347" style="background:#FFB347;"></button>
         <button type="button" onclick="selectColor('#7B68EE','ech')" class="color-pick-btn" id="cpb-ech-7B68EE" style="background:#7B68EE;"></button>
         <button type="button" onclick="selectColor('#5BC8AF','ech')" class="color-pick-btn" id="cpb-ech-5BC8AF" style="background:#5BC8AF;"></button>
       </div>
-      <input type="hidden" id="ech-color" value="#4ECDC4">
+      <input type="hidden" id="ech-color" value="#2ECC71">
     </div>
     <div class="calc-preview" id="ech-preview" style="display:none;"></div>
     <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
@@ -1561,7 +1561,7 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       <label>ГРУППА</label>
       <div style="display:flex;gap:8px;margin-top:2px;">
         <button onclick="budgetModalSetGroup('Основное')" id="bm-grp-Основное"
-          style="flex:1;padding:8px 4px;border-radius:var(--radius-sm);border:2px solid var(--accent);background:rgba(78,205,196,0.15);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;">Основное</button>
+          style="flex:1;padding:8px 4px;border-radius:var(--radius-sm);border:2px solid var(--accent);background:rgba(46,204,113,0.15);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;">Основное</button>
         <button onclick="budgetModalSetGroup('Желания')" id="bm-grp-Желания"
           style="flex:1;padding:8px 4px;border-radius:var(--radius-sm);border:2px solid rgba(255,255,255,0.1);background:var(--surface2);color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;">Желания</button>
         <button onclick="budgetModalSetGroup('Накопления')" id="bm-grp-Накопления"
@@ -1884,14 +1884,14 @@ nav button.nav-bounce .ni { animation:nav-bounce .35s cubic-bezier(.34,1.56,.64,
       </div>
       <div class="field"><label>ЦВЕТ</label>
         <div style="display:flex;gap:8px;">
-          <button type="button" class="color-pick-btn selected" onclick="selectGoalColor('#4ECDC4')" id="gcpb-4ECDC4" style="background:#4ECDC4;"></button>
+          <button type="button" class="color-pick-btn selected" onclick="selectGoalColor('#2ECC71')" id="gcpb-4ECDC4" style="background:#2ECC71;"></button>
           <button type="button" class="color-pick-btn" onclick="selectGoalColor('#FF6B9D')" id="gcpb-FF6B9D" style="background:#FF6B9D;"></button>
           <button type="button" class="color-pick-btn" onclick="selectGoalColor('#FFB347')" id="gcpb-FFB347" style="background:#FFB347;"></button>
           <button type="button" class="color-pick-btn" onclick="selectGoalColor('#7B68EE')" id="gcpb-7B68EE" style="background:#7B68EE;"></button>
           <button type="button" class="color-pick-btn" onclick="selectGoalColor('#5BC8AF')" id="gcpb-5BC8AF" style="background:#5BC8AF;"></button>
           <button type="button" class="color-pick-btn" onclick="selectGoalColor('#64B5F6')" id="gcpb-64B5F6" style="background:#64B5F6;"></button>
         </div>
-        <input type="hidden" id="g-color" value="#4ECDC4">
+        <input type="hidden" id="g-color" value="#2ECC71">
       </div>
     </div>
     <div class="modal-actions">
@@ -2990,7 +2990,7 @@ function renderNavNotch() {
       </linearGradient>
     </defs>
     <path d="${path}" fill="url(#nav-bg-grad)" style="backdrop-filter:blur(16px)"/>
-    <path d="${path}" fill="none" stroke="rgba(78,205,196,0.15)" stroke-width="1"/>
+    <path d="${path}" fill="none" stroke="rgba(46,204,113,0.15)" stroke-width="1"/>
   `;
 }
 
@@ -3006,7 +3006,7 @@ function renderHome() {
 
   const goalsPctEl = document.getElementById('dash-goals-pct');
   goalsPctEl.textContent = goalsPct+'%';
-  goalsPctEl.style.color = goalsPct>=100?'#4ECDC4':goalsPct>=60?'#FFB347':goalsPct>=30?'#FF9F43':'#FF6B6B';
+  goalsPctEl.style.color = goalsPct>=100?'#2ECC71':goalsPct>=60?'#FFB347':goalsPct>=30?'#FF9F43':'#FF6B6B';
 
   // Urgent alert for expired/soon deposits
   const nowU = new Date(); nowU.setHours(0,0,0,0);
@@ -3354,7 +3354,7 @@ function renderHomeChartWidget() {
   const areaPath = `${path} L${xs[n-1]},${pad.t+iH} L${xs[0]},${pad.t+iH} Z`;
 
   // color
-  const color = _homeChartMode==='savings' ? '#4ECDC4' : '#3DD68C';
+  const color = _homeChartMode==='savings' ? '#2ECC71' : '#3DD68C';
   const gid = 'hcg_' + _homeChartMode;
 
   // x-axis labels (max 5)
@@ -3564,7 +3564,7 @@ function renderPiggyWidget(piggyId, container) {
     const saved = pg.saved||0;
     const pgGoal = (pg.goal && pg.goal < 999999999) ? pg.goal : 0;
     const pct = pgGoal > 0 ? Math.min(100,Math.round(saved/pgGoal*100)) : 0;
-    const color = pg.color||'#4ECDC4';
+    const color = pg.color||'#2ECC71';
     container.innerHTML = `<div class="widget-section-header" style="cursor:pointer;" onclick="showPage('challenge');setTimeout(()=>openPiggySheet('${pg.id}'),350)"><span class="widget-section-label">${pg.emoji||'🐷'} ${pg.name}</span></div>
       <div class="home-piggy-widget" style="cursor:pointer;" onclick="if(!event.target.closest('button')){showPage('challenge');setTimeout(()=>openPiggySheet('${pg.id}'),350)}">
         <div class="home-piggy-header">
@@ -3605,7 +3605,7 @@ function renderPiggyWidget(piggyId, container) {
     }
 
     // Show only undone cells on home widget
-    const color = ch.color||'#4ECDC4';
+    const color = ch.color||'#2ECC71';
     const pct = totalGoal ? Math.round(totalDone/totalGoal*100) : 0;
     const doneCnt = validCells.filter(c=>c.done).length;
     const undoneCells = validCells.filter(c=>!c.done);
@@ -4073,7 +4073,7 @@ function openTaxDetailSheet() {
 
   // Build HTML for per-account rows
   const sourceTag = src =>
-    src === 'tx'   ? '<span style="font-size:10px;padding:1px 5px;background:rgba(78,205,196,0.12);color:var(--accent);border-radius:4px;border:1px solid rgba(78,205,196,0.25);">зафикс.</span>' :
+    src === 'tx'   ? '<span style="font-size:10px;padding:1px 5px;background:rgba(46,204,113,0.12);color:var(--accent);border-radius:4px;border:1px solid rgba(46,204,113,0.25);">зафикс.</span>' :
     src === 'calc' ? '<span style="font-size:10px;padding:1px 5px;background:rgba(255,255,255,0.06);color:var(--text-dim);border-radius:4px;border:1px solid rgba(255,255,255,0.1);">расчёт</span>' :
                      '<span style="font-size:10px;padding:1px 5px;background:rgba(255,255,255,0.06);color:var(--text-dim);border-radius:4px;border:1px solid rgba(255,255,255,0.1);">оценка</span>';
 
@@ -4657,7 +4657,7 @@ function openSubHistorySheet(id) {
       : `${fmt(e.amount)} ₽`;
     const d = e.date ? new Date(e.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}) : '';
     return `<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-      <div style="width:34px;height:34px;border-radius:50%;background:rgba(78,205,196,0.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">🔄</div>
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(46,204,113,0.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">🔄</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:14px;font-weight:600;">${amtStr}</div>
         <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">${d}${e.note ? ' · ' + e.note : ''}</div>
@@ -5255,8 +5255,8 @@ function _buildHistorySheetContent(savingId, rows) {
 
 // ── ACCOUNT DETAIL SHEET ──────────────────────────────────
 function _sheetBtn(onclick, icon, label, accent) {
-  const bg = accent ? 'rgba(78,205,196,0.12)' : 'var(--surface2)';
-  const border = accent ? '1px solid rgba(78,205,196,0.2)' : '1px solid rgba(255,255,255,0.08)';
+  const bg = accent ? 'rgba(46,204,113,0.12)' : 'var(--surface2)';
+  const border = accent ? '1px solid rgba(46,204,113,0.2)' : '1px solid rgba(255,255,255,0.08)';
   const color = accent ? 'var(--accent)' : 'var(--text)';
   return `<button onclick="document.getElementById('sa-sheet').remove();${onclick}"
     style="padding:12px 0;background:${bg};border:${border};border-radius:12px;color:${color};font-size:13px;font-weight:600;cursor:pointer;">
@@ -5669,7 +5669,7 @@ function renderIncome() {
         return 0;
       })();
       const icon = s.isDeposit ? '💰' : '🏦';
-      const color = s.isDeposit ? '#4ECDC4' : '#5BC8AF';
+      const color = s.isDeposit ? '#2ECC71' : '#5BC8AF';
       const ratePct = s.rate ? Number(s.rate).toFixed(1)+'% год.' : '';
       // Подпись: если отключён в Счетах — показываем предупреждение (независимо от тоггла дохода)
       const subBase = ratePct ? `авто · ${ratePct}` : 'авто';
@@ -5707,7 +5707,7 @@ function renderIncome() {
   const manualHtml = manualHeaderHtml + (filteredManual.length ? `<div class="group-block">` : '') + filteredManual.map(x => {
       const excl = !!x.incomeExcluded;
       const amt = excl ? 0 : calcIncomeAmountRub(x);
-      const color = COLORS_MANUAL[x.icon] || '#4ECDC4';
+      const color = COLORS_MANUAL[x.icon] || '#2ECC71';
       const opacity = excl ? 'opacity:0.45;' : '';
       return `<div class="card-item savings-card-item" data-id="${x.id}" style="${opacity}">
         <div class="card-item-inner">
@@ -5830,7 +5830,7 @@ function renderGoals() {
   subItems = sortGoals(subItems);
 
   function renderGoalItem(g) {
-    const color = g.color || '#4ECDC4';
+    const color = g.color || '#2ECC71';
     const emoji = g.emoji || '🎯';
     const partialPct = g.partial ? Math.round(g.partial * 100) : 0;
     return `<div class="goal-item ${g.covered?'covered':''}" data-id="${g.id}" draggable="true">
@@ -5844,7 +5844,7 @@ function renderGoals() {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:fit-content;">
           <div style="font-size:13px;font-weight:600;color:var(--text);">${fmt(g.amount)} ₽/мес</div>
-          ${g.covered ? `<div style="font-size:11px;color:#4ECDC4;font-weight:600;display:flex;align-items:center;gap:3px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg> покрыта</div>` : ''}
+          ${g.covered ? `<div style="font-size:11px;color:#2ECC71;font-weight:600;display:flex;align-items:center;gap:3px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg> покрыта</div>` : ''}
         </div>
         <button class="card-menu-btn" onclick="showGoalMenu(event,'${g.id}')" style="font-size:16px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><path d="M0 0h16v16H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><circle cx="8" cy="2.5" r=".75"/><circle cx="8" cy="8" r=".75"/><circle cx="8" cy="13.5" r=".75"/></g></svg></button>
       </div>
@@ -5877,7 +5877,7 @@ function renderGoals() {
                <div style="font-size:10px;color:var(--text-dim);">≈ ${fmt(Math.round(g.amount))} ₽</div>`
             : `<div style="font-size:13px;font-weight:600;color:var(--text);">${fmt(g.amount)} ₽</div>`}
           ${g.subPeriod && g.subPeriod > 1 ? `<div style="font-size:10px;color:var(--text-dim);">${fmt(Math.round(monthlyAmt))} ₽/мес</div>` : ''}
-          ${g.covered ? `<div style="font-size:11px;color:#4ECDC4;font-weight:600;display:flex;align-items:center;gap:3px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg> покрыта</div>` : `<div style="font-size:11px;color:#FFB347;">не покрыта</div>`}
+          ${g.covered ? `<div style="font-size:11px;color:#2ECC71;font-weight:600;display:flex;align-items:center;gap:3px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg> покрыта</div>` : `<div style="font-size:11px;color:#FFB347;">не покрыта</div>`}
         </div>
         <button class="card-menu-btn" onclick="showGoalMenu(event,'${g.id}')" style="font-size:16px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><path d="M0 0h16v16H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><circle cx="8" cy="2.5" r=".75"/><circle cx="8" cy="8" r=".75"/><circle cx="8" cy="13.5" r=".75"/></g></svg></button>
       </div>
@@ -6189,7 +6189,7 @@ function startConfetti() {
   const pieces = Array.from({length: 120}, () => ({
     x: Math.random()*canvas.width, y: Math.random()*canvas.height-canvas.height,
     r: 4+Math.random()*6, d: 2+Math.random()*3,
-    color: ['#4ECDC4','#FF6B9D','#FFB347','#7B68EE','#5BC8AF','#64B5F6'][Math.floor(Math.random()*6)],
+    color: ['#2ECC71','#FF6B9D','#FFB347','#7B68EE','#5BC8AF','#64B5F6'][Math.floor(Math.random()*6)],
     tilt: Math.random()*10-5, tiltAngle: 0
   }));
   let frame;
@@ -6473,7 +6473,7 @@ function openModal(mode) {
   if(mode==='savings') setTimeout(()=>{ const el=document.getElementById('s-name'); if(el) el.focus(); }, 200);
   if(mode==='goals') {
     const gEmoji=document.getElementById('g-emoji'); if(gEmoji) gEmoji.value='🎯';
-    const gColor=document.getElementById('g-color'); if(gColor) gColor.value='#4ECDC4';
+    const gColor=document.getElementById('g-color'); if(gColor) gColor.value='#2ECC71';
     document.querySelectorAll('[id^="gepb-"]').forEach(b=>b.classList.remove('selected'));
     const defE=document.getElementById('gepb-target'); if(defE) defE.classList.add('selected');
     document.querySelectorAll('[id^="gcpb-"]').forEach(b=>b.classList.remove('selected'));
@@ -6802,7 +6802,7 @@ function saveItem(){
     const amount=readAmountInput('g-amount');
     if(!name||isNaN(amount)||amount<=0)return;
     const emoji=document.getElementById('g-emoji')?.value||'🎯';
-    const color=document.getElementById('g-color')?.value||'#4ECDC4';
+    const color=document.getElementById('g-color')?.value||'#2ECC71';
     const gType=document.getElementById('g-type')?.value||'regular';
     const subPeriod=gType==='subscription'?getSubPeriodValue():null;
     const subDate=gType==='subscription'?document.getElementById('g-sub-date')?.value||null:null;
@@ -7082,8 +7082,8 @@ function drawChart() {
 
   // Gradient fill
   const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top+gH);
-  grad.addColorStop(0, 'rgba(78,205,196,0.3)');
-  grad.addColorStop(1, 'rgba(78,205,196,0)');
+  grad.addColorStop(0, 'rgba(46,204,113,0.3)');
+  grad.addColorStop(1, 'rgba(46,204,113,0)');
   ctx.beginPath();
   ctx.moveTo(xOf(0), yOf(vals[0]));
   for (let i=1; i<vals.length; i++) {
@@ -7099,7 +7099,7 @@ function drawChart() {
 
   // Line
   ctx.beginPath();
-  ctx.strokeStyle = '#4ECDC4';
+  ctx.strokeStyle = '#2ECC71';
   ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
   ctx.moveTo(xOf(0), yOf(vals[0]));
@@ -7115,9 +7115,9 @@ function drawChart() {
     const x=xOf(i), y=yOf(v);
     ctx.beginPath();
     ctx.arc(x, y, 4, 0, Math.PI*2);
-    ctx.fillStyle = '#4ECDC4';
+    ctx.fillStyle = '#2ECC71';
     ctx.fill();
-    ctx.strokeStyle = '#0F1B2D';
+    ctx.strokeStyle = '#0a0a0a';
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -7253,7 +7253,7 @@ function drawIncomeChart() {
   entries.forEach(([ym2,v],i) => {
     ctx.beginPath(); ctx.arc(xOf(i),yOf(v),4,0,Math.PI*2);
     ctx.fillStyle='#FFB347'; ctx.fill();
-    ctx.strokeStyle='#0F1B2D'; ctx.lineWidth=2; ctx.stroke();
+    ctx.strokeStyle='#0a0a0a'; ctx.lineWidth=2; ctx.stroke();
     const step = entries.length<=6?1:entries.length<=12?2:3;
     if (i%step===0||i===entries.length-1) {
       const [y4,m2]=ym2.split('-');
@@ -7526,7 +7526,7 @@ function createPiggyBank() {
   const perPeriod = hasPlan && planMode==='amount' ? readAmountInput('pg-per-period')||null : null;
   const reminder = hasPlan ? !!(document.getElementById('pg-reminder')?.checked) : false;
   const emoji = document.getElementById('pg-emoji')?.value||'🐷';
-  const color = document.getElementById('pg-color')?.value||'#4ECDC4';
+  const color = document.getElementById('pg-color')?.value||'#2ECC71';
   if (!name || !goal || goal<=0) return;
   if (!state.piggyBanks) state.piggyBanks = [];
   if (!state.fixedDepositIncome) state.fixedDepositIncome = [];
@@ -7593,7 +7593,7 @@ function openPiggyEdit(id) {
   selectEmoji(pg.emoji||(pg.mirror?'✉️':'🐷'), 'pge');
   const pgeCustom = document.getElementById('pge-emoji-custom');
   if (pgeCustom) pgeCustom.value = stdPgEmojis.includes(pg.emoji||'🐷') ? '' : (pg.emoji||'');
-  selectColor(pg.color||(pg.mirror?'#64B5F6':'#4ECDC4'), 'pge');
+  selectColor(pg.color||(pg.mirror?'#64B5F6':'#2ECC71'), 'pge');
   fillLinkedSavingSelect('pg-edit-linked-saving', pg.linkedSavingId||'');
   document.getElementById('pg-edit-modal').classList.add('open');
   document.getElementById('fab')?.setAttribute('hidden','');
@@ -7715,7 +7715,7 @@ function savePiggyEdit() {
   }
 
   pg.emoji = document.getElementById('pg-edit-emoji')?.value||pg.emoji||'🐷';
-  pg.color = document.getElementById('pg-edit-color')?.value||pg.color||'#4ECDC4';
+  pg.color = document.getElementById('pg-edit-color')?.value||pg.color||'#2ECC71';
   save();
   closePiggyEdit();
   renderChallengesPage();
@@ -7856,7 +7856,7 @@ function openPiggyHistorySheet(id) {
   const sheet = document.createElement('div');
   sheet.id = 'piggy-history-overlay';
   sheet.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;';
-  const color = pg.color||'#4ECDC4';
+  const color = pg.color||'#2ECC71';
   const txRows = deposits.length ? deposits.map(d=>{
     const amt = d.amount||0;
     const isNeg = amt < 0;
@@ -7865,7 +7865,7 @@ function openPiggyHistorySheet(id) {
     const note = d.note || (isNeg ? 'Списание' : 'Пополнение');
     const dateStr = _fmtDateTime(d.createdAt || d.date);
     return `<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-      <div style="width:34px;height:34px;border-radius:50%;background:${isNeg?'rgba(255,80,80,0.12)':'rgba(78,205,196,0.12)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${isNeg?'↓':'↑'}</div>
+      <div style="width:34px;height:34px;border-radius:50%;background:${isNeg?'rgba(255,80,80,0.12)':'rgba(46,204,113,0.12)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${isNeg?'↓':'↑'}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:14px;font-weight:600;">${sign}${amtStr} ₽</div>
         <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">${note}${dateStr?' · '+dateStr:''}</div>
@@ -7929,7 +7929,7 @@ function openChallengeHistorySheet(id) {
     });
   const totalDone = (ch.cells||[]).filter(c=>c.done).reduce((s,c)=>s+c.amt,0);
   const totalGoal = (ch.cells||[]).reduce((s,c)=>s+c.amt,0);
-  const color = ch.color||'#4ECDC4';
+  const color = ch.color||'#2ECC71';
   const sheet = document.createElement('div');
   sheet.id = 'challenge-history-overlay';
   sheet.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;';
@@ -7937,7 +7937,7 @@ function openChallengeHistorySheet(id) {
   const txRows = doneCells.length ? doneCells.map(c=>{
     const dateStr = _fmtDateTime(c.doneAt);
     return `<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-      <div style="width:34px;height:34px;border-radius:50%;background:rgba(78,205,196,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">✓</div>
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(46,204,113,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">✓</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:14px;font-weight:600;">+${fmtInt(c.amt)} ₽</div>
         <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">Ячейка #${c.idx+1}${dateStr?' · '+dateStr:''}</div>
@@ -8164,7 +8164,7 @@ function openPiggySheet(id) {
   const saved = pg.saved||0;
   const effectiveGoal = (pg.goal && pg.goal < 999999999) ? pg.goal : 999999999;
   const pct = effectiveGoal < 999999999 ? Math.min(100, Math.round(saved/effectiveGoal*100)) : 0;
-  const color = pg.color||'#4ECDC4';
+  const color = pg.color||'#2ECC71';
   const emoji = pg.emoji||'🐷';
   const done = effectiveGoal < 999999999 && pct >= 100;
   const planCalc = getPiggyPlanCalc(pg);
@@ -8197,7 +8197,7 @@ function openPiggySheet(id) {
           <div>
             <div style="font-size:20px;font-weight:700;">${emoji} ${pg.name}</div>
             <div style="font-size:12px;color:var(--text-dim);margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span style="color:rgba(78,205,196,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;display:inline-flex;align-items:center;gap:3px;"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g transform="scale(-1,1) translate(-24,0)"><path fill="currentColor" d="M10.081 4.089c.53.366 1.037.607 1.454.66a5 5 0 0 0-.47 1.44c-.672-.149-1.311-.504-1.836-.866a10 10 0 0 1-.729-.557V7a.75.75 0 0 1-.47.695l-.006.003a3 3 0 0 0-.166.074c-.117.055-.287.14-.486.254A6.5 6.5 0 0 0 6.03 9.03c-.453.453-.733 1.063-.89 1.536c-.203.606-.719 1.165-1.453 1.288a.224.224 0 0 0-.187.22v1.754c0 .165.12.306.283.333c.624.104 1.115.512 1.392 1.006a8.4 8.4 0 0 0 1.355 1.802a5 5 0 0 0 1.585 1.039a5 5 0 0 0 .774.254l.005.002A.75.75 0 0 1 9.5 19v1.25c0 .138.112.25.25.25H11a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5h1.25a.25.25 0 0 0 .25-.25V18c0-.283.16-.542.412-.67l.013-.007l.07-.04c.065-.039.164-.1.285-.188c.242-.176.571-.449.9-.833c.653-.761 1.32-1.968 1.32-3.762c0-1.007-.188-1.82-.509-2.488a5 5 0 0 0 .798-1.576q.15.204.282.423c.604.999.929 2.204.929 3.64c0 2.207-.833 3.75-1.68 4.739A6.7 6.7 0 0 1 19 18.42v1.829A1.75 1.75 0 0 1 17.25 22H16a1.5 1.5 0 0 1-1.5-1.5h-2A1.5 1.5 0 0 1 11 22H9.75A1.75 1.75 0 0 1 8 20.25v-.683a7 7 0 0 1-.464-.175A6.5 6.5 0 0 1 5.47 18.03a10 10 0 0 1-1.605-2.131a.49.49 0 0 0-.329-.258A1.84 1.84 0 0 1 2 13.828v-1.753c0-.843.61-1.562 1.44-1.7c.087-.015.216-.102.277-.284c.192-.577.565-1.434 1.253-2.122a8 8 0 0 1 1.658-1.246q.206-.117.372-.2V3.67c0-.938 1.13-1.323 1.74-.716c.33.329.81.767 1.341 1.134m2.989 4.759c-.49-.203-.904-.589-1.002-1.11a4.002 4.002 0 0 1 7.627-2.27a4 4 0 0 1-1.436 4.834c-.438.299-1.003.279-1.493.076zm4.394.18a2.502 2.502 0 0 0-2.42-4.338a2.5 2.5 0 0 0-1.513 2.708l.021.016a.5.5 0 0 0 .092.048l3.696 1.53a.5.5 0 0 0 .124.035M9 10a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></g></svg> КОПИЛКА</span>
+              <span style="color:rgba(46,204,113,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;display:inline-flex;align-items:center;gap:3px;"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g transform="scale(-1,1) translate(-24,0)"><path fill="currentColor" d="M10.081 4.089c.53.366 1.037.607 1.454.66a5 5 0 0 0-.47 1.44c-.672-.149-1.311-.504-1.836-.866a10 10 0 0 1-.729-.557V7a.75.75 0 0 1-.47.695l-.006.003a3 3 0 0 0-.166.074c-.117.055-.287.14-.486.254A6.5 6.5 0 0 0 6.03 9.03c-.453.453-.733 1.063-.89 1.536c-.203.606-.719 1.165-1.453 1.288a.224.224 0 0 0-.187.22v1.754c0 .165.12.306.283.333c.624.104 1.115.512 1.392 1.006a8.4 8.4 0 0 0 1.355 1.802a5 5 0 0 0 1.585 1.039a5 5 0 0 0 .774.254l.005.002A.75.75 0 0 1 9.5 19v1.25c0 .138.112.25.25.25H11a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5h1.25a.25.25 0 0 0 .25-.25V18c0-.283.16-.542.412-.67l.013-.007l.07-.04c.065-.039.164-.1.285-.188c.242-.176.571-.449.9-.833c.653-.761 1.32-1.968 1.32-3.762c0-1.007-.188-1.82-.509-2.488a5 5 0 0 0 .798-1.576q.15.204.282.423c.604.999.929 2.204.929 3.64c0 2.207-.833 3.75-1.68 4.739A6.7 6.7 0 0 1 19 18.42v1.829A1.75 1.75 0 0 1 17.25 22H16a1.5 1.5 0 0 1-1.5-1.5h-2A1.5 1.5 0 0 1 11 22H9.75A1.75 1.75 0 0 1 8 20.25v-.683a7 7 0 0 1-.464-.175A6.5 6.5 0 0 1 5.47 18.03a10 10 0 0 1-1.605-2.131a.49.49 0 0 0-.329-.258A1.84 1.84 0 0 1 2 13.828v-1.753c0-.843.61-1.562 1.44-1.7c.087-.015.216-.102.277-.284c.192-.577.565-1.434 1.253-2.122a8 8 0 0 1 1.658-1.246q.206-.117.372-.2V3.67c0-.938 1.13-1.323 1.74-.716c.33.329.81.767 1.341 1.134m2.989 4.759c-.49-.203-.904-.589-1.002-1.11a4.002 4.002 0 0 1 7.627-2.27a4 4 0 0 1-1.436 4.834c-.438.299-1.003.279-1.493.076zm4.394.18a2.502 2.502 0 0 0-2.42-4.338a2.5 2.5 0 0 0-1.513 2.708l.021.016a.5.5 0 0 0 .092.048l3.696 1.53a.5.5 0 0 0 .124.035M9 10a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></g></svg> КОПИЛКА</span>
               ${(()=>{const ls=(state.savings||[]).find(s=>s.id===pg.linkedSavingId);return ls?`<span style="font-size:11px;color:var(--text-dim);">· 💳 ${ls.name}</span>`:''})()}
             </div>
           </div>
@@ -8220,7 +8220,7 @@ function openPiggySheet(id) {
         </div>
         <!-- Кнопки действий -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
-          ${!done ? `<button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyDeposit('${id}','add')" style="padding:13px;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.2);border-radius:12px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="M21 8H7c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h14c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1m-1 8c-1.1 0-2 .9-2 2h-8c0-1.1-.9-2-2-2v-4c1.1 0 2-.9 2-2h8c0 1.1.9 2 2 2zm-5-1a2 2 0 1 0 0-4a2 2 0 1 0 0 4"/><path fill="currentColor" d="M18 4H3c-.55 0-1 .45-1 1v11h2V6h14z"/></svg> Пополнить/снять</button>` : ''}
+          ${!done ? `<button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyDeposit('${id}','add')" style="padding:13px;background:rgba(46,204,113,0.12);border:1px solid rgba(46,204,113,0.2);border-radius:12px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="M21 8H7c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h14c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1m-1 8c-1.1 0-2 .9-2 2h-8c0-1.1-.9-2-2-2v-4c1.1 0 2-.9 2-2h8c0 1.1.9 2 2 2zm-5-1a2 2 0 1 0 0-4a2 2 0 1 0 0 4"/><path fill="currentColor" d="M18 4H3c-.55 0-1 .45-1 1v11h2V6h14z"/></svg> Пополнить/снять</button>` : ''}
           <button onclick="document.getElementById('piggy-sheet-overlay').remove();openPiggyEdit('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 12 12"><path fill="currentColor" d="M7.736 1.56a1.914 1.914 0 0 1 2.707 2.707l-.508.509l-2.707-2.707zm-.863.862L1.598 7.698a.5.5 0 0 0-.137.255l-.457 2.285a.5.5 0 0 0 .588.588l2.286-.457A.5.5 0 0 0 4.134 10l5.276-5.276z"/></svg> Изменить</button>
           ${!done ? `<button onclick="document.getElementById('piggy-sheet-overlay').remove();completePiggyBank('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg> Завершить</button>` : ''}
           <button onclick="document.getElementById('piggy-sheet-overlay').remove();deletePiggyBank('${id}')" style="padding:13px;background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.15);border-radius:12px;color:var(--danger);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16l-1.58 14.22A2 2 0 0 1 16.432 22H7.568a2 2 0 0 1-1.988-1.78zm3.345-2.853A2 2 0 0 1 9.154 2h5.692a2 2 0 0 1 1.81 1.147L18 6H6zM2 6h20m-12 5v5m4-5v5"/></svg> Удалить</button>
@@ -8248,7 +8248,7 @@ function openChallengeSheet(id) {
   const totalGoal = validCells.reduce((s,c)=>s+c.amt,0);
   const pct = totalGoal ? Math.round(totalDone/totalGoal*100) : 0;
   const doneCnt = validCells.filter(c=>c.done).length;
-  const color = ch.color||'#4ECDC4';
+  const color = ch.color||'#2ECC71';
   const emoji = ch.emoji||'🎯';
   const streak = ch.streak||0;
   const createdDate = new Date(ch.createdAt);
@@ -8305,7 +8305,7 @@ function openChallengeSheet(id) {
         <!-- Кнопки действий -->
         ${!done ? `
         <div style="display:grid;grid-template-columns:1fr;gap:10px;padding:14px 0 0;">
-          <button onclick="highlightRandomCellInSheet('${id}')" style="padding:13px;background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.2);border-radius:12px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32"><path d="M0 0h32v32H0z" fill="none"/><g fill="currentColor"><path d="M7.988 13.877c.104 1.1-.483 2.054-1.303 2.12c-.82.065-1.57-.773-1.673-1.873c-.104-1.101.483-2.054 1.303-2.12c.82-.073 1.57.764 1.673 1.873m4.698 12.119c.82-.065 1.406-1.018 1.302-2.119c-.103-1.109-.854-1.946-1.673-1.872c-.82.065-1.407 1.018-1.303 2.119c.103 1.1.854 1.938 1.673 1.872m13.001-13.992c.82.065 1.406 1.018 1.302 2.119c-.103 1.109-.854 1.946-1.674 1.873c-.82-.066-1.406-1.019-1.302-2.12c.103-1.1.854-1.938 1.674-1.872m-1.698 7.119c.104-1.1-.483-2.054-1.302-2.12c-.82-.065-1.57.773-1.674 1.873s.483 2.054 1.302 2.12c.82.073 1.57-.764 1.674-1.873m-4.302 2.881c.82.065 1.406 1.018 1.302 2.119c-.103 1.109-.854 1.946-1.674 1.872c-.82-.065-1.406-1.018-1.302-2.119c.103-1.1.854-1.938 1.674-1.872"/><path d="M13.883 2.451L4.494 6.504q-.329.148-.59.39A2.5 2.5 0 0 0 2 9.324v14.17a3 3 0 0 0 1.795 2.747l9.701 4.253c.297.13.6.198.9.21a4.5 4.5 0 0 0 3.209 0c.298-.012.602-.08.899-.21l9.7-4.253A3 3 0 0 0 30 23.493V9.323a2.5 2.5 0 0 0-1.782-2.396a2 2 0 0 0-.61-.423l-9.49-4.053a5.2 5.2 0 0 0-4.235 0M15 14.81v13.396a.5.5 0 0 1-.7.457L4.597 24.41A1 1 0 0 1 4 23.493V9.323a.5.5 0 0 1 .706-.455l9.117 4.118A2 2 0 0 1 15 14.81m2 13.396V14.808a2 2 0 0 1 1.177-1.823l9.117-4.118a.5.5 0 0 1 .706.456v14.17a1 1 0 0 1-.598.915L17.7 28.662a.5.5 0 0 1-.701-.457M16 7.5c-1.657 0-3-.448-3-1s1.343-1 3-1s3 .448 3 1s-1.343 1-3 1"/></g></svg> Случайная ячейка</button>
+          <button onclick="highlightRandomCellInSheet('${id}')" style="padding:13px;background:rgba(46,204,113,0.12);border:1px solid rgba(46,204,113,0.2);border-radius:12px;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32"><path d="M0 0h32v32H0z" fill="none"/><g fill="currentColor"><path d="M7.988 13.877c.104 1.1-.483 2.054-1.303 2.12c-.82.065-1.57-.773-1.673-1.873c-.104-1.101.483-2.054 1.303-2.12c.82-.073 1.57.764 1.673 1.873m4.698 12.119c.82-.065 1.406-1.018 1.302-2.119c-.103-1.109-.854-1.946-1.673-1.872c-.82.065-1.407 1.018-1.303 2.119c.103 1.1.854 1.938 1.673 1.872m13.001-13.992c.82.065 1.406 1.018 1.302 2.119c-.103 1.109-.854 1.946-1.674 1.873c-.82-.066-1.406-1.019-1.302-2.12c.103-1.1.854-1.938 1.674-1.872m-1.698 7.119c.104-1.1-.483-2.054-1.302-2.12c-.82-.065-1.57.773-1.674 1.873s.483 2.054 1.302 2.12c.82.073 1.57-.764 1.674-1.873m-4.302 2.881c.82.065 1.406 1.018 1.302 2.119c-.103 1.109-.854 1.946-1.674 1.872c-.82-.065-1.406-1.018-1.302-2.119c.103-1.1.854-1.938 1.674-1.872"/><path d="M13.883 2.451L4.494 6.504q-.329.148-.59.39A2.5 2.5 0 0 0 2 9.324v14.17a3 3 0 0 0 1.795 2.747l9.701 4.253c.297.13.6.198.9.21a4.5 4.5 0 0 0 3.209 0c.298-.012.602-.08.899-.21l9.7-4.253A3 3 0 0 0 30 23.493V9.323a2.5 2.5 0 0 0-1.782-2.396a2 2 0 0 0-.61-.423l-9.49-4.053a5.2 5.2 0 0 0-4.235 0M15 14.81v13.396a.5.5 0 0 1-.7.457L4.597 24.41A1 1 0 0 1 4 23.493V9.323a.5.5 0 0 1 .706-.455l9.117 4.118A2 2 0 0 1 15 14.81m2 13.396V14.808a2 2 0 0 1 1.177-1.823l9.117-4.118a.5.5 0 0 1 .706.456v14.17a1 1 0 0 1-.598.915L17.7 28.662a.5.5 0 0 1-.701-.457M16 7.5c-1.657 0-3-.448-3-1s1.343-1 3-1s3 .448 3 1s-1.343 1-3 1"/></g></svg> Случайная ячейка</button>
         </div>` : ''}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
           <button onclick="document.getElementById('challenge-sheet-overlay').remove();openChallengeHistorySheet('${id}')" style="padding:13px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"><path stroke-linejoin="round" d="M15.5 4H18a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2.5"/><path stroke-linejoin="round" d="M8.621 3.515A2 2 0 0 1 10.561 2h2.877a2 2 0 0 1 1.94 1.515L16 6H8z"/><path d="M9 12h6m-6 4h6"/></g></svg> История</button>
@@ -8339,7 +8339,7 @@ async function sheetToggleChCell(chId, cellIdx) {
   // Refresh sheet without closing it
   const ch = (state.challenges||[]).find(c=>c.id===chId);
   if (!ch) return;
-  const color = ch.color||'#4ECDC4';
+  const color = ch.color||'#2ECC71';
   const grid = document.getElementById('ch-sheet-grid-'+chId);
   if (grid) {
     grid.innerHTML = ch.cells.map((c,i)=>
@@ -8365,8 +8365,8 @@ function highlightRandomCellInSheet(chId) {
   if (!grid) return;
   const cells = grid.querySelectorAll('.ch-cell');
   if (cells[idx]) {
-    const color = ch.color||'#4ECDC4';
-    cells[idx].style.background = 'rgba(78,205,196,0.4)';
+    const color = ch.color||'#2ECC71';
+    cells[idx].style.background = 'rgba(46,204,113,0.4)';
     cells[idx].style.borderColor = color;
     cells[idx].scrollIntoView({behavior:'smooth',block:'nearest'});
     setTimeout(()=>{ if(cells[idx]){cells[idx].style.background='';cells[idx].style.borderColor='';} }, 2000);
@@ -8378,7 +8378,7 @@ function renderPiggyCard(pg) {
   const saved = pg.mirror ? getMirrorBalance(pg) : (pg.saved||0);
   const effectiveGoal = pg.goal || 999999999;
   const pct = effectiveGoal < 999999999 ? Math.min(100, Math.round(saved/effectiveGoal*100)) : 0;
-  const color = pg.color||'#4ECDC4';
+  const color = pg.color||'#2ECC71';
   const emoji = pg.emoji||'🐷';
   const daysLeft = pg.deadline ? Math.max(0,Math.round((new Date(pg.deadline)-new Date())/86400000)) : null;
   const daysTotal = (pg.dateStart && pg.deadline) ? Math.round((new Date(pg.deadline)-new Date(pg.dateStart))/86400000) : null;
@@ -8405,7 +8405,7 @@ function renderPiggyCard(pg) {
                   : fc ? ` · ~${fc.estimatedMonths} мес` : '';
                 return `<span style="color:rgba(100,181,246,0.7);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;">✉️ КОНВЕРТ</span>${fmtInt(saved)} ₽${effectiveGoal<999999999?' из '+fmtInt(effectiveGoal)+' ₽'+hintStr:''}`;
               })()
-            : `<span style="color:rgba(78,205,196,0.6);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;display:inline-flex;align-items:center;gap:3px;"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g transform="scale(-1,1) translate(-24,0)"><path fill="currentColor" d="M10.081 4.089c.53.366 1.037.607 1.454.66a5 5 0 0 0-.47 1.44c-.672-.149-1.311-.504-1.836-.866a10 10 0 0 1-.729-.557V7a.75.75 0 0 1-.47.695l-.006.003a3 3 0 0 0-.166.074c-.117.055-.287.14-.486.254A6.5 6.5 0 0 0 6.03 9.03c-.453.453-.733 1.063-.89 1.536c-.203.606-.719 1.165-1.453 1.288a.224.224 0 0 0-.187.22v1.754c0 .165.12.306.283.333c.624.104 1.115.512 1.392 1.006a8.4 8.4 0 0 0 1.355 1.802a5 5 0 0 0 1.585 1.039a5 5 0 0 0 .774.254l.005.002A.75.75 0 0 1 9.5 19v1.25c0 .138.112.25.25.25H11a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5h1.25a.25.25 0 0 0 .25-.25V18c0-.283.16-.542.412-.67l.013-.007l.07-.04c.065-.039.164-.1.285-.188c.242-.176.571-.449.9-.833c.653-.761 1.32-1.968 1.32-3.762c0-1.007-.188-1.82-.509-2.488a5 5 0 0 0 .798-1.576q.15.204.282.423c.604.999.929 2.204.929 3.64c0 2.207-.833 3.75-1.68 4.739A6.7 6.7 0 0 1 19 18.42v1.829A1.75 1.75 0 0 1 17.25 22H16a1.5 1.5 0 0 1-1.5-1.5h-2A1.5 1.5 0 0 1 11 22H9.75A1.75 1.75 0 0 1 8 20.25v-.683a7 7 0 0 1-.464-.175A6.5 6.5 0 0 1 5.47 18.03a10 10 0 0 1-1.605-2.131a.49.49 0 0 0-.329-.258A1.84 1.84 0 0 1 2 13.828v-1.753c0-.843.61-1.562 1.44-1.7c.087-.015.216-.102.277-.284c.192-.577.565-1.434 1.253-2.122a8 8 0 0 1 1.658-1.246q.206-.117.372-.2V3.67c0-.938 1.13-1.323 1.74-.716c.33.329.81.767 1.341 1.134m2.989 4.759c-.49-.203-.904-.589-1.002-1.11a4.002 4.002 0 0 1 7.627-2.27a4 4 0 0 1-1.436 4.834c-.438.299-1.003.279-1.493.076zm4.394.18a2.502 2.502 0 0 0-2.42-4.338a2.5 2.5 0 0 0-1.513 2.708l.021.016a.5.5 0 0 0 .092.048l3.696 1.53a.5.5 0 0 0 .124.035M9 10a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></g></svg> КОПИЛКА</span>${fmtInt(saved)} ₽ из ${fmtInt(effectiveGoal)} ₽`
+            : `<span style="color:rgba(46,204,113,0.6);font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:5px;display:inline-flex;align-items:center;gap:3px;"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g transform="scale(-1,1) translate(-24,0)"><path fill="currentColor" d="M10.081 4.089c.53.366 1.037.607 1.454.66a5 5 0 0 0-.47 1.44c-.672-.149-1.311-.504-1.836-.866a10 10 0 0 1-.729-.557V7a.75.75 0 0 1-.47.695l-.006.003a3 3 0 0 0-.166.074c-.117.055-.287.14-.486.254A6.5 6.5 0 0 0 6.03 9.03c-.453.453-.733 1.063-.89 1.536c-.203.606-.719 1.165-1.453 1.288a.224.224 0 0 0-.187.22v1.754c0 .165.12.306.283.333c.624.104 1.115.512 1.392 1.006a8.4 8.4 0 0 0 1.355 1.802a5 5 0 0 0 1.585 1.039a5 5 0 0 0 .774.254l.005.002A.75.75 0 0 1 9.5 19v1.25c0 .138.112.25.25.25H11a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5h1.25a.25.25 0 0 0 .25-.25V18c0-.283.16-.542.412-.67l.013-.007l.07-.04c.065-.039.164-.1.285-.188c.242-.176.571-.449.9-.833c.653-.761 1.32-1.968 1.32-3.762c0-1.007-.188-1.82-.509-2.488a5 5 0 0 0 .798-1.576q.15.204.282.423c.604.999.929 2.204.929 3.64c0 2.207-.833 3.75-1.68 4.739A6.7 6.7 0 0 1 19 18.42v1.829A1.75 1.75 0 0 1 17.25 22H16a1.5 1.5 0 0 1-1.5-1.5h-2A1.5 1.5 0 0 1 11 22H9.75A1.75 1.75 0 0 1 8 20.25v-.683a7 7 0 0 1-.464-.175A6.5 6.5 0 0 1 5.47 18.03a10 10 0 0 1-1.605-2.131a.49.49 0 0 0-.329-.258A1.84 1.84 0 0 1 2 13.828v-1.753c0-.843.61-1.562 1.44-1.7c.087-.015.216-.102.277-.284c.192-.577.565-1.434 1.253-2.122a8 8 0 0 1 1.658-1.246q.206-.117.372-.2V3.67c0-.938 1.13-1.323 1.74-.716c.33.329.81.767 1.341 1.134m2.989 4.759c-.49-.203-.904-.589-1.002-1.11a4.002 4.002 0 0 1 7.627-2.27a4 4 0 0 1-1.436 4.834c-.438.299-1.003.279-1.493.076zm4.394.18a2.502 2.502 0 0 0-2.42-4.338a2.5 2.5 0 0 0-1.513 2.708l.021.016a.5.5 0 0 0 .092.048l3.696 1.53a.5.5 0 0 0 .124.035M9 10a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/></g></svg> КОПИЛКА</span>${fmtInt(saved)} ₽ из ${fmtInt(effectiveGoal)} ₽`
           }
         </div>
       </div>
@@ -8540,7 +8540,7 @@ function createChallengeFromPage() {
   const days = getChDays('ch');
   const mode = document.getElementById('ch-cell-mode-p').value;
   const emoji = document.getElementById('ch-emoji-p').value || '🎯';
-  const color = document.getElementById('ch-color-p').value || '#4ECDC4';
+  const color = document.getElementById('ch-color-p').value || '#2ECC71';
   if (!name || !goal || goal <= 0 || !days || days <= 0) return;
   const cells = generateCells(goal, days, mode);
 
@@ -9484,9 +9484,9 @@ function renderBudgetEntries(entries) {
         const emoji = _budgetCatEmoji(e.type, e.group, e.category) || (isExpense ? '💸' : '💰');
         // Icon square color: group-based for expenses, teal for income
         const iconBg = isExpense
-          ? (e.group === 'Желания' ? 'rgba(255,107,107,0.18)' : e.group === 'Накопления' ? 'rgba(78,205,196,0.18)' : 'rgba(150,130,255,0.18)')
-          : 'rgba(78,205,196,0.18)';
-        const amountColor = isExpense ? 'var(--text)' : '#4ECDC4';
+          ? (e.group === 'Желания' ? 'rgba(255,107,107,0.18)' : e.group === 'Накопления' ? 'rgba(46,204,113,0.18)' : 'rgba(150,130,255,0.18)')
+          : 'rgba(46,204,113,0.18)';
+        const amountColor = isExpense ? 'var(--text)' : '#2ECC71';
         const amountSign = isExpense ? '−' : '+';
         const groupChip = isExpense && e.group
           ? `<span style="display:inline-block;font-size:9px;color:var(--text-dim);background:rgba(255,255,255,0.07);border-radius:4px;padding:1px 5px;line-height:1.5;">${e.group}</span>`
@@ -9503,8 +9503,8 @@ function renderBudgetEntries(entries) {
         </div>`;
       }).join('');
     const daySummary = dayExpense > 0
-      ? `<span style="color:#FF6B6B;">−${fmt(dayExpense)}</span>${dayIncome > 0 ? ` <span style="color:#4ECDC4;">+${fmt(dayIncome)}</span>` : ''}`
-      : dayIncome > 0 ? `<span style="color:#4ECDC4;">+${fmt(dayIncome)}</span>` : '';
+      ? `<span style="color:#FF6B6B;">−${fmt(dayExpense)}</span>${dayIncome > 0 ? ` <span style="color:#2ECC71;">+${fmt(dayIncome)}</span>` : ''}`
+      : dayIncome > 0 ? `<span style="color:#2ECC71;">+${fmt(dayIncome)}</span>` : '';
     return `<div style="margin-bottom:4px;">
       <div onclick="toggleBudgetDay('${date}')" style="display:flex;justify-content:space-between;align-items:center;
                   padding:8px 12px;margin:0 -16px;
@@ -9566,7 +9566,7 @@ function renderBudgetAnalysis(entries, targetId) {
           style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;
                  color:var(--text);font-size:13px;padding:5px 8px;min-width:0;">
         <span style="font-size:12px;color:var(--text-dim);">₽/мес</span>
-        <button onclick="saveBudgetIncome()" style="background:rgba(78,205,196,0.2);border:none;border-radius:7px;color:#4ECDC4;font-size:18px;padding:5px 8px;cursor:pointer;line-height:1;" title="Сохранить"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg></button>
+        <button onclick="saveBudgetIncome()" style="background:rgba(46,204,113,0.2);border:none;border-radius:7px;color:#2ECC71;font-size:18px;padding:5px 8px;cursor:pointer;line-height:1;" title="Сохранить"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg></button>
         <button onclick="cancelBudgetIncome()" style="background:none;border:none;color:var(--text-dim);font-size:18px;padding:4px 6px;cursor:pointer;line-height:1;" title="Отмена"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 1024 1024"><path d="M0 0h1024v1024H0z" fill="none"/><path fill="currentColor" d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448s448-200.6 448-448S759.4 64 512 64m0 820c-205.4 0-372-166.6-372-372c0-89 31.3-170.8 83.5-234.8l523.3 523.3C682.8 852.7 601 884 512 884m288.5-137.2L277.2 223.5C341.2 171.3 423 140 512 140c205.4 0 372 166.6 372 372c0 89-31.3 170.8-83.5 234.8"/></svg></button>
       </div>`;
   } else if (income > 0) {
@@ -9589,7 +9589,7 @@ function renderBudgetAnalysis(entries, targetId) {
           style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;
                  color:var(--text);font-size:13px;padding:5px 8px;min-width:0;">
         <span style="font-size:12px;color:var(--text-dim);">₽/мес</span>
-        <button onclick="saveBudgetIncome()" style="background:rgba(78,205,196,0.2);border:none;border-radius:7px;color:#4ECDC4;font-size:18px;padding:5px 8px;cursor:pointer;line-height:1;" title="Сохранить"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg></button>
+        <button onclick="saveBudgetIncome()" style="background:rgba(46,204,113,0.2);border:none;border-radius:7px;color:#2ECC71;font-size:18px;padding:5px 8px;cursor:pointer;line-height:1;" title="Сохранить"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0"/><path d="m7 12 3.5 3.5L17 9"/></g></svg></button>
       </div>`;
   }
 
@@ -9607,7 +9607,7 @@ function renderBudgetAnalysis(entries, targetId) {
       const limit     = income * pct / 100;
       const factPct   = Math.min(Math.round(spent / income * 100), 100);
       const overLimit = spent > limit * 1.05; // >5% over — show red
-      const barColor  = overLimit ? '#FF6B6B' : '#4ECDC4';
+      const barColor  = overLimit ? '#FF6B6B' : '#2ECC71';
       const limitFill = Math.min(pct, 100); // where the "recommended" mark sits
 
       return `<div style="margin-bottom:8px;">
@@ -9637,7 +9637,7 @@ function renderBudgetAnalysis(entries, targetId) {
       </div>
       <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:28px;text-align:center;font-size:13px;font-weight:700;color:#4ECDC4;">50%</div>
+          <div style="width:28px;text-align:center;font-size:13px;font-weight:700;color:#2ECC71;">50%</div>
           <div style="font-size:12px;color:var(--text-dim);"><span style="color:var(--text);">Основное</span> — необходимые расходы: жильё, еда, транспорт</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
@@ -10281,7 +10281,7 @@ function statsSetGroup(val) {
     if (!btn) return;
     const active = v === val;
     btn.style.borderColor = active ? 'var(--accent)' : 'rgba(255,255,255,0.1)';
-    btn.style.background  = active ? 'rgba(78,205,196,0.15)' : 'var(--surface2)';
+    btn.style.background  = active ? 'rgba(46,204,113,0.15)' : 'var(--surface2)';
     btn.style.color       = active ? 'var(--accent)' : 'var(--text-dim)';
   });
   renderBudgetStats();
@@ -10560,7 +10560,7 @@ function budgetModalSetGroup(group) {
     if (!btn) return;
     const active = g === group;
     btn.style.borderColor = active ? 'var(--accent)' : 'rgba(255,255,255,0.1)';
-    btn.style.background  = active ? 'rgba(78,205,196,0.15)' : 'var(--surface2)';
+    btn.style.background  = active ? 'rgba(46,204,113,0.15)' : 'var(--surface2)';
     btn.style.color       = active ? 'var(--accent)' : 'var(--text-dim)';
   });
   budgetModalUpdateCats('expense', group, '');
@@ -10638,7 +10638,7 @@ function renderChallengesPage() {
       }));
     }
     if (!ch.emoji) ch.emoji = '🎯';
-    if (!ch.color) ch.color = '#4ECDC4';
+    if (!ch.color) ch.color = '#2ECC71';
     if (!ch.streak) ch.streak = 0;
     if (!ch.createdAt) ch.createdAt = today();
     if (!ch.days) ch.days = 90;
@@ -10727,7 +10727,7 @@ function renderChCard(ch) {
     const pct = Math.round(totalDone/totalGoal*100);
     const doneCells = ch.cells.filter(c=>c.done).length;
     const collapsed = window._chCollapsed[ch.id] !== false; // default collapsed
-    const color = ch.color || '#4ECDC4';
+    const color = ch.color || '#2ECC71';
     const emoji = ch.emoji || '🎯';
     const streak = ch.streak || 0;
     // Days remaining
@@ -10811,7 +10811,7 @@ function highlightRandomCell(id) {
   setTimeout(() => {
     const cells = document.querySelectorAll(`[data-ch="${id}"] .ch-cell`);
     if (cells[idx]) {
-      cells[idx].style.background = 'rgba(78,205,196,0.4)';
+      cells[idx].style.background = 'rgba(46,204,113,0.4)';
       cells[idx].style.borderColor = 'var(--accent)';
       cells[idx].scrollIntoView({ behavior:'smooth', block:'center' });
       setTimeout(() => {
@@ -10865,7 +10865,7 @@ function editChallenge(id) {
   selectEmoji(chEmoji, 'ech');
   const echCustom = document.getElementById('ech-emoji-custom');
   if (echCustom) echCustom.value = stdEmojis.includes(chEmoji) ? '' : chEmoji;
-  selectColor(ch.color||'#4ECDC4', 'ech');
+  selectColor(ch.color||'#2ECC71', 'ech');
   fillLinkedSavingSelect('ech-linked-saving', ch.linkedSavingId||'');
   document.getElementById('edit-challenge-modal').classList.add('open');
 }
@@ -10908,7 +10908,7 @@ function saveEditChallenge() {
   ch.days = days;
   ch.mode = mode;
   ch.emoji = document.getElementById('ech-emoji')?.value||ch.emoji||'🎯';
-  ch.color = document.getElementById('ech-color')?.value||ch.color||'#4ECDC4';
+  ch.color = document.getElementById('ech-color')?.value||ch.color||'#2ECC71';
   ch.linkedSavingId = getLinkedSavingValue('ech-linked-saving') || null;
 
   if (newGoal > 0) {
@@ -11982,12 +11982,12 @@ const OB_STEPS = [
     text: () => state.savings.length > 0
       ? 'С возвращением! Давай быстро напомним как всё устроено.'
       : 'Добро пожаловать в твой личный финансовый трекер! Здесь ты будешь следить за накоплениями, доходом и целями — всё в одном месте.',
-    page: 'home', highlight: null, anim: '💰', color: '#4ECDC4'
+    page: 'home', highlight: null, anim: '💰', color: '#2ECC71'
   },
   {
     title: '🏠 Главный экран',
     text: 'Главная страница показывает самое важное — общая сумма, ежемесячный доход и прогресс по целям. Кнопка «Настроить» позволяет выбрать, какие блоки показывать и в каком порядке.',
-    page: 'home', highlight: null, anim: '👀', color: '#4ECDC4'
+    page: 'home', highlight: null, anim: '👀', color: '#2ECC71'
   },
   {
     title: '💰 Счета',
@@ -12020,7 +12020,7 @@ const OB_STEPS = [
     text: () => state.savings.length > 0
       ? 'Ты знаешь всё самое важное. Продолжай копить — ты на верном пути! 💚'
       : 'Всё готово! Начни с добавления первого счёта — и пусть накопления растут 🌱',
-    page: 'home', highlight: null, anim: '🚀', color: '#4ECDC4'
+    page: 'home', highlight: null, anim: '🚀', color: '#2ECC71'
   },
 ];
 
@@ -12064,7 +12064,7 @@ function obPositionTooltip(highlightSel) {
 
 function obRenderStep() {
   const step = OB_STEPS[obStep], total = OB_STEPS.length;
-  const color = step.color || '#4ECDC4';
+  const color = step.color || '#2ECC71';
 
   // Adaptive text
   const text = typeof step.text === 'function' ? step.text() : step.text;
@@ -12303,13 +12303,13 @@ checkPiggyReminders();
     </div>
     <div class="field"><label>ЦВЕТ</label>
       <div style="display:flex;gap:8px;">
-        <button type="button" onclick="selectColor('#4ECDC4','pge')" class="color-pick-btn" id="cpb-pge-4ECDC4" style="background:#4ECDC4;"></button>
+        <button type="button" onclick="selectColor('#2ECC71','pge')" class="color-pick-btn" id="cpb-pge-4ECDC4" style="background:#2ECC71;"></button>
         <button type="button" onclick="selectColor('#FF6B9D','pge')" class="color-pick-btn" id="cpb-pge-FF6B9D" style="background:#FF6B9D;"></button>
         <button type="button" onclick="selectColor('#FFB347','pge')" class="color-pick-btn" id="cpb-pge-FFB347" style="background:#FFB347;"></button>
         <button type="button" onclick="selectColor('#7B68EE','pge')" class="color-pick-btn" id="cpb-pge-7B68EE" style="background:#7B68EE;"></button>
         <button type="button" onclick="selectColor('#64B5F6','pge')" class="color-pick-btn" id="cpb-pge-64B5F6" style="background:#64B5F6;"></button>
       </div>
-      <input type="hidden" id="pg-edit-color" value="#4ECDC4">
+      <input type="hidden" id="pg-edit-color" value="#2ECC71">
     </div>
     <div class="field"><label>ПРИВЯЗАТЬ К СЧЁТУ (необязательно)</label>
       <div id="pg-edit-linked-saving" class="linked-saving-chips" data-value=""></div>
