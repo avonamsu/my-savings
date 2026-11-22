@@ -150,7 +150,20 @@ html:has(body.theme-light) {
 .theme-light .home-piggy-cell.undone { background: rgba(0,0,0,0.06) !important; }
 .theme-light .home-chart-tab { background: rgba(0,0,0,0.07) !important; }
 .theme-light .home-chart-tab.active { background: var(--accent) !important; color: #fff !important; }
-.theme-light .ch-cell { border-color: rgba(0,0,0,0.1) !important; }
+.theme-light .ch-cell { border-color: transparent !important; background: rgba(0,0,0,0.05) !important; color: #3c3c43 !important; }
+.theme-light .ch-cell.done { background: var(--accent) !important; border-color: transparent !important; color: #fff !important; }
+
+/* Кнопки-сегменты (income-type-btn) в светлой теме */
+.theme-light .income-type-btn {
+  background: rgba(255,255,255,0.65) !important;
+  border: 0.5px solid rgba(0,0,0,0.08) !important;
+  color: #3c3c43 !important;
+}
+.theme-light .income-type-btn.active {
+  background: var(--accent-dim) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
 .theme-light .widget-settings-panel {
   background: rgba(255,255,255,0.72) !important;
   backdrop-filter: blur(24px) !important;
