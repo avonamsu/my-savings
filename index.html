@@ -182,9 +182,10 @@ html:has(body.theme-light) {
 .theme-light input:checked + .wt-slider:before { background: #fff !important; }
 
 /* Кнопки-иконки и кнопки с rgba(255,255,255) фоном — делаем видимыми */
-.theme-light button[style*="rgba(255,255,255,0.07)"],
-.theme-light button[style*="rgba(255,255,255,0.08)"],
-.theme-light button[style*="rgba(255,255,255,0.06)"] {
+/* Исключаем #theme-grid — карточки тем имеют тёмный фон и белый текст */
+.theme-light button[style*="rgba(255,255,255,0.07)"]:not(#theme-grid button),
+.theme-light button[style*="rgba(255,255,255,0.08)"]:not(#theme-grid button),
+.theme-light button[style*="rgba(255,255,255,0.06)"]:not(#theme-grid button) {
   background: rgba(0,0,0,0.06) !important;
   border-color: rgba(0,0,0,0.1) !important;
   color: #3c3c43 !important;
@@ -11397,7 +11398,7 @@ function openThemeSheet() {
         <span style="font-size:13px;font-weight:700;color:${t.text};">${t.label}</span>
       </div>
       ${t.isDefault ? `<div style="font-size:9px;font-weight:700;letter-spacing:.06em;color:${t.accent};opacity:0.7;margin-bottom:6px;text-transform:uppercase;">по умолчанию</div>` : ''}
-      <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.1);">
+      <div style="height:4px;border-radius:2px;background:${t.light ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'};">
         <div style="height:100%;width:65%;border-radius:2px;background:${t.accent};"></div>
       </div>
     </button>
