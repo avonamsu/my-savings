@@ -42,19 +42,51 @@
 .theme-light .hero { background: linear-gradient(135deg,#e8f0fe 0%,#dbeafe 100%) !important; }
 .theme-light .sidebar { background: #ffffff; }
 .theme-light .sidebar-profile { background: linear-gradient(135deg,#e8e8ed,#d1d1d6) !important; border-bottom: 1px solid rgba(0,0,0,0.08) !important; }
-.theme-light nav { background: #ffffff; border-top: 1px solid rgba(0,0,0,0.1); }
 .theme-light nav button { color: #6e6e73; }
-.theme-light .modal { border-top: 1px solid rgba(0,0,0,0.1) !important; }
-.theme-light .ctx-menu { background: #ffffff; border: 1px solid rgba(0,0,0,0.1); }
-.theme-light .wt-slider { background: #e5e5ea; border-color: rgba(0,0,0,0.1); }
-.theme-light .wt-slider:before { background: #fff; }
+.theme-light .modal { border-top: 1px solid rgba(0,0,0,0.1) !important; background: #ffffff !important; }
+.theme-light .ctx-menu { background: #ffffff !important; border: 1px solid rgba(0,0,0,0.1) !important; box-shadow: 0 8px 32px rgba(0,0,0,.12) !important; }
+.theme-light .wt-slider { background: #e5e5ea !important; border-color: rgba(0,0,0,0.1) !important; }
+.theme-light .wt-slider:before { background: #fff !important; }
 .theme-light input, .theme-light select, .theme-light textarea { background: #f2f2f7 !important; color: #1c1c1e !important; border-color: rgba(0,0,0,0.12) !important; }
 .theme-light .progress-bar-bg { background: rgba(0,0,0,0.08) !important; }
 .theme-light .onboard-card { background: #ffffff; }
 .theme-light .ob-step-block { background: #f2f2f7 !important; border-color: rgba(0,0,0,0.1) !important; }
 .theme-light .group-block { background: #ffffff !important; border-color: rgba(0,0,0,0.08) !important; }
-.theme-light .notif-settings-sheet, .theme-light #notif-settings-sheet { background: #ffffff !important; }
+.theme-light #notif-settings-sheet { background: #ffffff !important; }
 .theme-light #theme-sheet { background: #ffffff !important; }
+
+/* Разделители списков и рядов */
+.theme-light .card-item,
+.theme-light .ctx-menu-item,
+.theme-light .goal-item,
+.theme-light .pg-history-item,
+.theme-light .widget-toggle-item,
+.theme-light .toggle-row { border-bottom-color: rgba(0,0,0,0.06) !important; }
+
+/* Топбар */
+.theme-light #page-home > div[style*="border-bottom"],
+.theme-light div[style*="border-bottom:1px solid rgba(255,255,255"] { border-bottom-color: rgba(0,0,0,0.08) !important; }
+
+/* Кнопки-иконки с rgba(255,255,255) фоном */
+.theme-light button[style*="rgba(255,255,255,0.07)"],
+.theme-light button[style*="rgba(255,255,255,0.08)"] { background: rgba(0,0,0,0.06) !important; color: #6e6e73 !important; }
+
+/* FAB — бордер должен совпадать с фоном notch (белый) */
+.theme-light .nav-fab { border-color: #ffffff !important; box-shadow: 0 2px 16px rgba(0,122,255,0.35), 0 4px 16px rgba(0,0,0,0.12) !important; }
+
+/* Nav notch shadow — светлее */
+.theme-light #nav-notch-svg { filter: drop-shadow(0 -2px 8px rgba(0,0,0,0.1)) !important; }
+
+/* Surface2 элементы */
+.theme-light .home-piggy-cell.undone { background: #e8e8ed !important; }
+.theme-light .dash-stat { background: #ffffff !important; }
+.theme-light .home-chart-tab { background: #e8e8ed !important; }
+.theme-light .home-chart-tab.active { background: var(--accent) !important; color: #fff !important; }
+.theme-light .ch-cell { border-color: rgba(0,0,0,0.12) !important; }
+.theme-light .widget-settings-panel { background: #ffffff !important; border-top-color: rgba(0,0,0,0.1) !important; }
+.theme-light .quick-btn { border-color: rgba(0,122,255,0.25) !important; background: #ffffff !important; }
+.theme-light .sidebar-item:active { background: rgba(0,0,0,0.05) !important; }
+.theme-light .sidebar-item.sb-active { background: rgba(0,122,255,0.08) !important; }
 
 .onboard-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:500; align-items:flex-end; justify-content:center; }
 .onboard-overlay.open { display:flex; }
@@ -3019,15 +3051,20 @@ function renderNavNotch() {
   }
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.setAttribute('preserveAspectRatio', 'none');
+  // Цвета notch зависят от темы
+  const isLight = document.body.classList.contains('theme-light');
+  const notchC1 = isLight ? 'rgba(255,255,255,0.97)' : 'rgba(22,36,55,0.92)';
+  const notchC2 = isLight ? 'rgba(242,242,247,0.98)' : 'rgba(15,27,45,0.96)';
+  const accentDim = getComputedStyle(document.documentElement).getPropertyValue('--accent-dim').trim() || 'rgba(78,205,196,0.15)';
   svg.innerHTML = `
     <defs>
       <linearGradient id="nav-bg-grad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="rgba(22,36,55,0.92)"/>
-        <stop offset="100%" stop-color="rgba(15,27,45,0.96)"/>
+        <stop offset="0%" stop-color="${notchC1}"/>
+        <stop offset="100%" stop-color="${notchC2}"/>
       </linearGradient>
     </defs>
     <path d="${path}" fill="url(#nav-bg-grad)" style="backdrop-filter:blur(16px)"/>
-    <path d="${path}" fill="none" stroke="rgba(46,204,113,0.15)" stroke-width="1"/>
+    <path d="${path}" fill="none" stroke="${accentDim}" stroke-width="1"/>
   `;
 }
 
@@ -11121,6 +11158,8 @@ function applyTheme(id) {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = t.bg;
   try { localStorage.setItem('app-theme', id); } catch(e) {}
+  // Перерисовываем nav notch с новыми цветами
+  if (typeof renderNavNotch === 'function') requestAnimationFrame(renderNavNotch);
 }
 
 function openThemeSheet() {
