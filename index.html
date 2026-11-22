@@ -30,63 +30,146 @@
   --radius:16px; --radius-sm:10px;
 }
 
-/* Светлая тема — переопределяем хардкоженные полупрозрачные цвета */
+/* ═══════════════════════════════════════════════════════════════
+   iOS Liquid Glass — светлая тема
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Фон страницы — мягкий пастельный градиент, сквозь него видно «стекло» */
+.theme-light body {
+  background: linear-gradient(145deg,#dce8ff 0%,#e8d5ff 40%,#ffd6ec 80%,#ffe8cc 100%) fixed !important;
+}
+
+/* Стеклянный миксин — применяется ко всем поверхностям */
 .theme-light .card,
 .theme-light .hero,
 .theme-light .home-chart-widget,
 .theme-light .home-next-deposit,
 .theme-light .home-piggy-widget,
-.theme-light .dash-stat { border-color: rgba(0,0,0,0.08) !important; }
+.theme-light .dash-stat,
+.theme-light .group-block {
+  background: rgba(255,255,255,0.58) !important;
+  backdrop-filter: blur(24px) saturate(1.8) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.8) !important;
+  border: 0.5px solid rgba(255,255,255,0.75) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+}
 
-.theme-light .card { background: #ffffff !important; }
-.theme-light .hero { background: linear-gradient(135deg,#e8f0fe 0%,#dbeafe 100%) !important; }
-.theme-light .sidebar { background: #ffffff; }
-.theme-light .sidebar-profile { background: linear-gradient(135deg,#e8e8ed,#d1d1d6) !important; border-bottom: 1px solid rgba(0,0,0,0.08) !important; }
-.theme-light nav button { color: #6e6e73; }
-.theme-light .modal { border-top: 1px solid rgba(0,0,0,0.1) !important; background: #ffffff !important; }
-.theme-light .ctx-menu { background: #ffffff !important; border: 1px solid rgba(0,0,0,0.1) !important; box-shadow: 0 8px 32px rgba(0,0,0,.12) !important; }
-.theme-light .wt-slider { background: #e5e5ea !important; border-color: rgba(0,0,0,0.1) !important; }
-.theme-light .wt-slider:before { background: #fff !important; }
-.theme-light input, .theme-light select, .theme-light textarea { background: #f2f2f7 !important; color: #1c1c1e !important; border-color: rgba(0,0,0,0.12) !important; }
-.theme-light .progress-bar-bg { background: rgba(0,0,0,0.08) !important; }
-.theme-light .onboard-card { background: #ffffff; }
-.theme-light .ob-step-block { background: #f2f2f7 !important; border-color: rgba(0,0,0,0.1) !important; }
-.theme-light .group-block { background: #ffffff !important; border-color: rgba(0,0,0,0.08) !important; }
-.theme-light #notif-settings-sheet { background: #ffffff !important; }
-.theme-light #theme-sheet { background: #ffffff !important; }
+/* Герой — чуть ярче и с цветным tint */
+.theme-light .hero {
+  background: rgba(220,232,255,0.65) !important;
+  box-shadow: 0 4px 24px rgba(0,122,255,0.1), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+}
 
-/* Разделители списков и рядов */
+/* Sidebar */
+.theme-light .sidebar {
+  background: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(32px) saturate(1.8) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.8) !important;
+}
+.theme-light .sidebar-profile {
+  background: rgba(255,255,255,0.4) !important;
+  border-bottom: 0.5px solid rgba(255,255,255,0.6) !important;
+}
+.theme-light .sidebar-item:active { background: rgba(0,0,0,0.05) !important; }
+.theme-light .sidebar-item.sb-active { background: rgba(0,122,255,0.1) !important; }
+
+/* Навигационная панель — стеклянная, тень убирается в .light через CSS */
+.theme-light nav { background: rgba(255,255,255,0.0) !important; }
+.theme-light #nav-notch-svg { filter: drop-shadow(0 -1px 6px rgba(0,0,0,0.08)) !important; }
+.theme-light nav button { color: rgba(60,60,67,0.6); }
+.theme-light nav button.active { color: var(--accent); }
+
+/* FAB */
+.theme-light .nav-fab {
+  background: rgba(0,122,255,0.92) !important;
+  border-color: rgba(255,255,255,0.9) !important;
+  box-shadow: 0 4px 20px rgba(0,122,255,0.4), inset 0 1px 0 rgba(255,255,255,0.4) !important;
+}
+
+/* Топбар */
+.theme-light div[style*="border-bottom:1px solid rgba(255,255,255"] {
+  background: rgba(255,255,255,0.65) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom-color: rgba(255,255,255,0.4) !important;
+}
+
+/* Модалки и шторки */
+.theme-light .modal {
+  background: rgba(255,255,255,0.78) !important;
+  backdrop-filter: blur(32px) saturate(1.8) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.8) !important;
+  border-top: 0.5px solid rgba(255,255,255,0.8) !important;
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.08) !important;
+}
+.theme-light #notif-settings-sheet,
+.theme-light #theme-sheet {
+  background: rgba(255,255,255,0.78) !important;
+  backdrop-filter: blur(32px) saturate(1.8) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(1.8) !important;
+}
+
+/* Контекстное меню */
+.theme-light .ctx-menu {
+  background: rgba(255,255,255,0.78) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 0.5px solid rgba(255,255,255,0.8) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1) !important;
+}
+
+/* Инпуты */
+.theme-light input, .theme-light select, .theme-light textarea {
+  background: rgba(255,255,255,0.65) !important;
+  color: #1c1c1e !important;
+  border-color: rgba(255,255,255,0.7) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Разделители */
 .theme-light .card-item,
 .theme-light .ctx-menu-item,
 .theme-light .goal-item,
 .theme-light .pg-history-item,
 .theme-light .widget-toggle-item,
-.theme-light .toggle-row { border-bottom-color: rgba(0,0,0,0.06) !important; }
+.theme-light .toggle-row { border-bottom-color: rgba(0,0,0,0.05) !important; }
 
-/* Топбар */
-.theme-light #page-home > div[style*="border-bottom"],
-.theme-light div[style*="border-bottom:1px solid rgba(255,255,255"] { border-bottom-color: rgba(0,0,0,0.08) !important; }
+/* Прогресс-бар */
+.theme-light .progress-bar-bg { background: rgba(0,0,0,0.08) !important; }
 
-/* Кнопки-иконки с rgba(255,255,255) фоном */
-.theme-light button[style*="rgba(255,255,255,0.07)"],
-.theme-light button[style*="rgba(255,255,255,0.08)"] { background: rgba(0,0,0,0.06) !important; color: #6e6e73 !important; }
-
-/* FAB — бордер должен совпадать с фоном notch (белый) */
-.theme-light .nav-fab { border-color: #ffffff !important; box-shadow: 0 2px 16px rgba(0,122,255,0.35), 0 4px 16px rgba(0,0,0,0.12) !important; }
-
-/* Nav notch shadow — светлее */
-.theme-light #nav-notch-svg { filter: drop-shadow(0 -2px 8px rgba(0,0,0,0.1)) !important; }
-
-/* Surface2 элементы */
-.theme-light .home-piggy-cell.undone { background: #e8e8ed !important; }
-.theme-light .dash-stat { background: #ffffff !important; }
-.theme-light .home-chart-tab { background: #e8e8ed !important; }
+/* Surface2 — матовое стекло потемнее */
+.theme-light .home-piggy-cell.undone { background: rgba(0,0,0,0.06) !important; }
+.theme-light .home-chart-tab { background: rgba(0,0,0,0.07) !important; }
 .theme-light .home-chart-tab.active { background: var(--accent) !important; color: #fff !important; }
-.theme-light .ch-cell { border-color: rgba(0,0,0,0.12) !important; }
-.theme-light .widget-settings-panel { background: #ffffff !important; border-top-color: rgba(0,0,0,0.1) !important; }
-.theme-light .quick-btn { border-color: rgba(0,122,255,0.25) !important; background: #ffffff !important; }
-.theme-light .sidebar-item:active { background: rgba(0,0,0,0.05) !important; }
-.theme-light .sidebar-item.sb-active { background: rgba(0,122,255,0.08) !important; }
+.theme-light .ch-cell { border-color: rgba(0,0,0,0.1) !important; }
+.theme-light .widget-settings-panel {
+  background: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(24px) !important;
+  border-top-color: rgba(255,255,255,0.6) !important;
+}
+.theme-light .quick-btn {
+  background: rgba(255,255,255,0.55) !important;
+  border-color: rgba(0,122,255,0.2) !important;
+  backdrop-filter: blur(8px) !important;
+}
+.theme-light .wt-slider { background: rgba(0,0,0,0.1) !important; border-color: rgba(0,0,0,0.08) !important; }
+.theme-light .wt-slider:before { background: rgba(255,255,255,0.95) !important; }
+
+/* Кнопки-иконки */
+.theme-light button[style*="rgba(255,255,255,0.07)"],
+.theme-light button[style*="rgba(255,255,255,0.08)"] {
+  background: rgba(0,0,0,0.06) !important;
+  color: #6e6e73 !important;
+}
+
+/* Onboarding */
+.theme-light .onboard-card {
+  background: rgba(255,255,255,0.78) !important;
+  backdrop-filter: blur(32px) !important;
+  -webkit-backdrop-filter: blur(32px) !important;
+}
+.theme-light .ob-step-block { background: rgba(255,255,255,0.5) !important; border-color: rgba(255,255,255,0.7) !important; }
 
 .onboard-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:500; align-items:flex-end; justify-content:center; }
 .onboard-overlay.open { display:flex; }
@@ -3053,8 +3136,8 @@ function renderNavNotch() {
   svg.setAttribute('preserveAspectRatio', 'none');
   // Цвета notch зависят от темы
   const isLight = document.body.classList.contains('theme-light');
-  const notchC1 = isLight ? 'rgba(255,255,255,0.97)' : 'rgba(22,36,55,0.92)';
-  const notchC2 = isLight ? 'rgba(242,242,247,0.98)' : 'rgba(15,27,45,0.96)';
+  const notchC1 = isLight ? 'rgba(255,255,255,0.72)' : 'rgba(22,36,55,0.92)';
+  const notchC2 = isLight ? 'rgba(248,245,255,0.78)' : 'rgba(15,27,45,0.96)';
   const accentDim = getComputedStyle(document.documentElement).getPropertyValue('--accent-dim').trim() || 'rgba(78,205,196,0.15)';
   svg.innerHTML = `
     <defs>
