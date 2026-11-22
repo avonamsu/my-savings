@@ -176,6 +176,8 @@ html:has(body.theme-light) {
 }
 .theme-light .wt-slider { background: rgba(0,0,0,0.1) !important; border-color: rgba(0,0,0,0.08) !important; }
 .theme-light .wt-slider:before { background: rgba(255,255,255,0.95) !important; }
+.theme-light input:checked + .wt-slider { background: var(--accent) !important; border-color: var(--accent) !important; }
+.theme-light input:checked + .wt-slider:before { background: #fff !important; }
 
 /* Кнопки-иконки и кнопки с rgba(255,255,255) фоном — делаем видимыми */
 .theme-light button[style*="rgba(255,255,255,0.07)"],
