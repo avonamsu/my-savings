@@ -188,6 +188,31 @@ html:has(body.theme-light) {
   color: #3c3c43 !important;
 }
 
+/* Убираем толстые белые обводки с кнопок-сегментов (inline border:2px solid rgba(255,255,255,...)) */
+.theme-light button[style*="border:2px solid rgba(255,255,255"] {
+  border-color: rgba(0,0,0,0.08) !important;
+  border-width: 0.5px !important;
+  background: rgba(255,255,255,0.65) !important;
+  color: #3c3c43 !important;
+}
+/* Активные кнопки-сегменты с accent/danger обводкой — уменьшаем толщину */
+.theme-light button[style*="border:2px solid var(--accent)"],
+.theme-light button[style*="border-color:var(--accent)"],
+.theme-light button[style*="border:2px solid var(--danger)"],
+.theme-light button[style*="border-color:var(--danger)"] {
+  border-width: 1px !important;
+}
+/* Инлайн-кнопки с border:1px solid rgba(255,255,255 → меняем на тёмный */
+.theme-light button[style*="border:1px solid rgba(255,255,255"] {
+  border-color: rgba(0,0,0,0.1) !important;
+}
+/* Копилка: кнопка «－» с белой рамкой */
+.theme-light button[style*="border:1px solid rgba(255,255,255,0.1)"] {
+  border-color: rgba(0,0,0,0.1) !important;
+  background: rgba(255,255,255,0.65) !important;
+  color: #3c3c43 !important;
+}
+
 /* Кнопки фильтров в бюджете — Поиск, Фильтр, Сортировка, CSV */
 .theme-light #budget-search-toggle-btn,
 .theme-light #budget-filter-btn,
