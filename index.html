@@ -30,6 +30,31 @@
   --radius:16px; --radius-sm:10px;
 }
 
+/* Светлая тема — переопределяем хардкоженные полупрозрачные цвета */
+.theme-light .card,
+.theme-light .hero,
+.theme-light .home-chart-widget,
+.theme-light .home-next-deposit,
+.theme-light .home-piggy-widget,
+.theme-light .dash-stat { border-color: rgba(0,0,0,0.08) !important; }
+
+.theme-light .card { background: #ffffff !important; }
+.theme-light .hero { background: linear-gradient(135deg,#e8f0fe 0%,#dbeafe 100%) !important; }
+.theme-light .sidebar { background: #ffffff; }
+.theme-light .sidebar-profile { background: linear-gradient(135deg,#e8e8ed,#d1d1d6) !important; border-bottom: 1px solid rgba(0,0,0,0.08) !important; }
+.theme-light nav { background: #ffffff; border-top: 1px solid rgba(0,0,0,0.1); }
+.theme-light nav button { color: #6e6e73; }
+.theme-light .modal { border-top: 1px solid rgba(0,0,0,0.1) !important; }
+.theme-light .ctx-menu { background: #ffffff; border: 1px solid rgba(0,0,0,0.1); }
+.theme-light .wt-slider { background: #e5e5ea; border-color: rgba(0,0,0,0.1); }
+.theme-light .wt-slider:before { background: #fff; }
+.theme-light input, .theme-light select, .theme-light textarea { background: #f2f2f7 !important; color: #1c1c1e !important; border-color: rgba(0,0,0,0.12) !important; }
+.theme-light .progress-bar-bg { background: rgba(0,0,0,0.08) !important; }
+.theme-light .onboard-card { background: #ffffff; }
+.theme-light .ob-step-block { background: #f2f2f7 !important; border-color: rgba(0,0,0,0.1) !important; }
+.theme-light .group-block { background: #ffffff !important; border-color: rgba(0,0,0,0.08) !important; }
+.theme-light .notif-settings-sheet, .theme-light #notif-settings-sheet { background: #ffffff !important; }
+.theme-light #theme-sheet { background: #ffffff !important; }
 
 .onboard-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:500; align-items:flex-end; justify-content:center; }
 .onboard-overlay.open { display:flex; }
@@ -11065,11 +11090,12 @@ const THEMES = [
   { id:'purple', label:'💜 Фиолетовый', accent:'#A78BFA', r:'167,139,250', bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
   { id:'orange', label:'🍊 Оранжевый',  accent:'#FB923C', r:'251,146,60',  bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
   { id:'rose',   label:'🌸 Розовый',    accent:'#F472B6', r:'244,114,182', bg:'#0a0a0a', surface:'#111111', surface2:'#1a1a1a', text:'#f0f0f0', textDim:'#6b7280' },
+  { id:'light',  label:'☀️ Светлая',    accent:'#007AFF', r:'0,122,255',   bg:'#f2f2f7', surface:'#ffffff', surface2:'#e8e8ed', text:'#1c1c1e', textDim:'#6e6e73', light:true },
 ];
 
 function applyTheme(id) {
-  // Находим тему по id, дефолт — green
-  const t = THEMES.find(x => x.id === id) || THEMES[0];
+  // Находим тему по id, дефолт — blue
+  const t = THEMES.find(x => x.id === id) || THEMES.find(x => x.isDefault);
   const r = document.documentElement.style;
   r.setProperty('--bg',          t.bg);
   r.setProperty('--surface',     t.surface);
@@ -11081,6 +11107,16 @@ function applyTheme(id) {
   r.setProperty('--text-dim',    t.textDim);
   r.setProperty('--done',        t.accent);
   r.setProperty('--done-bg',     `rgba(${t.r},0.12)`);
+  // Светлая тема: переопределяем border/shadow переменные
+  if (t.light) {
+    r.setProperty('--card-border', 'rgba(0,0,0,0.08)');
+    r.setProperty('--card-bg',     '#ffffff');
+    document.body.classList.add('theme-light');
+  } else {
+    r.removeProperty('--card-border');
+    r.removeProperty('--card-bg');
+    document.body.classList.remove('theme-light');
+  }
   // theme-color мета
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = t.bg;
