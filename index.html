@@ -164,11 +164,56 @@ html:has(body.theme-light) {
 .theme-light .wt-slider { background: rgba(0,0,0,0.1) !important; border-color: rgba(0,0,0,0.08) !important; }
 .theme-light .wt-slider:before { background: rgba(255,255,255,0.95) !important; }
 
-/* Кнопки-иконки */
+/* Кнопки-иконки и кнопки с rgba(255,255,255) фоном — делаем видимыми */
 .theme-light button[style*="rgba(255,255,255,0.07)"],
-.theme-light button[style*="rgba(255,255,255,0.08)"] {
+.theme-light button[style*="rgba(255,255,255,0.08)"],
+.theme-light button[style*="rgba(255,255,255,0.06)"] {
   background: rgba(0,0,0,0.06) !important;
-  color: #6e6e73 !important;
+  border-color: rgba(0,0,0,0.1) !important;
+  color: #3c3c43 !important;
+}
+
+/* Кнопки фильтров в бюджете — Поиск, Фильтр, Сортировка, CSV */
+.theme-light #budget-search-toggle-btn,
+.theme-light #budget-filter-btn,
+.theme-light #budget-sort-btn,
+.theme-light #stats-excel-btn {
+  background: rgba(255,255,255,0.72) !important;
+  border: 0.5px solid rgba(0,0,0,0.12) !important;
+  color: #3c3c43 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+}
+
+/* Шапки дат в истории операций */
+.theme-light div[style*="background:rgba(255,255,255,0.04)"] {
+  background: transparent !important;
+  border-top-color: rgba(0,0,0,0.08) !important;
+}
+
+/* Строки транзакций — разделители */
+.theme-light div[style*="border-bottom:1px solid rgba(255,255,255,0.04)"] {
+  border-bottom-color: rgba(0,0,0,0.06) !important;
+}
+
+/* Контейнер группы дня — делаем стеклянной карточкой */
+.theme-light #budget-entries-list > div {
+  background: rgba(255,255,255,0.65) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8) !important;
+  margin-bottom: 10px !important;
+  border: 0.5px solid rgba(255,255,255,0.75) !important;
+}
+
+/* Шапка дня внутри карточки */
+.theme-light #budget-entries-list > div > div:first-child {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background: rgba(0,0,0,0.03) !important;
+  border-top: none !important;
+  border-bottom: 0.5px solid rgba(0,0,0,0.08) !important;
 }
 
 /* Onboarding */
