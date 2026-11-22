@@ -34,10 +34,10 @@
    iOS Liquid Glass — светлая тема
    ═══════════════════════════════════════════════════════════════ */
 
-/* Фон страницы — насыщенный градиент, сквозь стекло он виден */
+/* Фон — почти белый с едва заметным холодным tint, как iOS */
 .theme-light,
 .theme-light body {
-  background: linear-gradient(145deg,#b8d4ff 0%,#d4b8ff 35%,#ffb8d4 70%,#ffd4b8 100%) fixed !important;
+  background: linear-gradient(160deg,#eef4ff 0%,#f5f0ff 50%,#fff0f7 100%) fixed !important;
   min-height: 100dvh;
 }
 
@@ -49,7 +49,7 @@
 .theme-light .home-piggy-widget,
 .theme-light .dash-stat,
 .theme-light .group-block {
-  background: rgba(255,255,255,0.42) !important;
+  background: rgba(255,255,255,0.72) !important;
   backdrop-filter: blur(20px) saturate(1.6) !important;
   -webkit-backdrop-filter: blur(20px) saturate(1.6) !important;
   border: 0.5px solid rgba(255,255,255,0.8) !important;
@@ -58,7 +58,7 @@
 
 /* Герой — синеватый tint */
 .theme-light .hero {
-  background: rgba(200,220,255,0.48) !important;
+  background: rgba(220,232,255,0.72) !important;
   box-shadow: 0 4px 24px rgba(0,122,255,0.12), inset 0 1px 0 rgba(255,255,255,0.85) !important;
 }
 
@@ -99,7 +99,7 @@
 /* html — фон всего viewport */
 .theme-light ~ * { }
 html:has(body.theme-light) {
-  background: linear-gradient(145deg,#b8d4ff 0%,#d4b8ff 35%,#ffb8d4 70%,#ffd4b8 100%) fixed !important;
+  background: linear-gradient(160deg,#eef4ff 0%,#f5f0ff 50%,#fff0f7 100%) fixed !important;
 }
 
 /* Модалки и шторки */
