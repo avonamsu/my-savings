@@ -195,12 +195,26 @@ html:has(body.theme-light) {
   background: rgba(255,255,255,0.65) !important;
   color: #3c3c43 !important;
 }
-/* Активные кнопки-сегменты с accent/danger обводкой — уменьшаем толщину */
-.theme-light button[style*="border:2px solid var(--accent)"],
-.theme-light button[style*="border-color:var(--accent)"],
-.theme-light button[style*="border:2px solid var(--danger)"],
+/* Все кнопки с border:2px — уменьшаем до 0.5px */
+.theme-light button[style*="border:2px"] {
+  border-width: 0.5px !important;
+}
+/* Активные с accent/danger — делаем чуть ярче цвет рамки, но тонкой */
+.theme-light button[style*="border-color:var(--accent)"] {
+  border-color: rgba(0,122,255,0.6) !important;
+  border-width: 0.5px !important;
+}
 .theme-light button[style*="border-color:var(--danger)"] {
-  border-width: 1px !important;
+  border-color: rgba(255,59,48,0.5) !important;
+  border-width: 0.5px !important;
+}
+.theme-light button[style*="border:2px solid var(--accent)"] {
+  border-color: rgba(0,122,255,0.6) !important;
+  border-width: 0.5px !important;
+}
+.theme-light button[style*="border:2px solid var(--danger)"] {
+  border-color: rgba(255,59,48,0.5) !important;
+  border-width: 0.5px !important;
 }
 /* Инлайн-кнопки с border:1px solid rgba(255,255,255 → меняем на тёмный */
 .theme-light button[style*="border:1px solid rgba(255,255,255"] {
