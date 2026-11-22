@@ -34,9 +34,11 @@
    iOS Liquid Glass — светлая тема
    ═══════════════════════════════════════════════════════════════ */
 
-/* Фон страницы — мягкий пастельный градиент, сквозь него видно «стекло» */
+/* Фон страницы — насыщенный градиент, сквозь стекло он виден */
+.theme-light,
 .theme-light body {
-  background: linear-gradient(145deg,#dce8ff 0%,#e8d5ff 40%,#ffd6ec 80%,#ffe8cc 100%) fixed !important;
+  background: linear-gradient(145deg,#b8d4ff 0%,#d4b8ff 35%,#ffb8d4 70%,#ffd4b8 100%) fixed !important;
+  min-height: 100dvh;
 }
 
 /* Стеклянный миксин — применяется ко всем поверхностям */
@@ -47,17 +49,17 @@
 .theme-light .home-piggy-widget,
 .theme-light .dash-stat,
 .theme-light .group-block {
-  background: rgba(255,255,255,0.58) !important;
-  backdrop-filter: blur(24px) saturate(1.8) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(1.8) !important;
-  border: 0.5px solid rgba(255,255,255,0.75) !important;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  background: rgba(255,255,255,0.42) !important;
+  backdrop-filter: blur(20px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.6) !important;
+  border: 0.5px solid rgba(255,255,255,0.8) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9) !important;
 }
 
-/* Герой — чуть ярче и с цветным tint */
+/* Герой — синеватый tint */
 .theme-light .hero {
-  background: rgba(220,232,255,0.65) !important;
-  box-shadow: 0 4px 24px rgba(0,122,255,0.1), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  background: rgba(200,220,255,0.48) !important;
+  box-shadow: 0 4px 24px rgba(0,122,255,0.12), inset 0 1px 0 rgba(255,255,255,0.85) !important;
 }
 
 /* Sidebar */
@@ -88,10 +90,16 @@
 
 /* Топбар */
 .theme-light div[style*="border-bottom:1px solid rgba(255,255,255"] {
-  background: rgba(255,255,255,0.65) !important;
+  background: rgba(255,255,255,0.45) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  border-bottom-color: rgba(255,255,255,0.4) !important;
+  border-bottom-color: rgba(255,255,255,0.5) !important;
+}
+
+/* html — фон всего viewport */
+.theme-light ~ * { }
+html:has(body.theme-light) {
+  background: linear-gradient(145deg,#b8d4ff 0%,#d4b8ff 35%,#ffb8d4 70%,#ffd4b8 100%) fixed !important;
 }
 
 /* Модалки и шторки */
